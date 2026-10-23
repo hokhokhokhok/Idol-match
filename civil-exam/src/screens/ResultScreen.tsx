@@ -1,4 +1,5 @@
 import { CIRCLED } from '../components/QuestionView';
+import { elapsedSec, isPractice } from '../lib/attempt';
 import type { AttemptRecord } from '../lib/db';
 import { formatDuration } from '../lib/format';
 import type { QuestionSet } from '../types';
@@ -14,14 +15,14 @@ type Props = {
 
 /** 채점 결과: 점수, 단원별 정답률, 문항별 O/X → 해설로 이동 */
 export function ResultScreen({ set, record, saveFailed, onReview, onHome }: Props) {
-  const elapsed = Math.min(record.timeLimitSec, (record.submittedAt - record.startedAt) / 1000);
+  const elapsed = elapsedSec(record);
   const wrong = record.total - record.correct;
 
   return (
     <div className="result">
       <header className="topbar">
         <div className="topbar-title">
-          <strong>채점 결과</strong>
+          <strong>채점 결과{isPractice(record) && <span className="mode-tag">연습</span>}</strong>
           <span className="topbar-sub">
             {set.title} · {new Date(record.submittedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}
           </span>

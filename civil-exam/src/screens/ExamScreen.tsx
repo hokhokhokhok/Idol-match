@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ExplanationView } from '../components/ExplanationView';
 import { OmrPanel } from '../components/OmrPanel';
 import { QuestionView, nextMark } from '../components/QuestionView';
 import { SubmitDialog } from '../components/SubmitDialog';
-import { Timer } from '../components/Timer';
+import { ElapsedClock, Timer } from '../components/Timer';
 import { useCountdown } from '../hooks/useCountdown';
 import { useSwipe } from '../hooks/useSwipe';
-import { addTime, unanswered, type Attempt } from '../lib/attempt';
+import { addTime, isPractice, unanswered, type Attempt } from '../lib/attempt';
 import type { ChoiceNo, QuestionSet } from '../types';
 
 type Props = {
@@ -17,7 +18,10 @@ type Props = {
   onExit: (final: Attempt) => void;
 };
 
-/** 실전 모드: 타이머 + 시험지 + 답안지(OMR). 40문항을 풀고 일괄 제출한다. */
+/**
+ * 실전 모드: 타이머 + 시험지 + 답안지(OMR). 40문항을 풀고 일괄 제출한다.
+ * 연습 모드: 시간 제한 없이(경과 시간만 표시) 보기를 고르는 즉시 채점·해설. 고른 답은 바꿀 수 없다.
+ */
 export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) {
   const qs = set.questions;
   const index = Math.min(attempt.current, qs.length - 1);
@@ -50,7 +54,9 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
 
-  const remaining = useCountdown(attempt.endsAt, () => onSubmit(withTime(attempt), true));
+  const practice = isPractice(attempt);
+  const remaining = useCountdown(attempt.endsAt, () => onSubmit(withTime(attempt), true), !practice);
+  const locked = practice && attempt.answers[q.id] != null;
 
   const go = useCallback(
     (i: number, how: 'next' | 'prev' | 'jump' = 'jump') => {
@@ -65,13 +71,14 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
 
   const select = useCallback(
     (c: ChoiceNo) => {
+      if (locked) return;
       const answers = { ...attempt.answers };
       // 같은 번호를 다시 누르면 마킹 해제
       if (answers[q.id] === c) delete answers[q.id];
       else answers[q.id] = c;
       onChange({ ...attempt, answers });
     },
-    [attempt, onChange, q.id],
+    [attempt, locked, onChange, q.id],
   );
 
   const flagged = attempt.flags.includes(q.id);
@@ -112,7 +119,11 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
         <button type="button" className="btn btn-ghost" onClick={() => onExit(withTime(attempt))} aria-label="나가기(진행 상황은 저장됨)">
           ‹ 나가기
         </button>
-        <Timer remaining={remaining} limitSec={attempt.timeLimitSec} />
+        {practice ? (
+          <ElapsedClock startedAt={attempt.startedAt} />
+        ) : (
+          <Timer remaining={remaining} limitSec={attempt.timeLimitSec} />
+        )}
         <div className="exam-bar-right">
           <button
             type="button"
@@ -135,6 +146,7 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
             <div className="qbar">
               <span className="qbar-pos">
                 <strong>{q.number}</strong> / {qs.length}
+                {practice && <span className="mode-tag">연습</span>}
               </span>
               <button
                 type="button"
@@ -149,11 +161,20 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
               <QuestionView
                 question={q}
                 selected={attempt.answers[q.id] ?? null}
-                onSelect={select}
+                onSelect={locked ? undefined : select}
                 marks={attempt.marks[q.id]}
                 onToggleMark={toggleMark}
+                reveal={locked}
               />
             </div>
+            {locked && (
+              <>
+                <p className={`verdict verdict-block ${attempt.answers[q.id] === q.answer ? 'is-o' : 'is-x'}`} role="status">
+                  {attempt.answers[q.id] === q.answer ? '정답입니다' : `오답입니다 · 정답 ${q.answer}번`}
+                </p>
+                <ExplanationView question={q} chosen={attempt.answers[q.id] ?? null} />
+              </>
+            )}
             <nav className="qnav" aria-label="문항 이동">
               <button type="button" className="btn" onClick={() => go(index - 1, 'prev')} disabled={index === 0}>
                 ‹ 이전 문항

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { RateBars, ScoreTrend } from '../components/Charts';
+import { elapsedSec, isPractice } from '../lib/attempt';
 import { db } from '../lib/db';
 import { formatDuration } from '../lib/format';
 import { byType, byUnit, streakDays, TYPE_LABEL } from '../lib/stats';
@@ -9,13 +10,17 @@ const secLabel = (s: number) => (s > 0 ? `평균 ${Math.round(s)}초` : '');
 /** 통계: 단원별·유형별 누적 정답률, 풀이시간, 점수 추이 (실전 제출 기록 기준) */
 export function StatsScreen({ onHome }: { onHome: () => void }) {
   const data = useLiveQuery(async () => {
-    const [attempts, results, reviews, notes] = await Promise.all([
+    const [all, allResults, reviews, notes] = await Promise.all([
       db.attempts.orderBy('submittedAt').toArray(),
       db.results.toArray(),
       db.reviews.toArray(),
       db.notes.toArray(),
     ]);
-    return { attempts, results, reviews, notes };
+    // 점수·정답률은 실전 모드만. 연습 모드 제출은 연속 학습일에만 반영
+    const attempts = all.filter((a) => !isPractice(a));
+    const examIds = new Set(attempts.map((a) => a.id));
+    const results = allResults.filter((r) => examIds.has(r.attemptId));
+    return { attempts, results, reviews, notes, activity: [...all.map((a) => a.submittedAt), ...reviews.map((r) => r.at)] };
   }, []);
 
   const header = (
@@ -31,13 +36,13 @@ export function StatsScreen({ onHome }: { onHome: () => void }) {
   );
   if (!data) return <div className="result">{header}</div>;
 
-  const { attempts, results, reviews, notes } = data;
+  const { attempts, results, reviews, notes, activity } = data;
   if (attempts.length === 0) {
     return (
       <div className="result">
         {header}
         <main className="home-main">
-          <p className="empty-note">아직 제출한 시험이 없습니다. 실전 모드로 한 세트를 풀면 통계가 쌓입니다.</p>
+          <p className="empty-note">아직 실전 모드로 제출한 시험이 없습니다. 실전 모드로 한 세트를 풀면 통계가 쌓입니다.</p>
         </main>
       </div>
     );
@@ -46,7 +51,7 @@ export function StatsScreen({ onHome }: { onHome: () => void }) {
   const avgScore = attempts.reduce((s, a) => s + a.score100, 0) / attempts.length;
   const timed = results.filter((r) => r.timeSec > 0);
   const avgSec = timed.length ? timed.reduce((s, r) => s + r.timeSec, 0) / timed.length : 0;
-  const streak = streakDays([...attempts.map((a) => a.submittedAt), ...reviews.map((r) => r.at)]);
+  const streak = streakDays(activity);
   const reviewRate = reviews.length ? reviews.filter((r) => r.correct).length / reviews.length : null;
   const units = byUnit(results);
   const types = byType(results);
@@ -134,7 +139,7 @@ export function StatsScreen({ onHome }: { onHome: () => void }) {
                   <td>
                     {a.correct}/{a.total}
                   </td>
-                  <td>{formatDuration(Math.min(a.timeLimitSec, (a.submittedAt - a.startedAt) / 1000))}</td>
+                  <td>{formatDuration(elapsedSec(a))}</td>
                 </tr>
               ))}
             </tbody>

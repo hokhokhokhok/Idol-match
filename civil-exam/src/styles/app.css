@@ -1078,3 +1078,123 @@
 .history tr:last-child td {
   border-bottom: 0;
 }
+
+/* ---------- 연습 모드 ---------- */
+.mode-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: #e8f3ec;
+  color: var(--correct);
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: 3px;
+}
+.timer-elapsed {
+  cursor: default;
+  font-size: 16px;
+  color: var(--correct);
+}
+.verdict-block {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* ---------- 설정 ---------- */
+.set-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 20px;
+}
+.set-row > div:first-child {
+  flex: 1 1 280px;
+}
+.set-row p + p {
+  margin-top: 4px;
+}
+.font-preview {
+  flex: 1 1 280px;
+  font-family: var(--font-exam);
+  font-size: var(--exam-size);
+  font-weight: 700;
+  line-height: var(--exam-leading);
+}
+.seg-lg button {
+  min-width: 72px;
+  padding: 0 12px;
+  font-family: var(--font-ui);
+  font-size: 15px;
+}
+.muted-inline {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stepper .btn {
+  min-width: 52px;
+  font-size: 22px;
+  line-height: 1;
+}
+.stepper output {
+  min-width: 4.5em;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.switch {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #c9c6bd;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.switch[aria-checked='true'] {
+  background: var(--correct);
+}
+.switch-knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  transition: transform 0.15s;
+}
+.switch[aria-checked='true'] .switch-knob {
+  transform: translateX(26px);
+}
+.data-card {
+  display: grid;
+  gap: 10px;
+}
+.data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.notice-ok {
+  background: #e8f3ec;
+  color: var(--correct);
+}
+.btn-danger {
+  background: var(--wrong);
+  border-color: var(--wrong);
+  color: #fff;
+  font-weight: 600;
+}

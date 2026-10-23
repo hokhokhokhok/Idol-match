@@ -6,9 +6,12 @@ import { examConfig } from './config';
 export type Attempt = {
   id: string;
   setId: string;
+  /** exam: 실전(제한시간, 일괄 해설) / practice: 연습(시간제한 없음, 고르는 즉시 해설). 없으면 exam */
+  mode?: 'exam' | 'practice';
   startedAt: number;
-  /** 종료 시각(epoch ms). 앱이 백그라운드에 있다 돌아와도 남은 시간이 정확하도록 절대 시각으로 둔다 */
+  /** 종료 시각(epoch ms). 앱이 백그라운드에 있다 돌아와도 남은 시간이 정확하도록 절대 시각으로 둔다. 연습 모드는 0 */
   endsAt: number;
+  /** 연습 모드는 0(제한 없음) */
   timeLimitSec: number;
   /** 문항 id → 고른 답 */
   answers: Record<string, ChoiceNo>;
@@ -25,13 +28,15 @@ export type Attempt = {
   timeUp?: boolean;
 };
 
-export function newAttempt(setId: string, limitSec: number, now = Date.now()): Attempt {
+export function newAttempt(setId: string, limitSec: number, now = Date.now(), mode: Attempt['mode'] = 'exam'): Attempt {
+  const practice = mode === 'practice';
   return {
     id: `${setId}-${now}`,
     setId,
+    mode,
     startedAt: now,
-    endsAt: now + limitSec * 1000,
-    timeLimitSec: limitSec,
+    endsAt: practice ? 0 : now + limitSec * 1000,
+    timeLimitSec: practice ? 0 : limitSec,
     answers: {},
     flags: [],
     marks: {},
@@ -88,4 +93,12 @@ export function addTime(a: Attempt, questionId: string, since: number, now = Dat
   if (sec < 0.05) return a;
   const prev = a.timeSpent?.[questionId] ?? 0;
   return { ...a, timeSpent: { ...a.timeSpent, [questionId]: Math.round((prev + sec) * 10) / 10 } };
+}
+
+export const isPractice = (a: Pick<Attempt, 'mode'>) => a.mode === 'practice';
+
+/** 실제 풀이에 쓴 시간(초). 실전은 제한시간을 넘지 않는다 */
+export function elapsedSec(a: Pick<Attempt, 'startedAt' | 'timeLimitSec'> & { submittedAt?: number }, now = Date.now()) {
+  const raw = ((a.submittedAt ?? now) - a.startedAt) / 1000;
+  return a.timeLimitSec ? Math.min(a.timeLimitSec, raw) : raw;
 }

@@ -2,15 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { newAttempt, type Attempt } from './lib/attempt';
 import { timeLimitSec } from './lib/config';
 import { db, loadDraft, saveDraft, saveSubmission, type AttemptRecord } from './lib/db';
-import { useFontSize } from './lib/prefs';
 import { buildSubmission } from './lib/records';
 import { questionSets } from './lib/sets';
+import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from './lib/settings';
 import { ExamScreen } from './screens/ExamScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { NotesScreen } from './screens/NotesScreen';
 import { PracticeScreen } from './screens/PracticeScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import { StatsScreen } from './screens/StatsScreen';
 
 type View =
@@ -20,22 +21,41 @@ type View =
   | { name: 'review'; record: AttemptRecord; number?: number; wrongOnly?: boolean }
   | { name: 'notes' }
   | { name: 'practice'; questionIds: string[] }
-  | { name: 'stats' };
+  | { name: 'stats' }
+  | { name: 'settings' };
 
 const findSet = (id: string) => questionSets.find((s) => s.id === id);
 
 export function App() {
-  const [fontSize, setFontSize] = useFontSize();
+  const [settings, setSettingsState] = useState<Settings | null>(null);
   const [draft, setDraftState] = useState<Attempt | null | undefined>(undefined);
   const [view, setView] = useState<View>({ name: 'home' });
 
   useEffect(() => {
+    loadSettings()
+      .catch((e) => {
+        console.error('settings load failed', e);
+        return DEFAULT_SETTINGS;
+      })
+      .then(setSettingsState);
     loadDraft()
       .then((d) => setDraftState(d && findSet(d.setId) ? d : null))
       .catch((e) => {
         console.error('draft load failed', e);
         setDraftState(null);
       });
+  }, []);
+
+  useEffect(() => {
+    if (settings) document.documentElement.dataset.fontSize = String(settings.fontSize);
+  }, [settings]);
+
+  const updateSettings = useCallback((patch: Partial<Settings>) => {
+    setSettingsState((prev) => {
+      const next = { ...(prev ?? DEFAULT_SETTINGS), ...patch };
+      saveSettings(next).catch((e) => console.error('settings save failed', e));
+      return next;
+    });
   }, []);
 
   const setDraft = useCallback((a: Attempt | null) => {
@@ -60,7 +80,7 @@ export function App() {
   if (questionSets.length === 0) {
     return <main className="app-empty">src/data/sets 에 문항 세트(JSON)가 없습니다.</main>;
   }
-  if (draft === undefined) return null; // IndexedDB 로딩 (수 ms)
+  if (draft === undefined || settings === null) return null; // IndexedDB 로딩 (수 ms)
 
   if (view.name === 'exam' && draft) {
     return (
@@ -120,17 +140,22 @@ export function App() {
     return <StatsScreen onHome={() => setView({ name: 'home' })} />;
   }
 
+  if (view.name === 'settings') {
+    return <SettingsScreen settings={settings} onChange={updateSettings} onHome={() => setView({ name: 'home' })} />;
+  }
+
   return (
     <HomeScreen
       sets={questionSets}
       draft={draft}
-      fontSize={fontSize}
-      onFontSize={setFontSize}
+      settings={settings}
       onStart={(setId) => {
         const set = findSet(setId)!;
-        setDraft(newAttempt(setId, timeLimitSec(set.questions.length)));
+        const mode = settings.instantExplanation ? 'practice' : 'exam';
+        setDraft(newAttempt(setId, timeLimitSec(set.questions.length, settings.timeLimitMinutes), Date.now(), mode));
         setView({ name: 'exam' });
       }}
+      onSettings={() => setView({ name: 'settings' })}
       onResume={() => setView({ name: 'exam' })}
       onNotes={() => setView({ name: 'notes' })}
       onStats={() => setView({ name: 'stats' })}

@@ -24,7 +24,7 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 - [x] **2단계** — 시험 모드(타이머, OMR 답안지, 스와이프, 별표, 제출 확인), 채점 요약, 이어 풀기
 - [x] **3단계** — 해설 모드(보기별 해설·조문·판례 확인 배지, 틀린 문항만 필터), IndexedDB(Dexie) 저장, 최근 기록
 - [x] **4단계** — 오답노트(별표·메모, 1·3·7일 간격 반복), 통계, 홈 요약(연속 학습일·오늘 복습·약점 단원 Top3)
-- [ ] 5단계 — 설정(글자 크기·시간·연습 모드), JSON 백업/복원
+- [x] **5단계** — 설정(글자 크기·시험시간·해설 즉시 보기=연습 모드), JSON 백업/복원
 - [ ] 6단계 — `validate-questions` 스크립트, 아이패드 Safari 테스트 체크리스트
 - [ ] 7단계 — 세트별 40문항 콘텐츠 작성·검수
 
@@ -51,6 +51,16 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 - **통계**(실전 제출 기록 기준): 연속 학습일, 평균 점수, 문항당 풀이시간, 오답노트 현황·복습 정답률, 점수 추이, 단원별·유형별 누적 정답률(+평균 풀이시간), 회차별 기록.
 - 홈: 연속 학습일(실전 제출 또는 복습한 날), 오늘 복습 문항 수, 약점 단원 Top3(단원별 3문항 이상 풀었을 때).
 
+## 설정 · 백업
+
+- 홈 우측 상단 **설정**.
+- **시험지 글자 크기**: 작게 15 / 보통 17 / 크게 19px.
+- **시험시간**: 40문항 기준 10~150분(5분 단위, 기본은 `config/exam.json`). 다른 문항 수 세트는 비례. 진행 중인 시험에는 적용 안 됨.
+- **해설 즉시 보기(연습 모드)**: 켜면 세트를 연습 모드로 시작 — 시간 제한 없이 경과 시간만 표시, 보기를 고르면 바로 정답/오답과 보기별 해설(답 변경 불가). 끝나면 제출해 결과 저장. 연습 결과도 오답노트·연속 학습일에는 반영되지만 **통계(점수·정답률)·약점 단원은 실전만** 집계.
+- **백업 파일 만들기**: 모든 기록(시험 기록, 문항 결과, 오답노트·메모, 복습 기록, 진행 중 시험, 설정)을 `civil-exam-backup-YYYYMMDD-HHMM.json`으로. 아이패드에서는 공유 시트 → '파일에 저장'.
+- **백업에서 복원**: 파일을 고르면 내용 요약과 함께 확인 → 현재 기기 기록을 **전부 백업 내용으로 교체**(한 트랜잭션이라 실패하면 기존 기록 유지). 다른 앱 파일·손상된 파일은 거부.
+- 앱 시작 시 저장공간 보호(`navigator.storage.persist`)를 요청한다. 설정 화면에서 상태 확인.
+
 ## 폴더 구조
 
 ```
@@ -63,8 +73,10 @@ src/components/OmrPanel.tsx      답안지(번호 격자)
 src/components/SubmitDialog.tsx  제출 확인 모달
 src/screens/                     Home / Exam / Result 화면
 src/lib/attempt.ts        응시 상태·채점·문항별 시간 누적
-src/lib/db.ts             IndexedDB(Dexie) v2: attempts / results(응시×문항) / drafts / notes(오답노트) / reviews(복습 기록)
+src/lib/db.ts             IndexedDB(Dexie) v3: attempts / results(응시×문항) / drafts / notes(오답노트) / reviews(복습 기록) / settings
 src/lib/srs.ts            간격 반복(1·3·7일) 규칙
+src/lib/settings.ts       설정(글자 크기·시험시간·연습 모드) — DB v3 settings 테이블
+src/lib/backup.ts         JSON 백업 내보내기·검증·복원
 src/lib/stats.ts          단원·유형별 정답률, 약점 단원, 연속 학습일
 src/lib/records.ts        제출 → 저장용 기록 변환
 src/components/ExplanationView.tsx  보기별 해설
@@ -72,6 +84,7 @@ src/screens/ReviewScreen.tsx        해설 모드
 src/screens/NotesScreen.tsx         오답노트
 src/screens/PracticeScreen.tsx      오답 다시 풀기
 src/screens/StatsScreen.tsx         통계
+src/screens/SettingsScreen.tsx      설정·백업/복원
 src/components/Charts.tsx           정답률 막대, 점수 추이
 src/hooks/                useCountdown(절대 시각 기준 타이머), useSwipe
 src/lib/inline.ts         **굵게**, <u>밑줄</u> 파서 (HTML 직접 주입 없음)

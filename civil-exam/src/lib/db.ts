@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Attempt, GradeResult } from './attempt';
+import type { SettingsRow } from './settings';
 import { onReview, onWrong, type Note } from './srs';
 import type { ChoiceNo, QuestionType, Unit } from '../types';
 
@@ -41,6 +42,7 @@ export const db = new Dexie('civil-exam') as Dexie & {
   drafts: EntityTable<DraftRow, 'id'>;
   notes: EntityTable<Note, 'questionId'>;
   reviews: EntityTable<ReviewLog, 'id'>;
+  settings: EntityTable<SettingsRow, 'id'>;
 };
 
 db.version(1).stores({
@@ -63,6 +65,9 @@ db.version(2)
     }
     await tx.table<Note>('notes').bulkPut([...notes.values()]);
   });
+
+// v3: 설정(글자 크기·시험시간·연습 모드)을 백업에 함께 담기 위해 DB로
+db.version(3).stores({ settings: 'id' });
 
 const LEGACY_DRAFT_KEY = 'ce:draft';
 
