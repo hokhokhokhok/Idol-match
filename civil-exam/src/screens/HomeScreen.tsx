@@ -9,7 +9,7 @@ import { isSeedSet, resolveSet, subjectOf } from '../lib/sets';
 import type { Settings } from '../lib/settings';
 import { isDue } from '../lib/srs';
 import { streakDays, weakCategories } from '../lib/stats';
-import { SUBJECT_LABEL, SUBJECTS, type Category, type QuestionSet, type Subject } from '../types';
+import { categoryOf, SUBJECT_LABEL, SUBJECTS, type Category, type QuestionSet, type Subject } from '../types';
 
 type Props = {
   /** 이 과목의 세트 */
@@ -68,6 +68,7 @@ export function HomeScreen(p: Props) {
       due: notes.filter((n) => isDue(n, now)).length,
       weak,
       weakDue: weak[0] ? notes.filter((n) => n.unit === weak[0].key && isDue(n, now)).length : 0,
+      drillSize: weak[0] ? Math.min(10, sets.reduce((k, s) => k + s.questions.filter((q) => categoryOf(q) === weak[0].key).length, 0)) : 0,
       today: pickTodaySet(realSets, submitted),
       solved: new Set(submitted.map((a) => a.setId)),
       recent: submitted.sort((a, b) => b.submittedAt - a.submittedAt).slice(0, 3),
@@ -154,7 +155,7 @@ export function HomeScreen(p: Props) {
               </p>
             </div>
             <button type="button" className="btn btn-lg" onClick={() => p.onWeakDrill(summary.weak[0].key)}>
-              10문항 풀기
+              {summary.drillSize}문항 풀기
             </button>
           </section>
         )}

@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Question } from '../src/types.ts';
 import { validateSet } from '../src/lib/validate.ts';
+// 감관법: 반드시 law.go.kr 현행 조문과 대조한 뒤 표시한다
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
@@ -43,6 +44,11 @@ for (const [setId, list] of bySet) {
       continue;
     }
     if (caseNo) {
+      if (q.subject !== '민법') {
+        console.error(`✗ ${id}: 판례 확인 표시는 민법 문항에만 있습니다`);
+        failed = true;
+        continue;
+      }
       const c = q.explanation.cases?.[Number(caseNo) - 1];
       if (!c) {
         console.error(`✗ ${id}: 판례 ${caseNo}번이 없습니다 (판례 ${q.explanation.cases?.length ?? 0}개)`);
@@ -65,7 +71,7 @@ for (const [setId, list] of bySet) {
   }
   writeFileSync(file, JSON.stringify(qs, null, 2) + '\n');
   const done = qs.filter((q) => q.reviewed).length;
-  const cases = qs.flatMap((q) => q.explanation.cases ?? []);
+  const cases = qs.flatMap((q) => (q.subject === '민법' ? (q.explanation.cases ?? []) : []));
   console.log(`  ${setId}: 검수 ${done}/${qs.length}, 판례 확인 ${cases.filter((c) => c.verified).length}/${cases.length}`);
 }
 process.exit(failed ? 1 : 0);

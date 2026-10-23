@@ -14,7 +14,13 @@ export const questionSets: QuestionSet[] = Object.entries(modules)
   })
   .sort((a, b) => a.id.localeCompare(b.id));
 
-export const setsOf = (subject: Subject) => questionSets.filter((s) => s.subject === subject);
+const bySubject = new Map<Subject, QuestionSet[]>();
+/** 과목별 세트 (같은 배열을 돌려주므로 React 의존성 배열에 그대로 쓸 수 있다) */
+export function setsOf(subject: Subject): QuestionSet[] {
+  let sets = bySubject.get(subject);
+  if (!sets) bySubject.set(subject, (sets = questionSets.filter((s) => s.subject === subject)));
+  return sets;
+}
 
 /** 문항 id → 문항 (오답노트에서 사용) */
 export const questionById = new Map(questionSets.flatMap((s) => s.questions.map((q) => [q.id, q] as const)));
