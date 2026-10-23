@@ -1,9 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
+import { CATEGORIES, CATEGORY_NAME } from '../lib/config';
 import { db, updateNote } from '../lib/db';
-import { parseInline, type InlineNode } from '../lib/inline';
-import { questionById } from '../lib/sets';
+import { plainText } from '../lib/inline';
+import { patternOf } from '../lib/law';
+import { questionById, subjectOf } from '../lib/sets';
 import { dueLabel, isDue, type Note } from '../lib/srs';
+import { PATTERN_LABEL, PATTERNS } from '../lib/stats';
+import { categoryOf, SUBJECT_LABEL, type Category, type Pattern, type Subject } from '../types';
 
 type Filter = 'due' | 'active' | 'starred' | 'mastered';
 const FILTERS: { key: Filter; label: string; test: (n: Note, now: number) => boolean }[] = [
@@ -13,19 +17,26 @@ const FILTERS: { key: Filter; label: string; test: (n: Note, now: number) => boo
   { key: 'mastered', label: '졸업', test: (n) => n.mastered },
 ];
 
-const plain = (nodes: InlineNode[]): string =>
-  nodes.map((n) => (n.kind === 'text' ? n.text : plain(n.children))).join('');
+type Props = { subject: Subject; onPractice: (ids: string[]) => void; onHome: () => void };
 
-type Props = { onPractice: (ids: string[]) => void; onHome: () => void };
-
-/** 오답노트: 틀린 문항 자동 수집, 별표·메모, 1·3·7일 간격 다시 풀기 */
-export function NotesScreen({ onPractice, onHome }: Props) {
+/** 오답노트: 틀린 문항 자동 수집, 별표·메모, 1·3·7일 간격 다시 풀기. 감관법은 법률·문항 유형 필터 */
+export function NotesScreen({ subject, onPractice, onHome }: Props) {
   const all = useLiveQuery(() => db.notes.toArray(), []);
   const [filter, setFilter] = useState<Filter>('due');
+  const [cat, setCat] = useState<Category | ''>('');
+  const [pattern, setPattern] = useState<Pattern | ''>('');
   const [memoOpen, setMemoOpen] = useState<string | null>(null);
   const now = Date.now();
+  const law = subject === '감관법';
 
-  const notes = (all ?? []).filter((n) => questionById.has(n.questionId));
+  const inSubject = (all ?? []).filter((n) => questionById.has(n.questionId) && subjectOf(n) === subject);
+  const notes = inSubject.filter((n) => {
+    const q = questionById.get(n.questionId)!;
+    if (cat && categoryOf(q) !== cat) return false;
+    if (pattern && (q.subject !== '감관법' || patternOf(q) !== pattern)) return false;
+    return true;
+  });
+  const cats = CATEGORIES[subject].filter((c) => inSubject.some((n) => categoryOf(questionById.get(n.questionId)!) === c));
   const counts = Object.fromEntries(FILTERS.map((f) => [f.key, notes.filter((n) => f.test(n, now)).length]));
   const shown = notes
     .filter((n) => FILTERS.find((f) => f.key === filter)!.test(n, now))
@@ -36,7 +47,7 @@ export function NotesScreen({ onPractice, onHome }: Props) {
     <div className="result">
       <header className="topbar">
         <div className="topbar-title">
-          <strong>오답노트</strong>
+          <strong>오답노트 · {SUBJECT_LABEL[subject]}</strong>
           <span className="topbar-sub">틀리면 1일 → 3일 → 7일 뒤 다시, 세 번 연속 맞히면 졸업</span>
         </div>
         <button type="button" className="btn" onClick={onHome}>
@@ -47,7 +58,9 @@ export function NotesScreen({ onPractice, onHome }: Props) {
       <main className="home-main">
         <section className="card card-resume">
           <div>
-            <h2>오늘 복습할 문항 {dueIds.length}개</h2>
+            <h2>
+              오늘 복습할 문항 {dueIds.length}개{(cat || pattern) && <small className="muted"> (필터 적용)</small>}
+            </h2>
             <p className="muted">진행 중 {counts.active}개 · 졸업 {counts.mastered}개</p>
           </div>
           <button
@@ -75,9 +88,38 @@ export function NotesScreen({ onPractice, onHome }: Props) {
           ))}
         </div>
 
+        {(cats.length > 1 || law) && (
+          <div className="filters">
+            <label>
+              <span>{CATEGORY_NAME[subject]}</span>
+              <select value={cat} onChange={(e) => setCat(e.target.value as Category | '')}>
+                <option value="">전체</option>
+                {cats.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {law && (
+              <label>
+                <span>문항 유형</span>
+                <select value={pattern} onChange={(e) => setPattern(e.target.value as Pattern | '')}>
+                  <option value="">전체</option>
+                  {PATTERNS.map((t) => (
+                    <option key={t} value={t}>
+                      {PATTERN_LABEL[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+        )}
+
         {all && shown.length === 0 && (
           <p className="empty-note">
-            {notes.length === 0 ? '아직 틀린 문항이 없습니다. 실전에서 틀린 문항이 여기에 모입니다.' : '이 목록은 비어 있습니다.'}
+            {inSubject.length === 0 ? '아직 틀린 문항이 없습니다. 실전에서 틀린 문항이 여기에 모입니다.' : '이 목록은 비어 있습니다.'}
           </p>
         )}
 
@@ -88,11 +130,14 @@ export function NotesScreen({ onPractice, onHome }: Props) {
             return (
               <li key={n.questionId} className="card note">
                 <div className="note-head">
-                  <span className="note-tag">{q.unit}</span>
-                  <span className="note-topic">{q.topic}</span>
+                  <span className="note-tag">{categoryOf(q)}</span>
+                  <span className="note-topic">
+                    {q.topic}
+                    {q.subject === '감관법' && <span className="muted"> · {PATTERN_LABEL[patternOf(q)]}</span>}
+                  </span>
                   <span className={`note-due${label === '오늘' ? ' is-due' : ''}`}>{label}</span>
                 </div>
-                <p className="note-stem">{plain(parseInline(q.stem))}</p>
+                <p className="note-stem">{plainText(q.stem)}</p>
                 <p className="muted small">
                   {q.setId} {q.number}번 · 틀림 {n.wrongCount}회{n.reviewCount ? ` · 복습 ${n.reviewCount}회` : ''}
                 </p>

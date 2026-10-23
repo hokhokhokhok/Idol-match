@@ -2,7 +2,7 @@
   "name": "civil-exam",
   "version": "0.1.0",
   "private": true,
-  "description": "감정평가사 1차 민법 모의고사 — 오프라인 PWA",
+  "description": "감정평가사 1차 민법·감정평가관계법규 모의고사 — 오프라인 PWA",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,8 @@
     "validate": "node scripts/validate-questions.ts",
     "test:e2e": "node scripts/e2e.mjs",
     "review-sheet": "node scripts/review-sheet.ts",
-    "mark": "node scripts/mark.ts"
+    "mark": "node scripts/mark.ts",
+    "fetch-law": "node scripts/fetch-law.ts"
   },
   "dependencies": {
     "@fontsource/nanum-myeongjo": "^5.3.0",

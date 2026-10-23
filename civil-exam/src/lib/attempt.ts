@@ -1,11 +1,13 @@
 import type { MarkMap } from '../components/QuestionView';
-import type { ChoiceNo, Question, Unit } from '../types';
+import { categoryOf, type Category, type ChoiceNo, type Question, type Subject } from '../types';
 import { examConfig } from './config';
 
 /** 진행 중이거나 제출된 한 번의 응시 */
 export type Attempt = {
   id: string;
   setId: string;
+  /** 과목. 없으면 민법(과목 구분 이전 기록) */
+  subject?: Subject;
   /** exam: 실전(제한시간, 일괄 해설) / practice: 연습(시간제한 없음, 고르는 즉시 해설). 없으면 exam */
   mode?: 'exam' | 'practice';
   /** 맞춤 모의고사(setId가 mix-*)의 문항 id 목록. 고정 세트는 없음 */
@@ -36,11 +38,13 @@ export function newAttempt(
   now = Date.now(),
   mode: Attempt['mode'] = 'exam',
   questionIds?: string[],
+  subject: Subject = '민법',
 ): Attempt {
   const practice = mode === 'practice';
   return {
     id: `${setId}-${now}`,
     setId,
+    subject,
     mode,
     ...(questionIds ? { questionIds } : {}),
     startedAt: now,
@@ -67,7 +71,8 @@ export type GradeResult = {
   /** 100점 만점 환산 */
   score100: number;
   items: { question: Question; chosen: ChoiceNo | null; correct: boolean }[];
-  byUnit: { unit: Unit; total: number; correct: number }[];
+  /** 분류별(민법 단원 / 감관법 법률) */
+  byUnit: { unit: Category; total: number; correct: number }[];
 };
 
 export function grade(questions: Question[], answers: Attempt['answers']): GradeResult {
@@ -77,12 +82,13 @@ export function grade(questions: Question[], answers: Attempt['answers']): Grade
   });
   const correct = items.filter((i) => i.correct).length;
   const total = questions.length;
-  const units = new Map<Unit, { unit: Unit; total: number; correct: number }>();
+  const units = new Map<Category, { unit: Category; total: number; correct: number }>();
   for (const i of items) {
-    const u = units.get(i.question.unit) ?? { unit: i.question.unit, total: 0, correct: 0 };
+    const c = categoryOf(i.question);
+    const u = units.get(c) ?? { unit: c, total: 0, correct: 0 };
     u.total += 1;
     if (i.correct) u.correct += 1;
-    units.set(i.question.unit, u);
+    units.set(c, u);
   }
   const p = examConfig.pointsPerQuestion;
   return {

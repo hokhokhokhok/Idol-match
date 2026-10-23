@@ -5,12 +5,29 @@ import { CIRCLED, QuestionView, nextMark, type MarkMap } from '../components/Que
 import { db, saveReview } from '../lib/db';
 import { questionById } from '../lib/sets';
 import { dueLabel } from '../lib/srs';
-import type { ChoiceNo } from '../types';
+import { categoryOf, type ChoiceNo } from '../types';
 
-type Props = { questionIds: string[]; onDone: () => void };
+/** 받침에 따라 '로'/'으로' (ㄹ 받침은 '로') */
+const withRo = (w: string) => {
+  const code = w.charCodeAt(w.length - 1) - 0xac00;
+  const jong = code >= 0 && code < 11172 ? code % 28 : 0;
+  return `${w}${jong && jong !== 8 ? '으로' : '로'}`;
+};
 
-/** 오답노트 다시 풀기: 한 문항씩 고르면 바로 채점·해설, 결과는 간격 반복 일정에 반영 */
-export function PracticeScreen({ questionIds, onDone }: Props) {
+type Props = {
+  questionIds: string[];
+  onDone: () => void;
+  /** 화면 제목 (기본: 다시 풀기) */
+  title?: string;
+  /** 돌아갈 곳 이름 (기본: 오답노트) */
+  backLabel?: string;
+};
+
+/**
+ * 다시 풀기(오답노트 복습·약점 복습): 한 문항씩 고르면 바로 채점·해설, 결과는 간격 반복 일정에 반영.
+ * 노트에 없던 문항을 틀리면 오답노트에 새로 들어간다.
+ */
+export function PracticeScreen({ questionIds, onDone, title = '다시 풀기', backLabel = '오답노트' }: Props) {
   const [queue] = useState(() => questionIds.filter((id) => questionById.has(id)));
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, ChoiceNo>>({});
@@ -27,9 +44,9 @@ export function PracticeScreen({ questionIds, onDone }: Props) {
     return (
       <div className="result">
         <header className="topbar">
-          <strong>다시 풀기</strong>
+          <strong>{title}</strong>
           <button type="button" className="btn" onClick={onDone}>
-            오답노트
+            {backLabel}
           </button>
         </header>
         <p className="app-empty">풀 문항이 없습니다.</p>
@@ -43,11 +60,11 @@ export function PracticeScreen({ questionIds, onDone }: Props) {
       <div className="result">
         <header className="topbar">
           <div className="topbar-title">
-            <strong>복습 완료</strong>
+            <strong>{title} 완료</strong>
             <span className="topbar-sub">{queue.length}문항</span>
           </div>
           <button type="button" className="btn btn-primary" onClick={onDone}>
-            오답노트로
+            {withRo(backLabel)}
           </button>
         </header>
         <main className="home-main">
@@ -69,7 +86,7 @@ export function PracticeScreen({ questionIds, onDone }: Props) {
                 <li key={id}>
                   <span className={`ox-mark ${ok ? 'is-o' : 'is-x'}`}>{ok ? 'O' : 'X'}</span>
                   <span className="grow">
-                    {q.unit} · {q.topic}
+                    {categoryOf(q)} · {q.topic}
                   </span>
                   <span className="muted">{n ? dueLabel(n) : ''}</span>
                 </li>
@@ -89,7 +106,8 @@ export function PracticeScreen({ questionIds, onDone }: Props) {
   const select = (c: ChoiceNo) => {
     if (answered) return;
     setAnswers((a) => ({ ...a, [id]: c }));
-    saveReview(id, c === q.answer).catch((e) => console.error('review save failed', e));
+    const base = { questionId: q.id, setId: q.setId, unit: categoryOf(q), topic: q.topic, subject: q.subject };
+    saveReview(id, c === q.answer, Date.now(), base).catch((e) => console.error('review save failed', e));
   };
 
   return (
@@ -99,7 +117,7 @@ export function PracticeScreen({ questionIds, onDone }: Props) {
           ‹ 그만하기
         </button>
         <span className="muted">
-          다시 풀기 {idx + 1} / {queue.length}
+          {title} {idx + 1} / {queue.length}
         </span>
         <span className="topbar-spacer" />
       </header>
@@ -108,7 +126,7 @@ export function PracticeScreen({ questionIds, onDone }: Props) {
           <div className="paper-wrap">
             <div className="qbar">
               <span className="qbar-pos">
-                {q.unit} · {q.topic}
+                {categoryOf(q)} · {q.topic}
               </span>
               {answered && (
                 <span className={`verdict ${chosen === q.answer ? 'is-o' : 'is-x'}`}>

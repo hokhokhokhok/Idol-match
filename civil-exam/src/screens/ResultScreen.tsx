@@ -1,8 +1,10 @@
 import { CIRCLED } from '../components/QuestionView';
 import { elapsedSec, isPractice } from '../lib/attempt';
 import type { AttemptRecord } from '../lib/db';
+import { CATEGORY_NAME, passAverage, passCut } from '../lib/config';
 import { formatDuration } from '../lib/format';
-import type { QuestionSet } from '../types';
+import { subjectOf } from '../lib/sets';
+import { SUBJECT_LABEL, type QuestionSet } from '../types';
 
 type Props = {
   set: QuestionSet;
@@ -13,10 +15,12 @@ type Props = {
   onHome: () => void;
 };
 
-/** 채점 결과: 점수, 단원별 정답률, 문항별 O/X → 해설로 이동 */
+/** 채점 결과: 점수·과락 여부, 단원(감관법은 법률)별 정답률, 문항별 O/X → 해설로 이동 */
 export function ResultScreen({ set, record, saveFailed, onReview, onHome }: Props) {
   const elapsed = elapsedSec(record);
   const wrong = record.total - record.correct;
+  const subject = subjectOf(record);
+  const fail = record.score100 < passCut;
 
   return (
     <div className="result">
@@ -24,7 +28,7 @@ export function ResultScreen({ set, record, saveFailed, onReview, onHome }: Prop
         <div className="topbar-title">
           <strong>채점 결과{isPractice(record) && <span className="mode-tag">연습</span>}</strong>
           <span className="topbar-sub">
-            {set.title} · {new Date(record.submittedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}
+            {SUBJECT_LABEL[subject]} · {set.title} · {new Date(record.submittedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}
           </span>
         </div>
         <button type="button" className="btn" onClick={onHome}>
@@ -47,6 +51,10 @@ export function ResultScreen({ set, record, saveFailed, onReview, onHome }: Prop
             {record.correct} / {record.total}문항 정답 · {record.score} / {record.maxScore}점 · 풀이{' '}
             {formatDuration(elapsed)}
           </p>
+          <p className={`pass-line ${fail ? 'is-fail' : 'is-pass'}`}>
+            {fail ? `과락 — 과목별 ${passCut}점 미만` : `과락 기준(${passCut}점) 통과`}
+            <span className="muted"> · 합격: 매 과목 {passCut}점 이상, 전 과목 평균 {passAverage}점 이상</span>
+          </p>
           <div className="score-actions">
             <button type="button" className="btn btn-lg" onClick={() => onReview({})}>
               전체 해설
@@ -62,7 +70,7 @@ export function ResultScreen({ set, record, saveFailed, onReview, onHome }: Prop
           </div>
         </section>
 
-        <h2 className="section-title">단원별 정답률</h2>
+        <h2 className="section-title">{CATEGORY_NAME[subject]}별 정답률</h2>
         <section className="card">
           <ul className="bars">
             {record.byUnit.map((u) => {

@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { newAttempt, type Attempt } from './lib/attempt';
-import { timeLimitSec } from './lib/config';
+import { blueprints, timeLimitSec } from './lib/config';
 import { db, loadDraft, saveDraft, saveSubmission, type AttemptRecord } from './lib/db';
 import { buildSubmission } from './lib/records';
-import blueprint from '../config/blueprint.json';
-import { buildMix } from './lib/plan';
-import { isSeedSet, MIX_PREFIX, questionSets, resolveSet } from './lib/sets';
-import { weakUnits } from './lib/stats';
+import { buildMix, buildWeakDrill } from './lib/plan';
+import { isSeedSet, MIX_PREFIX, questionSets, resolveSet, setsOf, subjectOf } from './lib/sets';
+import { isDue } from './lib/srs';
+import { weakCategories } from './lib/stats';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from './lib/settings';
+import { BrowseScreen } from './screens/BrowseScreen';
+import { CardsScreen } from './screens/CardsScreen';
+import { CiteSearchScreen } from './screens/CiteSearchScreen';
 import { ExamScreen } from './screens/ExamScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { NotesScreen } from './screens/NotesScreen';
@@ -16,6 +19,7 @@ import { ResultScreen } from './screens/ResultScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { StatsScreen } from './screens/StatsScreen';
+import type { Category, Subject } from './types';
 
 type View =
   | { name: 'home' }
@@ -23,18 +27,35 @@ type View =
   | { name: 'result'; record: AttemptRecord; saveFailed?: boolean }
   | { name: 'review'; record: AttemptRecord; number?: number; wrongOnly?: boolean }
   | { name: 'notes' }
-  | { name: 'practice'; questionIds: string[] }
+  | { name: 'practice'; questionIds: string[]; from: 'notes' | 'home'; title?: string }
   | { name: 'stats' }
-  | { name: 'settings' };
+  | { name: 'settings' }
+  | { name: 'cards' }
+  | { name: 'cite-search' }
+  | { name: 'browse'; questionIds: string[]; start: number };
 
 const findSet = (id: string) => questionSets.find((s) => s.id === id);
 /** 맞춤 세트·고정 세트 공통: 응시(또는 기록)가 가리키는 세트 */
-const setOf = (a: { setId: string; questionIds?: string[] }) => resolveSet(a);
+const setOf = (a: { setId: string; questionIds?: string[]; subject?: Subject }) => resolveSet(a);
+
+/** 문항 id → 지금까지 푼 횟수·틀린 횟수 */
+async function questionHistory() {
+  const rows = await db.results.toArray();
+  const history = new Map<string, { seen: number; wrong: number }>();
+  for (const r of rows) {
+    const h = history.get(r.questionId) ?? { seen: 0, wrong: 0 };
+    h.seen += 1;
+    if (!r.correct) h.wrong += 1;
+    history.set(r.questionId, h);
+  }
+  return { rows, history };
+}
 
 export function App() {
   const [settings, setSettingsState] = useState<Settings | null>(null);
   const [draft, setDraftState] = useState<Attempt | null | undefined>(undefined);
   const [view, setView] = useState<View>({ name: 'home' });
+  const [citeQuery, setCiteQuery] = useState('');
 
   useEffect(() => {
     loadSettings()
@@ -70,7 +91,7 @@ export function App() {
 
   const submit = useCallback(async (final: Attempt, timeUp: boolean) => {
     const set = setOf(final)!;
-    const { record, rows } = buildSubmission(set.questions, { ...final, timeUp });
+    const { record, rows } = buildSubmission(set.questions, { ...final, subject: final.subject ?? set.subject, timeUp });
     setDraftState(null);
     let saveFailed = false;
     try {
@@ -87,6 +108,9 @@ export function App() {
   }
   if (draft === undefined || settings === null) return null; // IndexedDB 로딩 (수 ms)
 
+  const subject = settings.subject;
+  const home = () => setView({ name: 'home' });
+
   if (view.name === 'exam' && draft) {
     return (
       <ExamScreen
@@ -95,7 +119,7 @@ export function App() {
         onChange={setDraft}
         onExit={(final) => {
           setDraft(final);
-          setView({ name: 'home' });
+          home();
         }}
         onSubmit={submit}
       />
@@ -110,7 +134,7 @@ export function App() {
         record={record}
         saveFailed={view.saveFailed}
         onReview={(o) => setView({ name: 'review', record, ...o })}
-        onHome={() => setView({ name: 'home' })}
+        onHome={home}
       />
     );
   }
@@ -131,54 +155,92 @@ export function App() {
   if (view.name === 'notes') {
     return (
       <NotesScreen
-        onPractice={(questionIds) => setView({ name: 'practice', questionIds })}
-        onHome={() => setView({ name: 'home' })}
+        subject={subject}
+        onPractice={(questionIds) => setView({ name: 'practice', questionIds, from: 'notes' })}
+        onHome={home}
       />
     );
   }
 
   if (view.name === 'practice') {
-    return <PracticeScreen questionIds={view.questionIds} onDone={() => setView({ name: 'notes' })} />;
+    return view.from === 'home' ? (
+      <PracticeScreen questionIds={view.questionIds} title={view.title} backLabel="홈" onDone={home} />
+    ) : (
+      <PracticeScreen questionIds={view.questionIds} onDone={() => setView({ name: 'notes' })} />
+    );
   }
 
-  if (view.name === 'stats') {
-    return <StatsScreen onHome={() => setView({ name: 'home' })} />;
+  if (view.name === 'stats') return <StatsScreen subject={subject} onHome={home} />;
+  if (view.name === 'cards') return <CardsScreen onHome={home} />;
+
+  if (view.name === 'cite-search') {
+    return (
+      <CiteSearchScreen
+        query={citeQuery}
+        onQuery={setCiteQuery}
+        onOpen={(questionIds, start) => setView({ name: 'browse', questionIds, start })}
+        onBack={() => setView({ name: 'settings' })}
+      />
+    );
+  }
+
+  if (view.name === 'browse') {
+    return <BrowseScreen questionIds={view.questionIds} start={view.start} onBack={() => setView({ name: 'cite-search' })} />;
   }
 
   if (view.name === 'settings') {
-    return <SettingsScreen settings={settings} onChange={updateSettings} onHome={() => setView({ name: 'home' })} />;
+    return (
+      <SettingsScreen
+        settings={settings}
+        onChange={updateSettings}
+        onHome={home}
+        onCiteSearch={() => setView({ name: 'cite-search' })}
+      />
+    );
   }
 
+  const mode = settings.instantExplanation ? 'practice' : 'exam';
   return (
     <HomeScreen
-      sets={questionSets}
+      sets={setsOf(subject)}
+      subject={subject}
       draft={draft}
       settings={settings}
+      onSubject={(s) => updateSettings({ subject: s })}
       onStart={(setId) => {
         const set = findSet(setId)!;
-        const mode = settings.instantExplanation ? 'practice' : 'exam';
-        setDraft(newAttempt(setId, timeLimitSec(set.questions.length, settings.timeLimitMinutes), Date.now(), mode));
+        setDraft(
+          newAttempt(setId, timeLimitSec(set.questions.length, settings.timeLimitMinutes), Date.now(), mode, undefined, set.subject),
+        );
         setView({ name: 'exam' });
       }}
       onStartMix={async () => {
-        // 맞춤 모의고사: 시드 세트를 뺀 전체 문항에서 blueprint 배분(±2 변동) + 약점 단원 가중치
-        const [attempts, rows] = await Promise.all([db.attempts.toArray(), db.results.toArray()]);
-        const examIds = new Set(attempts.filter((a) => a.mode !== 'practice').map((a) => a.id));
-        const history = new Map<string, { seen: number; wrong: number }>();
-        for (const r of rows) {
-          const h = history.get(r.questionId) ?? { seen: 0, wrong: 0 };
-          h.seen += 1;
-          if (!r.correct) h.wrong += 1;
-          history.set(r.questionId, h);
-        }
-        const weak = settings.weakUnitBoost ? weakUnits(rows.filter((r) => examIds.has(r.attemptId))).map((u) => u.key) : [];
-        const pool = questionSets.filter((s) => !isSeedSet(s.id)).flatMap((s) => s.questions);
-        const ids = buildMix({ pool, blueprint, weakUnits: weak, history });
+        // 맞춤 모의고사: 이 과목의 시드 제외 전체 문항에서 blueprint 배분(±jitter) + 약점 분류 가중치
+        const [attempts, { rows, history }] = await Promise.all([db.attempts.toArray(), questionHistory()]);
+        const examIds = new Set(attempts.filter((a) => a.mode !== 'practice' && subjectOf(a) === subject).map((a) => a.id));
+        const weak = settings.weakUnitBoost
+          ? weakCategories(
+              rows.filter((r) => examIds.has(r.attemptId)),
+              subject,
+            ).map((u) => u.key)
+          : [];
+        const pool = setsOf(subject)
+          .filter((s) => !isSeedSet(s.id))
+          .flatMap((s) => s.questions);
+        const ids = buildMix({ pool, blueprint: blueprints[subject], weakUnits: weak, history });
         const now = Date.now();
-        const mode = settings.instantExplanation ? 'practice' : 'exam';
-        setDraft(newAttempt(`${MIX_PREFIX}${now}`, timeLimitSec(ids.length, settings.timeLimitMinutes), now, mode, ids));
+        setDraft(newAttempt(`${MIX_PREFIX}${now}`, timeLimitSec(ids.length, settings.timeLimitMinutes), now, mode, ids, subject));
         setView({ name: 'exam' });
       }}
+      onWeakDrill={async (category: Category) => {
+        const [notes, { history }] = await Promise.all([db.notes.toArray(), questionHistory()]);
+        const now = Date.now();
+        const dueIds = new Set(notes.filter((n) => isDue(n, now)).map((n) => n.questionId));
+        const pool = setsOf(subject).flatMap((s) => s.questions);
+        const ids = buildWeakDrill(pool, category, { dueIds, history });
+        if (ids.length) setView({ name: 'practice', questionIds: ids, from: 'home', title: `약점 복습 · ${category}` });
+      }}
+      onCards={() => setView({ name: 'cards' })}
       onSettings={() => setView({ name: 'settings' })}
       onResume={() => setView({ name: 'exam' })}
       onNotes={() => setView({ name: 'notes' })}

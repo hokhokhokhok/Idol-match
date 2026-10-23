@@ -1,7 +1,9 @@
-# 민법 모의고사 (감정평가사 1차) — 오프라인 PWA
+# 감정평가사 1차 모의고사 — 민법 · 감정평가관계법규 (오프라인 PWA)
 
-아이패드에서 매일 민법 모의고사를 실제 시험지 조판(바탕/명조, ①~⑤, <보 기> 박스)으로 풀고
-해설·오답노트·약점 통계를 보는 앱. 계정·서버 없이 기기(IndexedDB)에만 저장한다.
+아이패드에서 매일 **민법**과 **감정평가관계법규(감관법)** 모의고사를 실제 시험지 조판(바탕/명조, ①~⑤, <보 기> 박스, 표 지문)으로 풀고
+해설·근거 조문·오답노트·약점 통계를 보는 앱. 홈 상단 탭으로 과목을 고른다. 계정·서버 없이 기기(IndexedDB)에만 저장한다.
+
+> 폴더 이름(`civil-exam/`)·배포 주소·IndexedDB 이름은 민법 앱 때와 같다 — 기존 기록이 그대로 이어진다.
 
 > 같은 저장소 루트의 '아이돌 매칭 맵'과는 별개 앱이다. 이 폴더(`civil-exam/`)만으로 빌드된다.
 
@@ -14,7 +16,7 @@ npm run dev        # 개발 서버
 npm test           # 단위 테스트(vitest)
 npm run validate   # 문항 세트 검증 (오류가 있으면 실패)
 npm run build      # 문항 검증 + 타입검사 + 프로덕션 빌드(dist/, 서비스워커 포함)
-npm run test:e2e   # 빌드 결과를 아이패드 5가지 화면 크기로 자동 점검 (BROWSER=webkit 가능, SHOTS=1 스크린샷)
+npm run test:e2e   # 빌드 결과를 아이패드 5가지 화면 크기로 자동 점검 + 감관법 흐름 (BROWSER=webkit 가능, SHOTS=1 스크린샷, CHROMIUM_PATH=설치된 크로미움)
 npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로 접속: npm run preview -- --host)
 ```
 
@@ -32,6 +34,17 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 - [x] **6단계** — `npm run validate`(문항 검증, 빌드 전 자동 실행), `npm run test:e2e`(아이패드 크기별 자동 점검), [아이패드 Safari 체크리스트](docs/ipad-checklist.md)
 - [x] **7단계** — 첫 실전 세트 `2026-001`(40문항, 검수 대기) + 제작·검수 흐름([docs/content-workflow.md](docs/content-workflow.md)), `npm run review-sheet`, `npm run mark`
 
+### 감정평가관계법규(감관법) 추가 — 기획안 10절 1~8단계
+
+- [x] **1단계** — 문항·기록에 `subject: "민법" | "감관법"`. 기존 기록은 DB v4 업그레이드 때 **먼저 전체를 자동 백업**(설정 → '업데이트 전 백업 내려받기')한 뒤 `민법`으로 표시(유실 없음, 테스트 `db.migrate-v4.test.ts`). 홈 과목 탭, 오답노트·통계 과목별 분리
+- [x] **2단계** — `QuestionView`에 표(table) 지문, 법률명 배지, 해설에 '기준 법령: 2026.10.24 현행'·'개정 확인 필요'(volatile)·'조문 확인 필요'(미검수) 배지. 시드 6문항 `law-seed-001`
+- [x] **3단계** — 감관법 시험·채점(과락 40점 표시)·해설, **법률별 통계**(누적 정답률, 최근 5회 추세, 약점 법률 Top3), 홈 '오늘의 추천 약점 복습'
+- [x] **4단계** — 오답노트 법률·문항 유형 필터, 약점 복습에서 틀린 문항도 오답노트(1·3·7일 간격)에 추가
+- [x] **5단계** — 근거 조문 원문 팝업(`law-texts/*.json` 수동 입력, 없으면 law.go.kr 링크), 설정 → **조문으로 문항 찾기**
+- [x] **6단계** — `npm run validate` 감관법 규칙(legalBasis·lawAsOf 누락, 복수 정답 의심, 표 마크업 등)과 `config/law/blueprint.json` 기반 맞춤 모의고사(법률별 문항 수 ±1)
+- [x] **7단계** — 첫 감관법 실전 세트 `law-2026-001`(40문항, 법률별 기본 배분, **사람 검수 대기**) + [감관법 제작·검수 흐름](docs/law-content-workflow.md)
+- [x] **8단계(2차)** — 숫자·기간 암기 카드(해설의 수치 빈칸 카드, 오답 수치 우선, 1·3·7·14·30일 간격), 법제처 Open API로 조문 받기 `npm run fetch-law`(키 필요, [law-texts/README.md](law-texts/README.md))
+
 ## 시험 모드 사용법
 
 - 홈 → **실전 시작**. 제한시간은 `config/exam.json`의 40분을 40문항 기준으로 두고 세트 문항 수에 비례해 정한다(시드 5문항 = 5분).
@@ -44,6 +57,19 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 - 해설 화면에서도 스와이프·←/→로 이동, 상단 **틀린 문항만** 토글, 세로 화면은 '문항 목록'으로 채점표를 연다.
 - 제출 기록은 기기의 IndexedDB에 저장되고 홈 **최근 기록**에서 다시 열 수 있다. 문항별 풀이시간도 함께 저장된다(4단계 통계용).
 - 풀던 내용은 기기에 바로 저장된다. 앱을 닫거나 '나가기' 후에도 홈에서 **이어 풀기**. 시간은 실제 시각 기준으로 계속 흐른다.
+
+## 감정평가관계법규(감관법)
+
+- 홈 상단 **민법 / 감정평가관계법규** 탭. 고른 탭은 기억한다. 풀던 시험(이어 풀기)은 과목과 관계없이 하나.
+- 시험 포맷: 40문항·문항당 2.5점, 기본 **40분**(2교시 80분을 회계학과 나눔 — 설정에서 변경), 결과에 과락(40점 미만) 표시. `config/law/exam.json`.
+- 시험지: 왼쪽 위 **법률명 배지**(국토계획법 등), 표 지문(건폐율·용적률 등), 긴 법령명 줄바꿈 처리.
+- 해설: **기준 법령일 배지**, 수치·기간 문항은 '개정 확인 필요', 미검수는 '조문 확인 필요'. **근거 조문**은 법/시행령/시행규칙 구분, 누르면 조문 원문 팝업(`law-texts/`에 넣은 경우, 없으면 국가법령정보센터 링크).
+- 통계: 9개 법률별 누적 정답률 + **최근 5회 추세**(그 법률 문항이 있던 실전 회차의 정답률), 약점 법률 Top3, 문항 유형(정의·숫자·기간·절차·순서·예외·단서·사례)별·형식별 정답률.
+- 홈 **오늘의 추천 약점 복습**: 실전 정답률이 가장 낮은 법률에서 10문항(오늘 복습할 오답 → 틀린 적 있는 문항 → 안 푼 문항 순), 고르는 즉시 해설. 틀리면 오답노트로.
+- 오답노트: 법률·문항 유형 필터.
+- **숫자·기간 암기 카드**(홈 타일): 해설 속 수치를 빈칸으로 만든 카드. 오답노트 문항의 카드부터, 알면 1·3·7·14·30일 뒤, 모르면 다음 날.
+- 설정 → **조문으로 찾기**: 법령이 개정되면 조문(예: `국토계획법 시행령 제84조`)으로 영향받는 문항을 찾는다. 약칭·공백 무시.
+- 맞춤 모의고사: 감관법 문항 풀에서 `config/law/blueprint.json` 법률별 배분(±1) + 약점 법률 +2.
 
 ## 오늘의 세트 · 맞춤 모의고사
 
@@ -66,7 +92,7 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 - **시험지 글자 크기**: 작게 15 / 보통 17 / 크게 19px.
 - **시험시간**: 40문항 기준 10~150분(5분 단위, 기본은 `config/exam.json`). 다른 문항 수 세트는 비례. 진행 중인 시험에는 적용 안 됨.
 - **해설 즉시 보기(연습 모드)**: 켜면 세트를 연습 모드로 시작 — 시간 제한 없이 경과 시간만 표시, 보기를 고르면 바로 정답/오답과 보기별 해설(답 변경 불가). 끝나면 제출해 결과 저장. 연습 결과도 오답노트·연속 학습일에는 반영되지만 **통계(점수·정답률)·약점 단원은 실전만** 집계.
-- **백업 파일 만들기**: 모든 기록(시험 기록, 문항 결과, 오답노트·메모, 복습 기록, 진행 중 시험, 설정)을 `civil-exam-backup-YYYYMMDD-HHMM.json`으로. 아이패드에서는 공유 시트 → '파일에 저장'.
+- **백업 파일 만들기**: 두 과목의 모든 기록(시험 기록, 문항 결과, 오답노트·메모, 복습 기록, 암기 카드, 진행 중 시험, 설정)을 `civil-exam-backup-YYYYMMDD-HHMM.json`으로. 아이패드에서는 공유 시트 → '파일에 저장'.
 - **백업에서 복원**: 파일을 고르면 내용 요약과 함께 확인 → 현재 기기 기록을 **전부 백업 내용으로 교체**(한 트랜잭션이라 실패하면 기존 기록 유지). 다른 앱 파일·손상된 파일은 거부.
 - 앱 시작 시 저장공간 보호(`navigator.storage.persist`)를 요청한다. 설정 화면에서 상태 확인.
 
@@ -78,6 +104,10 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 | `2026-002` | 40 (같은 배분, 2026-001과 쟁점 겹치지 않음) | 분량·배분 기준 통과(`--strict`), **사람 검수 대기** — [검수 시트](docs/review/2026-002.md) |
 | `2026-003` | 40 (같은 배분, 앞 두 세트와 쟁점 겹치지 않음) | 분량·배분 기준 통과(`--strict`), **사람 검수 대기** — [검수 시트](docs/review/2026-003.md) |
 | `seed-001` | 5 | 포맷 확인용 시드, 분량 기준보다 짧음 |
+| `law-2026-001` | 감관법 40 (국토계획법 13·공시법 3·감정평가법 3·국유재산법 4·건축법 4·공간정보법 4·등기법 4·도시정비법 4·동산채권담보법 1, 정답 ①~⑤ 각 8, 표 지문 1) | 분량·배분 기준 통과(`--strict`), **사람 검수 대기 — law.go.kr 조문 대조 필수** — [검수 시트](docs/review/law-2026-001.md) |
+| `law-seed-001` | 감관법 6 | 기획안 12절 시드(포맷 확인용) — [검수 시트](docs/review/law-seed-001.md) |
+
+감관법 문항 만들기·검수하기: [docs/law-content-workflow.md](docs/law-content-workflow.md)
 
 새 세트 만들기·검수하기: [docs/content-workflow.md](docs/content-workflow.md)
 
@@ -90,6 +120,7 @@ npm run mark -- 2026-001-q01 --case 1 --citation "대법원 … 판결"   # 판�
 ## 문항 검증 (`npm run validate`)
 
 `src/data/sets/*.json` 전체(또는 `npm run validate -- 파일.json`)를 검사한다. 빌드 때 자동 실행되어 **오류가 있으면 빌드가 멈춘다**.
+과목(`subject`)마다 규칙이 다르다 — 아래 표는 민법, 감관법 추가 규칙은 [docs/law-content-workflow.md](docs/law-content-workflow.md#②-자동-검증) (legalBasis·lawAsOf 누락은 오류, 복수 정답 의심·volatile 누락·법률별 배분 ±1·분량(`config/law/length.json`)은 경고).
 
 | 수준 | 내용 |
 |---|---|
@@ -102,8 +133,20 @@ npm run mark -- 2026-001-q01 --case 1 --citation "대법원 … 판결"   # 판�
 ## 폴더 구조
 
 ```
-config/exam.json          시험 포맷 가정치 (Q-Net 공고로 확인 후 수정, scopeVerified)
-config/blueprint.json     40문항 단원·쟁점 배분
+config/exam.json          민법 시험 포맷 가정치 (Q-Net 공고로 확인 후 수정, scopeVerified)
+config/blueprint.json     민법 40문항 단원·쟁점 배분
+config/law/exam.json      감관법 시험 포맷·과락·기준 법령일·9개 법률 정식 명칭
+config/law/blueprint.json 감관법 40문항 법률별 배분(±1)
+config/law/length.json    감관법 유형별 분량 기준
+law-texts/*.json          근거 조문 원문(앱 팝업용, 수동 또는 npm run fetch-law)
+src/lib/law.ts            조문 표기 해석(parseCite)·law.go.kr 링크·조문 검색(citeMatches)·문항 유형(patternOf)
+src/lib/lawtexts.ts       law-texts 조회
+src/lib/cards.ts          숫자·기간 암기 카드(추출·간격 반복)
+src/screens/CardsScreen.tsx      암기 카드
+src/screens/CiteSearchScreen.tsx 조문으로 문항 찾기
+src/screens/BrowseScreen.tsx     문항 열람(읽기 전용)
+src/components/LawTextDialog.tsx 조문 원문 팝업
+scripts/fetch-law.ts      법제처 Open API로 조문 받기 (LAW_OC 필요)
 src/data/sets/*.json      문항 세트 (Question[]; 빌드에 포함되어 오프라인 동작)
 src/types.ts              Question 스키마
 src/components/QuestionView.tsx  시험지 조판 컴포넌트
@@ -111,7 +154,7 @@ src/components/OmrPanel.tsx      답안지(번호 격자)
 src/components/SubmitDialog.tsx  제출 확인 모달
 src/screens/                     Home / Exam / Result 화면
 src/lib/attempt.ts        응시 상태·채점·문항별 시간 누적
-src/lib/db.ts             IndexedDB(Dexie) v3: attempts / results(응시×문항) / drafts / notes(오답노트) / reviews(복습 기록) / settings
+src/lib/db.ts             IndexedDB(Dexie) v4: attempts / results(응시×문항) / drafts / notes(오답노트) / reviews(복습 기록) / settings / cards(암기 카드) / snapshots(업데이트 전 자동 백업). v4에서 subject 필드·색인 추가
 src/lib/srs.ts            간격 반복(1·3·7일) 규칙
 src/lib/settings.ts       설정(글자 크기·시험시간·연습 모드) — DB v3 settings 테이블
 src/lib/backup.ts         JSON 백업 내보내기·검증·복원

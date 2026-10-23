@@ -1,5 +1,6 @@
 import { examConfig } from './config';
 import { db } from './db';
+import { SUBJECTS, type Subject } from '../types';
 
 export const FONT_SIZES = [15, 17, 19] as const;
 export type FontSize = (typeof FONT_SIZES)[number];
@@ -15,8 +16,10 @@ export type Settings = {
   timeLimitMinutes: number;
   /** 해설 즉시 보기(연습 모드): 문항마다 고르는 즉시 채점·해설 */
   instantExplanation: boolean;
-  /** 맞춤 모의고사에서 정답률이 가장 낮은 단원에 문항 가중치(+2) */
+  /** 맞춤 모의고사에서 정답률이 가장 낮은 단원(감관법은 법률)에 문항 가중치(+2) */
   weakUnitBoost: boolean;
+  /** 홈에서 마지막으로 고른 과목 탭 */
+  subject: Subject;
   lastBackupAt?: number;
 };
 
@@ -25,6 +28,7 @@ export const DEFAULT_SETTINGS: Settings = {
   timeLimitMinutes: examConfig.defaultTimeLimitMinutes,
   instantExplanation: false,
   weakUnitBoost: true,
+  subject: '민법',
 };
 
 export type SettingsRow = Settings & { id: 'app' };
@@ -41,6 +45,7 @@ export function normalizeSettings(s: Partial<Settings> | undefined): Settings {
     timeLimitMinutes,
     instantExplanation: Boolean(s?.instantExplanation),
     weakUnitBoost: s?.weakUnitBoost === undefined ? DEFAULT_SETTINGS.weakUnitBoost : Boolean(s.weakUnitBoost),
+    subject: SUBJECTS.includes(s?.subject as Subject) ? (s!.subject as Subject) : DEFAULT_SETTINGS.subject,
     ...(typeof s?.lastBackupAt === 'number' ? { lastBackupAt: s.lastBackupAt } : {}),
   };
 }

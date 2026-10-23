@@ -1,11 +1,13 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Attempt, GradeResult } from './attempt';
 import type { SettingsRow } from './settings';
+import type { CardState } from './cards';
 import { onReview, onWrong, type Note } from './srs';
-import type { ChoiceNo, QuestionType, Unit } from '../types';
+import type { Category, ChoiceNo, QuestionType, Subject } from '../types';
 
 /** 제출된 응시 1회 */
 export type AttemptRecord = Attempt & {
+  subject: Subject;
   submittedAt: number;
   total: number;
   correct: number;
@@ -20,8 +22,10 @@ export type ResultRow = {
   id: string; // `${attemptId}:${questionId}`
   attemptId: string;
   setId: string;
+  subject: Subject;
   questionId: string;
-  unit: Unit;
+  /** 민법 단원 / 감관법 법률 */
+  unit: Category;
   topic: string;
   type: QuestionType;
   chosen: ChoiceNo | null;
@@ -36,6 +40,9 @@ type DraftRow = { id: 'current'; attempt: Attempt };
 /** 오답노트에서 다시 푼 기록 (연속 학습일·복습 통계용) */
 export type ReviewLog = { id?: number; questionId: string; correct: boolean; at: number };
 
+/** 마이그레이션 직전 자동 백업 (설정 화면에서 내려받기) */
+export type SnapshotRow = { id: string; createdAt: number; file: { app: 'civil-exam'; version: number; exportedAt: string; data: Record<string, unknown[]> } };
+
 export const db = new Dexie('civil-exam') as Dexie & {
   attempts: EntityTable<AttemptRecord, 'id'>;
   results: EntityTable<ResultRow, 'id'>;
@@ -43,6 +50,8 @@ export const db = new Dexie('civil-exam') as Dexie & {
   notes: EntityTable<Note, 'questionId'>;
   reviews: EntityTable<ReviewLog, 'id'>;
   settings: EntityTable<SettingsRow, 'id'>;
+  snapshots: EntityTable<SnapshotRow, 'id'>;
+  cards: EntityTable<CardState, 'id'>;
 };
 
 db.version(1).stores({
@@ -68,6 +77,37 @@ db.version(2)
 
 // v3: 설정(글자 크기·시험시간·연습 모드)을 백업에 함께 담기 위해 DB로
 db.version(3).stores({ settings: 'id' });
+
+// v4: 과목(민법/감관법) 구분. 바꾸기 전에 기존 기록 전체를 snapshots에 백업해 두고(데이터 유실 방지),
+// 과목 필드가 없는 기존 기록은 모두 민법으로 표시한다. 숫자 암기 카드(cards) 추가.
+export const PRE_SUBJECT_SNAPSHOT = 'before-v4-subject';
+db.version(4)
+  .stores({
+    attempts: 'id, setId, submittedAt, subject',
+    results: 'id, attemptId, questionId, unit, type, answeredAt, subject',
+    notes: 'questionId, dueAt, subject',
+    snapshots: 'id',
+    cards: 'id, dueAt, questionId',
+  })
+  .upgrade(async (tx) => {
+    const names = ['attempts', 'results', 'notes', 'reviews', 'drafts', 'settings'] as const;
+    const data = Object.fromEntries(await Promise.all(names.map(async (n) => [n, await tx.table(n).toArray()] as const)));
+    const now = Date.now();
+    if (Object.values(data).some((rows) => rows.length > 0)) {
+      await tx.table<SnapshotRow>('snapshots').put({
+        id: PRE_SUBJECT_SNAPSHOT,
+        createdAt: now,
+        file: { app: 'civil-exam', version: 1, exportedAt: new Date(now).toISOString(), data },
+      });
+    }
+    const civil = (r: { subject?: Subject }) => {
+      r.subject ??= '민법';
+    };
+    await tx.table('attempts').toCollection().modify(civil);
+    await tx.table('results').toCollection().modify(civil);
+    await tx.table('notes').toCollection().modify(civil);
+    await tx.table<DraftRow>('drafts').toCollection().modify((d) => civil(d.attempt));
+  });
 
 const LEGACY_DRAFT_KEY = 'ce:draft';
 
@@ -104,11 +144,15 @@ export async function saveSubmission(record: AttemptRecord, rows: ResultRow[]) {
   });
 }
 
-/** 오답노트 다시 풀기 결과 반영 */
-export async function saveReview(questionId: string, correct: boolean, now = Date.now()) {
+/**
+ * 다시 풀기(오답노트 복습·약점 복습) 결과 반영. 노트에 없던 문항을 틀리면 오답노트에 새로 넣는다.
+ * base는 노트에 없던 문항일 때 노트를 만들 정보.
+ */
+export async function saveReview(questionId: string, correct: boolean, now = Date.now(), base?: Parameters<typeof onWrong>[1]) {
   await db.transaction('rw', db.notes, db.reviews, async () => {
     const n = await db.notes.get(questionId);
     if (n) await db.notes.put(onReview(n, correct, now));
+    else if (!correct && base) await db.notes.put(onWrong(undefined, base, now));
     await db.reviews.add({ questionId, correct, at: now });
   });
 }

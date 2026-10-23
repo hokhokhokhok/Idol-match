@@ -1,6 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
-import { backupFileName, exportBackup, restoreBackup, summarize, validateBackup, type BackupFile } from '../lib/backup';
+import {
+  backupFileName,
+  exportBackup,
+  preMigrationBackup,
+  restoreBackup,
+  summarize,
+  validateBackup,
+  type BackupFile,
+} from '../lib/backup';
 import { examConfig } from '../lib/config';
 import { db } from '../lib/db';
 import { FONT_SIZES, TIME_MAX, TIME_MIN, TIME_STEP, type Settings } from '../lib/settings';
@@ -9,6 +17,7 @@ type Props = {
   settings: Settings;
   onChange: (patch: Partial<Settings>) => void;
   onHome: () => void;
+  onCiteSearch: () => void;
 };
 
 /** 내보내기: 공유 시트(아이패드: '파일에 저장')가 되면 그것을, 아니면 파일 다운로드 */
@@ -33,8 +42,9 @@ async function deliverFile(text: string, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-export function SettingsScreen({ settings, onChange, onHome }: Props) {
+export function SettingsScreen({ settings, onChange, onHome, onCiteSearch }: Props) {
   const counts = useLiveQuery(async () => ({ attempts: await db.attempts.count(), notes: await db.notes.count() }), []);
+  const snapshot = useLiveQuery(() => preMigrationBackup(), []);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [pending, setPending] = useState<BackupFile | null>(null);
@@ -94,6 +104,17 @@ export function SettingsScreen({ settings, onChange, onHome }: Props) {
     }
   };
 
+  const downloadSnapshot = async () => {
+    if (!snapshot) return;
+    setMessage(null);
+    try {
+      const d = new Date(snapshot.createdAt);
+      await deliverFile(JSON.stringify(snapshot.file), backupFileName(d).replace('-backup-', '-backup-before-update-'));
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError') setMessage({ kind: 'error', text: `내려받기에 실패했습니다: ${(e as Error).message}` });
+    }
+  };
+
   const time = settings.timeLimitMinutes;
   const setTime = (m: number) => onChange({ timeLimitMinutes: Math.min(TIME_MAX, Math.max(TIME_MIN, m)) });
   const pendingSummary = pending && summarize(pending.data);
@@ -135,7 +156,7 @@ export function SettingsScreen({ settings, onChange, onHome }: Props) {
             </p>
             <p className="muted small">
               문항 수가 다른 세트는 비례해서 정합니다. 기본값 {examConfig.defaultTimeLimitMinutes}분 — Q-Net 공고와 다르면
-              바꾸세요. 진행 중인 시험에는 적용되지 않습니다.
+              바꾸세요(감관법은 2교시 80분을 회계학과 나눠 쓰므로 40분). 진행 중인 시험에는 적용되지 않습니다.
             </p>
           </div>
           <div className="stepper" role="group" aria-label="시험시간">
@@ -172,9 +193,9 @@ export function SettingsScreen({ settings, onChange, onHome }: Props) {
 
         <section className="card set-row">
           <div>
-            <p id="weak-label">맞춤 모의고사 약점 단원 가중치</p>
+            <p id="weak-label">맞춤 모의고사 약점 가중치</p>
             <p className="muted small">
-              켜면 맞춤 세트를 만들 때 실전 정답률이 가장 낮은 단원(3문항 이상 푼 단원)에 2문항을 더 배정합니다.
+              켜면 맞춤 세트를 만들 때 실전 정답률이 가장 낮은 단원(감관법은 법률, 3문항 이상 푼 것)에 2문항을 더 배정합니다.
             </p>
           </div>
           <button
@@ -186,6 +207,19 @@ export function SettingsScreen({ settings, onChange, onHome }: Props) {
             onClick={() => onChange({ weakUnitBoost: !settings.weakUnitBoost })}
           >
             <span className="switch-knob" />
+          </button>
+        </section>
+
+        <h2 className="section-title">법령 개정 대응 (감관법)</h2>
+        <section className="card set-row">
+          <div>
+            <p>이 조문을 쓰는 문항 보기</p>
+            <p className="muted small">
+              법령이 개정되면 근거 조문(예: 국토계획법 시행령 제84조)으로 영향받는 문항을 찾아 다시 검수하세요.
+            </p>
+          </div>
+          <button type="button" className="btn btn-lg" onClick={onCiteSearch}>
+            조문으로 찾기
           </button>
         </section>
 
@@ -220,6 +254,15 @@ export function SettingsScreen({ settings, onChange, onHome }: Props) {
             아이패드에서는 공유 시트의 '파일에 저장'으로 iCloud Drive 등에 보관하세요. 복원하면 이 기기의 기록이 백업
             내용으로 <strong>모두 바뀝니다</strong>.
           </p>
+          {snapshot && (
+            <p className="muted small">
+              과목 구분 업데이트 전({new Date(snapshot.createdAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })})
+              기록을 자동으로 백업해 두었습니다.{' '}
+              <button type="button" className="btn btn-inline" onClick={downloadSnapshot}>
+                업데이트 전 백업 내려받기
+              </button>
+            </p>
+          )}
           {message && (
             <p className={`notice ${message.kind === 'error' ? 'notice-error' : 'notice-ok'}`} role="status">
               {message.text}
@@ -243,7 +286,7 @@ export function SettingsScreen({ settings, onChange, onHome }: Props) {
             <p>
               {pending.exportedAt &&
                 `${new Date(pending.exportedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}에 만든 백업 · `}
-              시험 기록 {pendingSummary.attempts}회, 오답노트 {pendingSummary.notes}문항, 복습 {pendingSummary.reviews}회
+              시험 기록 {pendingSummary.attempts}회(민법 {pendingSummary.civil} · 감관법 {pendingSummary.law}), 오답노트 {pendingSummary.notes}문항, 복습 {pendingSummary.reviews}회
             </p>
             <p className="dlg-warn">
               현재 기기의 기록(시험 기록 {counts?.attempts ?? 0}회, 오답노트 {counts?.notes ?? 0}문항)은 <strong>삭제</strong>되고

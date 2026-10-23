@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import blueprint from '../../config/blueprint.json';
+import lawBlueprint from '../../config/law/blueprint.json';
+import lawSeed from '../data/sets/law-seed-001.json';
 import set1 from '../data/sets/2026-001.json';
-import type { Question, QuestionSet } from '../types';
-import { buildMix, pickTodaySet, unitCounts } from './plan';
+import { categoryOf, type Question, type QuestionSet } from '../types';
+import { buildMix, buildWeakDrill, pickTodaySet, unitCounts } from './plan';
 
-const sets = ['2026-001', '2026-002', '2026-003'].map((id) => ({ id, title: id, questions: [] }) as QuestionSet);
+const sets = ['2026-001', '2026-002', '2026-003'].map((id) => ({ id, title: id, subject: '민법', questions: [] }) as QuestionSet);
 const seq = (...xs: number[]) => {
   let i = 0;
   return () => xs[i++ % xs.length];
@@ -49,8 +51,31 @@ describe('mix', () => {
     const ids = buildMix({ pool, blueprint, history, random: () => 0.5 });
     expect(ids).toHaveLength(40);
     expect(new Set(ids).size).toBe(40);
-    const units = ids.map((id) => pool.find((q) => q.id === id)!.unit);
+    const units = ids.map((id) => categoryOf(pool.find((q) => q.id === id)!));
     expect(units.indexOf('물권')).toBeGreaterThan(units.lastIndexOf('총칙'));
     expect(units.indexOf('계약')).toBeGreaterThan(units.lastIndexOf('물권'));
+  });
+});
+
+describe('감관법 mix and weak drill', () => {
+  it('law blueprint sums to 40 with ±1 per law', () => {
+    const plenty = Object.fromEntries(Object.keys(lawBlueprint.units).map((k) => [k, 30]));
+    expect(Object.values(lawBlueprint.units).reduce((s, u) => s + u.count, 0)).toBe(40);
+    for (let k = 0; k < 50; k++) {
+      const c = unitCounts(lawBlueprint, plenty);
+      expect(Object.values(c).reduce((s, n) => s + n, 0)).toBe(40);
+      for (const [law, { count }] of Object.entries(lawBlueprint.units)) expect(Math.abs(c[law] - count)).toBeLessThanOrEqual(1);
+      expect(c.동산채권담보법).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('weak drill: due notes, then wrong, then unseen, then solved', () => {
+    const pool = lawSeed as Question[];
+    const gukto = pool.filter((q) => categoryOf(q) === '국토계획법').map((q) => q.id);
+    expect(gukto).toHaveLength(2);
+    const history = new Map([[gukto[0], { seen: 1, wrong: 0 }]]);
+    expect(buildWeakDrill(pool, '국토계획법', { history, random: () => 0.3 })).toEqual([gukto[1], gukto[0]]);
+    expect(buildWeakDrill(pool, '국토계획법', { history, dueIds: new Set([gukto[0]]), random: () => 0.3 })).toEqual([gukto[0], gukto[1]]);
+    expect(buildWeakDrill(pool, '건축법', { n: 1 })).toHaveLength(1);
   });
 });

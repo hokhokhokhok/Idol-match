@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ResultRow } from './db';
-import { byType, byUnit, streakDays, weakUnits } from './stats';
+import { byCategory as byUnit, byType, recentTrend, streakDays, weakCategories as weakUnits } from './stats';
 
 const row = (unit: ResultRow['unit'], type: ResultRow['type'], correct: boolean, timeSec = 60): ResultRow => ({
   id: Math.random().toString(),
   attemptId: 'a',
   setId: 's',
+  subject: '민법',
   questionId: 'q',
   unit,
   topic: '',
@@ -46,5 +47,38 @@ describe('stats', () => {
     expect(streakDays([d(21), d(22)], d(23, 8))).toBe(2);
     expect(streakDays([d(20), d(22)], d(23, 8))).toBe(1);
     expect(streakDays([d(20)], d(23))).toBe(0);
+  });
+});
+
+describe('law stats', () => {
+  const r = (attemptId: string, unit: ResultRow['unit'], correct: boolean): ResultRow => ({
+    ...row(unit, 'single', correct),
+    attemptId,
+    subject: '감관법',
+  });
+  const rows = [
+    r('a1', '국토계획법', false),
+    r('a1', '국토계획법', true),
+    r('a2', '국토계획법', true),
+    r('a2', '건축법', false),
+    r('a3', '건축법', false),
+    r('a3', '건축법', true),
+  ];
+  const attempts = [
+    { id: 'a1', submittedAt: 1 },
+    { id: 'a2', submittedAt: 2 },
+    { id: 'a3', submittedAt: 3 },
+  ];
+  it('orders laws like the exam paper and finds weak laws', () => {
+    expect(byUnit(rows, '감관법').map((x) => x.key)).toEqual(['국토계획법', '건축법']);
+    expect(weakUnits(rows, '감관법').map((x) => x.key)).toEqual(['건축법', '국토계획법']);
+  });
+  it('recent trend per law, oldest first, last n attempts', () => {
+    const t = recentTrend(rows, attempts, 5);
+    expect(t.get('국토계획법')!.map((c) => [c.attemptId, c.correct, c.total])).toEqual([
+      ['a1', 1, 2],
+      ['a2', 1, 1],
+    ]);
+    expect(recentTrend(rows, attempts, 1).get('건축법')!.map((c) => c.attemptId)).toEqual(['a3']);
   });
 });
