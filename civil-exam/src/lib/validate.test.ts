@@ -55,6 +55,14 @@ describe('validate-questions', () => {
     );
   });
 
+  it('warns when the explanation marks a different choice as the answer', () => {
+    const bad = q(1);
+    bad.answer = 2;
+    expect(warns(validateQuestion(bad, 'seed-001', 1))).toContain(
+      '보기별 해설에서 정답으로 설명한 보기(1번)가 answer(2번)와 다릅니다',
+    );
+  });
+
   it('length rules warn, not fail', () => {
     const short = q(2);
     short.choices[0] = '상속';

@@ -119,6 +119,13 @@ export function validateQuestion(raw: unknown, setId: string, index: number): Is
     }
   }
 
+  // ── 해설과 정답의 일치: '…정답.'으로 끝나는 보기 해설이 정답 번호와 같아야 한다 ──
+  if (isObj(ex) && Array.isArray(ex.perChoice) && ex.perChoice.length === 5 && isInt(q.answer, 1, 5)) {
+    const marked = (ex.perChoice as unknown[]).flatMap((p, i) => (typeof p === 'string' && /정답\.?\s*$/.test(p) ? [i + 1] : []));
+    if (marked.length && (marked.length > 1 || marked[0] !== q.answer))
+      warn(`보기별 해설에서 정답으로 설명한 보기(${marked.join(', ')}번)가 answer(${String(q.answer)}번)와 다릅니다`);
+  }
+
   // ── 마크업 ──
   const texts: [string, unknown][] = [['stem', q.stem], ...(choices ?? []).map((c, i) => [`${i + 1}번 보기`, c] as [string, unknown])];
   if (isObj(q.box) && Array.isArray(q.box.items)) q.box.items.forEach((it, i) => texts.push([`박스 ${i + 1}`, isObj(it) ? it.text : '']));
