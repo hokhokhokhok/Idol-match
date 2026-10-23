@@ -7,14 +7,20 @@ import { buildSubmission } from './lib/records';
 import { questionSets } from './lib/sets';
 import { ExamScreen } from './screens/ExamScreen';
 import { HomeScreen } from './screens/HomeScreen';
+import { NotesScreen } from './screens/NotesScreen';
+import { PracticeScreen } from './screens/PracticeScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
+import { StatsScreen } from './screens/StatsScreen';
 
 type View =
   | { name: 'home' }
   | { name: 'exam' }
   | { name: 'result'; record: AttemptRecord; saveFailed?: boolean }
-  | { name: 'review'; record: AttemptRecord; number?: number; wrongOnly?: boolean };
+  | { name: 'review'; record: AttemptRecord; number?: number; wrongOnly?: boolean }
+  | { name: 'notes' }
+  | { name: 'practice'; questionIds: string[] }
+  | { name: 'stats' };
 
 const findSet = (id: string) => questionSets.find((s) => s.id === id);
 
@@ -97,6 +103,23 @@ export function App() {
     );
   }
 
+  if (view.name === 'notes') {
+    return (
+      <NotesScreen
+        onPractice={(questionIds) => setView({ name: 'practice', questionIds })}
+        onHome={() => setView({ name: 'home' })}
+      />
+    );
+  }
+
+  if (view.name === 'practice') {
+    return <PracticeScreen questionIds={view.questionIds} onDone={() => setView({ name: 'notes' })} />;
+  }
+
+  if (view.name === 'stats') {
+    return <StatsScreen onHome={() => setView({ name: 'home' })} />;
+  }
+
   return (
     <HomeScreen
       sets={questionSets}
@@ -109,6 +132,8 @@ export function App() {
         setView({ name: 'exam' });
       }}
       onResume={() => setView({ name: 'exam' })}
+      onNotes={() => setView({ name: 'notes' })}
+      onStats={() => setView({ name: 'stats' })}
       onOpenRecord={async (id) => {
         const record = await db.attempts.get(id);
         if (record && findSet(record.setId)) setView({ name: 'result', record });

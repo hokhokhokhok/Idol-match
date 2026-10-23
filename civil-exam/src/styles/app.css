@@ -795,3 +795,286 @@
   min-width: 110px;
   min-height: 52px;
 }
+
+/* ---------- 홈 요약 · 통계 타일 ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.home-summary,
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 96px;
+  padding: 14px 16px;
+  background: var(--chrome);
+  border: 1px solid var(--chrome-border);
+  border-radius: 14px;
+  text-align: left;
+}
+.tile strong {
+  font-size: 26px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.tile strong small {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.tile-label {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.tile-sub {
+  margin-top: auto;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.tile-btn {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.tile-btn .tile-sub:last-child {
+  color: var(--accent);
+  font-weight: 600;
+}
+.weak-list {
+  margin: 2px 0 6px;
+  padding-left: 1.2em;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ---------- 오답노트 ---------- */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0 12px;
+}
+.empty-note {
+  padding: 28px 8px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.note {
+  display: grid;
+  gap: 6px;
+}
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.note-tag {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.note-topic {
+  flex: 1;
+  font-weight: 600;
+}
+.note-due {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.note-due.is-due {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.note-stem {
+  font-family: var(--font-exam);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: keep-all;
+}
+.note-memo {
+  padding: 8px 12px;
+  border-left: 3px solid var(--pencil);
+  background: #f4f6fc;
+  white-space: pre-wrap;
+}
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.memo-edit {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+.memo-edit textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 16px; /* iOS 확대 방지 */
+  resize: vertical;
+}
+
+/* 다시 풀기 */
+.topbar-spacer {
+  width: var(--tap);
+}
+.hint {
+  margin: 14px 4px;
+  text-align: center;
+}
+.plain-list {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.plain-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.plain-list .grow {
+  flex: 1;
+}
+.ox-mark.is-o {
+  color: var(--correct);
+}
+.ox-mark.is-x {
+  color: var(--wrong);
+}
+
+/* ---------- 차트 ---------- */
+.rate-bars {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rate-bars th {
+  width: 8.5em;
+  padding: 8px 12px 8px 0;
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.rate-bars td {
+  padding: 8px 0;
+}
+.rb-bar {
+  width: 100%;
+}
+.rb-track {
+  display: block;
+  height: 12px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent-soft);
+}
+.rb-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+}
+.rb-value {
+  padding-left: 12px !important;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.rb-value strong {
+  display: block;
+}
+.rb-value span {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.trend {
+  margin: 0;
+}
+.trend svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.trend-grid {
+  stroke: var(--chrome-border);
+  stroke-width: 1;
+}
+.trend-axis {
+  font-size: 12px;
+  fill: var(--ink-soft);
+}
+.trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.trend-dot {
+  fill: var(--accent);
+  stroke: var(--chrome);
+  stroke-width: 2;
+}
+.trend-hit {
+  fill: transparent;
+}
+.trend-pt {
+  cursor: pointer;
+}
+.trend-label {
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.history {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.history th,
+.history td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--chrome-border);
+  text-align: left;
+}
+.history th {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.history tr:last-child td {
+  border-bottom: 0;
+}

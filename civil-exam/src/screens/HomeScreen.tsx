@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { Attempt } from '../lib/attempt';
 import { db } from '../lib/db';
+import { isDue } from '../lib/srs';
+import { streakDays, weakUnits } from '../lib/stats';
 import { timeLimitSec } from '../lib/config';
 import { formatClock } from '../lib/format';
 import { FONT_SIZES, type FontSize } from '../lib/prefs';
@@ -14,12 +16,28 @@ type Props = {
   onStart: (setId: string) => void;
   onResume: () => void;
   onOpenRecord: (attemptId: string) => void;
+  onNotes: () => void;
+  onStats: () => void;
 };
 
-/** 세트 목록, 이어 풀기, 최근 기록. (연속 학습일·약점 단원은 4단계에서 추가) */
-export function HomeScreen({ sets, draft, fontSize, onFontSize, onStart, onResume, onOpenRecord }: Props) {
+/** 홈: 이어 풀기, 연속 학습일·오늘 복습·약점 단원, 최근 기록, 세트 목록 */
+export function HomeScreen({ sets, draft, fontSize, onFontSize, onStart, onResume, onOpenRecord, onNotes, onStats }: Props) {
   const draftSet = draft && sets.find((s) => s.id === draft.setId);
   const recent = useLiveQuery(() => db.attempts.orderBy('submittedAt').reverse().limit(3).toArray(), []);
+  const summary = useLiveQuery(async () => {
+    const [submitted, reviews, notes, results] = await Promise.all([
+      db.attempts.toArray(),
+      db.reviews.toArray(),
+      db.notes.toArray(),
+      db.results.toArray(),
+    ]);
+    const now = Date.now();
+    return {
+      streak: streakDays([...submitted.map((a) => a.submittedAt), ...reviews.map((r) => r.at)], now),
+      due: notes.filter((n) => isDue(n, now)).length,
+      weak: weakUnits(results),
+    };
+  }, []);
   return (
     <div className="home">
       <header className="topbar">
@@ -60,6 +78,33 @@ export function HomeScreen({ sets, draft, fontSize, onFontSize, onStart, onResum
             </button>
           </section>
         )}
+
+        <section className="home-summary">
+          <div className="tile">
+            <span className="tile-label">연속 학습</span>
+            <strong>{summary?.streak ?? 0}일</strong>
+          </div>
+          <button type="button" className="tile tile-btn" onClick={onNotes}>
+            <span className="tile-label">오답노트 · 오늘 복습</span>
+            <strong>{summary?.due ?? 0}문항</strong>
+            <span className="tile-sub">열기 ›</span>
+          </button>
+          <button type="button" className="tile tile-btn" onClick={onStats}>
+            <span className="tile-label">약점 단원 Top 3</span>
+            {summary && summary.weak.length > 0 ? (
+              <ol className="weak-list">
+                {summary.weak.map((u) => (
+                  <li key={u.key}>
+                    {u.key} <span className="muted">{Math.round(u.rate * 100)}%</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <span className="tile-sub">단원별 3문항 이상 풀면 표시</span>
+            )}
+            <span className="tile-sub">통계 ›</span>
+          </button>
+        </section>
 
         {recent && recent.length > 0 && (
           <>

@@ -9,3 +9,6 @@ export const questionSets: QuestionSet[] = Object.entries(modules)
     return { id, title: id, questions: [...questions].sort((a, b) => a.number - b.number) };
   })
   .sort((a, b) => a.id.localeCompare(b.id));
+
+/** 문항 id → 문항 (오답노트에서 사용) */
+export const questionById = new Map(questionSets.flatMap((s) => s.questions.map((q) => [q.id, q] as const)));

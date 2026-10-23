@@ -23,7 +23,7 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 - [x] **1단계** — Vite+React+TS+PWA, 폰트 번들, 시험지 컴포넌트 `QuestionView`, 시드 5문항 미리보기
 - [x] **2단계** — 시험 모드(타이머, OMR 답안지, 스와이프, 별표, 제출 확인), 채점 요약, 이어 풀기
 - [x] **3단계** — 해설 모드(보기별 해설·조문·판례 확인 배지, 틀린 문항만 필터), IndexedDB(Dexie) 저장, 최근 기록
-- [ ] 4단계 — 오답노트 + 간격 반복(1·3·7일), 통계
+- [x] **4단계** — 오답노트(별표·메모, 1·3·7일 간격 반복), 통계, 홈 요약(연속 학습일·오늘 복습·약점 단원 Top3)
 - [ ] 5단계 — 설정(글자 크기·시간·연습 모드), JSON 백업/복원
 - [ ] 6단계 — `validate-questions` 스크립트, 아이패드 Safari 테스트 체크리스트
 - [ ] 7단계 — 세트별 40문항 콘텐츠 작성·검수
@@ -41,6 +41,16 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 - 제출 기록은 기기의 IndexedDB에 저장되고 홈 **최근 기록**에서 다시 열 수 있다. 문항별 풀이시간도 함께 저장된다(4단계 통계용).
 - 풀던 내용은 기기에 바로 저장된다. 앱을 닫거나 '나가기' 후에도 홈에서 **이어 풀기**. 시간은 실제 시각 기준으로 계속 흐른다.
 
+## 오답노트 · 통계
+
+- 실전에서 틀리거나 비운 문항은 자동으로 **오답노트**에 들어가고 **다음 날** 복습 대상이 된다.
+- 복습에서 맞히면 3일 뒤 → 다시 맞히면 7일 뒤 → 또 맞히면 **졸업**. 중간에 틀리면 다시 1일 뒤부터. 실전에서 또 틀려도 1일 뒤로 돌아간다.
+- 복습일 전에 '풀기'로 미리 풀어 맞혀도 일정은 그대로(틀리면 1일 뒤로 리셋).
+- 복습은 한 문항씩: 보기를 고르면 바로 채점·해설.
+- 각 문항에 **별표**와 **메모**. 필터: 오늘 복습 / 진행 중 / 별표 / 졸업.
+- **통계**(실전 제출 기록 기준): 연속 학습일, 평균 점수, 문항당 풀이시간, 오답노트 현황·복습 정답률, 점수 추이, 단원별·유형별 누적 정답률(+평균 풀이시간), 회차별 기록.
+- 홈: 연속 학습일(실전 제출 또는 복습한 날), 오늘 복습 문항 수, 약점 단원 Top3(단원별 3문항 이상 풀었을 때).
+
 ## 폴더 구조
 
 ```
@@ -53,10 +63,16 @@ src/components/OmrPanel.tsx      답안지(번호 격자)
 src/components/SubmitDialog.tsx  제출 확인 모달
 src/screens/                     Home / Exam / Result 화면
 src/lib/attempt.ts        응시 상태·채점·문항별 시간 누적
-src/lib/db.ts             IndexedDB(Dexie): attempts(제출 기록) / results(응시×문항) / drafts(진행 중)
+src/lib/db.ts             IndexedDB(Dexie) v2: attempts / results(응시×문항) / drafts / notes(오답노트) / reviews(복습 기록)
+src/lib/srs.ts            간격 반복(1·3·7일) 규칙
+src/lib/stats.ts          단원·유형별 정답률, 약점 단원, 연속 학습일
 src/lib/records.ts        제출 → 저장용 기록 변환
 src/components/ExplanationView.tsx  보기별 해설
 src/screens/ReviewScreen.tsx        해설 모드
+src/screens/NotesScreen.tsx         오답노트
+src/screens/PracticeScreen.tsx      오답 다시 풀기
+src/screens/StatsScreen.tsx         통계
+src/components/Charts.tsx           정답률 막대, 점수 추이
 src/hooks/                useCountdown(절대 시각 기준 타이머), useSwipe
 src/lib/inline.ts         **굵게**, <u>밑줄</u> 파서 (HTML 직접 주입 없음)
 src/styles/               fonts / tokens / question(시험지) / app
