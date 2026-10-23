@@ -1,0 +1,56 @@
+import { comparativeAdvantage, purchasingPowerParity } from './intl.ts';
+import {
+  gdpTwoGoods,
+  isLmLinear,
+  keynesianMultiplier,
+  laborStats,
+  moneyMultiplier,
+  proportionalTaxMultiplier,
+  quantityTheoryFisher,
+  solowCobbDouglas,
+} from './macro.ts';
+import {
+  cobbDouglasDemand,
+  cournotDuopoly,
+  externalityLinear,
+  laborDemandQuadratic,
+  linearDemandElasticity,
+  monopolyLinear,
+  nash2x2,
+  perfectComplements,
+  perUnitTaxLinear,
+  priceCeilingLinear,
+  priceDiscrimination,
+  publicGoodLinear,
+  quadraticCost,
+} from './micro.ts';
+import type { Solver } from './types.ts';
+
+export type { Solver, SolverResult } from './types.ts';
+
+/** 문항의 calc.solverId → 풀이 함수 */
+export const solvers: Record<string, Solver> = {
+  'linear-demand-elasticity': linearDemandElasticity,
+  'per-unit-tax-linear': perUnitTaxLinear,
+  'price-ceiling-linear': priceCeilingLinear,
+  'cobb-douglas-demand': cobbDouglasDemand,
+  'perfect-complements': perfectComplements,
+  'quadratic-cost': quadraticCost,
+  'cournot-duopoly': cournotDuopoly,
+  'monopoly-linear': monopolyLinear,
+  'price-discrimination': priceDiscrimination,
+  'nash-2x2': nash2x2,
+  'labor-demand-quadratic': laborDemandQuadratic,
+  'externality-linear': externalityLinear,
+  'public-good-linear': publicGoodLinear,
+  'keynesian-multiplier': keynesianMultiplier,
+  'proportional-tax-multiplier': proportionalTaxMultiplier,
+  'is-lm-linear': isLmLinear,
+  'gdp-two-goods': gdpTwoGoods,
+  'money-multiplier': moneyMultiplier,
+  'quantity-theory-fisher': quantityTheoryFisher,
+  'labor-stats': laborStats,
+  'solow-cobb-douglas': solowCobbDouglas,
+  'comparative-advantage': comparativeAdvantage,
+  'purchasing-power-parity': purchasingPowerParity,
+};

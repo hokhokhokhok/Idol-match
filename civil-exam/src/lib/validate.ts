@@ -7,7 +7,7 @@
  * 과목(subject)에 따라 민법 규칙과 감관법 규칙을 나눠 적용한다.
  * Node가 이 파일을 직접 실행하므로 런타임 import 없이 타입만 가져온다.
  */
-import type { CivilType, Law, LawType, Pattern, Question, Subject, Unit } from '../types';
+import type { CalcClaim, CivilType, EconField, EconType, EconUnit, Figure, Law, LawType, Pattern, Question, Subject, Unit } from '../types';
 
 export type Level = 'error' | 'warn' | 'info';
 export type Issue = { level: Level; where: string; message: string };
@@ -17,7 +17,16 @@ export type Blueprint = { total: number; jitter: number; units: Record<string, {
 type Range = readonly [number, number];
 export type LengthRule = { stem?: Range; facts?: Range; choice?: Range; boxItem?: Range; total: Range };
 
+/** 풀이 함수 표(src/solvers) — 런타임 import를 피하려고 호출하는 쪽이 넘긴다 */
+export type SolverLike = { params: string[]; solve: (p: Record<string, number>) => { answer: (number | string)[]; values: Record<string, number> } };
+
 export type ValidateConfig = {
+  /** 경제학원론 계산 검증용 풀이 함수 (없으면 계산 검증을 건너뛰고 참고로 알린다) */
+  solvers?: Record<string, SolverLike>;
+  /** 수식(TeX) 파싱 검사: 문제가 있으면 오류 메시지, 없으면 null (KaTeX) */
+  parseMath?: (tex: string) => string | null;
+  /** 경제학원론 분량 기준 (config/econ/length.json). 없으면 ECON_LENGTH_RULES */
+  econLength?: Partial<Record<EconType, LengthRule>>;
   /** 과목별 40문항 배분 기준 */
   blueprints?: Partial<Record<Subject, Blueprint>>;
   /** 감관법 분량 기준 (config/law/length.json). 없으면 LAW_LENGTH_RULES */
@@ -26,7 +35,21 @@ export type ValidateConfig = {
   lawAsOf?: string;
 };
 
-const SUBJECTS: readonly Subject[] = ['민법', '감관법'];
+const SUBJECTS: readonly Subject[] = ['민법', '경제학원론', '감관법'];
+const ECON_UNITS: Record<EconUnit, EconField> = {
+  '수요공급·탄력성·조세': '미시',
+  소비자이론: '미시',
+  '생산자·비용': '미시',
+  시장이론: '미시',
+  '요소시장·분배': '미시',
+  '일반균형·후생·시장실패': '미시',
+  '국민소득·승수·IS-LM·AD-AS': '거시',
+  '화폐·금융': '거시',
+  '물가·실업·소비투자': '거시',
+  '성장·경기변동': '거시',
+  국제경제: '거시',
+};
+const ECON_TYPES: readonly EconType[] = ['calc', 'concept', 'combo', 'graph', 'table'];
 const UNITS: readonly Unit[] = ['총칙', '물권', '계약', '채권총론', '기타'];
 const CIVIL_TYPES: readonly CivilType[] = ['single', 'count', 'combo', 'case', 'precedent'];
 const LAWS: readonly Law[] = ['국토계획법', '부동산공시법', '감정평가법', '국유재산법', '건축법', '공간정보법', '등기법', '도시정비법', '동산채권담보법'];
@@ -49,7 +72,7 @@ const BOX_LABELS = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ'];
 const CIRCLED = /^\s*[①②③④⑤]|^\s*[1-5][.)]\s/;
 const DISPUTE_NOTE = /\s*\(다툼이 있는 경우 판례에 따름\)\s*/g;
 /** 발문 끝 괄호 단서: "(조례는 고려하지 않으며, 다툼이 있는 경우 판례에 따름)" 등 */
-const STEM_NOTE = /\s*\([^()]*(?:고려하지 않|판례에 따름|특례는|조례는)[^()]*\)\s*/g;
+const STEM_NOTE = /\s*\((?:단,|단 )[^()]*\)\s*|\s*\([^()]*(?:고려하지 않|판례에 따름|특례는|조례는)[^()]*\)\s*/g;
 const TABLE_RE = /<table\b[^>]*>[\s\S]*?<\/table>/g;
 const TABLE_TAGS = ['table', 'caption', 'thead', 'tbody', 'tr', 'th', 'td'];
 
@@ -70,6 +93,113 @@ export const LAW_LENGTH_RULES: Record<LawType, LengthRule> = {
   case: { facts: [150, 350], choice: [50, 140], total: [550, 950] },
   numeric: { stem: [25, 60], choice: [40, 100], total: [300, 600] },
 };
+
+/** 경제학원론 분량 기준 기본값 — config/econ/length.json 과 같은 값 (테스트가 일치 확인) */
+export const ECON_LENGTH_RULES: Record<EconType, LengthRule> = {
+  calc: { stem: [40, 300], choice: [1, 50], total: [100, 450] },
+  concept: { stem: [15, 120], choice: [20, 90], total: [150, 550] },
+  combo: { stem: [15, 120], boxItem: [15, 90], total: [150, 500] },
+  graph: { stem: [20, 300], choice: [5, 90], total: [150, 550] },
+  table: { stem: [40, 350], choice: [5, 80], total: [200, 600] },
+};
+
+/* ---------- 계산 문항: 보기 값 읽기·비교 ---------- */
+
+export type Token = number | string;
+
+/** "60", "1,600", "+250", "−3", "$\\frac{1}{2}$", "0.5%" → 숫자. 숫자가 없으면 null */
+export function numberOf(raw: string): number | null {
+  const s = raw.replace(/\$/g, '').replace(/\{,\}/g, ',').replace(/[−–]/g, '-').trim();
+  const frac = s.match(/(-?)\\d?frac\{(-?\d+(?:\.\d+)?)\}\{(\d+(?:\.\d+)?)\}/);
+  if (frac) return (frac[1] ? -1 : 1) * (Number(frac[2]) / Number(frac[3]));
+  const m = s.match(/[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[+-]?\d+(?:\.\d+)?/);
+  return m ? Number(m[0].replace(/,/g, '')) : null;
+}
+const decimalsOf = (raw: string) => {
+  const m = raw.replace(/,(?=\d{3})/g, '').match(/\d+\.(\d+)/);
+  return m ? m[1].length : 0;
+};
+/** 보기 하나를 값 목록으로: "가격 60, 자중손실 800" → [60, 800], "1.5, 감소" → [1.5, '감소'] */
+export function tokensOf(choice: string): { tokens: Token[]; decimals: number[] } {
+  const parts = choice.split(/,\s+|，\s*|\s*\/\s*/).map((t) => t.trim()).filter(Boolean);
+  const tokens: Token[] = [];
+  const decimals: number[] = [];
+  for (const t of parts) {
+    const n = numberOf(t);
+    tokens.push(n === null ? t.replace(/[.。]$/, '') : n);
+    decimals.push(n === null ? 0 : decimalsOf(t));
+  }
+  return { tokens, decimals };
+}
+/**
+ * 보기에 적힌 값(소수 d자리)과 풀이값이 같은가: 정수로 적힌 보기는 정확히 같아야 하고,
+ * 소수로 적힌 보기는 마지막 자리 반올림 차이(0.5 단위 미만)까지만 허용한다.
+ */
+const sameNumber = (shown: number, d: number, exact: number) => {
+  const eps = 1e-9 * Math.max(1, Math.abs(exact));
+  return d === 0 ? Math.abs(shown - exact) <= eps : Math.abs(shown - exact) < 0.5 * 10 ** -d - eps;
+};
+function sameTokens(shown: { tokens: Token[]; decimals: number[] }, exact: Token[]) {
+  if (shown.tokens.length !== exact.length) return false;
+  return shown.tokens.every((t, i) => {
+    const e = exact[i];
+    if (typeof t === 'number' && typeof e === 'number') return sameNumber(t, shown.decimals[i], e);
+    return String(t) === String(e);
+  });
+}
+/** calc.expected: 숫자 하나 또는 쉼표로 구분한 값들("60,800", "250,-200", "1.5,감소") — 천 단위 쉼표는 쓰지 않는다 */
+const expectedTokens = (e: number | string): { tokens: Token[]; decimals: number[] } => {
+  const parts = typeof e === 'number' ? [String(e)] : String(e).split(',').map((t) => t.trim());
+  return {
+    tokens: parts.map((t) => numberOf(t) ?? t),
+    decimals: parts.map((t) => (numberOf(t) === null ? 0 : decimalsOf(t))),
+  };
+};
+const fmt = (ts: Token[]) => ts.map((t) => (typeof t === 'number' ? String(Math.round(t * 1e6) / 1e6) : t)).join(', ');
+function claimHolds(c: CalcClaim, v: number) {
+  const tol = 1e-6 * Math.max(1, Math.abs(c.value));
+  if (c.op === '>') return v > c.value + tol;
+  if (c.op === '<') return v < c.value - tol;
+  return Math.abs(v - c.value) <= tol;
+}
+
+/** 그래프 명세 검사 */
+function figureProblems(f: unknown): string[] {
+  const out: string[] = [];
+  if (typeof f !== 'object' || f === null) return ['figure가 객체가 아닙니다'];
+  const g = f as Partial<Figure> & Record<string, unknown>;
+  if (g.kind !== 'line-plot') out.push('figure.kind는 "line-plot"이어야 합니다');
+  if (typeof g.xLabel !== 'string' || typeof g.yLabel !== 'string') out.push('figure.xLabel·yLabel이 필요합니다');
+  const fin = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+  const pt = (p: unknown) => Array.isArray(p) && p.length === 2 && fin(p[0]) && fin(p[1]);
+  if (g.xMax !== undefined && !(fin(g.xMax) && (g.xMax as number) > 0)) out.push('figure.xMax는 양수여야 합니다');
+  if (g.yMax !== undefined && !(fin(g.yMax) && (g.yMax as number) > 0)) out.push('figure.yMax는 양수여야 합니다');
+  const inRange = (p: [number, number], what: string) => {
+    if (p[0] < 0 || p[1] < 0) out.push(`${what} ${JSON.stringify(p)}: 좌표는 0 이상이어야 합니다`);
+    if (g.xMax !== undefined && p[0] > (g.xMax as number)) out.push(`${what} ${JSON.stringify(p)}: x가 xMax(${g.xMax})를 넘습니다`);
+    if (g.yMax !== undefined && p[1] > (g.yMax as number)) out.push(`${what} ${JSON.stringify(p)}: y가 yMax(${g.yMax})를 넘습니다`);
+  };
+  if (!Array.isArray(g.series) || g.series.length === 0) out.push('figure.series가 비어 있습니다');
+  else {
+    const names = new Set<string>();
+    g.series.forEach((s, i) => {
+      if (typeof s?.name !== 'string' || !s.name) out.push(`series[${i}].name이 없습니다`);
+      else if (names.has(s.name)) out.push(`series 이름 "${s.name}"이 중복됩니다`);
+      else names.add(s.name);
+      if (!Array.isArray(s?.points) || s.points.length < 2 || !s.points.every(pt)) out.push(`series[${i}].points는 [x, y] 좌표 2개 이상이어야 합니다`);
+      else s.points.forEach((p) => inRange(p, `series "${s.name}"`));
+    });
+  }
+  (Array.isArray(g.marks) ? g.marks : []).forEach((m, i) => {
+    if (typeof m?.label !== 'string' || !pt(m.at)) out.push(`marks[${i}]는 label과 at [x, y]가 필요합니다`);
+    else inRange(m.at, `mark "${m.label}"`);
+  });
+  (Array.isArray(g.shades) ? g.shades : []).forEach((sh, i) => {
+    if (!Array.isArray(sh?.polygon) || sh.polygon.length < 3 || !sh.polygon.every(pt)) out.push(`shades[${i}].polygon은 좌표 3개 이상이어야 합니다`);
+    else sh.polygon.forEach((p) => inRange(p, `shade ${i}`));
+  });
+  return out;
+}
 
 /** 화면에 보이는 글자 수: 인라인 마크업 제거 후 코드포인트 수 */
 export const visibleLength = (s: string) => [...s.replace(/\*\*|<\/?u>/g, '')].length;
@@ -128,6 +258,93 @@ const NEGATIVE_STEM = /옳지 않은|틀린 것|아닌 것|해당하지 않는|�
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
+/** 텍스트 속 $…$·$$…$$ 수식 (inline.ts와 같은 규칙, 런타임 import를 피하려고 여기 둔다) */
+function mathIn(src: string): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < src.length; i++) {
+    if (src[i] !== '$' || src[i - 1] === '\\') continue;
+    const d = src.startsWith('$$', i) ? '$$' : '$';
+    const end = src.indexOf(d, i + d.length);
+    if (end <= i + d.length) continue;
+    out.push(src.slice(i + d.length, end).trim());
+    i = end + d.length - 1;
+  }
+  return out;
+}
+
+type EconLike = { stem?: unknown; choices?: unknown; answer?: unknown; calc?: unknown };
+type Report = { err: (m: string) => void; warn: (m: string) => void; info: (m: string) => void };
+
+/**
+ * 계산형 검증(기획안 9절): 풀이 함수 실행 → expected 일치, 정답 보기만 풀이값과 같은지, 보기 값이 서로 다른지.
+ * claims가 있으면 보기별 주장의 참·거짓으로 정답이 하나뿐인지.
+ */
+function econCalcIssues(q: EconLike, cfg: ValidateConfig, { err, warn, info }: Report) {
+  const calc = q.calc as Record<string, unknown>;
+  const id = calc.solverId;
+  if (typeof id !== 'string' || !id) return err('calc.solverId가 없습니다');
+  if (!isObj(calc.params) || !Object.values(calc.params).every((v) => typeof v === 'number' && Number.isFinite(v)))
+    return err('calc.params는 숫자 값만 가진 객체여야 합니다');
+  if (typeof calc.expected !== 'number' && !isStr(calc.expected)) return err('calc.expected(풀이 결과)가 없습니다');
+  if (!cfg.solvers) return info('풀이 함수가 연결되지 않아 계산 검증을 건너뜀');
+  const solver = cfg.solvers[id];
+  if (!solver) return err(`풀이 함수 "${id}"가 없습니다 (src/solvers/index.ts에 등록)`);
+  const params = calc.params as Record<string, number>;
+  const missing = solver.params.filter((k) => !(k in params));
+  if (missing.length) return err(`calc.params에 ${missing.join(', ')}가 없습니다 (${id})`);
+  let result: ReturnType<SolverLike['solve']>;
+  try {
+    result = solver.solve(params);
+  } catch (e) {
+    return err(`풀이 함수 ${id} 실행 오류: ${(e as Error).message}`);
+  }
+  if (result.answer.some((t) => typeof t === 'number' && !Number.isFinite(t))) return err(`풀이 결과가 수가 아닙니다: ${fmt(result.answer)}`);
+  // (1) 풀이 결과 = expected (expected는 결과의 앞부분만 적어도 된다)
+  const exp = expectedTokens(calc.expected as number | string);
+  if (!sameTokens(exp, result.answer.slice(0, exp.tokens.length)))
+    err(`계산 검증 실패: 풀이 결과 ${fmt(result.answer)} ≠ calc.expected ${String(calc.expected)}`);
+  const choices = Array.isArray(q.choices) ? (q.choices as unknown[]).map(String) : [];
+  const answer = q.answer as number;
+  if (choices.length !== 5 || !isInt(answer, 1, 5)) return;
+
+  if (calc.claims !== undefined) {
+    // (2') 보기별 주장 판정
+    if (!Array.isArray(calc.claims) || calc.claims.length !== 5) return err('calc.claims는 길이 5 배열이어야 합니다 (판정하지 않는 보기는 null)');
+    const neg = NEGATIVE_STEM.test(String(q.stem ?? '').replace(TABLE_RE, ''));
+    const truth = (calc.claims as unknown[]).map((c, i) => {
+      if (c === null) return null;
+      if (!isObj(c) || !isStr(c.key) || typeof c.value !== 'number' || (c.op !== undefined && !['=', '>', '<'].includes(c.op as string))) {
+        err(`calc.claims[${i}]는 { key, value, op? } 형식이어야 합니다`);
+        return null;
+      }
+      const v = result.values[c.key as string];
+      if (typeof v !== 'number') {
+        err(`calc.claims[${i}]: 풀이 함수 ${id}에 값 "${c.key}"가 없습니다 (있는 값: ${Object.keys(result.values).join(', ')})`);
+        return null;
+      }
+      return claimHolds(c as CalcClaim, v);
+    });
+    if (truth[answer - 1] === null) err(`정답(${answer}번) 보기의 주장(calc.claims)이 없습니다`);
+    const wanted = !neg;
+    const hits = truth.flatMap((t, i) => (t === wanted ? [i + 1] : []));
+    if (hits.length !== 1 || hits[0] !== answer)
+      err(`계산 검증 실패: 풀이값으로 판정하면 ${neg ? '틀린' : '옳은'} 보기는 ${hits.length ? hits.join(', ') + '번' : '없음'}인데 answer는 ${answer}번입니다`);
+    const unchecked = truth.flatMap((t, i) => (t === null ? [i + 1] : []));
+    if (unchecked.length && truth[answer - 1] !== null) warn(`보기 ${unchecked.join(', ')}번은 계산 검증 대상이 아닙니다 (calc.claims null) — 사람이 확인`);
+    return;
+  }
+
+  // (2) 정답 보기만 풀이 결과와 같아야 한다  (3) 보기 값이 서로 달라야 한다
+  const parsed = choices.map(tokensOf);
+  const matches = parsed.flatMap((p, i) => (sameTokens(p, result.answer) ? [i + 1] : []));
+  if (!matches.includes(answer)) err(`계산 검증 실패: 정답 ${answer}번 보기 "${choices[answer - 1]}"가 풀이 결과 ${fmt(result.answer)}와 다릅니다`);
+  const others = matches.filter((m) => m !== answer);
+  if (others.length) err(`계산 검증 실패: 정답 외 보기(${others.join(', ')}번)도 풀이 결과 ${fmt(result.answer)}와 같습니다`);
+  const keys = parsed.map((p) => fmt(p.tokens));
+  const dup = keys.filter((k, i) => keys.indexOf(k) !== i);
+  if (dup.length) err(`보기 값이 겹칩니다: ${[...new Set(dup)].join(' / ')}`);
+}
+
 /** 문항 1개 검사. setId는 파일 이름에서 온 값 */
 export function validateQuestion(raw: unknown, setId: string, index: number, cfg: ValidateConfig = {}): Issue[] {
   const issues: Issue[] = [];
@@ -156,6 +373,12 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
     if (!LAW_TYPES.includes(q.type as LawType)) err(`type "${String(q.type)}"은(는) ${LAW_TYPES.join('/')} 중 하나여야 합니다`);
     if (q.pattern === undefined) warn(`pattern(문항 유형: ${PATTERNS.join('/')})이 없습니다 — 앱이 추정합니다`);
     else if (!PATTERNS.includes(q.pattern as Pattern)) err(`pattern "${String(q.pattern)}"은(는) ${PATTERNS.join('/')} 중 하나여야 합니다`);
+  } else if (subject === '경제학원론') {
+    const unit = q.unit as EconUnit;
+    if (!(unit in ECON_UNITS)) err(`unit "${String(q.unit)}"은(는) ${Object.keys(ECON_UNITS).join('/')} 중 하나여야 합니다`);
+    if (q.field !== '미시' && q.field !== '거시') err(`field는 "미시" 또는 "거시"여야 합니다 (현재 ${String(q.field)})`);
+    else if (unit in ECON_UNITS && ECON_UNITS[unit] !== q.field) warn(`${unit} 단원은 ${ECON_UNITS[unit]} 영역입니다 (field: ${String(q.field)})`);
+    if (!ECON_TYPES.includes(q.type as EconType)) err(`type "${String(q.type)}"은(는) ${ECON_TYPES.join('/')} 중 하나여야 합니다`);
   } else if (subject === '민법') {
     if (!UNITS.includes(q.unit as Unit)) err(`unit "${String(q.unit)}"은(는) ${UNITS.join('/')} 중 하나여야 합니다`);
     if (!CIVIL_TYPES.includes(q.type as CivilType)) err(`type "${String(q.type)}"은(는) ${CIVIL_TYPES.join('/')} 중 하나여야 합니다`);
@@ -200,6 +423,9 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
           if (b.instrument !== '고시' && !/제\s*\d+\s*조|별표/.test(cite)) warn(`legalBasis[${i}] "${cite}": 조문 번호(제○조)가 없습니다`);
         });
       if (ex.statutes !== undefined || ex.cases !== undefined) warn('감관법 문항은 statutes/cases 대신 legalBasis를 씁니다');
+    } else if (subject === '경제학원론') {
+      if (ex.steps !== undefined && (!Array.isArray(ex.steps) || !ex.steps.every(isStr))) err('explanation.steps는 문자열 배열이어야 합니다');
+      if ((q.type === 'calc' || q.calc) && !(Array.isArray(ex.steps) && ex.steps.length)) warn('계산형 해설에 풀이 단계(steps)가 없습니다');
     } else {
       if (!Array.isArray(ex.statutes) || !ex.statutes.every(isStr)) err('explanation.statutes는 문자열 배열이어야 합니다');
       else if (ex.statutes.length === 0) warn('근거 조문(statutes)이 없습니다');
@@ -233,6 +459,36 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
       warn(`발문에 법률 이름(${String(q.law)})이 없습니다 — "○○법령상 …" 형식을 권장합니다`);
   }
 
+  // ── 경제학원론: 그래프·계산 검증·수식 ──
+  if (subject === '경제학원론') {
+    if (q.figure !== undefined) figureProblems(q.figure).forEach((m) => err(`figure: ${m}`));
+    else if (q.type === 'graph') err('그래프 해석형(graph)인데 figure가 없습니다');
+    if (q.type === 'calc' && !isObj(q.calc)) err('계산형(calc) 문항에 calc(solverId, params, expected)가 없습니다');
+    if (isObj(q.calc)) econCalcIssues(q as EconLike, cfg, { err, warn, info });
+    if (cfg.parseMath) {
+      const texts: [string, unknown][] = [
+        ['stem', q.stem],
+        ...(choices ?? []).map((c, i) => [`${i + 1}번 보기`, c] as [string, unknown]),
+        ...(isObj(q.box) && Array.isArray(q.box.items) ? q.box.items.map((it, i) => [`박스 ${i + 1}`, isObj(it) ? it.text : ''] as [string, unknown]) : []),
+        ...(isObj(ex)
+          ? [
+              ['해설 summary', ex.summary] as [string, unknown],
+              ...((Array.isArray(ex.steps) ? ex.steps : []) as unknown[]).map((t, i) => [`풀이 ${i + 1}`, t] as [string, unknown]),
+              ...((Array.isArray(ex.perChoice) ? ex.perChoice : []) as unknown[]).map((t, i) => [`보기 ${i + 1} 해설`, t] as [string, unknown]),
+            ]
+          : []),
+      ];
+      for (const [label, t] of texts) {
+        if (typeof t !== 'string') continue;
+        if ((t.match(/(?<!\\)\$/g) ?? []).length % 2) err(`${label}: $ 짝이 맞지 않습니다`);
+        for (const tex of mathIn(t)) {
+          const problem = cfg.parseMath(tex);
+          if (problem) err(`${label}: 수식 "${tex}"을(를) 그릴 수 없습니다 — ${problem}`);
+        }
+      }
+    }
+  }
+
   // ── 해설과 정답의 일치: '…정답.'으로 끝나는 보기 해설이 정답 번호와 같아야 한다 ──
   if (isObj(ex) && Array.isArray(ex.perChoice) && ex.perChoice.length === 5 && isInt(q.answer, 1, 5)) {
     const per = ex.perChoice as unknown[];
@@ -241,7 +497,8 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
       warn(`보기별 해설에서 정답으로 설명한 보기(${marked.join(', ')}번)가 answer(${String(q.answer)}번)와 다릅니다`);
 
     // ── 감관법: 복수 정답 의심 — 묻는 쪽(옳은/옳지 않은)으로 판정된 보기 해설이 2개 이상 ──
-    if (law && isStr(q.stem) && ['single', 'numeric', 'case'].includes(q.type as string)) {
+    const econSingle = subject === '경제학원론' && ['concept', 'graph', 'table'].includes(q.type as string) && !(isObj(q.calc) && Array.isArray(q.calc.claims));
+    if (((law && ['single', 'numeric', 'case'].includes(q.type as string)) || econSingle) && isStr(q.stem)) {
       const neg = NEGATIVE_STEM.test((q.stem as string).replace(TABLE_RE, ''));
       const wanted = neg ? 'false' : 'true';
       const hits = per.flatMap((p, i) => {
@@ -256,7 +513,7 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
 
   // ── 마크업 (표는 감관법 발문에서만) ──
   const texts: [string, unknown, boolean][] = [
-    ['stem', q.stem, law],
+    ['stem', q.stem, law || subject === '경제학원론'],
     ...(choices ?? []).map((c, i) => [`${i + 1}번 보기`, c, false] as [string, unknown, boolean]),
   ];
   if (isObj(q.box) && Array.isArray(q.box.items))
@@ -296,7 +553,11 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
   if (!law && type === 'case' && isStr(q.stem) && !/[갑을병정]/.test(q.stem as string)) warn('사례형인데 갑·을·병 등장인물이 없습니다');
 
   // ── 분량 ──
-  const rule = law ? { ...LAW_LENGTH_RULES, ...cfg.lawLength }[type as LawType] : LENGTH_RULES[type as CivilType];
+  const rule = law
+    ? { ...LAW_LENGTH_RULES, ...cfg.lawLength }[type as LawType]
+    : subject === '경제학원론'
+      ? { ...ECON_LENGTH_RULES, ...cfg.econLength }[type as EconType]
+      : LENGTH_RULES[type as CivilType];
   if (rule && isStr(q.stem) && choices && choices.every((c) => typeof c === 'string')) {
     const stem = q.stem as string;
     const cs = choices as string[];
@@ -320,7 +581,14 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
     out('문항 전체', total, rule.total);
   }
 
-  if (q.reviewed === false) info(law ? '미검수 (reviewed: false) — law.go.kr 현행 조문과 대조 필요' : '미검수 (reviewed: false)');
+  if (q.reviewed === false)
+    info(
+      law
+        ? '미검수 (reviewed: false) — law.go.kr 현행 조문과 대조 필요'
+        : subject === '경제학원론'
+          ? `미검수 (reviewed: false) — ${isObj(q.calc) ? '계산은 코드로 검증, 발문·해설 내용은 교재 대조' : '교재와 대조'} 필요`
+          : '미검수 (reviewed: false)',
+    );
   return issues;
 }
 
@@ -337,6 +605,7 @@ export function validateSet(raw: unknown, setId: string, cfg: ValidateConfig | B
   if (subjects.length > 1) set(`한 세트에 여러 과목이 섞여 있습니다: ${subjects.join(', ')}`, 'error');
   const subject = subjects[0] as Subject | undefined;
   if (subject === '감관법' && !/^law-/.test(setId)) set('감관법 세트 파일 이름은 "law-"로 시작하기를 권장합니다 (예: law-2027-001)');
+  if (subject === '경제학원론' && !/^econ-/.test(setId)) set('경제학원론 세트 파일 이름은 "econ-"으로 시작하기를 권장합니다 (예: econ-2027-001)');
 
   const dup = <T,>(vals: T[]) => [...new Set(vals.filter((v, i) => vals.indexOf(v) !== i))];
   const dupNo = dup(qs.map((q) => q.number).filter((n) => n !== undefined));
@@ -395,4 +664,19 @@ export function lawCoverage(sets: { setId: string; questions: unknown }[], bluep
     return `${law} ${have}/${count}${have < count ? '(부족)' : ''}`;
   });
   return [{ level: 'info', where: '감관법 문항 풀', message: `${pool.length}문항 — ${parts.join(', ')}` }];
+}
+
+/** 경제학원론 문항 풀의 단원별 충족 현황(맞춤 모의고사용) — 시드 세트 제외 */
+export function econCoverage(sets: { setId: string; questions: unknown }[], blueprint: Blueprint): Issue[] {
+  const pool = sets
+    .filter((s) => !/(^|-)seed-/.test(s.setId) && Array.isArray(s.questions))
+    .flatMap((s) => (s.questions as unknown[]).filter(isObj))
+    .filter((q) => q.subject === '경제학원론');
+  if (!pool.length) return [];
+  const parts = Object.entries(blueprint.units).map(([u, { count }]) => {
+    const have = pool.filter((q) => q.unit === u).length;
+    return `${u} ${have}/${count}${have < count ? '(부족)' : ''}`;
+  });
+  const calc = pool.filter((q) => isObj(q.calc)).length;
+  return [{ level: 'info', where: '경제학원론 문항 풀', message: `${pool.length}문항(계산 검증 ${calc}) — ${parts.join(', ')}` }];
 }

@@ -21,9 +21,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png', 'icons/*.svg', 'fonts/LICENSE'],
       manifest: {
-        name: '감정평가사 1차 모의고사 — 민법·감정평가관계법규',
+        name: '감정평가사 1차 모의고사 — 민법·경제학원론·감정평가관계법규',
         short_name: '1차 모의고사',
-        description: '감정평가사 1차 민법·감정평가관계법규 모의고사 (오프라인)',
+        description: '감정평가사 1차 민법·경제학원론·감정평가관계법규 모의고사 (오프라인)',
         lang: 'ko',
         display: 'standalone',
         orientation: 'any',

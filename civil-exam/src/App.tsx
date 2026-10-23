@@ -3,7 +3,7 @@ import { newAttempt, type Attempt } from './lib/attempt';
 import { blueprints, timeLimitSec } from './lib/config';
 import { db, loadDraft, saveDraft, saveSubmission, type AttemptRecord } from './lib/db';
 import { buildSubmission } from './lib/records';
-import { buildMix, buildWeakDrill } from './lib/plan';
+import { buildDrill, buildMix, buildWeakDrill } from './lib/plan';
 import { isSeedSet, MIX_PREFIX, questionSets, resolveSet, setsOf, subjectOf } from './lib/sets';
 import { isDue } from './lib/srs';
 import { weakCategories } from './lib/stats';
@@ -18,8 +18,9 @@ import { PracticeScreen } from './screens/PracticeScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { ShiftQuizScreen } from './screens/ShiftQuizScreen';
 import { StatsScreen } from './screens/StatsScreen';
-import type { Category, Subject } from './types';
+import { isCalc, type Category, type Subject } from './types';
 
 type View =
   | { name: 'home' }
@@ -31,6 +32,7 @@ type View =
   | { name: 'stats' }
   | { name: 'settings' }
   | { name: 'cards' }
+  | { name: 'shift-quiz' }
   | { name: 'cite-search' }
   | { name: 'browse'; questionIds: string[]; start: number };
 
@@ -122,6 +124,7 @@ export function App() {
           home();
         }}
         onSubmit={submit}
+        calculator={settings.examCalculator && subjectOf(draft) === '경제학원론'}
       />
     );
   }
@@ -172,6 +175,7 @@ export function App() {
 
   if (view.name === 'stats') return <StatsScreen subject={subject} onHome={home} />;
   if (view.name === 'cards') return <CardsScreen onHome={home} />;
+  if (view.name === 'shift-quiz') return <ShiftQuizScreen onHome={home} />;
 
   if (view.name === 'cite-search') {
     return (
@@ -241,6 +245,15 @@ export function App() {
         if (ids.length) setView({ name: 'practice', questionIds: ids, from: 'home', title: `약점 복습 · ${category}` });
       }}
       onCards={() => setView({ name: 'cards' })}
+      onShiftQuiz={() => setView({ name: 'shift-quiz' })}
+      onCalcDrill={async () => {
+        const [notes, { history }] = await Promise.all([db.notes.toArray(), questionHistory()]);
+        const now = Date.now();
+        const dueIds = new Set(notes.filter((n) => isDue(n, now)).map((n) => n.questionId));
+        const pool = setsOf(subject).flatMap((s) => s.questions);
+        const ids = buildDrill(pool, isCalc, { dueIds, history });
+        if (ids.length) setView({ name: 'practice', questionIds: ids, from: 'home', title: '계산 문제' });
+      }}
       onSettings={() => setView({ name: 'settings' })}
       onResume={() => setView({ name: 'exam' })}
       onNotes={() => setView({ name: 'notes' })}

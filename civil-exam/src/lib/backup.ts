@@ -1,5 +1,5 @@
 import type { CardState } from './cards';
-import { db, PRE_SUBJECT_SNAPSHOT, type AttemptRecord, type ResultRow, type ReviewLog } from './db';
+import { db, type AttemptRecord, type ResultRow, type ReviewLog } from './db';
 import { normalizeSettings, type SettingsRow } from './settings';
 import type { Note } from './srs';
 
@@ -98,7 +98,7 @@ export function summarize(d: BackupData) {
   return { attempts: d.attempts.length, civil: by('민법'), law: by('감관법'), notes: d.notes.length, reviews: d.reviews.length };
 }
 
-/** 마이그레이션 직전 자동 백업 파일 (없으면 null) */
-export async function preMigrationBackup() {
-  return (await db.snapshots.get(PRE_SUBJECT_SNAPSHOT)) ?? null;
+/** 업데이트(DB 업그레이드) 직전 자동 백업들, 최신 것부터 */
+export async function preMigrationBackups() {
+  return (await db.snapshots.toArray()).sort((a, b) => b.createdAt - a.createdAt);
 }

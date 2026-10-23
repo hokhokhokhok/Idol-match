@@ -4,10 +4,9 @@
 //   --strict  분량·구성 경고도 실패로 처리   --quiet  info 숨김   --json  결과를 JSON으로
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { crossSetIssues, lawCoverage, validateSet, type Blueprint, type Issue, type ValidateConfig } from '../src/lib/validate.ts';
+import { crossSetIssues, econCoverage, lawCoverage, validateSet, type Issue } from '../src/lib/validate.ts';
+import { econBlueprint, lawBlueprint, root, validateConfig as cfg } from './validate-config.ts';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
 const quiet = args.includes('--quiet');
@@ -20,14 +19,6 @@ const targets = files.length
       .filter((f) => f.endsWith('.json'))
       .sort()
       .map((f) => join(setsDir, f));
-
-const readJson = <T,>(p: string) => JSON.parse(readFileSync(join(root, p), 'utf8')) as T;
-const lawBlueprint = readJson<Blueprint>('config/law/blueprint.json');
-const cfg: ValidateConfig = {
-  blueprints: { 민법: readJson<Blueprint>('config/blueprint.json'), 감관법: lawBlueprint },
-  lawLength: readJson<ValidateConfig['lawLength'] & { _note?: string }>('config/law/length.json'),
-  lawAsOf: readJson<{ lawAsOf: string }>('config/law/exam.json').lawAsOf,
-};
 
 const sets: { setId: string; questions: unknown }[] = [];
 const issues: Issue[] = [];
@@ -44,7 +35,7 @@ for (const file of targets) {
   issues.push(...validateSet(questions, setId, cfg));
 }
 issues.push(...crossSetIssues(sets));
-if (!files.length) issues.push(...lawCoverage(sets, lawBlueprint));
+if (!files.length) issues.push(...lawCoverage(sets, lawBlueprint), ...econCoverage(sets, econBlueprint));
 
 const count = (l: Issue['level']) => issues.filter((i) => i.level === l).length;
 const errors = count('error');

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
+import 'katex/dist/katex.min.css';
 import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/question.css';

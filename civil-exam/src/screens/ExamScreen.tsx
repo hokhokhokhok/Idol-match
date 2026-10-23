@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Calculator } from '../components/Calculator';
 import { ExplanationView } from '../components/ExplanationView';
 import { OmrPanel } from '../components/OmrPanel';
 import { QuestionView, nextMark } from '../components/QuestionView';
@@ -16,19 +17,22 @@ type Props = {
   /** 마지막 문항 체류시간까지 반영된 응시를 넘긴다 */
   onSubmit: (final: Attempt, timeUp: boolean) => void;
   onExit: (final: Attempt) => void;
+  /** 시험 화면 계산기 버튼 (경제학원론, 설정에서 켠 경우) */
+  calculator?: boolean;
 };
 
 /**
  * 실전 모드: 타이머 + 시험지 + 답안지(OMR). 40문항을 풀고 일괄 제출한다.
  * 연습 모드: 시간 제한 없이(경과 시간만 표시) 보기를 고르는 즉시 채점·해설. 고른 답은 바꿀 수 없다.
  */
-export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) {
+export function ExamScreen({ set, attempt, onChange, onSubmit, onExit, calculator }: Props) {
   const qs = set.questions;
   const index = Math.min(attempt.current, qs.length - 1);
   const q = qs[index];
 
   const [omrOpen, setOmrOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
   const [dir, setDir] = useState<'next' | 'prev' | 'jump'>('jump');
   const mainRef = useRef<HTMLElement>(null);
 
@@ -125,6 +129,14 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
           <Timer remaining={remaining} limitSec={attempt.timeLimitSec} />
         )}
         <div className="exam-bar-right">
+          {calculator && (
+            <button type="button" className="btn" aria-label="계산기" aria-pressed={calcOpen} onClick={() => setCalcOpen((o) => !o)}>
+              <span className="calc-btn-text">계산기</span>
+              <span className="calc-btn-icon" aria-hidden>
+                ÷
+              </span>
+            </button>
+          )}
           <button
             type="button"
             className="btn omr-toggle"
@@ -197,6 +209,8 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
           <OmrPanel questions={qs} attempt={attempt} current={index} onJump={(i) => go(i)} />
         </aside>
       </div>
+
+      {calcOpen && <Calculator onClose={() => setCalcOpen(false)} />}
 
       <SubmitDialog
         open={confirmOpen}

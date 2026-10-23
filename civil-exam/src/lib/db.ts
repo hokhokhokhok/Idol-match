@@ -109,6 +109,22 @@ db.version(4)
     await tx.table<DraftRow>('drafts').toCollection().modify((d) => civil(d.attempt));
   });
 
+// v5: 경제학원론 추가. 스키마·기존 기록(민법·감관법)은 그대로 두고, 바꾸기 전 상태를 snapshots에 한 번 더 백업만 한다.
+export const PRE_ECON_SNAPSHOT = 'before-v5-econ';
+db.version(5)
+  .stores({})
+  .upgrade(async (tx) => {
+    const names = ['attempts', 'results', 'notes', 'reviews', 'drafts', 'settings', 'cards'] as const;
+    const data = Object.fromEntries(await Promise.all(names.map(async (n) => [n, await tx.table(n).toArray()] as const)));
+    if (!Object.values(data).some((rows) => rows.length > 0)) return;
+    const now = Date.now();
+    await tx.table<SnapshotRow>('snapshots').put({
+      id: PRE_ECON_SNAPSHOT,
+      createdAt: now,
+      file: { app: 'civil-exam', version: 2, exportedAt: new Date(now).toISOString(), data },
+    });
+  });
+
 const LEGACY_DRAFT_KEY = 'ce:draft';
 
 /** 진행 중 응시 불러오기. 2단계(localStorage)에 남은 임시 저장분은 옮겨 온다. */
