@@ -8,6 +8,8 @@ export type Attempt = {
   setId: string;
   /** exam: 실전(제한시간, 일괄 해설) / practice: 연습(시간제한 없음, 고르는 즉시 해설). 없으면 exam */
   mode?: 'exam' | 'practice';
+  /** 맞춤 모의고사(setId가 mix-*)의 문항 id 목록. 고정 세트는 없음 */
+  questionIds?: string[];
   startedAt: number;
   /** 종료 시각(epoch ms). 앱이 백그라운드에 있다 돌아와도 남은 시간이 정확하도록 절대 시각으로 둔다. 연습 모드는 0 */
   endsAt: number;
@@ -28,12 +30,19 @@ export type Attempt = {
   timeUp?: boolean;
 };
 
-export function newAttempt(setId: string, limitSec: number, now = Date.now(), mode: Attempt['mode'] = 'exam'): Attempt {
+export function newAttempt(
+  setId: string,
+  limitSec: number,
+  now = Date.now(),
+  mode: Attempt['mode'] = 'exam',
+  questionIds?: string[],
+): Attempt {
   const practice = mode === 'practice';
   return {
     id: `${setId}-${now}`,
     setId,
     mode,
+    ...(questionIds ? { questionIds } : {}),
     startedAt: now,
     endsAt: practice ? 0 : now + limitSec * 1000,
     timeLimitSec: practice ? 0 : limitSec,

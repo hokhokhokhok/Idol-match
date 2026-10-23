@@ -170,6 +170,25 @@ export function SettingsScreen({ settings, onChange, onHome }: Props) {
           </button>
         </section>
 
+        <section className="card set-row">
+          <div>
+            <p id="weak-label">맞춤 모의고사 약점 단원 가중치</p>
+            <p className="muted small">
+              켜면 맞춤 세트를 만들 때 실전 정답률이 가장 낮은 단원(3문항 이상 푼 단원)에 2문항을 더 배정합니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings.weakUnitBoost}
+            aria-labelledby="weak-label"
+            className="switch"
+            onClick={() => onChange({ weakUnitBoost: !settings.weakUnitBoost })}
+          >
+            <span className="switch-knob" />
+          </button>
+        </section>
+
         <h2 className="section-title">데이터 백업 · 복원</h2>
         <section className="card data-card">
           <p>

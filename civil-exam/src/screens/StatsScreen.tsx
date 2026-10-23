@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { RateBars, ScoreTrend } from '../components/Charts';
 import { elapsedSec, isPractice } from '../lib/attempt';
 import { db } from '../lib/db';
+import { resolveSet } from '../lib/sets';
 import { formatDuration } from '../lib/format';
 import { byType, byUnit, streakDays, TYPE_LABEL } from '../lib/stats';
 
@@ -134,7 +135,7 @@ export function StatsScreen({ onHome }: { onHome: () => void }) {
               {[...attempts].reverse().map((a) => (
                 <tr key={a.id}>
                   <td>{new Date(a.submittedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</td>
-                  <td>{a.setId}</td>
+                  <td>{resolveSet(a)?.title ?? a.setId}</td>
                   <td>{a.score100}</td>
                   <td>
                     {a.correct}/{a.total}

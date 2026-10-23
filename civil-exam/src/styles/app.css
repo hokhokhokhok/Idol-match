@@ -1198,3 +1198,30 @@
   color: #fff;
   font-weight: 600;
 }
+
+/* ---------- 오늘의 세트 · 맞춤 모의고사 ---------- */
+.card-today {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 12px;
+  border-color: var(--accent);
+}
+.card-today h2 {
+  font-size: 22px;
+}
+.today-label {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.card-mix {
+  border-style: dashed;
+}

@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { isPractice, type Attempt } from '../lib/attempt';
 import { db } from '../lib/db';
+import { pickTodaySet } from '../lib/plan';
+import { isSeedSet, resolveSet } from '../lib/sets';
 import { isDue } from '../lib/srs';
 import { streakDays, weakUnits } from '../lib/stats';
 import { timeLimitSec } from '../lib/config';
@@ -18,12 +20,17 @@ type Props = {
   onNotes: () => void;
   onStats: () => void;
   onSettings: () => void;
+  onStartMix: () => void;
 };
 
-/** 홈: 이어 풀기, 연속 학습일·오늘 복습·약점 단원, 최근 기록, 세트 목록 */
-export function HomeScreen({ sets, draft, settings, onStart, onResume, onOpenRecord, onNotes, onStats, onSettings }: Props) {
+/** 홈: 이어 풀기, 오늘의 세트, 연속 학습일·오늘 복습·약점 단원, 최근 기록, 맞춤 모의고사, 세트 목록 */
+export function HomeScreen({ sets, draft, settings, onStart, onResume, onOpenRecord, onNotes, onStats, onSettings, onStartMix }: Props) {
   const practice = settings.instantExplanation;
-  const draftSet = draft && sets.find((s) => s.id === draft.setId);
+  const draftSet = draft && resolveSet(draft);
+  const realSets = sets.filter((s) => !isSeedSet(s.id));
+  const poolSize = realSets.reduce((n, s) => n + s.questions.length, 0);
+  const confirmNew = () => !draft || confirm('풀던 세트가 있습니다. 새로 시작하면 진행 내용이 사라집니다. 시작할까요?');
+  const startLabel = practice ? '연습 시작' : '실전 시작';
   const recent = useLiveQuery(() => db.attempts.orderBy('submittedAt').reverse().limit(3).toArray(), []);
   const summary = useLiveQuery(async () => {
     const [submitted, reviews, notes, results] = await Promise.all([
@@ -38,6 +45,8 @@ export function HomeScreen({ sets, draft, settings, onStart, onResume, onOpenRec
       streak: streakDays([...submitted.map((a) => a.submittedAt), ...reviews.map((r) => r.at)], now),
       due: notes.filter((n) => isDue(n, now)).length,
       weak: weakUnits(results.filter((r) => examIds.has(r.attemptId))),
+      today: pickTodaySet(realSets, submitted),
+      solved: new Set(submitted.map((a) => a.setId)),
     };
   }, []);
   return (
@@ -64,6 +73,30 @@ export function HomeScreen({ sets, draft, settings, onStart, onResume, onOpenRec
             </div>
             <button type="button" className="btn btn-primary btn-lg" onClick={onResume}>
               이어 풀기
+            </button>
+          </section>
+        )}
+
+        {summary?.today && (
+          <section className="card card-today">
+            <div>
+              <span className="today-label">오늘의 세트</span>
+              <h2>{summary.today.title}</h2>
+              <p className="muted">
+                {summary.today.questions.length}문항 ·{' '}
+                {practice
+                  ? '연습 모드'
+                  : `${Math.round(timeLimitSec(summary.today.questions.length, settings.timeLimitMinutes) / 60)}분`}
+                {summary.solved.has(summary.today.id) && ' · 다시 풀기'}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              aria-label={`오늘의 세트 ${summary.today.title} ${startLabel}`}
+              onClick={() => confirmNew() && onStart(summary.today!.id)}
+            >
+              {startLabel}
             </button>
           </section>
         )}
@@ -106,13 +139,31 @@ export function HomeScreen({ sets, draft, settings, onStart, onResume, onOpenRec
                       <strong>{r.score100}</strong>점{isPractice(r) && <span className="mode-tag">연습</span>}
                     </span>
                     <span className="muted">
-                      {sets.find((s) => s.id === r.setId)?.title ?? r.setId} · {r.correct}/{r.total} ·{' '}
+                      {resolveSet(r)?.title ?? r.setId} · {r.correct}/{r.total} ·{' '}
                       {new Date(r.submittedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
                     </span>
                   </button>
                 </li>
               ))}
             </ul>
+          </>
+        )}
+
+        {poolSize >= 40 && (
+          <>
+            <h2 className="section-title">맞춤 모의고사</h2>
+            <section className="card set-card card-mix">
+              <div>
+                <h3>전체 {poolSize}문항에서 40문항</h3>
+                <p className="muted">
+                  단원 배분 ±2 무작위 · 안 푼 문항·틀린 문항 우선
+                  {settings.weakUnitBoost ? ' · 약점 단원 +2' : ''}
+                </p>
+              </div>
+              <button type="button" className="btn btn-lg" onClick={() => confirmNew() && onStartMix()}>
+                맞춤 세트 만들기
+              </button>
+            </section>
           </>
         )}
 
@@ -133,12 +184,9 @@ export function HomeScreen({ sets, draft, settings, onStart, onResume, onOpenRec
                 <button
                   type="button"
                   className="btn btn-primary btn-lg"
-                  onClick={() => {
-                    if (draft && !confirm('풀던 세트가 있습니다. 새로 시작하면 진행 내용이 사라집니다. 시작할까요?')) return;
-                    onStart(s.id);
-                  }}
+                  onClick={() => confirmNew() && onStart(s.id)}
                 >
-                  {practice ? '연습 시작' : '실전 시작'}
+                  {startLabel}
                 </button>
               </li>
             );

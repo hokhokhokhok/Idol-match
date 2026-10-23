@@ -176,7 +176,7 @@ console.log('\n[기능]');
 
   await step('연습 모드: 고르는 즉시 정답·해설, 답 잠금', async () => {
     await page.getByRole('button', { name: '설정' }).click();
-    await page.getByRole('switch').click();
+    await page.getByRole('switch', { name: /해설 즉시 보기/ }).click();
     await page.getByRole('button', { name: '홈으로' }).click();
     await seedStart(page, '연습 시작').click();
     await page.getByRole('radio').nth(3).click();
@@ -200,7 +200,7 @@ console.log('\n[기능]');
   });
 
   await step('복원: 다른 기록을 백업 시점으로 되돌림', async () => {
-    await page.getByRole('switch').click();
+    await page.getByRole('switch', { name: /해설 즉시 보기/ }).click();
     await page.getByRole('button', { name: '홈으로' }).click();
     await seedStart(page, '실전 시작').click();
     await submitAll(page);
@@ -225,7 +225,7 @@ console.log('\n[40문항 세트]');
   const { ctx, page, errors } = await newPage(IPADS['iPad 가로']);
   await page.goto(URL_);
   await step('40문항 세트: 답안지 40칸, 40분 타이머, 마지막 문항까지 이동', async () => {
-    const card = page.locator('.set-card').filter({ hasText: '40문항' }).first();
+    const card = page.locator('.set-card').filter({ hasText: '2026-001' });
     await card.getByRole('button', { name: '실전 시작' }).click();
     assert.equal(await page.locator('.omr-cell').count(), 40);
     assert.match(await page.locator('.timer').innerText(), /^(40:00|39:5\d)$/);
@@ -235,6 +235,20 @@ console.log('\n[40문항 세트]');
     await shot(page, '40문항-마지막');
     await submitAll(page);
     assert.match(await page.locator('.score-card').innerText(), /0 \/ 40문항 정답/);
+  });
+  await step('오늘의 세트: 푼 세트 다음 세트 또는 다시 풀기 표시', async () => {
+    await page.getByRole('button', { name: '홈으로' }).click();
+    await page.locator('.card-today').waitFor();
+    assert.match(await page.locator('.card-today').innerText(), /오늘의 세트/);
+  });
+  await step('맞춤 모의고사: 40문항을 단원 순서대로 구성, 기록에 이름 표시', async () => {
+    await page.getByRole('button', { name: '맞춤 세트 만들기' }).click();
+    await page.locator('.omr-cell').first().waitFor(); // 맞춤 세트는 기록을 읽은 뒤 만들어진다
+    assert.equal(await page.locator('.omr-cell').count(), 40);
+    await submitAll(page);
+    assert.match(await page.locator('.topbar-sub').first().innerText(), /맞춤 모의고사/);
+    await page.getByRole('button', { name: '홈으로' }).click();
+    await page.locator('.recent-item', { hasText: '맞춤 모의고사' }).first().waitFor();
   });
   await step('콘솔 오류 없음', async () => assert.deepEqual(errors, []));
   await ctx.close();

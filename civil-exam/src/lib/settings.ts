@@ -15,6 +15,8 @@ export type Settings = {
   timeLimitMinutes: number;
   /** 해설 즉시 보기(연습 모드): 문항마다 고르는 즉시 채점·해설 */
   instantExplanation: boolean;
+  /** 맞춤 모의고사에서 정답률이 가장 낮은 단원에 문항 가중치(+2) */
+  weakUnitBoost: boolean;
   lastBackupAt?: number;
 };
 
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fontSize: 17,
   timeLimitMinutes: examConfig.defaultTimeLimitMinutes,
   instantExplanation: false,
+  weakUnitBoost: true,
 };
 
 export type SettingsRow = Settings & { id: 'app' };
@@ -37,6 +40,7 @@ export function normalizeSettings(s: Partial<Settings> | undefined): Settings {
     fontSize,
     timeLimitMinutes,
     instantExplanation: Boolean(s?.instantExplanation),
+    weakUnitBoost: s?.weakUnitBoost === undefined ? DEFAULT_SETTINGS.weakUnitBoost : Boolean(s.weakUnitBoost),
     ...(typeof s?.lastBackupAt === 'number' ? { lastBackupAt: s.lastBackupAt } : {}),
   };
 }
