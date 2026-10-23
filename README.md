@@ -2,7 +2,7 @@
 
 내 MBTI(4축 토글)를 고르면 K팝 100그룹 멤버와의 궁합 점수를 계산해 **방사형 지도 · 찰떡 TOP 10 · 그룹 궁합 순위**로 보여 주는 재미용 PWA입니다. 홈 화면에 추가하면 앱처럼 전체화면으로 열리고, 오프라인에서도 실행됩니다.
 
-**배포 URL:** _아직 배포 전_ — 배포 후 여기에 `https://<github-id>.github.io/idol-match/` 형태로 적어 주세요.
+**배포 URL:** https://hokhokhokhok.github.io/idol-match/  (GitHub Pages, 저장소 hokhokhokhok/idol-match)
 
 ## 아이패드 설치법
 
