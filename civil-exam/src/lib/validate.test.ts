@@ -98,8 +98,11 @@ describe('bundled sets', () => {
       expect(errors(validateSet(qs, setId, blueprint))).toEqual([]);
     });
   }
-  it('2026-001 meets the exam length and distribution rules (strict)', () => {
-    const issues = validateSet(sets['../data/sets/2026-001.json'], '2026-001', blueprint);
-    expect(warns(issues)).toEqual([]);
-  });
+  for (const [path, qs] of Object.entries(sets)) {
+    const setId = path.split('/').pop()!.replace('.json', '');
+    if (setId.startsWith('seed')) continue;
+    it(`${setId} meets the exam length and distribution rules (strict)`, () => {
+      expect(warns(validateSet(qs, setId, blueprint))).toEqual([]);
+    });
+  }
 });
