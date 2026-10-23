@@ -1,21 +1,30 @@
 import { CIRCLED } from '../components/QuestionView';
-import { grade, type Attempt } from '../lib/attempt';
+import type { AttemptRecord } from '../lib/db';
 import { formatDuration } from '../lib/format';
 import type { QuestionSet } from '../types';
 
-type Props = { set: QuestionSet; attempt: Attempt; onHome: () => void };
+type Props = {
+  set: QuestionSet;
+  record: AttemptRecord;
+  /** 기기 저장에 실패했으면 알린다 */
+  saveFailed?: boolean;
+  onReview: (opts: { number?: number; wrongOnly?: boolean }) => void;
+  onHome: () => void;
+};
 
-/** 채점 결과 요약. 보기별 해설·오답 필터·기록 저장은 3단계에서 이 화면을 확장한다. */
-export function ResultScreen({ set, attempt, onHome }: Props) {
-  const r = grade(set.questions, attempt.answers);
-  const elapsed = Math.min(attempt.timeLimitSec, ((attempt.submittedAt ?? Date.now()) - attempt.startedAt) / 1000);
+/** 채점 결과: 점수, 단원별 정답률, 문항별 O/X → 해설로 이동 */
+export function ResultScreen({ set, record, saveFailed, onReview, onHome }: Props) {
+  const elapsed = Math.min(record.timeLimitSec, (record.submittedAt - record.startedAt) / 1000);
+  const wrong = record.total - record.correct;
 
   return (
     <div className="result">
       <header className="topbar">
         <div className="topbar-title">
           <strong>채점 결과</strong>
-          <span className="topbar-sub">{set.title}</span>
+          <span className="topbar-sub">
+            {set.title} · {new Date(record.submittedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}
+          </span>
         </div>
         <button type="button" className="btn" onClick={onHome}>
           홈으로
@@ -23,22 +32,39 @@ export function ResultScreen({ set, attempt, onHome }: Props) {
       </header>
 
       <main className="home-main">
-        {attempt.timeUp && <p className="notice">시간이 종료되어 자동으로 제출되었습니다.</p>}
+        {record.timeUp && <p className="notice">시간이 종료되어 자동으로 제출되었습니다.</p>}
+        {saveFailed && (
+          <p className="notice notice-error">기기에 기록을 저장하지 못했습니다. 이 화면을 닫으면 결과가 사라집니다.</p>
+        )}
 
         <section className="card score-card">
           <div className="score-big">
-            <strong>{r.score100}</strong>
+            <strong>{record.score100}</strong>
             <span>점</span>
           </div>
           <p className="muted">
-            {r.correct} / {r.total}문항 정답 · {r.score} / {r.maxScore}점 · 풀이 {formatDuration(elapsed)}
+            {record.correct} / {record.total}문항 정답 · {record.score} / {record.maxScore}점 · 풀이{' '}
+            {formatDuration(elapsed)}
           </p>
+          <div className="score-actions">
+            <button type="button" className="btn btn-lg" onClick={() => onReview({})}>
+              전체 해설
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              disabled={wrong === 0}
+              onClick={() => onReview({ wrongOnly: true })}
+            >
+              틀린 문항 해설 ({wrong})
+            </button>
+          </div>
         </section>
 
         <h2 className="section-title">단원별 정답률</h2>
         <section className="card">
           <ul className="bars">
-            {r.byUnit.map((u) => {
+            {record.byUnit.map((u) => {
               const pct = Math.round((u.correct / u.total) * 100);
               return (
                 <li key={u.unit}>
@@ -55,26 +81,32 @@ export function ResultScreen({ set, attempt, onHome }: Props) {
           </ul>
         </section>
 
-        <h2 className="section-title">문항별</h2>
+        <h2 className="section-title">문항별 (탭하면 해설)</h2>
         <section className="card">
           <ol className="ox-grid">
-            {r.items.map(({ question: q, chosen, correct }) => (
-              <li
-                key={q.id}
-                className={correct ? 'is-o' : 'is-x'}
-                aria-label={`${q.number}번 ${correct ? '정답' : '오답'}, 내 답 ${chosen ?? '없음'}, 정답 ${q.answer}`}
-              >
-                <span className="ox-no">{q.number}</span>
-                <span className="ox-mark" aria-hidden>
-                  {correct ? 'O' : 'X'}
-                </span>
-                <span className="ox-ans" aria-hidden>
-                  {chosen ? CIRCLED[chosen - 1] : '—'} → {CIRCLED[q.answer - 1]}
-                </span>
-              </li>
-            ))}
+            {set.questions.map((q) => {
+              const chosen = record.answers[q.id] ?? null;
+              const correct = chosen === q.answer;
+              return (
+                <li key={q.id}>
+                  <button
+                    type="button"
+                    className={`ox-item ${correct ? 'is-o' : 'is-x'}`}
+                    aria-label={`${q.number}번 ${correct ? '정답' : '오답'}, 내 답 ${chosen ?? '없음'}, 정답 ${q.answer}. 해설 보기`}
+                    onClick={() => onReview({ number: q.number })}
+                  >
+                    <span className="ox-no">{q.number}</span>
+                    <span className="ox-mark" aria-hidden>
+                      {correct ? 'O' : 'X'}
+                    </span>
+                    <span className="ox-ans" aria-hidden>
+                      {chosen ? CIRCLED[chosen - 1] : '—'} → {CIRCLED[q.answer - 1]}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ol>
-          <p className="muted small">보기별 해설 화면은 다음 단계에서 추가됩니다.</p>
         </section>
       </main>
     </div>

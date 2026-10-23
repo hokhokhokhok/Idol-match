@@ -5,15 +5,16 @@ import { SubmitDialog } from '../components/SubmitDialog';
 import { Timer } from '../components/Timer';
 import { useCountdown } from '../hooks/useCountdown';
 import { useSwipe } from '../hooks/useSwipe';
-import { unanswered, type Attempt } from '../lib/attempt';
+import { addTime, unanswered, type Attempt } from '../lib/attempt';
 import type { ChoiceNo, QuestionSet } from '../types';
 
 type Props = {
   set: QuestionSet;
   attempt: Attempt;
   onChange: (a: Attempt) => void;
-  onSubmit: (timeUp: boolean) => void;
-  onExit: () => void;
+  /** 마지막 문항 체류시간까지 반영된 응시를 넘긴다 */
+  onSubmit: (final: Attempt, timeUp: boolean) => void;
+  onExit: (final: Attempt) => void;
 };
 
 /** 실전 모드: 타이머 + 시험지 + 답안지(OMR). 40문항을 풀고 일괄 제출한다. */
@@ -27,7 +28,29 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
   const [dir, setDir] = useState<'next' | 'prev' | 'jump'>('jump');
   const mainRef = useRef<HTMLElement>(null);
 
-  const remaining = useCountdown(attempt.endsAt, () => onSubmit(true));
+  // 문항별 풀이시간: 지금 문항을 보기 시작한 시각. 이동·제출·나가기·백그라운드 전환 때 누적한다.
+  const enterAt = useRef(Date.now());
+  const withTime = (a: Attempt) => addTime(a, q.id, enterAt.current);
+  const latest = useRef({ attempt, qid: q.id, onChange });
+  latest.current = { attempt, qid: q.id, onChange };
+
+  useEffect(() => {
+    enterAt.current = Date.now();
+  }, [index]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') {
+        const { attempt: a, qid, onChange: save } = latest.current;
+        save(addTime(a, qid, enterAt.current));
+      }
+      enterAt.current = Date.now();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
+  const remaining = useCountdown(attempt.endsAt, () => onSubmit(withTime(attempt), true));
 
   const go = useCallback(
     (i: number, how: 'next' | 'prev' | 'jump' = 'jump') => {
@@ -35,9 +58,9 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
       setOmrOpen(false);
       if (to === index) return;
       setDir(how);
-      onChange({ ...attempt, current: to });
+      onChange({ ...addTime(attempt, q.id, enterAt.current), current: to });
     },
-    [attempt, index, onChange, qs.length],
+    [attempt, index, onChange, q.id, qs.length],
   );
 
   const select = useCallback(
@@ -86,7 +109,7 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
   return (
     <div className="exam">
       <header className="topbar exam-bar">
-        <button type="button" className="btn btn-ghost" onClick={onExit} aria-label="나가기(진행 상황은 저장됨)">
+        <button type="button" className="btn btn-ghost" onClick={() => onExit(withTime(attempt))} aria-label="나가기(진행 상황은 저장됨)">
           ‹ 나가기
         </button>
         <Timer remaining={remaining} limitSec={attempt.timeLimitSec} />
@@ -165,7 +188,7 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit }: Props) 
         onCancel={() => setConfirmOpen(false)}
         onSubmit={() => {
           setConfirmOpen(false);
-          onSubmit(false);
+          onSubmit(withTime(attempt), false);
         }}
       />
     </div>

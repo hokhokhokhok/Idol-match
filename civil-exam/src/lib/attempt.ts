@@ -16,6 +16,8 @@ export type Attempt = {
   flags: string[];
   /** 문항 id → 보기 옆 밑줄/X 표시 */
   marks: Record<string, MarkMap>;
+  /** 문항 id → 그 문항을 보고 있던 누적 시간(초) */
+  timeSpent: Record<string, number>;
   /** 마지막으로 보던 문항 index */
   current: number;
   submittedAt?: number;
@@ -33,6 +35,7 @@ export function newAttempt(setId: string, limitSec: number, now = Date.now()): A
     answers: {},
     flags: [],
     marks: {},
+    timeSpent: {},
     current: 0,
   };
 }
@@ -79,24 +82,10 @@ export function grade(questions: Question[], answers: Attempt['answers']): Grade
   };
 }
 
-// 진행 중 응시는 앱이 종료돼도 이어 풀 수 있게 기기에 임시 저장한다.
-// (제출 기록의 IndexedDB 저장은 3단계에서 추가)
-const DRAFT_KEY = 'ce:draft';
-
-export function loadDraft(): Attempt | null {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    return raw ? (JSON.parse(raw) as Attempt) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveDraft(a: Attempt | null) {
-  try {
-    if (a) localStorage.setItem(DRAFT_KEY, JSON.stringify(a));
-    else localStorage.removeItem(DRAFT_KEY);
-  } catch {
-    /* 저장 불가 환경(개인정보 보호 모드 등)에서는 메모리 상태로만 진행 */
-  }
+/** 지금 보고 있는 문항에 [since, now) 동안의 시간을 더한다 */
+export function addTime(a: Attempt, questionId: string, since: number, now = Date.now()): Attempt {
+  const sec = Math.max(0, (now - since) / 1000);
+  if (sec < 0.05) return a;
+  const prev = a.timeSpent?.[questionId] ?? 0;
+  return { ...a, timeSpent: { ...a.timeSpent, [questionId]: Math.round((prev + sec) * 10) / 10 } };
 }

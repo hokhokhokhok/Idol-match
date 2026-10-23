@@ -123,6 +123,31 @@
   text-align: center;
 }
 
+.chip {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 999px;
+  background: var(--chrome);
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chip.is-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.notice-error {
+  background: color-mix(in srgb, var(--wrong) 10%, #fff);
+  color: var(--wrong);
+}
+
 /* ---------- 홈 · 결과 ---------- */
 .home,
 .result {
@@ -206,7 +231,13 @@
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 8px;
 }
-.ox-grid li {
+.ox-item {
+  width: 100%;
+  min-height: var(--tap);
+  background: var(--chrome);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -229,14 +260,195 @@
   font-size: 14px;
   color: var(--ink-soft);
 }
-.ox-grid .is-o .ox-mark {
+.ox-grid .is-o .ox-mark,
+.ox-cell.is-o .omr-ans {
   color: var(--correct);
 }
 .ox-grid .is-x {
-  background: color-mix(in srgb, var(--wrong) 6%, transparent);
+  background: color-mix(in srgb, var(--wrong) 6%, var(--chrome));
 }
-.ox-grid .is-x .ox-mark {
+.ox-grid .is-x .ox-mark,
+.ox-cell.is-x .omr-ans {
   color: var(--wrong);
+}
+
+.score-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.recent-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  cursor: pointer;
+}
+.recent-score strong {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 해설 모드 ---------- */
+.review .exam-bar {
+  justify-content: space-between;
+}
+.qbar-sub {
+  font-size: 14px;
+}
+.verdict {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+}
+.verdict.is-o {
+  color: var(--correct);
+  background: color-mix(in srgb, var(--correct) 10%, #fff);
+}
+.verdict.is-x {
+  color: var(--wrong);
+  background: color-mix(in srgb, var(--wrong) 10%, #fff);
+}
+.ox-cell.is-x:not(.is-current) {
+  border-color: color-mix(in srgb, var(--wrong) 40%, var(--chrome-border));
+  background: color-mix(in srgb, var(--wrong) 7%, var(--chrome));
+}
+.ox-cell .omr-ans {
+  font-family: var(--font-ui);
+  font-weight: 800;
+}
+.omr-cell:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.exp {
+  margin-top: 14px;
+  padding: 18px 20px 20px;
+  background: var(--chrome);
+  border: 1px solid var(--chrome-border);
+  border-radius: 14px;
+  font-size: 16px;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.exp-summary {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.exp-key {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  vertical-align: 1px;
+}
+.exp-h {
+  margin: 20px 0 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.exp-choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.exp-choice {
+  display: grid;
+  grid-template-columns: 1.6em 1fr;
+  align-items: start;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.exp-no {
+  font-family: var(--font-exam);
+}
+.exp-choice.is-answer {
+  background: color-mix(in srgb, var(--correct) 9%, #fff);
+}
+.exp-choice.is-mine-wrong {
+  background: color-mix(in srgb, var(--wrong) 8%, #fff);
+}
+.exp-tags {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.tag {
+  display: inline-block;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+.tag-answer {
+  background: var(--correct);
+  color: #fff;
+}
+.tag-mine {
+  background: var(--wrong);
+  color: #fff;
+}
+.tag-mine-ok {
+  border: 1px solid var(--correct);
+  color: var(--correct);
+}
+.tag-verify {
+  margin-right: 6px;
+  background: var(--badge-bg);
+  color: var(--badge-ink);
+}
+.exp-statutes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.exp-statutes li {
+  padding: 3px 10px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 999px;
+  font-size: 14px;
+}
+.exp-cases {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.exp-cases li + li {
+  margin-top: 6px;
+}
+.exp-cite {
+  margin-left: 6px;
+  color: var(--ink-soft);
+  font-size: 14px;
 }
 
 /* ---------- 시험 모드 ---------- */

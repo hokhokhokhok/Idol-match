@@ -1,4 +1,6 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import type { Attempt } from '../lib/attempt';
+import { db } from '../lib/db';
 import { timeLimitSec } from '../lib/config';
 import { formatClock } from '../lib/format';
 import { FONT_SIZES, type FontSize } from '../lib/prefs';
@@ -11,11 +13,13 @@ type Props = {
   onFontSize: (s: FontSize) => void;
   onStart: (setId: string) => void;
   onResume: () => void;
+  onOpenRecord: (attemptId: string) => void;
 };
 
-/** 세트 목록과 이어 풀기. (연속 학습일·최근 점수·약점 단원은 3~4단계에서 추가) */
-export function HomeScreen({ sets, draft, fontSize, onFontSize, onStart, onResume }: Props) {
+/** 세트 목록, 이어 풀기, 최근 기록. (연속 학습일·약점 단원은 4단계에서 추가) */
+export function HomeScreen({ sets, draft, fontSize, onFontSize, onStart, onResume, onOpenRecord }: Props) {
   const draftSet = draft && sets.find((s) => s.id === draft.setId);
+  const recent = useLiveQuery(() => db.attempts.orderBy('submittedAt').reverse().limit(3).toArray(), []);
   return (
     <div className="home">
       <header className="topbar">
@@ -55,6 +59,27 @@ export function HomeScreen({ sets, draft, fontSize, onFontSize, onStart, onResum
               이어 풀기
             </button>
           </section>
+        )}
+
+        {recent && recent.length > 0 && (
+          <>
+            <h2 className="section-title">최근 기록</h2>
+            <ul className="recent-list">
+              {recent.map((r) => (
+                <li key={r.id}>
+                  <button type="button" className="card recent-item" onClick={() => onOpenRecord(r.id)}>
+                    <span className="recent-score">
+                      <strong>{r.score100}</strong>점
+                    </span>
+                    <span className="muted">
+                      {sets.find((s) => s.id === r.setId)?.title ?? r.setId} · {r.correct}/{r.total} ·{' '}
+                      {new Date(r.submittedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
 
         <h2 className="section-title">문항 세트</h2>
