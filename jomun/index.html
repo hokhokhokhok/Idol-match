@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="조문암기">
+<title>조문 암기 트레이너</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1c1c1e;--sub:#6b6b70;--line:#e3e0d8;--pri:#2b4c7e;
+--A:#c0392b;--B:#d98324;--C:#2e86ab;--D:#7a8b99;--ok:#2e8b57;--no:#c0392b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.7 -apple-system,"Apple SD Gothic Neo",sans-serif;
+padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#app{max-width:880px;margin:0 auto;padding:16px}
+nav{display:flex;gap:8px;margin-bottom:16px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+nav button{flex:1}
+button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);
+border-radius:12px;padding:14px 16px;min-height:48px}
+button.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+button.on{background:var(--pri);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:14px}
+.badge{display:inline-block;color:#fff;font-weight:700;border-radius:8px;padding:0 10px;margin-right:8px}
+.A{background:var(--A)}.B{background:var(--B)}.C{background:var(--C)}.D{background:var(--D)}
+.sub{color:var(--sub);font-size:15px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}
+.bar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0}
+.body{font-size:22px;line-height:2.1;word-break:keep-all}
+input.blank{font:inherit;border:0;border-bottom:2px solid var(--pri);background:#eef2f8;
+border-radius:4px 4px 0 0;padding:0 6px;text-align:center;width:var(--w,6em)}
+input.blank.ok{background:#e3f4ea;border-color:var(--ok)}
+input.blank.no{background:#fbe6e3;border-color:var(--no)}
+.ans{color:var(--ok);font-weight:700;border-bottom:2px solid var(--ok)}
+.wrong{color:var(--no);text-decoration:line-through;font-size:16px;margin-right:4px}
+textarea{width:100%;min-height:200px;font:14px/1.5 ui-monospace,monospace;border:1px solid var(--line);border-radius:10px;padding:10px}
+.prog{height:6px;background:var(--line);border-radius:3px;margin-bottom:14px}
+.prog i{display:block;height:100%;background:var(--pri);border-radius:3px}
+h2{margin:4px 0 12px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ===== 시드 데이터 (샘플) =====
+ 반드시 국가법령정보센터(law.go.kr) 원문과 대조해 검증할 것.
+ {{ }} = 빈칸. grade: A(매일 정독·핵심) B C D */
+const SEED=[
+{id:"bosang-67-1",law:"토지보상법",article:"제67조 제1항",title:"보상액의 가격시점",grade:"A",
+ text:"보상액의 산정은 협의에 의한 경우에는 {{협의 성립 당시}}의 가격을, 재결에 의한 경우에는 {{수용 또는 사용의 재결 당시}}의 가격을 기준으로 한다.",
+ tags:["가격시점"],verified:false},
+{id:"bosang-67-2",law:"토지보상법",article:"제67조 제2항",title:"개발이익 배제",grade:"A",
+ text:"보상액을 산정할 경우에 해당 {{공익사업으로 인하여}} 토지등의 가격이 변동되었을 때에는 이를 {{고려하지 아니한다}}.",
+ tags:["개발이익배제"],verified:false},
+{id:"bosang-70-1",law:"토지보상법",article:"제70조 제1항",title:"취득하는 토지의 보상",grade:"A",
+ text:"취득하는 토지에 대하여는 {{공시지가}}를 기준으로 하여 보상하되, 공시기준일부터 가격시점까지의 관계 법령에 따른 해당 토지의 {{이용계획}}, 해당 공익사업으로 인한 지가의 영향을 받지 아니하는 지역의 {{지가변동률}}, {{생산자물가상승률}} 및 그 밖에 그 토지의 위치·형상·환경 및 이용 상황 등을 참작하여 평가한 {{적정가격}}으로 보상하여야 한다.",
+ tags:["공시지가기준","시점수정"],verified:false}
+];
+
+/* ===== 상태 ===== */
+const KEY="jomun-v1";
+const GMAX={A:2,B:4,C:7,D:14};          // 등급별 최대 복습 간격(일)
+const BOX=[1,1,2,4,7,14,30];            // 박스별 기본 간격
+const KST=()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10);
+const addDays=(d,n)=>{const t=new Date(d+"T00:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm=s=>String(s).replace(/[\s·ㆍ,.()「」]/g,"");
+let S=load();
+function fresh(){return {items:SEED.map(x=>({...x,box:0,due:KST(),log:[]})),cap:30}}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.items)return s}catch(e){}return fresh()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+let V={tab:"home"};          // 뷰 상태
+let R=null;                  // 복습 세션
+
+const dueItems=()=>S.items.filter(i=>i.due<=KST()).sort((a,b)=>"ABCD".indexOf(a.grade)-"ABCD".indexOf(b.grade)||a.box-b.box);
+
+function parts(t){return t.split(/\{\{(.+?)\}\}/g)} // 홀수 인덱스 = 빈칸
+
+/* ===== 렌더 ===== */
+function render(){
+ const nav=`<nav>${[["home","오늘"],["read","A급 정독"],["manage","관리"]].map(([k,l])=>
+  `<button class="${V.tab===k?"on":""}" onclick="go('${k}')">${l}</button>`).join("")}</nav>`;
+ const app=document.getElementById("app");
+ app.innerHTML=nav+(V.tab==="home"?home():V.tab==="review"?review():V.tab==="read"?read():manage());
+}
+function go(t){V.tab=t;R=null;render();scrollTo(0,0)}
+
+function home(){
+ const n={A:0,B:0,C:0,D:0};S.items.forEach(i=>n[i.grade]++);
+ const tot=S.items.length||1;
+ const due=dueItems();
+ return `<div class="card"><h2>오늘 복습 ${Math.min(due.length,S.cap)}개 <span class="sub">(대기 ${due.length})</span></h2>
+ <div class="bar">${"ABCD".split("").map(g=>`<div class="${g}" style="width:${n[g]/tot*100}%"></div>`).join("")}</div>
+ <div class="sub">${"ABCD".split("").map(g=>`<span class="badge ${g}">${g}</span>${n[g]}`).join("  ")}</div>
+ <p><button class="pri" style="width:100%" onclick="start()" ${due.length?"":"disabled"}>복습 시작</button></p></div>`;
+}
+
+function start(){
+ const q=dueItems().slice(0,S.cap);
+ if(!q.length)return;
+ R={q,i:0,checked:false,ans:[],miss:0};V.tab="review";render();
+}
+
+function review(){
+ if(!R)return home();
+ if(R.i>=R.q.length)return `<div class="card"><h2>오늘 끝!</h2><p>${R.q.length}개 복습 완료 · 오답 재시도 ${R.miss}회</p><button class="pri" onclick="go('home')">홈으로</button></div>`;
+ const it=R.q[R.i],p=parts(it.text);
+ let k=0;
+ const body=p.map((s,idx)=>{
+  if(idx%2===0)return esc(s);
+  const w=Math.max(3,s.length*1.05);
+  if(!R.checked)return `<input class="blank" data-k="${k++}" style="--w:${w}em" autocapitalize="off" autocorrect="off" spellcheck="false">`;
+  const u=R.ans[k]||"",ok=norm(u)===norm(s);k++;
+  return ok?`<span class="ans">${esc(s)}</span>`:`${u?`<span class="wrong">${esc(u)}</span>`:""}<span class="ans">${esc(s)}</span>`;
+ }).join("");
+ const btns=R.checked
+  ?`<div class="row"><button onclick="rate(0)">몰랐다</button><button onclick="rate(1)">애매</button><button class="pri" onclick="rate(2)">알았다</button></div>`
+  :`<div class="row"><button class="pri" onclick="check()">정답 확인</button><button onclick="peek()">포기·보기</button></div>`;
+ return `<div class="prog"><i style="width:${R.i/R.q.length*100}%"></i></div>
+ <div class="card"><div><span class="badge ${it.grade}">${it.grade}</span><b>${esc(it.law)} ${esc(it.article)}</b>
+ <span class="sub"> ${esc(it.title||"")}</span></div><div class="body">${body}</div></div>${btns}`;
+}
+function collect(){R.ans=[...document.querySelectorAll("input.blank")].map(e=>e.value)}
+function check(){collect();R.checked=true;render()}
+function peek(){R.ans=[];R.checked=true;render()}
+function rate(r){
+ const it=R.q[R.i],today=KST();
+ it.log=(it.log||[]).concat([{d:today,r}]).slice(-30);
+ if(r===0){it.box=Math.max(0,it.box-2);it.due=today;R.miss++;R.q.push(R.q.splice(R.i,1)[0]); // 뒤로 보내 재시도
+   it.due=addDays(today,1);R.checked=false;R.ans=[];save();render();return}
+ if(r===2)it.box=Math.min(BOX.length-1,it.box+1);
+ const iv=Math.max(1,Math.min(BOX[it.box],GMAX[it.grade]));
+ it.due=addDays(today,iv);
+ R.i++;R.checked=false;R.ans=[];save();render();
+}
+
+function read(){
+ const as=S.items.filter(i=>i.grade==="A");
+ return `<h2>A급 정독 <span class="sub">${as.length}개 · 소리 내어 읽기</span></h2>`+
+  as.map(i=>`<div class="card"><span class="badge A">A</span><b>${esc(i.law)} ${esc(i.article)}</b> <span class="sub">${esc(i.title||"")}</span>
+  <div class="body">${parts(i.text).map((s,x)=>x%2?`<b style="color:var(--pri)">${esc(s)}</b>`:esc(s)).join("")}</div></div>`).join("")||`<p class="sub">A급 조문이 없습니다.</p>`;
+}
+
+function manage(){
+ return `<div class="card"><h2>데이터 가져오기 / 내보내기</h2>
+ <p class="sub">JSON 배열을 붙여넣어 조문을 추가합니다. 필드: id, law, article, title, grade(A~D), text({{빈칸}}), tags, source. 같은 id는 덮어씁니다(학습기록은 유지).</p>
+ <textarea id="io" placeholder='[{"id":"...","law":"토지보상법","article":"제00조","title":"","grade":"B","text":"...{{빈칸}}..."}]'></textarea>
+ <div class="row" style="margin-top:10px"><button class="pri" onclick="imp()">가져오기</button><button onclick="exp()">전체 내보내기(백업)</button></div></div>
+ <div class="card"><h2>설정</h2><label>하루 최대 복습 수 <input type="number" value="${S.cap}" min="5" max="200" onchange="S.cap=+this.value;save()" style="font:inherit;width:5em"></label>
+ <p><button onclick="grade()">등급 일괄 변경 도우미</button> <button onclick="if(confirm('모든 학습기록을 삭제할까요?')){S=fresh();save();render()}">초기화</button></p></div>
+ <div class="card"><h2>조문 목록 (${S.items.length})</h2>${S.items.map(i=>`<div style="padding:6px 0;border-bottom:1px solid var(--line)">
+ <span class="badge ${i.grade}">${i.grade}</span>${esc(i.law)} ${esc(i.article)} <span class="sub">box ${i.box} · 다음 ${i.due}${i.verified===false?" · 원문검증 필요":""}</span>
+ <select onchange="setG('${esc(i.id)}',this.value)" style="font:inherit;float:right">${"ABCD".split("").map(g=>`<option ${g===i.grade?"selected":""}>${g}</option>`).join("")}</select></div>`).join("")}</div>`;
+}
+function setG(id,g){const i=S.items.find(x=>x.id===id);if(i){i.grade=g;save();render()}}
+function grade(){alert("등급 기준: A=매년 출제·기본 법리/요건(매일), B=자주 출제(격일), C=가끔(주 1~2회), D=출제 가능성 낮은 세부 조문(2주). 목록에서 등급 드롭다운으로 개별 조정하세요.")}
+function imp(){
+ try{
+  const arr=JSON.parse(document.getElementById("io").value);
+  const list=Array.isArray(arr)?arr:arr.items;
+  let add=0,upd=0;
+  list.forEach(x=>{
+   if(!x.id||!x.text||!/^[ABCD]$/.test(x.grade))throw new Error("필수 필드 누락: "+(x.id||"?"));
+   const o=S.items.find(i=>i.id===x.id);
+   if(o){Object.assign(o,x,{box:o.box,due:o.due,log:o.log});upd++}
+   else{S.items.push({...x,box:x.box||0,due:x.due||KST(),log:x.log||[]});add++}
+  });
+  save();alert(`추가 ${add}, 갱신 ${upd}`);render();
+ }catch(e){alert("가져오기 실패: "+e.message)}
+}
+function exp(){const t=document.getElementById("io");t.value=JSON.stringify(S.items,null,1);t.select()}
+render();
+</script>
+</body>
+</html>
