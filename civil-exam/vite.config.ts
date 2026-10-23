@@ -7,6 +7,14 @@ const base = process.env.BASE ?? './';
 
 export default defineConfig({
   base,
+  build: {
+    rolldownOptions: {
+      output: {
+        // 문항 데이터(src/data/sets)는 앱 코드와 별도 청크로: 코드만 바뀐 업데이트에서 문항을 다시 받지 않게 한다
+        codeSplitting: { groups: [{ name: 'question-sets', test: /src[\\/]data[\\/]sets[\\/]/ }] },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
