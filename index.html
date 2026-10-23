@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>아이돌 매칭 맵</title>
+<meta name="description" content="내 MBTI로 K팝 100그룹 멤버와의 궁합을 지도로 그려 보는 재미용 앱">
+<meta name="theme-color" content="#0d0f1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="매칭맵">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 공연장 무대 콘셉트. 가운데가 '나', 응원봉 점들이 궁합 점수만큼 가까이 모인다. 단일 다크 테마(의도). */
+:root{
+  --stage:#0d0f1c; --panel:#161a2e; --line:#2a3050; --ink:#eef0fa; --mute:#9aa1c2;
+  --spot:#ffd23f; --pink:#ff5d8f; --cyan:#45d3e6;
+  --f-display:"Black Han Sans","Apple SD Gothic Neo",sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--stage);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55;margin:0;-webkit-text-size-adjust:100%}
+.wrap{max-width:1080px;margin:0 auto;padding-block:max(20px,env(safe-area-inset-top,0px)) max(48px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,6vw,46px);line-height:1;margin:0;letter-spacing:.01em}
+h1 b{color:var(--spot);font-weight:400}
+.sub{color:var(--mute);margin:6px 0 0;font-size:14px}
+h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0 0 12px;letter-spacing:.02em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.axis{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.axis button{font:inherit;font-family:var(--f-display);font-size:24px;padding:10px 0;background:transparent;color:var(--mute);border:0;cursor:pointer}
+.axis button[aria-pressed="true"]{background:var(--spot);color:#1a1400}
+.axis button:focus-visible,.chip:focus-visible,select:focus-visible,input:focus-visible,.row:focus-visible,.dot:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.mytype{display:flex;align-items:baseline;gap:10px;margin-top:12px;flex-wrap:wrap}
+.mytype strong{font-family:var(--f-display);font-weight:400;font-size:34px;color:var(--spot);letter-spacing:.06em}
+.mytype span{color:var(--mute);font-size:13px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.chip{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--pink);color:var(--ink);background:color-mix(in srgb,var(--pink) 18%,transparent)}
+.chip.solid{background:var(--spot);border-color:var(--spot);color:#1a1400;font-weight:700}
+select,input[type=search]{font:inherit;font-size:16px;background:var(--stage);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;max-width:100%}
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}
+@media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.mapbox{position:relative}
+svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--mute);font-size:12px;margin-top:8px}
+.tip{min-height:62px;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--stage);border:1px dashed var(--line);font-size:14px}
+.tip b{color:var(--spot)}
+.list{display:grid;gap:6px}
+.row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--stage);border:1px solid transparent;cursor:pointer}
+.row:hover{border-color:var(--line)}
+.rk{font-family:var(--f-mono);color:var(--mute);font-size:13px;text-align:right}
+.nm{min-width:0}
+.nm b{font-weight:700}
+.nm small{display:block;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc{font-family:var(--f-mono);font-size:15px;font-variant-numeric:tabular-nums}
+.bar{height:4px;border-radius:2px;background:var(--line);margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--spot))}
+.tag{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--mute);margin-left:6px}
+.tag.v{border-color:var(--cyan);color:var(--cyan)}
+.dir{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;max-height:560px;overflow:auto;padding-right:4px;-webkit-overflow-scrolling:touch}
+.gcard{background:var(--stage);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.gcard h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.gcard h3 span{font-family:var(--f-mono);color:var(--mute);font-weight:500;font-size:12px;white-space:nowrap}
+.mem{display:flex;flex-wrap:wrap;gap:4px}
+.mem button{font:inherit;font-size:12px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.mem button.no{color:var(--mute);border-style:dashed}
+.mem button em{font-style:normal;font-family:var(--f-mono);color:var(--spot);margin-left:3px}
+.dialog[hidden]{display:none}
+.dialog{position:fixed;inset:0;background:rgb(5 6 14 / .7);display:grid;place-items:center;padding:16px;z-index:20}
+.dialog .panel{width:min(360px,100%)}
+.types{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.types button{font:inherit;font-family:var(--f-mono);padding:8px 0;border-radius:8px;border:1px solid var(--line);background:var(--stage);color:var(--ink);cursor:pointer}
+.types button:hover{border-color:var(--spot)}
+.foot{color:var(--mute);font-size:12.5px;line-height:1.6;max-width:72ch}
+.status{min-height:1.4em;color:var(--cyan);font-size:13px;margin:8px 0 0}
+.loading{display:grid;place-items:center;min-height:50vh;color:var(--mute);text-align:center}
+.loading .spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--spot);margin:0 auto 12px}
+@media (prefers-reduced-motion:no-preference){.dot{transition:transform .5s ease}.loading .spin{animation:spin 1s linear infinite}}
+@keyframes spin{to{transform:rotate(360deg)}}
+#app{display:contents}#app[hidden]{display:none}
+.hidden-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 data-i18n-html="title">아이돌 <b>매칭 맵</b></h1>
+      <p class="sub" data-i18n="subtitle">내 MBTI로 K팝 100그룹 멤버와의 궁합을 지도로 그려 봅니다 · 2026년 10월 데이터</p>
+    </div>
+    <button class="chip" id="langBtn" type="button" aria-label="Language">English</button>
+  </header>
+
+  <div class="loading" id="loading" role="status" aria-live="polite">
+    <div><div class="spin" aria-hidden="true"></div><span id="loadingMsg" data-i18n="loading">데이터를 불러오는 중…</span></div>
+  </div>
+
+  <div id="app" hidden>
+  <section class="panel" aria-labelledby="h-me">
+    <h2 id="h-me" data-i18n="myMbti">내 MBTI</h2>
+    <div class="picker" id="picker"></div>
+    <div class="mytype"><strong id="mytype">ENFP</strong><span id="mydesc"></span></div>
+    <div class="controls">
+      <button class="chip" type="button" data-gender="A" aria-pressed="true" data-i18n="all">전체</button>
+      <button class="chip" type="button" data-gender="B" aria-pressed="false" data-i18n="boys">보이그룹</button>
+      <button class="chip" type="button" data-gender="G" aria-pressed="false" data-i18n="girls">걸그룹</button>
+      <button class="chip" type="button" id="fanToggle" aria-pressed="true" data-i18n="fanToggle">팬 집계 MBTI 포함</button>
+      <label for="groupSel" class="sub" style="margin:0" data-i18n="group">그룹</label>
+      <select id="groupSel"><option value="" data-i18n="allGroups">전체 그룹</option></select>
+    </div>
+    <div class="controls">
+      <button class="chip solid" type="button" id="cardBtn" data-i18n="saveCard">결과 카드 저장</button>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel" aria-labelledby="h-map">
+      <h2 id="h-map" data-i18n="map">매칭 맵</h2>
+      <div class="mapbox"><svg id="map" viewBox="0 0 600 600" role="img" aria-label="궁합 점수 방사형 지도"></svg></div>
+      <div class="legend"><span data-i18n="lgCenter">가운데 = 나</span><span data-i18n="lgRings">안쪽 원일수록 궁합 ↑ (85·70·55·40점)</span><span data-i18n="lgColor">점 색 = 그룹</span></div>
+      <div class="tip" id="tip" data-i18n="tipDefault">점을 누르면 그 아이돌과의 궁합 풀이가 나옵니다.</div>
+    </section>
+    <section class="panel" aria-labelledby="h-top">
+      <h2 id="h-top" data-i18n="top10">찰떡 TOP 10</h2>
+      <div class="list" id="top"></div>
+      <h2 style="margin-top:20px" data-i18n="groupRank">그룹 궁합 순위</h2>
+      <div class="list" id="gtop"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-dir">
+    <h2 id="h-dir" data-i18n="directory">100그룹 멤버 디렉터리</h2>
+    <div class="controls" style="margin:0 0 12px"><input type="search" id="q" data-i18n-ph="search" placeholder="그룹·멤버 검색"><span class="sub" style="margin:0" id="cov"></span></div>
+    <div class="dir" id="dir"></div>
+    <p class="sub" data-i18n="dirHint">점선 멤버는 MBTI 미공개입니다. 눌러서 내가 아는 MBTI를 넣으면 이 기기에서만 지도에 추가됩니다.</p>
+    <div class="controls">
+      <button class="chip" type="button" id="exportBtn" data-i18n="export">내 입력 내보내기(JSON)</button>
+      <button class="chip" type="button" id="importBtn" data-i18n="import">가져오기</button>
+      <input type="file" id="importFile" class="hidden-input" accept="application/json,.json" tabindex="-1" aria-hidden="true">
+    </div>
+    <p class="status" id="ioStatus" role="status" aria-live="polite"></p>
+  </section>
+
+  <p class="foot" data-i18n-html="foot">궁합 점수는 MBTI 네 축(인식 S/N 일치, 에너지 E/I 보완, 판단 T/F 일치, 생활 J/P 보완)과 국내에서 널리 쓰이는 '찰떡 궁합' 조합을 합친 재미용 지표입니다. MBTI는 자기보고식 검사라 시기에 따라 바뀌며, 아이돌의 MBTI도 방송마다 다르게 나온 경우가 많습니다. <span class="tag v">공개</span>는 본인이 방송·인터뷰에서 밝힌 것이 기사로 확인된 값, <span class="tag">팬집계</span>는 팬 커뮤니티 정리값입니다. 실제 성격이나 인간관계를 판단하는 근거로 쓰지 마세요.</p>
+  </div>
+</div>
+
+<div class="dialog" id="dlg" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+    <h2 id="dlgT">MBTI 입력</h2>
+    <p class="sub" id="dlgS"></p>
+    <div class="types" id="dlgTypes"></div>
+    <div class="controls"><button class="chip" type="button" id="dlgClear" data-i18n="clear">입력 지우기</button><button class="chip" type="button" id="dlgClose" data-i18n="close">닫기</button></div>
+  </div>
+</div>
+
+<script src="js/score.js"></script>
+<script>
+const {TYPES,NICK,GOLD,score,why}=Match;
+
+// ---- i18n
+const I18N={
+  ko:{
+    title:"아이돌 <b>매칭 맵</b>",subtitle:"내 MBTI로 K팝 100그룹 멤버와의 궁합을 지도로 그려 봅니다 · 2026년 10월 데이터",
+    loading:"데이터를 불러오는 중…",loadFail:"데이터를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.",
+    myMbti:"내 MBTI",all:"전체",boys:"보이그룹",girls:"걸그룹",fanToggle:"팬 집계 MBTI 포함",group:"그룹",allGroups:"전체 그룹",
+    saveCard:"결과 카드 저장",map:"매칭 맵",lgCenter:"가운데 = 나",lgRings:"안쪽 원일수록 궁합 ↑ (85·70·55·40점)",lgColor:"점 색 = 그룹",
+    tipDefault:"점을 누르면 그 아이돌과의 궁합 풀이가 나옵니다.",top10:"찰떡 TOP 10",groupRank:"그룹 궁합 순위",
+    directory:"100그룹 멤버 디렉터리",search:"그룹·멤버 검색",dirHint:"점선 멤버는 MBTI 미공개입니다. 눌러서 내가 아는 MBTI를 넣으면 이 기기에서만 지도에 추가됩니다.",
+    export:"내 입력 내보내기(JSON)",import:"가져오기",clear:"입력 지우기",close:"닫기",
+    foot:"궁합 점수는 MBTI 네 축(인식 S/N 일치, 에너지 E/I 보완, 판단 T/F 일치, 생활 J/P 보완)과 국내에서 널리 쓰이는 '찰떡 궁합' 조합을 합친 재미용 지표입니다. MBTI는 자기보고식 검사라 시기에 따라 바뀌며, 아이돌의 MBTI도 방송마다 다르게 나온 경우가 많습니다. <span class=\"tag v\">공개</span>는 본인이 방송·인터뷰에서 밝힌 것이 기사로 확인된 값, <span class=\"tag\">팬집계</span>는 팬 커뮤니티 정리값입니다. 실제 성격이나 인간관계를 판단하는 근거로 쓰지 마세요.",
+    gold:"찰떡 유형",mapLabel:"궁합 점수 방사형 지도",noMap:"이 조건에는 MBTI가 공개된 멤버가 없어요",noTop:"조건에 맞는 멤버가 없어요.",noGroup:"MBTI가 2명 이상 확인된 그룹이 없어요.",
+    groupAvg:n=>`MBTI 확인 멤버 ${n}명 평균`,coverage:(k,t)=>`MBTI 확인 ${k} / ${t}명`,membersPending:"멤버 정보 확인 중",
+    tagV:"공개",tagF:"팬집계",tagU:"내 입력",match:"궁합",pts:n=>`${n}점`,
+    dlgTitle:n=>`${n} MBTI 입력`,dlgSub:g=>`${g} · 방송이나 인터뷰에서 본 값을 골라 주세요. 이 기기에만 저장됩니다.`,
+    exported:n=>`${n}명의 입력을 내보냈어요.`,imported:n=>`${n}명의 입력을 가져왔어요.`,importBad:"가져올 수 없는 파일이에요. 이 앱에서 내보낸 JSON인지 확인해 주세요.",nothingToExport:"아직 직접 넣은 MBTI가 없어요.",
+    cardTitle:"아이돌 매칭 맵",cardMine:"나의 MBTI",cardTop:"찰떡 TOP 3",cardNone:"조건에 맞는 멤버가 없어요",cardFoot:"재미용 궁합 지표 · MBTI는 방송·팬 집계 기준",cardSaved:"결과 카드를 저장했어요.",
+    langBtn:"English"
+  },
+  en:{
+    title:"Idol <b>Match Map</b>",subtitle:"Map your MBTI compatibility with members of 100 K-pop groups · Data as of Oct 2026",
+    loading:"Loading data…",loadFail:"Couldn't load the data. Check your connection and reload.",
+    myMbti:"My MBTI",all:"All",boys:"Boy groups",girls:"Girl groups",fanToggle:"Include fan-sourced MBTI",group:"Group",allGroups:"All groups",
+    saveCard:"Save result card",map:"Match Map",lgCenter:"Center = you",lgRings:"Inner rings = better match (85·70·55·40)",lgColor:"Dot color = group",
+    tipDefault:"Tap a dot to see why you match.",top10:"Top 10 Matches",groupRank:"Group Ranking",
+    directory:"Member Directory · 100 Groups",search:"Search groups or members",dirHint:"Dashed members have no public MBTI. Tap one to add an MBTI you know — it's saved on this device only.",
+    export:"Export my entries (JSON)",import:"Import",clear:"Clear entry",close:"Close",
+    foot:"The score is a just-for-fun index combining the four MBTI axes (same S/N, complementary E/I, same T/F, complementary J/P) with popular Korean 'perfect match' pairings. MBTI is self-reported and changes over time, and idols often report different types on different shows. <span class=\"tag v\">Public</span> means the idol stated it on air or in an interview and it was reported in the press; <span class=\"tag\">Fan</span> means compiled by fan communities. Don't use this to judge anyone's real personality or relationships.",
+    gold:"Best matches",mapLabel:"Radial compatibility map",noMap:"No members with a known MBTI for this filter",noTop:"No members match this filter.",noGroup:"No group has 2+ members with a known MBTI.",
+    groupAvg:n=>`Average of ${n} members with known MBTI`,coverage:(k,t)=>`MBTI known: ${k} / ${t}`,membersPending:"Member list pending",
+    tagV:"Public",tagF:"Fan",tagU:"Mine",match:"Match",pts:n=>`${n} pts`,
+    dlgTitle:n=>`MBTI for ${n}`,dlgSub:g=>`${g} · Pick the type you saw on a show or in an interview. Saved on this device only.`,
+    exported:n=>`Exported ${n} entries.`,imported:n=>`Imported ${n} entries.`,importBad:"Can't import this file. Make sure it's JSON exported from this app.",nothingToExport:"You haven't added any MBTI yet.",
+    cardTitle:"Idol Match Map",cardMine:"My MBTI",cardTop:"Top 3 Matches",cardNone:"No members match this filter",cardFoot:"Just for fun · MBTI from broadcasts & fan sources",cardSaved:"Result card saved.",
+    langBtn:"한국어"
+  }
+};
+
+// ---- state
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let me=store.get("im_me","ENFP"), gender="A", useFan=true, onlyGroup="";
+if(!TYPES.includes(me)) me="ENFP";
+let lang=store.get("im_lang",(navigator.language||"ko").toLowerCase().startsWith("ko")?"ko":"en");
+let custom=store.get("im_custom",{}); // key "rank|name" -> type
+let DATA=[], HUES=[];
+const t=k=>I18N[lang][k];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const gname=g=>lang==="en"?g.en:g.ko;
+
+function applyI18n(){
+  document.documentElement.lang=lang;
+  document.title=lang==="en"?"Idol Match Map":"아이돌 매칭 맵";
+  document.querySelectorAll("[data-i18n]").forEach(e=>e.textContent=t(e.dataset.i18n));
+  document.querySelectorAll("[data-i18n-html]").forEach(e=>e.innerHTML=t(e.dataset.i18nHtml));
+  document.querySelectorAll("[data-i18n-ph]").forEach(e=>e.placeholder=t(e.dataset.i18nPh));
+  document.getElementById("map").setAttribute("aria-label",t("mapLabel"));
+  document.getElementById("langBtn").textContent=t("langBtn");
+  [...gs.options].slice(1).forEach((o,i)=>o.textContent=DATA[i].r+". "+gname(DATA[i]));
+}
+
+function idols(){
+  const out=[];
+  DATA.forEach((g,gi)=>{
+    if(gender!=="A"&&g.g!==gender) return;
+    if(onlyGroup&&String(g.r)!==onlyGroup) return;
+    g.m.forEach(m=>{
+      const key=g.r+"|"+m.n; let ty=m.t, s=m.s;
+      if(custom[key]){ty=custom[key];s="u";}
+      if(!ty) return; if(s==="f"&&!useFan) return;
+      out.push({g,gi,n:m.n,t:ty,s,key,sc:score(me,ty)});
+    });
+  });
+  return out;
+}
+const ranked=list=>[...list].sort((a,b)=>b.sc-a.sc||a.g.r-b.g.r);
+
+// ---- picker
+const AX=[["E","I"],["S","N"],["T","F"],["J","P"]];
+const picker=document.getElementById("picker");
+AX.forEach((pair,i)=>{
+  const d=document.createElement("div");d.className="axis";
+  pair.forEach(L=>{const b=document.createElement("button");b.textContent=L;b.type="button";
+    b.onclick=()=>{me=me.slice(0,i)+L+me.slice(i+1);store.set("im_me",me);render()};d.appendChild(b)});
+  picker.appendChild(d);
+});
+
+document.querySelectorAll("[data-gender]").forEach(b=>b.onclick=()=>{gender=b.dataset.gender;document.querySelectorAll("[data-gender]").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
+const fanT=document.getElementById("fanToggle");fanT.onclick=()=>{useFan=!useFan;fanT.setAttribute("aria-pressed",useFan);render()};
+const gs=document.getElementById("groupSel");
+gs.onchange=()=>{onlyGroup=gs.value;render()};
+document.getElementById("langBtn").onclick=()=>{lang=lang==="ko"?"en":"ko";store.set("im_lang",lang);applyI18n();render()};
+
+// ---- map
+const NS="http://www.w3.org/2000/svg";
+function el(tag,a,p){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e}
+const C=300, R=270;
+function rad(sc){return 56+(90-Math.max(36,Math.min(90,sc)))/(90-36)*(R-56)}
+function drawMap(list){
+  const svg=document.getElementById("map");svg.innerHTML="";
+  const defs=el("defs",{},svg);const rg=el("radialGradient",{id:"spot"},defs);
+  el("stop",{offset:"0","stop-color":"#ffd23f","stop-opacity":".28"},rg);el("stop",{offset:"1","stop-color":"#ffd23f","stop-opacity":"0"},rg);
+  el("circle",{cx:C,cy:C,r:R,fill:"url(#spot)"},svg);
+  [85,70,55,40].forEach(v=>{el("circle",{cx:C,cy:C,r:rad(v),fill:"none",stroke:"#2a3050","stroke-dasharray":"3 5"},svg);
+    const tx=el("text",{x:C+4,y:C-rad(v)-4,fill:"#9aa1c2","font-size":"11","font-family":"IBM Plex Mono,monospace"},svg);tx.textContent=v});
+  const gids=[...new Set(list.map(x=>x.gi))];
+  const per=2*Math.PI/Math.max(gids.length,1);
+  const byG={};list.forEach(x=>(byG[x.gi]=byG[x.gi]||[]).push(x));
+  const top=new Set(ranked(list).slice(0,6).map(x=>x.key));
+  gids.forEach((gi,k)=>{
+    const arr=byG[gi];
+    arr.forEach((x,j)=>{
+      const a=-Math.PI/2+per*k+per*(arr.length===1?.5:(j+.5)/arr.length)*.9;
+      const r=rad(x.sc)+((j%3)-1)*6;
+      const px=C+Math.cos(a)*r, py=C+Math.sin(a)*r;
+      const col=`hsl(${HUES[gi]} 85% 64%)`;
+      const c=el("circle",{cx:px,cy:py,r:top.has(x.key)?8:5.5,fill:col,stroke:"#0d0f1c","stroke-width":"1.5",class:"dot",tabindex:"0",role:"button","aria-label":`${x.n} (${gname(x.g)}) ${x.t} ${x.sc}`},svg);
+      c.style.cursor="pointer";
+      const show=()=>tip(x);c.addEventListener("click",show);c.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();show()}});
+      if(top.has(x.key)){const tx=el("text",{x:px+(Math.cos(a)>=0?11:-11),y:py+4,fill:"#eef0fa","font-size":"12","text-anchor":Math.cos(a)>=0?"start":"end","font-family":"IBM Plex Sans KR,sans-serif"},svg);tx.textContent=x.n}
+    });
+  });
+  el("circle",{cx:C,cy:C,r:24,fill:"#ffd23f"},svg);
+  const tx=el("text",{x:C,y:C+5,"text-anchor":"middle",fill:"#1a1400","font-size":"14","font-family":"IBM Plex Mono,monospace"},svg);tx.textContent=me;
+  if(!list.length){const e=el("text",{x:C,y:C+60,"text-anchor":"middle",fill:"#9aa1c2","font-size":"14"},svg);e.textContent=t("noMap")}
+}
+function srcTag(s){return s==="v"?`<span class="tag v">${t("tagV")}</span>`:s==="u"?`<span class="tag">${t("tagU")}</span>`:`<span class="tag">${t("tagF")}</span>`}
+function tip(x){document.getElementById("tip").innerHTML=`<b>${esc(x.n)}</b> (${esc(gname(x.g))}) · ${x.t} ${srcTag(x.s)} → ${t("match")} <b>${t("pts")(x.sc)}</b><br>${esc(why(me,x.t,lang))}`}
+
+let lastList=[];
+function render(){
+  document.querySelectorAll(".axis").forEach((d,i)=>d.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",me[i]===b.textContent)));
+  document.getElementById("mytype").textContent=me;
+  document.getElementById("mydesc").textContent=NICK[lang][me]+" · "+t("gold")+" "+(GOLD[me]||[]).join(", ");
+  const list=lastList=idols();drawMap(list);
+  const top=ranked(list).slice(0,10);
+  document.getElementById("top").innerHTML=top.map((x,i)=>`<div class="row" tabindex="0" role="button" data-k="${esc(x.key)}"><span class="rk">${i+1}</span><span class="nm"><b>${esc(x.n)}</b>${srcTag(x.s)}<small>${esc(gname(x.g))} · ${x.t}</small><div class="bar"><i style="width:${x.sc}%"></i></div></span><span class="sc">${x.sc}</span></div>`).join("")||`<p class="sub">${t("noTop")}</p>`;
+  document.querySelectorAll("#top .row").forEach(r=>{const go=()=>tip(list.find(x=>x.key===r.dataset.k));r.onclick=go;r.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}});
+  const agg={};list.forEach(x=>{(agg[x.gi]=agg[x.gi]||[]).push(x.sc)});
+  const gl=Object.entries(agg).filter(([,v])=>v.length>=2).map(([gi,v])=>({g:DATA[gi],avg:v.reduce((a,b)=>a+b,0)/v.length,n:v.length})).sort((a,b)=>b.avg-a.avg).slice(0,5);
+  document.getElementById("gtop").innerHTML=gl.map((x,i)=>`<div class="row"><span class="rk">${i+1}</span><span class="nm"><b>${esc(gname(x.g))}</b><small>${t("groupAvg")(x.n)}</small><div class="bar"><i style="width:${x.avg}%"></i></div></span><span class="sc">${x.avg.toFixed(1)}</span></div>`).join("")||`<p class="sub">${t("noGroup")}</p>`;
+  renderDir();
+}
+
+// ---- directory
+const q=document.getElementById("q");q.oninput=renderDir;
+function renderDir(){
+  const s=q.value.trim().toLowerCase();
+  let known=0,total=0;
+  const html=DATA.filter(g=>!s||g.ko.includes(s)||g.en.toLowerCase().includes(s)||g.m.some(m=>m.n.toLowerCase().includes(s))).map(g=>{
+    const mem=g.m.map(m=>{const key=g.r+"|"+m.n;const ty=custom[key]||m.t;return `<button type="button" class="${ty?"":"no"}" data-k="${esc(key)}" data-n="${esc(m.n)}" data-g="${esc(gname(g))}">${esc(m.n)}${ty?`<em>${ty}</em>`:""}</button>`}).join("")||`<span class="sub" style="margin:0">${t("membersPending")}</span>`;
+    return `<div class="gcard"><h3>${esc(gname(g))}<span>#${g.r} · ${g.tier}</span></h3><div class="mem">${mem}</div></div>`}).join("");
+  DATA.forEach(g=>g.m.forEach(m=>{total++;if(custom[g.r+"|"+m.n]||m.t)known++}));
+  document.getElementById("dir").innerHTML=html;
+  document.getElementById("cov").textContent=t("coverage")(known,total);
+  document.querySelectorAll("#dir .mem button").forEach(b=>b.onclick=()=>openDlg(b.dataset.k,b.dataset.n,b.dataset.g,b));
+}
+const dlg=document.getElementById("dlg");let dlgKey="",dlgReturn=null;
+const dt=document.getElementById("dlgTypes");
+TYPES.forEach(ty=>{const b=document.createElement("button");b.type="button";b.textContent=ty;b.onclick=()=>{custom[dlgKey]=ty;store.set("im_custom",custom);closeDlg();render()};dt.appendChild(b)});
+function openDlg(k,n,g,from){dlgKey=k;dlgReturn=from;document.getElementById("dlgT").textContent=t("dlgTitle")(n);document.getElementById("dlgS").textContent=t("dlgSub")(g);dlg.hidden=false;dt.querySelector("button").focus()}
+function closeDlg(){dlg.hidden=true;if(dlgReturn&&dlgReturn.isConnected)dlgReturn.focus()}
+document.getElementById("dlgClose").onclick=closeDlg;
+document.getElementById("dlgClear").onclick=()=>{delete custom[dlgKey];store.set("im_custom",custom);closeDlg();render()};
+dlg.addEventListener("click",e=>{if(e.target===dlg)closeDlg()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dlg.hidden)closeDlg()});
+
+// ---- export / import (localStorage im_custom)
+const ioStatus=document.getElementById("ioStatus");
+function saveBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+document.getElementById("exportBtn").onclick=()=>{
+  const n=Object.keys(custom).length;
+  if(!n){ioStatus.textContent=t("nothingToExport");return}
+  const body=JSON.stringify({app:"idol-match",version:1,exportedAt:new Date().toISOString(),custom},null,2);
+  saveBlob(new Blob([body],{type:"application/json"}),"idol-match-mbti.json");
+  ioStatus.textContent=t("exported")(n);
+};
+const importFile=document.getElementById("importFile");
+document.getElementById("importBtn").onclick=()=>importFile.click();
+importFile.onchange=async()=>{
+  const f=importFile.files[0];importFile.value="";if(!f)return;
+  try{
+    const j=JSON.parse(await f.text());
+    const src=j&&typeof j==="object"&&j.custom&&typeof j.custom==="object"?j.custom:j;
+    if(!src||typeof src!=="object"||Array.isArray(src)) throw new Error("bad");
+    const ok=Object.entries(src).filter(([k,v])=>/^\d{1,3}\|.{1,40}$/.test(k)&&TYPES.includes(v));
+    if(!ok.length) throw new Error("empty");
+    ok.forEach(([k,v])=>custom[k]=v);store.set("im_custom",custom);render();
+    ioStatus.textContent=t("imported")(ok.length);
+  }catch(e){ioStatus.textContent=t("importBad")}
+};
+
+// ---- result card (1080x1920, 인스타 스토리)
+async function drawCard(){
+  const W=1080,H=1920,cv=document.createElement("canvas");cv.width=W;cv.height=H;const x=cv.getContext("2d");
+  const DISP='"Black Han Sans","Apple SD Gothic Neo",sans-serif', BODY='"IBM Plex Sans KR","Apple SD Gothic Neo",sans-serif', MONO='"IBM Plex Mono",ui-monospace,monospace';
+  try{await Promise.all([`400 80px ${DISP}`,`700 40px ${BODY}`,`400 40px ${BODY}`,`500 40px ${MONO}`].map(f=>document.fonts.load(f,"아이돌ABC123")))}catch(e){}
+  x.fillStyle="#0d0f1c";x.fillRect(0,0,W,H);
+  let g=x.createRadialGradient(W/2,560,0,W/2,560,620);g.addColorStop(0,"rgba(255,210,63,.32)");g.addColorStop(1,"rgba(255,210,63,0)");x.fillStyle=g;x.fillRect(0,0,W,H);
+  // 응원봉 점 장식
+  for(let i=0;i<70;i++){const a=i*2.399,r=300+((i*97)%260);x.fillStyle=`hsla(${Math.round(i*137.508)%360},85%,64%,.55)`;x.beginPath();x.arc(W/2+Math.cos(a)*r,560+Math.sin(a)*r,4+(i%3)*3,0,7);x.fill()}
+  x.textAlign="center";x.textBaseline="alphabetic";
+  x.fillStyle="#eef0fa";x.font=`400 76px ${DISP}`;x.fillText(t("cardTitle"),W/2,190);
+  x.fillStyle="#9aa1c2";x.font=`500 40px ${BODY}`;x.fillText(t("cardMine"),W/2,420);
+  x.fillStyle="#ffd23f";x.font=`400 220px ${DISP}`;x.fillText(me,W/2,640);
+  x.fillStyle="#eef0fa";x.font=`500 44px ${BODY}`;x.fillText(NICK[lang][me],W/2,730);
+  x.fillStyle="#ffd23f";x.font=`400 64px ${DISP}`;x.fillText(t("cardTop"),W/2,960);
+  const top=ranked(lastList).slice(0,3);
+  if(!top.length){x.fillStyle="#9aa1c2";x.font=`400 40px ${BODY}`;x.fillText(t("cardNone"),W/2,1100)}
+  top.forEach((m,i)=>{
+    const y=1010+i*230,L=90,Wd=W-180;
+    x.fillStyle="#161a2e";x.strokeStyle="#2a3050";x.lineWidth=3;x.beginPath();x.roundRect(L,y,Wd,200,28);x.fill();x.stroke();
+    x.textAlign="left";
+    x.fillStyle="#9aa1c2";x.font=`500 56px ${MONO}`;x.fillText(String(i+1),L+44,y+120);
+    x.fillStyle="#eef0fa";x.font=`700 58px ${BODY}`;x.fillText(fit(x,m.n,560),L+130,y+92);
+    x.fillStyle="#9aa1c2";x.font=`400 36px ${BODY}`;x.fillText(fit(x,gname(m.g)+" · "+m.t,560),L+130,y+148);
+    x.textAlign="right";x.fillStyle="#ffd23f";x.font=`500 80px ${MONO}`;x.fillText(String(m.sc),L+Wd-44,y+125);
+    const bg=x.createLinearGradient(L+130,0,L+Wd-44,0);bg.addColorStop(0,"#ff5d8f");bg.addColorStop(1,"#ffd23f");
+    x.fillStyle="#2a3050";x.fillRect(L+130,y+170,Wd-174,8);x.fillStyle=bg;x.fillRect(L+130,y+170,(Wd-174)*m.sc/100,8);
+    x.textAlign="center";
+  });
+  x.fillStyle="#9aa1c2";x.font=`400 32px ${BODY}`;x.fillText(t("cardFoot"),W/2,1790);
+  x.font=`500 30px ${MONO}`;x.fillText(location.host+location.pathname.replace(/index\.html$/,""),W/2,1845);
+  return new Promise(res=>cv.toBlob(res,"image/png"));
+}
+function fit(x,s,max){if(x.measureText(s).width<=max)return s;while(s.length>1&&x.measureText(s+"…").width>max)s=s.slice(0,-1);return s+"…"}
+document.getElementById("cardBtn").onclick=async()=>{
+  const blob=await drawCard();if(!blob)return;
+  const name=`idol-match-${me}.png`;
+  const file=new File([blob],name,{type:"image/png"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:t("cardTitle")});return}
+    catch(e){if(e.name==="AbortError")return}
+  }
+  saveBlob(blob,name);ioStatus.textContent=t("cardSaved");
+};
+
+// ---- boot
+applyI18n();
+fetch("data/idols.json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(d=>{
+  DATA=d;HUES=DATA.map((g,i)=>Math.round((i*137.508)%360));
+  DATA.forEach(g=>{const o=document.createElement("option");o.value=g.r;gs.appendChild(o)});
+  applyI18n();
+  document.getElementById("loading").remove();
+  document.getElementById("app").hidden=false;
+  render();
+}).catch(()=>{document.getElementById("loadingMsg").textContent=t("loadFail");document.querySelector("#loading .spin").remove()});
+
+if("serviceWorker" in navigator) addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>

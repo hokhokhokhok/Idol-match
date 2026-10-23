@@ -1,0 +1,17 @@
+{
+  "name": "아이돌 매칭 맵",
+  "short_name": "매칭맵",
+  "description": "내 MBTI로 K팝 100그룹 멤버와의 궁합을 지도로 그려 보는 재미용 앱",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d0f1c",
+  "theme_color": "#0d0f1c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
