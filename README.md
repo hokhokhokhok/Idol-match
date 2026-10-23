@@ -4,6 +4,8 @@
 
 **배포 URL:** https://hokhokhokhok.github.io/Idol-match/  (GitHub Pages, 저장소 hokhokhokhok/Idol-match)
 
+> 같은 저장소의 별도 앱: [`civil-exam/`](civil-exam/README.md) 민법 모의고사 (`/Idol-match/civil-exam/`), [`jomun/`](jomun/README.md) 감정평가 및 보상법규 조문 암기 트레이너 (`/Idol-match/jomun/`)
+
 ## 아이패드 설치법
 
 1. **사파리**로 배포 URL 열기 (크롬 등 다른 브라우저에서는 홈 화면 앱으로 설치되지 않음)
