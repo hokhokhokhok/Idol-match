@@ -1,6 +1,6 @@
 // 앱 셸은 cache-first, 데이터(idols.json)는 stale-while-revalidate, 구글 폰트는 런타임 cache-first.
 // 파일을 바꿔 배포할 때는 VERSION을 올린다.
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL = `im-shell-${VERSION}`;
 const DATA = `im-data-${VERSION}`;
 const FONTS = `im-fonts-${VERSION}`;
@@ -46,8 +46,8 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  // 같은 사이트 하위 경로에 배포된 다른 앱(민법 모의고사)은 그 앱의 서비스워커가 처리한다.
-  if (url.origin === location.origin && url.pathname.includes("/civil-exam/")) return;
+  // 같은 사이트 하위 경로에 배포된 다른 앱(민법 모의고사, 조문 암기)은 그 앱의 서비스워커가 처리한다.
+  if (url.origin === location.origin && /\/(civil-exam|jomun)(\/|$)/.test(url.pathname)) return;
   if (url.origin === location.origin) {
     if (url.pathname.endsWith("/data/idols.json")) return e.respondWith(staleWhileRevalidate(req, DATA));
     if (req.mode === "navigate") {
