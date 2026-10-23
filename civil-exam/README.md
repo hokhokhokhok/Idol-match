@@ -21,12 +21,22 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 ## 구현 단계
 
 - [x] **1단계** — Vite+React+TS+PWA, 폰트 번들, 시험지 컴포넌트 `QuestionView`, 시드 5문항 미리보기
-- [ ] 2단계 — 시험 모드(타이머, OMR 패널, 스와이프, 별표, 제출 모달)
+- [x] **2단계** — 시험 모드(타이머, OMR 답안지, 스와이프, 별표, 제출 확인), 채점 요약, 이어 풀기
 - [ ] 3단계 — 채점·해설(보기별 해설, 오답 필터), IndexedDB(Dexie) 저장
 - [ ] 4단계 — 오답노트 + 간격 반복(1·3·7일), 통계
 - [ ] 5단계 — 설정(글자 크기·시간·연습 모드), JSON 백업/복원
 - [ ] 6단계 — `validate-questions` 스크립트, 아이패드 Safari 테스트 체크리스트
 - [ ] 7단계 — 세트별 40문항 콘텐츠 작성·검수
+
+## 시험 모드 사용법
+
+- 홈 → **실전 시작**. 제한시간은 `config/exam.json`의 40분을 40문항 기준으로 두고 세트 문항 수에 비례해 정한다(시드 5문항 = 5분).
+- 타이머를 탭하면 숨김/표시. 남은 시간이 5분(짧은 세트는 제한시간의 10%) 이하면 빨간색. 0이 되면 자동 제출.
+- 문제 이동: 시험지를 **좌우로 스와이프**, 아래 이전/다음 버튼, 답안지 번호 탭, 키보드 ←/→.
+- 보기를 탭하면 마킹, 같은 보기를 다시 탭하면 해제(키보드 1~5).
+- **답안지**: 가로 화면은 오른쪽에 고정, 세로 화면은 상단 '답안지' 버튼으로 연다. 마킹한 칸은 칠해지고 고른 번호가 보이며 별표 문항엔 ★.
+- **제출** → 미응답·별표 문항 목록 확인(번호를 탭하면 그 문항으로 이동) → 채점 결과(점수, 단원별 정답률, 문항별 O/X).
+- 풀던 내용은 기기에 바로 저장된다. 앱을 닫거나 '나가기' 후에도 홈에서 **이어 풀기**. 시간은 실제 시각 기준으로 계속 흐른다.
 
 ## 폴더 구조
 
@@ -36,6 +46,11 @@ config/blueprint.json     40문항 단원·쟁점 배분
 src/data/sets/*.json      문항 세트 (Question[]; 빌드에 포함되어 오프라인 동작)
 src/types.ts              Question 스키마
 src/components/QuestionView.tsx  시험지 조판 컴포넌트
+src/components/OmrPanel.tsx      답안지(번호 격자)
+src/components/SubmitDialog.tsx  제출 확인 모달
+src/screens/                     Home / Exam / Result 화면
+src/lib/attempt.ts        응시 상태·채점·임시 저장
+src/hooks/                useCountdown(절대 시각 기준 타이머), useSwipe
 src/lib/inline.ts         **굵게**, <u>밑줄</u> 파서 (HTML 직접 주입 없음)
 src/styles/               fonts / tokens / question(시험지) / app
 public/fonts/LICENSE      번들 폰트 라이선스(OFL)
