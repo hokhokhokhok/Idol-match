@@ -1,0 +1,10 @@
+{
+  "_note": "출제범위·시험시간은 Q-Net 최신 감정평가사 1차 시행계획 공고로 확인한 뒤 수정하세요. 아래 값은 기획 단계 가정치입니다.",
+  "subject": "민법",
+  "scopeVerified": false,
+  "scope": ["총칙", "물권", "계약", "채권총론"],
+  "questionCount": 40,
+  "choiceCount": 5,
+  "pointsPerQuestion": 2.5,
+  "defaultTimeLimitMinutes": 40
+}
