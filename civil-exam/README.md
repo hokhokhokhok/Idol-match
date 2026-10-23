@@ -30,7 +30,7 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 - [x] **4단계** — 오답노트(별표·메모, 1·3·7일 간격 반복), 통계, 홈 요약(연속 학습일·오늘 복습·약점 단원 Top3)
 - [x] **5단계** — 설정(글자 크기·시험시간·해설 즉시 보기=연습 모드), JSON 백업/복원
 - [x] **6단계** — `npm run validate`(문항 검증, 빌드 전 자동 실행), `npm run test:e2e`(아이패드 크기별 자동 점검), [아이패드 Safari 체크리스트](docs/ipad-checklist.md)
-- [ ] 7단계 — 세트별 40문항 콘텐츠 작성·검수
+- [x] **7단계** — 첫 실전 세트 `2026-001`(40문항, 검수 대기) + 제작·검수 흐름([docs/content-workflow.md](docs/content-workflow.md)), `npm run review-sheet`, `npm run mark`
 
 ## 시험 모드 사용법
 
@@ -65,6 +65,21 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 - **백업에서 복원**: 파일을 고르면 내용 요약과 함께 확인 → 현재 기기 기록을 **전부 백업 내용으로 교체**(한 트랜잭션이라 실패하면 기존 기록 유지). 다른 앱 파일·손상된 파일은 거부.
 - 앱 시작 시 저장공간 보호(`navigator.storage.persist`)를 요청한다. 설정 화면에서 상태 확인.
 
+## 문항 세트
+
+| 세트 | 문항 | 상태 |
+|---|---|---|
+| `2026-001` | 40 (총칙 14·물권 14·계약 12, 정답 ①~⑤ 각 8) | 분량·배분 기준 통과(`--strict`), **사람 검수 대기** — [검수 시트](docs/review/2026-001.md) |
+| `seed-001` | 5 | 포맷 확인용 시드, 분량 기준보다 짧음 |
+
+새 세트 만들기·검수하기: [docs/content-workflow.md](docs/content-workflow.md)
+
+```bash
+npm run review-sheet -- 2026-001                 # 검수 시트(docs/review/2026-001.md) 생성
+npm run mark -- 2026-001-q01                     # 검수 완료 표시
+npm run mark -- 2026-001-q01 --case 1 --citation "대법원 … 판결"   # 판례 확인 표시
+```
+
 ## 문항 검증 (`npm run validate`)
 
 `src/data/sets/*.json` 전체(또는 `npm run validate -- 파일.json`)를 검사한다. 빌드 때 자동 실행되어 **오류가 있으면 빌드가 멈춘다**.
@@ -96,6 +111,10 @@ src/lib/backup.ts         JSON 백업 내보내기·검증·복원
 src/lib/validate.ts       문항 검증 규칙 (scripts/validate-questions.ts가 실행)
 scripts/e2e.mjs           아이패드 크기별 자동 점검 (Playwright)
 docs/ipad-checklist.md    실기기 사파리 체크리스트
+docs/content-workflow.md  세트 제작·검수 흐름, 작성 규칙, 쟁점 사용 현황
+docs/review/              세트별 검수 시트 (npm run review-sheet)
+scripts/review-sheet.ts   검수 시트 생성
+scripts/mark.ts           검수·판례 확인 표시
 src/lib/stats.ts          단원·유형별 정답률, 약점 단원, 연속 학습일
 src/lib/records.ts        제출 → 저장용 기록 변환
 src/components/ExplanationView.tsx  보기별 해설

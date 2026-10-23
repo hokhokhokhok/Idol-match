@@ -89,3 +89,17 @@ describe('validate-questions', () => {
     expect(errors(crossSetIssues([{ setId: 'a', questions: [q(0)] }, { setId: 'b', questions: [q(0)] }]))).toHaveLength(1);
   });
 });
+
+describe('bundled sets', () => {
+  const sets = import.meta.glob<unknown[]>('../data/sets/*.json', { eager: true, import: 'default' });
+  for (const [path, qs] of Object.entries(sets)) {
+    const setId = path.split('/').pop()!.replace('.json', '');
+    it(`${setId} has no validation errors`, () => {
+      expect(errors(validateSet(qs, setId, blueprint))).toEqual([]);
+    });
+  }
+  it('2026-001 meets the exam length and distribution rules (strict)', () => {
+    const issues = validateSet(sets['../data/sets/2026-001.json'], '2026-001', blueprint);
+    expect(warns(issues)).toEqual([]);
+  });
+});

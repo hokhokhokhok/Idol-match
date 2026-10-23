@@ -70,6 +70,10 @@ async function touchTargets(page) {
   assert.deepEqual(small, [], `44px 미만 터치 영역: ${small.join(', ')}`);
 }
 
+/** 시드 세트(5문항) 카드의 시작 버튼: 흐름 점검은 짧은 세트로 한다 */
+const seedStart = (page, label = /실전 시작|연습 시작/) =>
+  page.locator('.set-card', { hasText: 'seed-001' }).getByRole('button', { name: label });
+
 async function submitAll(page) {
   await page.getByRole('button', { name: '제출', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: '제출', exact: true }).click();
@@ -86,8 +90,8 @@ for (const [label, viewport] of Object.entries(IPADS)) {
 
   await step('홈 로드, 시험지 글꼴(나눔명조·Pretendard) 로드', async () => {
     await page.goto(URL_);
-    await page.getByRole('button', { name: '실전 시작' }).waitFor();
-    await page.getByRole('button', { name: '실전 시작' }).click();
+    await seedStart(page, '실전 시작').waitFor();
+    await seedStart(page, '실전 시작').click();
     await page.evaluate(() => document.fonts.ready);
     const fams = await page.evaluate(() => [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '')));
     assert.ok(fams.includes('Nanum Myeongjo'), `로드된 글꼴: ${[...new Set(fams)]}`);
@@ -164,7 +168,7 @@ console.log('\n[기능]');
     await page.waitForTimeout(1500);
     await ctx.setOffline(true);
     await page.reload();
-    await page.getByRole('button', { name: '실전 시작' }).waitFor();
+    await seedStart(page, '실전 시작').waitFor();
     await page.evaluate(() => document.fonts.ready);
     assert.ok(await page.evaluate(() => !!navigator.serviceWorker.controller));
     await ctx.setOffline(false);
@@ -174,7 +178,7 @@ console.log('\n[기능]');
     await page.getByRole('button', { name: '설정' }).click();
     await page.getByRole('switch').click();
     await page.getByRole('button', { name: '홈으로' }).click();
-    await page.getByRole('button', { name: '연습 시작' }).click();
+    await seedStart(page, '연습 시작').click();
     await page.getByRole('radio').nth(3).click();
     await page.getByText('정답입니다').waitFor();
     await page.locator('.exp').waitFor();
@@ -198,7 +202,7 @@ console.log('\n[기능]');
   await step('복원: 다른 기록을 백업 시점으로 되돌림', async () => {
     await page.getByRole('switch').click();
     await page.getByRole('button', { name: '홈으로' }).click();
-    await page.getByRole('button', { name: '실전 시작' }).click();
+    await seedStart(page, '실전 시작').click();
     await submitAll(page);
     await page.getByRole('button', { name: '홈으로' }).click();
     await page.locator('.recent-item').nth(1).waitFor();
@@ -208,9 +212,30 @@ console.log('\n[기능]');
     await page.locator('.recent-item').first().waitFor();
     await page.waitForTimeout(300);
     assert.equal(await page.locator('.recent-item').count(), 1);
-    await page.getByRole('button', { name: '연습 시작' }).waitFor();
+    await seedStart(page, '연습 시작').waitFor();
   });
 
+  await step('콘솔 오류 없음', async () => assert.deepEqual(errors, []));
+  await ctx.close();
+}
+
+// 3) 40문항 실전 세트
+console.log('\n[40문항 세트]');
+{
+  const { ctx, page, errors } = await newPage(IPADS['iPad 가로']);
+  await page.goto(URL_);
+  await step('40문항 세트: 답안지 40칸, 40분 타이머, 마지막 문항까지 이동', async () => {
+    const card = page.locator('.set-card').filter({ hasText: '40문항' }).first();
+    await card.getByRole('button', { name: '실전 시작' }).click();
+    assert.equal(await page.locator('.omr-cell').count(), 40);
+    assert.match(await page.locator('.timer').innerText(), /^(40:00|39:5\d)$/);
+    await page.getByRole('button', { name: /^40번 문항/ }).click();
+    assert.equal(await page.locator('.qbar-pos strong').innerText(), '40');
+    await noHorizontalOverflow(page);
+    await shot(page, '40문항-마지막');
+    await submitAll(page);
+    assert.match(await page.locator('.score-card').innerText(), /0 \/ 40문항 정답/);
+  });
   await step('콘솔 오류 없음', async () => assert.deepEqual(errors, []));
   await ctx.close();
 }

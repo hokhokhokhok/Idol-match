@@ -12,7 +12,9 @@
     "test": "vitest run",
     "icons": "node scripts/make-icons.mjs",
     "validate": "node scripts/validate-questions.ts",
-    "test:e2e": "node scripts/e2e.mjs"
+    "test:e2e": "node scripts/e2e.mjs",
+    "review-sheet": "node scripts/review-sheet.ts",
+    "mark": "node scripts/mark.ts"
   },
   "dependencies": {
     "@fontsource/nanum-myeongjo": "^5.3.0",
