@@ -20,7 +20,7 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 
 Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). 실제 아이패드 확인은 [docs/ipad-checklist.md](docs/ipad-checklist.md) — HTTPS 주소로 올려야 오프라인이 동작한다.
 
-하위 경로에 배포할 때는 `BASE=/저장소명/경로/ npm run build`.
+**배포:** `main`에 병합하면 GitHub Pages가 https://hokhokhokhok.github.io/Idol-match/civil-exam/ 로 배포한다(`.github/workflows/pages.yml`). 다른 하위 경로에 배포할 때는 `BASE=/저장소명/경로/ npm run build`.
 
 ## 구현 단계
 

@@ -22,11 +22,13 @@ BROWSER=webkit npm run test:e2e   # 선택: 사파리 엔진(WebKit)으로 한 �
 서비스워커(오프라인 동작)는 **HTTPS**에서만 켜진다. `npm run preview -- --host` 후 `http://192.168.x.x`로 접속하면
 화면은 열리지만 **오프라인·홈 화면 앱 캐시가 동작하지 않으므로** 테스트로 인정하지 않는다. 다음 중 하나로 올린다.
 
+가장 쉬운 방법은 GitHub Pages다. 루트 아이돌 앱의 서비스워커는 `/civil-exam/` 경로를 건드리지 않도록 수정해 두었으므로, 같은 기기에서 두 앱을 모두 써도 서로 간섭하지 않는다.
+
 | 방법 | 절차 |
 |---|---|
 | Netlify Drop (가장 빠름) | app.netlify.com/drop 에 `dist/` 폴더를 끌어다 놓기 → https 주소 발급 |
 | Vercel / Cloudflare Pages | 저장소 연결, 루트 `civil-exam`, 빌드 `npm run build`, 출력 `dist` |
-| GitHub Pages 하위 경로 | `BASE=/Idol-match/civil-exam/ npm run build` 후 `dist/`를 그 경로에 배포 (현재 Pages 워크플로는 루트 앱만 배포하므로 워크플로 수정 필요) |
+| **GitHub Pages (설정 완료)** | 이 브랜치를 `main`에 병합하면 `.github/workflows/pages.yml`이 아이돌 앱과 함께 빌드해 **https://hokhokhokhok.github.io/Idol-match/civil-exam/** 에 배포한다 (테스트·문항 검증 실패 시 배포 중단) |
 
 - [ ] 아이패드 사파리에서 https 주소가 열린다
 - 테스트 기기 / iPadOS 버전: ____________ / 배포 주소: ____________

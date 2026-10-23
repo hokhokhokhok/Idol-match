@@ -23,6 +23,17 @@ jobs:
           node-version: 22
       - run: node --test test/*.test.js
       - run: node scripts/build-www.mjs
+      # 민법 모의고사 앱(civil-exam/)을 /Idol-match/civil-exam/ 하위 경로로 함께 배포
+      - name: Build civil-exam
+        working-directory: civil-exam
+        env:
+          BASE: /Idol-match/civil-exam/
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - run: cp -r civil-exam/dist www/civil-exam
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
