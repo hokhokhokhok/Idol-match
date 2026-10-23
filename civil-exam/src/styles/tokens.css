@@ -1,0 +1,56 @@
+:root {
+  --font-exam: 'KoPub Exam', 'Nanum Myeongjo', 'Noto Serif KR', 'AppleMyungjo', serif;
+  --font-ui: 'Pretendard Variable', Pretendard, 'Noto Sans KR', -apple-system, system-ui, sans-serif;
+
+  --exam-size: 17px;
+  --exam-leading: 1.75;
+  --exam-tracking: -0.01em;
+
+  --paper: #fffefa;
+  --ink: #111;
+  --ink-soft: #555;
+  --rule: #111;
+  --app-bg: #ecebe6;
+  --chrome: #ffffff;
+  --chrome-border: #d8d6cf;
+  --accent: #1f2a44;
+  --accent-soft: #e4e8f2;
+  --pencil: #2f5bd3;
+  --correct: #1d7a46;
+  --wrong: #c0362c;
+  --badge-bg: #fff1d6;
+  --badge-ink: #8a5a00;
+
+  --tap: 44px;
+  --radius: 10px;
+}
+
+:root[data-font-size='15'] { --exam-size: 15px; }
+:root[data-font-size='17'] { --exam-size: 17px; }
+:root[data-font-size='19'] { --exam-size: 19px; }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pencil);
+  outline-offset: 2px;
+}

@@ -1,0 +1,27 @@
+/*
+ * 시험지(바탕/명조): KoPubWorld바탕 → 나눔명조(번들) → Noto Serif KR
+ * UI·해설(고딕):    Pretendard(번들) → Noto Sans KR
+ *
+ * 나눔명조·Pretendard woff2는 npm 패키지에서 import 되어 빌드 결과에 포함되고
+ * 서비스워커가 프리캐시하므로 오프라인에서도 같은 조판으로 보인다.
+ *
+ * KoPubWorld바탕을 직접 번들하려면 woff2로 변환한 파일을
+ * public/fonts/KoPubWorldBatang-Medium.woff2, -Bold.woff2 로 넣고
+ * 아래 src에 url(/fonts/...) format('woff2') 를 추가한다.
+ */
+@import '@fontsource/nanum-myeongjo/400.css';
+@import '@fontsource/nanum-myeongjo/700.css';
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
+@font-face {
+  font-family: 'KoPub Exam';
+  font-weight: 400;
+  font-display: swap;
+  src: local('KoPubWorldBatangPM'), local('KoPubWorld Batang Medium'), local('KoPubWorldBatang Medium');
+}
+@font-face {
+  font-family: 'KoPub Exam';
+  font-weight: 700;
+  font-display: swap;
+  src: local('KoPubWorldBatangPB'), local('KoPubWorld Batang Bold'), local('KoPubWorldBatang Bold');
+}

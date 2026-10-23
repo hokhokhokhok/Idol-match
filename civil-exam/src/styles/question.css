@@ -1,0 +1,211 @@
+/* 시험지 조판: 아이보리 지면, 바탕(명조) 계열, 양쪽 정렬, 어절 단위 줄바꿈 */
+.sheet {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-exam);
+  font-size: var(--exam-size);
+  line-height: var(--exam-leading);
+  letter-spacing: var(--exam-tracking);
+  text-align: justify;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  /* 왼쪽 여백은 보기 옆 표시 버튼(밑줄/X) 자리 */
+  padding: 32px 28px 28px calc(var(--tap) + 16px);
+  border: 1px solid var(--chrome-border);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+.qv {
+  position: relative;
+}
+
+.qv p {
+  margin: 0;
+}
+
+.qv-badge {
+  position: absolute;
+  top: -22px;
+  right: -14px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--badge-ink);
+}
+
+/* 1. 발문 — 번호 뒤로 이어 쓰고, 둘째 줄부터 번호 폭만큼 들여 맞춘다 */
+.qv-stem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.4em;
+  font-weight: 700;
+  margin-bottom: 0.9em;
+}
+.qv-no {
+  font-weight: 700;
+}
+.qv[data-type='case'] .qv-stem-text {
+  font-weight: 400;
+}
+.qv-stem-text p + p {
+  margin-top: 0.5em;
+}
+.qv u {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+/* <보 기> 박스 */
+.qv-box {
+  border: 1px solid var(--rule);
+  padding: 12px;
+  margin: 0 0 1em;
+}
+.qv-box-title {
+  text-align: center;
+  margin-bottom: 0.3em;
+}
+.qv-box-items,
+.qv-choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 보기 한 줄: [표시 버튼][내어쓰기 본문] */
+.qv-row {
+  display: grid;
+  grid-template-columns: var(--tap) 1fr;
+  align-items: start;
+  margin-left: calc(var(--tap) * -1);
+}
+.qv-choices .qv-row + .qv-row {
+  margin-top: 0.15em;
+}
+.qv-box .qv-row {
+  margin-left: calc(var(--tap) * -1 - 13px); /* 박스 테두리+여백 밖으로 */
+}
+.qv-box .qv-row .qv-hang {
+  padding-left: 13px;
+}
+
+/* 내어쓰기(hanging indent): 기호 열 + 본문 열 */
+.qv-hang {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start; /* 기호는 첫 줄에 맞춘다 */
+  column-gap: 0.35em;
+  text-align: justify;
+}
+.qv-hang-label {
+  min-width: 1em;
+}
+
+.qv-choice {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  margin: 0;
+  padding: calc((var(--tap) - var(--exam-size) * var(--exam-leading)) / 2) 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  word-break: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button.qv-choice:active {
+  background: rgb(0 0 0 / 0.04);
+}
+.qv-circled {
+  position: relative;
+  text-align: center;
+}
+/* 선택한 번호에 OMR 마킹처럼 칠한다 */
+.qv-circled.is-selected {
+  color: var(--paper);
+  isolation: isolate;
+}
+.qv-circled.is-selected::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.05em;
+  height: 1.05em;
+  transform: translate(-50%, -52%);
+  border-radius: 50%;
+  background: var(--ink);
+  z-index: -1;
+}
+
+/* 채점 후 정답/오답 */
+.qv-row.is-correct .qv-choice {
+  background: color-mix(in srgb, var(--correct) 10%, transparent);
+  box-shadow: inset 3px 0 0 var(--correct);
+}
+.qv-row.is-wrong .qv-choice {
+  background: color-mix(in srgb, var(--wrong) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--wrong);
+}
+
+/* 보기 옆 표시(탭 토글): 밑줄 / X */
+.qv-mark,
+.qv-mark-slot {
+  width: var(--tap);
+  height: var(--tap);
+}
+.qv-mark {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  color: #b9b6ac;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.qv-mark--underline,
+.qv-mark--cross {
+  color: var(--pencil);
+  font-weight: 700;
+}
+.qv-mark-underline .qv-hang-text {
+  text-decoration: underline;
+  text-decoration-color: var(--pencil);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}
+.qv-mark-cross .qv-hang-text {
+  text-decoration: line-through;
+  text-decoration-color: var(--pencil);
+  text-decoration-thickness: 1.5px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 600px) {
+  .sheet {
+    padding: 28px 12px 20px calc(var(--tap) + 14px);
+  }
+  /* 폰 폭에서는 양쪽 정렬이 어절 사이를 과하게 벌리므로 왼쪽 정렬 */
+  .sheet,
+  .qv-hang {
+    text-align: left;
+  }
+  .qv-badge {
+    right: -4px;
+  }
+}

@@ -1,0 +1,71 @@
+// 검수 표시: 문항 JSON을 손으로 고치지 않고 reviewed / 판례 verified 를 바꾼다.
+//   npm run mark -- 2026-001-q03 2026-001-q04          문항 검수 완료(reviewed: true)
+//   npm run mark -- 2026-001-q03 --undo                 검수 완료 취소
+//   npm run mark -- 2026-001-q03 --case 1               그 문항의 1번째 판례 확인(verified: true)
+//   npm run mark -- 2026-001-q03 --case 1 --citation "대법원 2000. 1. 1. 선고 99다00000 판결"
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { Question } from '../src/types.ts';
+import { validateSet } from '../src/lib/validate.ts';
+
+const root = fileURLToPath(new URL('..', import.meta.url));
+const args = process.argv.slice(2);
+const opt = (name: string) => {
+  const i = args.indexOf(name);
+  return i >= 0 ? args[i + 1] : undefined;
+};
+const undo = args.includes('--undo');
+const caseNo = opt('--case');
+const citation = opt('--citation');
+const skip = new Set([caseNo, citation].filter(Boolean));
+const ids = args.filter((a) => !a.startsWith('--') && !skip.has(a));
+if (!ids.length) {
+  console.error('사용법: npm run mark -- <문항id...> [--undo] [--case N [--citation "..."]]');
+  process.exit(1);
+}
+
+const bySet = new Map<string, string[]>();
+for (const id of ids) {
+  const setId = id.replace(/-q\d+$/, '');
+  bySet.set(setId, [...(bySet.get(setId) ?? []), id]);
+}
+
+let failed = false;
+for (const [setId, list] of bySet) {
+  const file = join(root, 'src/data/sets', `${setId}.json`);
+  const qs = JSON.parse(readFileSync(file, 'utf8')) as Question[];
+  for (const id of list) {
+    const q = qs.find((x) => x.id === id);
+    if (!q) {
+      console.error(`✗ ${id}: 문항을 찾을 수 없습니다`);
+      failed = true;
+      continue;
+    }
+    if (caseNo) {
+      const c = q.explanation.cases?.[Number(caseNo) - 1];
+      if (!c) {
+        console.error(`✗ ${id}: 판례 ${caseNo}번이 없습니다 (판례 ${q.explanation.cases?.length ?? 0}개)`);
+        failed = true;
+        continue;
+      }
+      c.verified = !undo;
+      if (citation) c.citation = citation;
+      console.log(`${undo ? '↺' : '✓'} ${id} 판례 ${caseNo}: ${c.gist.slice(0, 40)}…`);
+    } else {
+      q.reviewed = !undo;
+      console.log(`${undo ? '↺' : '✓'} ${id} ${undo ? '검수 취소' : '검수 완료'}`);
+    }
+  }
+  const errors = validateSet(qs, setId).filter((i) => i.level === 'error');
+  if (errors.length) {
+    console.error(`✗ ${setId}: 검증 오류가 있어 저장하지 않았습니다`, errors);
+    failed = true;
+    continue;
+  }
+  writeFileSync(file, JSON.stringify(qs, null, 2) + '\n');
+  const done = qs.filter((q) => q.reviewed).length;
+  const cases = qs.flatMap((q) => q.explanation.cases ?? []);
+  console.log(`  ${setId}: 검수 ${done}/${qs.length}, 판례 확인 ${cases.filter((c) => c.verified).length}/${cases.length}`);
+}
+process.exit(failed ? 1 : 0);
