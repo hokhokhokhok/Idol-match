@@ -12,9 +12,13 @@ cd civil-exam
 npm install
 npm run dev        # 개발 서버
 npm test           # 단위 테스트(vitest)
-npm run build      # 타입검사 + 프로덕션 빌드(dist/, 서비스워커 포함)
+npm run validate   # 문항 세트 검증 (오류가 있으면 실패)
+npm run build      # 문항 검증 + 타입검사 + 프로덕션 빌드(dist/, 서비스워커 포함)
+npm run test:e2e   # 빌드 결과를 아이패드 5가지 화면 크기로 자동 점검 (BROWSER=webkit 가능, SHOTS=1 스크린샷)
 npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로 접속: npm run preview -- --host)
 ```
+
+Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). 실제 아이패드 확인은 [docs/ipad-checklist.md](docs/ipad-checklist.md) — HTTPS 주소로 올려야 오프라인이 동작한다.
 
 하위 경로에 배포할 때는 `BASE=/저장소명/경로/ npm run build`.
 
@@ -25,7 +29,7 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 - [x] **3단계** — 해설 모드(보기별 해설·조문·판례 확인 배지, 틀린 문항만 필터), IndexedDB(Dexie) 저장, 최근 기록
 - [x] **4단계** — 오답노트(별표·메모, 1·3·7일 간격 반복), 통계, 홈 요약(연속 학습일·오늘 복습·약점 단원 Top3)
 - [x] **5단계** — 설정(글자 크기·시험시간·해설 즉시 보기=연습 모드), JSON 백업/복원
-- [ ] 6단계 — `validate-questions` 스크립트, 아이패드 Safari 테스트 체크리스트
+- [x] **6단계** — `npm run validate`(문항 검증, 빌드 전 자동 실행), `npm run test:e2e`(아이패드 크기별 자동 점검), [아이패드 Safari 체크리스트](docs/ipad-checklist.md)
 - [ ] 7단계 — 세트별 40문항 콘텐츠 작성·검수
 
 ## 시험 모드 사용법
@@ -61,6 +65,18 @@ npm run preview    # 빌드 결과 확인 (아이패드에서는 같은 Wi-Fi로
 - **백업에서 복원**: 파일을 고르면 내용 요약과 함께 확인 → 현재 기기 기록을 **전부 백업 내용으로 교체**(한 트랜잭션이라 실패하면 기존 기록 유지). 다른 앱 파일·손상된 파일은 거부.
 - 앱 시작 시 저장공간 보호(`navigator.storage.persist`)를 요청한다. 설정 화면에서 상태 확인.
 
+## 문항 검증 (`npm run validate`)
+
+`src/data/sets/*.json` 전체(또는 `npm run validate -- 파일.json`)를 검사한다. 빌드 때 자동 실행되어 **오류가 있으면 빌드가 멈춘다**.
+
+| 수준 | 내용 |
+|---|---|
+| ✗ 오류 (실패) | 스키마: id·setId(=파일 이름)·number 1~40·unit·type·difficulty·`source: "original"`·reviewed, 보기 정확히 5개(번호 기호 없이, 중복 없이), 정답 1~5, 해설 summary·perChoice 5개·statutes·cases(gist, verified), 마크업(`**`, `<u>` 짝, 다른 태그 금지), 조합형·개수형 박스 ㄱ~ㄹ 순서와 조합 보기의 기호, 번호·id 중복(세트 간 포함), JSON 문법 |
+| △ 경고 | 기획안 7절 분량(공백 포함, 마크업·"(다툼이 있는 경우 판례에 따름)" 제외): 발문·사실관계·보기·박스 항목·문항 전체 글자 수 / 유형별 발문 표현("모두 고른 것은", "몇 개", "판례", 갑·을·병) / id 형식 `세트-qNN` / 40문항 세트의 단원 배분(`config/blueprint.json` ±2)과 정답 번호 분포 |
+| · 참고 | 미검수(`reviewed: false`), 판례 미확인(`verified: false`), 40문항이 아닌 세트 |
+
+옵션: `--strict`(경고도 실패), `--quiet`(참고 숨김), `--json`(기계 판독용 출력).
+
 ## 폴더 구조
 
 ```
@@ -77,6 +93,9 @@ src/lib/db.ts             IndexedDB(Dexie) v3: attempts / results(응시×문항
 src/lib/srs.ts            간격 반복(1·3·7일) 규칙
 src/lib/settings.ts       설정(글자 크기·시험시간·연습 모드) — DB v3 settings 테이블
 src/lib/backup.ts         JSON 백업 내보내기·검증·복원
+src/lib/validate.ts       문항 검증 규칙 (scripts/validate-questions.ts가 실행)
+scripts/e2e.mjs           아이패드 크기별 자동 점검 (Playwright)
+docs/ipad-checklist.md    실기기 사파리 체크리스트
 src/lib/stats.ts          단원·유형별 정답률, 약점 단원, 연속 학습일
 src/lib/records.ts        제출 → 저장용 기록 변환
 src/components/ExplanationView.tsx  보기별 해설

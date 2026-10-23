@@ -4,3 +4,5 @@ dev-dist/
 # 개인 학습용 기출 PDF 등 — 앱·저장소에 포함하지 않는다
 local-only/
 *.tsbuildinfo
+e2e-shots/
+e2e-shots-backup.json
