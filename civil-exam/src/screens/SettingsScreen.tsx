@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   backupFileName,
   exportBackup,
-  preMigrationBackup,
+  preMigrationBackups,
   restoreBackup,
   summarize,
   validateBackup,
@@ -42,9 +42,12 @@ async function deliverFile(text: string, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/** 업데이트 직전 자동 백업의 이름 */
+const SNAPSHOT_LABEL: Record<string, string> = { 'before-v4-subject': '과목 구분 업데이트', 'before-v5-econ': '경제학원론 추가' };
+
 export function SettingsScreen({ settings, onChange, onHome, onCiteSearch }: Props) {
   const counts = useLiveQuery(async () => ({ attempts: await db.attempts.count(), notes: await db.notes.count() }), []);
-  const snapshot = useLiveQuery(() => preMigrationBackup(), []);
+  const snapshots = useLiveQuery(() => preMigrationBackups(), []);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [pending, setPending] = useState<BackupFile | null>(null);
@@ -104,8 +107,7 @@ export function SettingsScreen({ settings, onChange, onHome, onCiteSearch }: Pro
     }
   };
 
-  const downloadSnapshot = async () => {
-    if (!snapshot) return;
+  const downloadSnapshot = async (snapshot: NonNullable<typeof snapshots>[number]) => {
     setMessage(null);
     try {
       const d = new Date(snapshot.createdAt);
@@ -210,6 +212,26 @@ export function SettingsScreen({ settings, onChange, onHome, onCiteSearch }: Pro
           </button>
         </section>
 
+        <section className="card set-row">
+          <div>
+            <p id="calc-label">시험 화면 계산기 (경제학원론)</p>
+            <p className="muted small">
+              켜면 경제학원론 시험 화면 위쪽에 사칙연산 계산기 버튼이 생깁니다. 실제 시험의 계산기 허용 여부·기종은 Q-Net 공고를
+              확인하세요.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings.examCalculator}
+            aria-labelledby="calc-label"
+            className="switch"
+            onClick={() => onChange({ examCalculator: !settings.examCalculator })}
+          >
+            <span className="switch-knob" />
+          </button>
+        </section>
+
         <h2 className="section-title">법령 개정 대응 (감관법)</h2>
         <section className="card set-row">
           <div>
@@ -254,15 +276,16 @@ export function SettingsScreen({ settings, onChange, onHome, onCiteSearch }: Pro
             아이패드에서는 공유 시트의 '파일에 저장'으로 iCloud Drive 등에 보관하세요. 복원하면 이 기기의 기록이 백업
             내용으로 <strong>모두 바뀝니다</strong>.
           </p>
-          {snapshot && (
-            <p className="muted small">
-              과목 구분 업데이트 전({new Date(snapshot.createdAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })})
-              기록을 자동으로 백업해 두었습니다.{' '}
-              <button type="button" className="btn btn-inline" onClick={downloadSnapshot}>
-                업데이트 전 백업 내려받기
+          {snapshots?.map((snapshot) => (
+            <p className="muted small" key={snapshot.id}>
+              {SNAPSHOT_LABEL[snapshot.id] ?? '업데이트'} 전(
+              {new Date(snapshot.createdAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })}) 기록을 자동으로
+              백업해 두었습니다.{' '}
+              <button type="button" className="btn btn-inline" onClick={() => downloadSnapshot(snapshot)}>
+                {SNAPSHOT_LABEL[snapshot.id] ?? '업데이트'} 전 백업 내려받기
               </button>
             </p>
-          )}
+          ))}
           {message && (
             <p className={`notice ${message.kind === 'error' ? 'notice-error' : 'notice-ok'}`} role="status">
               {message.text}

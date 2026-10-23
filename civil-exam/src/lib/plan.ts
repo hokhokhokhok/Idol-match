@@ -108,12 +108,12 @@ export function buildMix({ pool, blueprint, weakUnits = [], history = new Map(),
 }
 
 /**
- * 오늘의 추천 약점 복습: 약점 분류 문항 중 ① 오늘 복습할 오답노트 문항 → ② 틀린 적 있는 문항
+ * 다시 풀기 묶음: 조건에 맞는 문항 중 ① 오늘 복습할 오답노트 문항 → ② 틀린 적 있는 문항
  * → ③ 안 푼 문항 → ④ 맞힌 문항 순으로 최대 n개.
  */
-export function buildWeakDrill(
+export function buildDrill(
   pool: Question[],
-  category: Category,
+  pick: (q: Question) => boolean,
   opts: { dueIds?: Set<string>; history?: History; n?: number; random?: () => number } = {},
 ): string[] {
   const { dueIds = new Set(), history = new Map(), n = 10, random = Math.random } = opts;
@@ -123,11 +123,12 @@ export function buildWeakDrill(
     if (h && h.wrong > 0) return 1;
     return h ? 3 : 2;
   };
-  return shuffle(
-    pool.filter((q) => categoryOf(q) === category),
-    random,
-  )
+  return shuffle(pool.filter(pick), random)
     .sort((a, b) => order(a) - order(b))
     .slice(0, n)
     .map((q) => q.id);
 }
+
+/** 오늘의 추천 약점 복습: 약점 분류(감관법 법률·경제학 단원 등) 문항으로 buildDrill */
+export const buildWeakDrill = (pool: Question[], category: Category, opts: Parameters<typeof buildDrill>[2] = {}) =>
+  buildDrill(pool, (q) => categoryOf(q) === category, opts);

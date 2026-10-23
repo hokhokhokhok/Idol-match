@@ -7,7 +7,7 @@ import { patternOf } from '../lib/law';
 import { questionById, subjectOf } from '../lib/sets';
 import { dueLabel, isDue, type Note } from '../lib/srs';
 import { PATTERN_LABEL, PATTERNS } from '../lib/stats';
-import { categoryOf, SUBJECT_LABEL, type Category, type Pattern, type Subject } from '../types';
+import { categoryOf, isCalc, SUBJECT_LABEL, type Category, type Pattern, type Subject } from '../types';
 
 type Filter = 'due' | 'active' | 'starred' | 'mastered';
 const FILTERS: { key: Filter; label: string; test: (n: Note, now: number) => boolean }[] = [
@@ -25,15 +25,18 @@ export function NotesScreen({ subject, onPractice, onHome }: Props) {
   const [filter, setFilter] = useState<Filter>('due');
   const [cat, setCat] = useState<Category | ''>('');
   const [pattern, setPattern] = useState<Pattern | ''>('');
+  const [calcOnly, setCalcOnly] = useState(false);
   const [memoOpen, setMemoOpen] = useState<string | null>(null);
   const now = Date.now();
   const law = subject === '감관법';
+  const econ = subject === '경제학원론';
 
   const inSubject = (all ?? []).filter((n) => questionById.has(n.questionId) && subjectOf(n) === subject);
   const notes = inSubject.filter((n) => {
     const q = questionById.get(n.questionId)!;
     if (cat && categoryOf(q) !== cat) return false;
     if (pattern && (q.subject !== '감관법' || patternOf(q) !== pattern)) return false;
+    if (calcOnly && !isCalc(q)) return false;
     return true;
   });
   const cats = CATEGORIES[subject].filter((c) => inSubject.some((n) => categoryOf(questionById.get(n.questionId)!) === c));
@@ -59,7 +62,7 @@ export function NotesScreen({ subject, onPractice, onHome }: Props) {
         <section className="card card-resume">
           <div>
             <h2>
-              오늘 복습할 문항 {dueIds.length}개{(cat || pattern) && <small className="muted"> (필터 적용)</small>}
+              오늘 복습할 문항 {dueIds.length}개{(cat || pattern || calcOnly) && <small className="muted"> (필터 적용)</small>}
             </h2>
             <p className="muted">진행 중 {counts.active}개 · 졸업 {counts.mastered}개</p>
           </div>
@@ -88,8 +91,13 @@ export function NotesScreen({ subject, onPractice, onHome }: Props) {
           ))}
         </div>
 
-        {(cats.length > 1 || law) && (
+        {(cats.length > 1 || law || econ) && (
           <div className="filters">
+            {econ && (
+              <button type="button" className={`chip${calcOnly ? ' is-on' : ''}`} aria-pressed={calcOnly} onClick={() => setCalcOnly(!calcOnly)}>
+                계산 문제만
+              </button>
+            )}
             <label>
               <span>{CATEGORY_NAME[subject]}</span>
               <select value={cat} onChange={(e) => setCat(e.target.value as Category | '')}>

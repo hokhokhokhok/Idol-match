@@ -1,13 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { RateBars, ScoreTrend } from '../components/Charts';
 import { elapsedSec, isPractice } from '../lib/attempt';
-import { CATEGORY_NAME, passCut } from '../lib/config';
+import { CATEGORY_NAME, ECON_FIELD, passCut } from '../lib/config';
 import { db } from '../lib/db';
 import { formatDuration } from '../lib/format';
 import { patternOf } from '../lib/law';
 import { questionById, resolveSet, subjectOf } from '../lib/sets';
 import { accBy, byCategory, byType, PATTERN_LABEL, PATTERNS, recentTrend, streakDays, TYPE_LABEL, weakCategories } from '../lib/stats';
-import { SUBJECT_LABEL, type Subject } from '../types';
+import { isCalc, SUBJECT_LABEL, type EconUnit, type Subject } from '../types';
 
 const secLabel = (s: number) => (s > 0 ? `평균 ${Math.round(s)}초` : '');
 const pct = (c: number, t: number) => Math.round((c / t) * 100);
@@ -80,6 +80,18 @@ export function StatsScreen({ subject, onHome }: Props) {
           return q?.subject === '감관법' ? patternOf(q) : undefined;
         },
         PATTERNS,
+      )
+    : [];
+  const econ = subject === '경제학원론';
+  const fields = econ ? accBy(results, (r) => ECON_FIELD[r.unit as EconUnit], ['미시', '거시'] as const) : [];
+  const calcVsConcept = econ
+    ? accBy(
+        results,
+        (r) => {
+          const q = questionById.get(r.questionId);
+          return q ? (isCalc(q) ? '계산형' : '개념형') : undefined;
+        },
+        ['계산형', '개념형'] as const,
       )
     : [];
   const recent = attempts.slice(-20);
@@ -156,6 +168,22 @@ export function StatsScreen({ subject, onHome }: Props) {
             })}
           />
         </section>
+
+        {econ && fields.length > 0 && (
+          <>
+            <h2 className="section-title">영역별 · 계산형/개념형 정답률</h2>
+            <section className="card">
+              <RateBars
+                caption="미시·거시, 계산형·개념형 정답률"
+                rows={[...fields, ...calcVsConcept].map((t) => ({
+                  label: t.key,
+                  rate: t.rate,
+                  detail: [`${t.correct}/${t.total}`, secLabel(t.avgSec)].filter(Boolean).join(' · '),
+                }))}
+              />
+            </section>
+          </>
+        )}
 
         {law && patterns.length > 0 && (
           <>

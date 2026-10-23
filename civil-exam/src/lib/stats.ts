@@ -29,7 +29,7 @@ export function accBy<R extends RowLike, K extends string>(rows: R[], keyOf: (r:
     });
 }
 
-export const TYPES: readonly QuestionType[] = ['single', 'count', 'combo', 'case', 'precedent', 'numeric'];
+export const TYPES: readonly QuestionType[] = ['single', 'count', 'combo', 'case', 'precedent', 'numeric', 'calc', 'concept', 'graph', 'table'];
 export const TYPE_LABEL: Record<QuestionType, string> = {
   single: '단일 정답형',
   count: '개수형',
@@ -37,6 +37,10 @@ export const TYPE_LABEL: Record<QuestionType, string> = {
   case: '사례형',
   precedent: '판례형',
   numeric: '숫자·기간 비교형',
+  calc: '계산형',
+  concept: '개념형',
+  graph: '그래프 해석형',
+  table: '표·사례형',
 };
 export const PATTERNS: readonly Pattern[] = ['정의', '숫자·기간', '절차·순서', '예외·단서', '사례'];
 export const PATTERN_LABEL: Record<Pattern, string> = {

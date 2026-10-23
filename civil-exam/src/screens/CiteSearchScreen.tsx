@@ -12,7 +12,7 @@ type Props = {
 
 /** 문항의 근거 조문 목록 (감관법 legalBasis, 민법 statutes) */
 const citesOf = (q: Question): string[] =>
-  q.subject === '감관법' ? q.explanation.legalBasis.map((b) => b.cite) : q.explanation.statutes;
+  q.subject === '감관법' ? q.explanation.legalBasis.map((b) => b.cite) : q.subject === '민법' ? q.explanation.statutes : [];
 
 const all = questionSets.flatMap((s) => s.questions);
 

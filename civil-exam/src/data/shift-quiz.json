@@ -1,0 +1,20 @@
+[
+  { "id": "d-income-normal", "market": "goods", "curve": "D", "prompt": "정상재인 이 재화의 수요자들의 소득이 증가하였다.", "answer": "right", "explain": "정상재는 소득이 늘면 같은 가격에서 수요량이 늘므로 수요곡선이 오른쪽으로 이동한다." },
+  { "id": "d-income-inferior", "market": "goods", "curve": "D", "prompt": "열등재인 이 재화의 수요자들의 소득이 증가하였다.", "answer": "left", "explain": "열등재는 소득이 늘면 수요가 줄어 수요곡선이 왼쪽으로 이동한다." },
+  { "id": "d-substitute", "market": "goods", "curve": "D", "prompt": "이 재화의 대체재 가격이 상승하였다.", "answer": "right", "explain": "대체재가 비싸지면 이 재화로 수요가 옮겨 와 수요곡선이 오른쪽으로 이동한다." },
+  { "id": "d-complement", "market": "goods", "curve": "D", "prompt": "이 재화의 보완재 가격이 상승하였다.", "answer": "left", "explain": "보완재 소비가 줄면 함께 쓰는 이 재화의 수요도 줄어 수요곡선이 왼쪽으로 이동한다." },
+  { "id": "d-own-price", "market": "goods", "curve": "D", "prompt": "이 재화 자체의 가격이 하락하였다.", "answer": "none", "explain": "자기 가격의 변화는 곡선의 이동이 아니라 수요곡선 위의 이동(수요량의 변화)이다." },
+  { "id": "s-input", "market": "goods", "curve": "S", "prompt": "이 재화 생산에 쓰이는 원자재 가격이 상승하였다.", "answer": "left", "explain": "생산비가 오르면 같은 가격에서 공급량이 줄어 공급곡선이 왼쪽(위쪽)으로 이동한다." },
+  { "id": "s-tech", "market": "goods", "curve": "S", "prompt": "이 재화의 생산기술이 진보하였다.", "answer": "right", "explain": "생산비가 낮아져 공급곡선이 오른쪽(아래쪽)으로 이동한다." },
+  { "id": "s-tax", "market": "goods", "curve": "S", "prompt": "정부가 공급자에게 단위당 종량세를 부과하였다.", "answer": "left", "explain": "공급자에게 부과한 종량세는 공급곡선을 세액만큼 위쪽(왼쪽)으로 이동시킨다." },
+  { "id": "is-g", "market": "islm", "curve": "IS", "prompt": "정부지출이 증가하였다.", "answer": "right", "explain": "같은 이자율에서 총수요가 늘어 IS곡선이 오른쪽으로 이동한다." },
+  { "id": "is-t", "market": "islm", "curve": "IS", "prompt": "정액세가 인상되었다.", "answer": "left", "explain": "가처분소득과 소비가 줄어 IS곡선이 왼쪽으로 이동한다." },
+  { "id": "is-nx", "market": "islm", "curve": "IS", "prompt": "외국의 경기 침체로 순수출이 감소하였다.", "answer": "left", "explain": "독립적 지출(순수출)이 줄어 IS곡선이 왼쪽으로 이동한다." },
+  { "id": "lm-m", "market": "islm", "curve": "LM", "prompt": "중앙은행이 통화공급을 늘렸다.", "answer": "right", "explain": "실질통화공급이 늘면 같은 소득에서 이자율이 낮아져 LM곡선이 오른쪽(아래쪽)으로 이동한다." },
+  { "id": "lm-p", "market": "islm", "curve": "LM", "prompt": "물가가 상승하였다(명목통화량은 일정).", "answer": "left", "explain": "실질통화공급 M/P가 줄어 LM곡선이 왼쪽(위쪽)으로 이동한다." },
+  { "id": "lm-md", "market": "islm", "curve": "LM", "prompt": "소득·이자율과 관계없이 사람들이 화폐를 더 보유하려 한다(화폐수요 증가).", "answer": "left", "explain": "화폐수요가 늘면 같은 소득에서 이자율이 올라 LM곡선이 왼쪽(위쪽)으로 이동한다." },
+  { "id": "ad-money", "market": "adas", "curve": "AD", "prompt": "확장적 통화정책이 시행되었다.", "answer": "right", "explain": "LM이 오른쪽으로 이동해 같은 물가에서 균형소득이 늘므로 AD곡선이 오른쪽으로 이동한다." },
+  { "id": "ad-price", "market": "adas", "curve": "AD", "prompt": "물가가 하락하였다.", "answer": "none", "explain": "물가 변화는 AD곡선 위의 이동이다(실질잔고효과 등으로 총수요량이 변함)." },
+  { "id": "as-oil", "market": "adas", "curve": "AS", "prompt": "국제 유가가 크게 상승하였다(부정적 공급충격).", "answer": "left", "explain": "생산비가 올라 단기 총공급곡선이 왼쪽(위쪽)으로 이동한다." },
+  { "id": "as-expect", "market": "adas", "curve": "AS", "prompt": "근로자들의 기대인플레이션이 상승하여 명목임금이 올랐다.", "answer": "left", "explain": "기대물가 상승은 명목임금을 올려 단기 총공급곡선을 왼쪽(위쪽)으로 이동시킨다." }
+]

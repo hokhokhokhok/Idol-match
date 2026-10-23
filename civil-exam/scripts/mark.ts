@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Question } from '../src/types.ts';
 import { validateSet } from '../src/lib/validate.ts';
+import { validateConfig } from './validate-config.ts';
 // 감관법: 반드시 law.go.kr 현행 조문과 대조한 뒤 표시한다
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -63,9 +64,9 @@ for (const [setId, list] of bySet) {
       console.log(`${undo ? '↺' : '✓'} ${id} ${undo ? '검수 취소' : '검수 완료'}`);
     }
   }
-  const errors = validateSet(qs, setId).filter((i) => i.level === 'error');
+  const errors = validateSet(qs, setId, validateConfig).filter((i) => i.level === 'error');
   if (errors.length) {
-    console.error(`✗ ${setId}: 검증 오류가 있어 저장하지 않았습니다`, errors);
+    console.error(`✗ ${setId}: 검증 오류(계산 검증 실패 포함)가 있어 저장하지 않았습니다 — 검수 완료로 표시할 수 없습니다`, errors);
     failed = true;
     continue;
   }

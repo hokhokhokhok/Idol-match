@@ -33,7 +33,7 @@ it('v3 → v4 snapshots existing data before marking it 민법 (no data loss)', 
   expect(await db.settings.get('app')).toMatchObject({ fontSize: 19 });
   expect(await db.attempts.where('subject').equals('민법').count()).toBe(1);
 
-  const { preMigrationBackup, validateBackup } = await import('./backup');
-  const file = (await preMigrationBackup())!.file;
+  const { preMigrationBackups, validateBackup } = await import('./backup');
+  const file = (await preMigrationBackups()).find((x) => x.id === PRE_SUBJECT_SNAPSHOT)!.file;
   expect(validateBackup(JSON.parse(JSON.stringify(file))).data.attempts[0].subject).toBe('민법');
 });

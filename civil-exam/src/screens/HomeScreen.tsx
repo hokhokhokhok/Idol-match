@@ -9,7 +9,8 @@ import { isSeedSet, resolveSet, subjectOf } from '../lib/sets';
 import type { Settings } from '../lib/settings';
 import { isDue } from '../lib/srs';
 import { streakDays, weakCategories } from '../lib/stats';
-import { categoryOf, SUBJECT_LABEL, SUBJECTS, type Category, type QuestionSet, type Subject } from '../types';
+import { categoryOf, isCalc, SUBJECT_LABEL, SUBJECTS, type Category, type QuestionSet, type Subject } from '../types';
+import { questionById } from '../lib/sets';
 
 type Props = {
   /** 이 과목의 세트 */
@@ -27,6 +28,10 @@ type Props = {
   onStartMix: () => void;
   onWeakDrill: (category: Category) => void;
   onCards: () => void;
+  /** 경제학원론: 계산 문제만 풀기 */
+  onCalcDrill: () => void;
+  /** 경제학원론: 곡선 이동 퀴즈 */
+  onShiftQuiz: () => void;
 };
 
 /** 홈: 과목 탭, 이어 풀기, 오늘의 세트, 연속 학습일·오늘 복습·약점, (감관법) 추천 약점 복습·암기 카드, 최근 기록, 맞춤 모의고사, 세트 목록 */
@@ -40,6 +45,7 @@ export function HomeScreen(p: Props) {
   const startLabel = practice ? '연습 시작' : '실전 시작';
   const catName = CATEGORY_NAME[subject];
   const law = subject === '감관법';
+  const econ = subject === '경제학원론';
 
   const summary = useLiveQuery(async () => {
     const [allAttempts, reviews, allNotes, allResults, cardStates] = await Promise.all([
@@ -63,7 +69,10 @@ export function HomeScreen(p: Props) {
       const states = new Map(cardStates.map((c) => [c.id, c]));
       cardsDue = pickCards(cards, states, new Set(notes.filter((n) => !n.mastered).map((n) => n.questionId)), now, 999).length;
     }
+    const calcRows = econ ? allResults.filter((r) => examIds.has(r.attemptId) && isCalc(questionById.get(r.questionId)!)) : [];
+    const calcCount = econ ? sets.reduce((k, s) => k + s.questions.filter(isCalc).length, 0) : 0;
     return {
+      calc: { total: calcRows.length, correct: calcRows.filter((r) => r.correct).length, size: Math.min(10, calcCount) },
       streak: streakDays([...allAttempts.map((a) => a.submittedAt), ...reviews.map((r) => r.at)], now),
       due: notes.filter((n) => isDue(n, now)).length,
       weak,
@@ -144,7 +153,25 @@ export function HomeScreen(p: Props) {
           </section>
         )}
 
-        {law && summary && summary.weak.length > 0 && (
+        {econ && summary && summary.calc.size > 0 && (
+          <section className="card card-drill card-calc">
+            <div>
+              <span className="today-label">계산 문제만 풀기</span>
+              <h2>계산형 {summary.calc.size}문항</h2>
+              <p className="muted">
+                {summary.calc.total
+                  ? `실전 계산형 정답률 ${Math.round((summary.calc.correct / summary.calc.total) * 100)}% (${summary.calc.correct}/${summary.calc.total})`
+                  : '아직 실전 기록 없음'}{' '}
+                · 틀린 문항·안 푼 문항 우선 · 풀이 단계 해설
+              </p>
+            </div>
+            <button type="button" className="btn btn-lg" onClick={p.onCalcDrill}>
+              계산 {summary.calc.size}문항 풀기
+            </button>
+          </section>
+        )}
+
+        {(law || econ) && summary && summary.weak.length > 0 && (
           <section className="card card-drill">
             <div>
               <span className="today-label">오늘의 추천 약점 복습</span>
@@ -185,6 +212,13 @@ export function HomeScreen(p: Props) {
             )}
             <span className="tile-sub">통계 ›</span>
           </button>
+          {econ && (
+            <button type="button" className="tile tile-btn" onClick={p.onShiftQuiz}>
+              <span className="tile-label">곡선 이동 퀴즈</span>
+              <strong>수요·공급·IS·LM·AD·AS</strong>
+              <span className="tile-sub">그래프로 연습 ›</span>
+            </button>
+          )}
           {law && (
             <button type="button" className="tile tile-btn" onClick={p.onCards}>
               <span className="tile-label">숫자·기간 암기 카드</span>
@@ -223,7 +257,7 @@ export function HomeScreen(p: Props) {
               <div>
                 <h3>전체 {poolSize}문항에서 40문항</h3>
                 <p className="muted">
-                  {catName} 배분 ±{law ? 1 : 2} 무작위 · 안 푼 문항·틀린 문항 우선
+                  {catName} 배분 ±{law || econ ? 1 : 2} 무작위 · 안 푼 문항·틀린 문항 우선
                   {settings.weakUnitBoost ? ` · 약점 ${catName} +2` : ''}
                 </p>
               </div>
