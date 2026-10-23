@@ -72,15 +72,25 @@ export function FigureView({ figure: f }: { figure: Figure }) {
             </g>
           );
         })}
-        {(f.marks ?? []).map((m) => (
-          <g key={m.label}>
-            <path d={`M${X(m.at[0])},${Y(0)} V${Y(m.at[1])} H${X(0)}`} className="fig-guide" />
-            <circle cx={X(m.at[0])} cy={Y(m.at[1])} r={2.6} className="fig-dot" />
-            <text x={X(m.at[0]) + 5} y={Y(m.at[1]) - 6} className="fig-label">
-              {m.label}
-            </text>
-          </g>
-        ))}
+        {(f.marks ?? []).map((m) => {
+          // 축 위의 점은 눈금처럼 축 바깥(아래·왼쪽)에, 그 밖의 점은 오른쪽 위에 이름을 단다
+          const onX = m.at[1] === 0;
+          const onY = m.at[0] === 0;
+          const pos = onX
+            ? { x: X(m.at[0]), y: Y(0) + 17, anchor: 'middle' as const }
+            : onY
+              ? { x: X(0) - 6, y: Y(m.at[1]) + 5, anchor: 'end' as const }
+              : { x: X(m.at[0]) + 5, y: Y(m.at[1]) - 6, anchor: 'start' as const };
+          return (
+            <g key={m.label}>
+              {!onX && !onY && <path d={`M${X(m.at[0])},${Y(0)} V${Y(m.at[1])} H${X(0)}`} className="fig-guide" />}
+              <circle cx={X(m.at[0])} cy={Y(m.at[1])} r={2.6} className="fig-dot" />
+              <text x={pos.x} y={pos.y} textAnchor={pos.anchor} className="fig-label">
+                {m.label}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </figure>
   );

@@ -53,6 +53,10 @@
 .qv[data-type='case'] .qv-stem-text {
   font-weight: 400;
 }
+.qv-stem-text {
+  /* 넓은 표가 있어도 칸이 시험지 폭을 넘지 않게(표는 .qv-table-wrap 안에서 가로 스크롤) */
+  min-width: 0;
+}
 .qv-stem-text p + p {
   margin-top: 0.5em;
 }

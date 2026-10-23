@@ -1,6 +1,6 @@
-# 감정평가사 1차 모의고사 — 민법 · 감정평가관계법규 (오프라인 PWA)
+# 감정평가사 1차 모의고사 — 민법 · 경제학원론 · 감정평가관계법규 (오프라인 PWA)
 
-아이패드에서 매일 **민법**과 **감정평가관계법규(감관법)** 모의고사를 실제 시험지 조판(바탕/명조, ①~⑤, <보 기> 박스, 표 지문)으로 풀고
+아이패드에서 매일 **민법**, **경제학원론**, **감정평가관계법규(감관법)** 모의고사를 실제 시험지 조판(바탕/명조, ①~⑤, <보 기> 박스, 표 지문)으로 풀고
 해설·근거 조문·오답노트·약점 통계를 보는 앱. 홈 상단 탭으로 과목을 고른다. 계정·서버 없이 기기(IndexedDB)에만 저장한다.
 
 > 폴더 이름(`civil-exam/`)·배포 주소·IndexedDB 이름은 민법 앱 때와 같다 — 기존 기록이 그대로 이어진다.
@@ -58,6 +58,27 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 - 제출 기록은 기기의 IndexedDB에 저장되고 홈 **최근 기록**에서 다시 열 수 있다. 문항별 풀이시간도 함께 저장된다(4단계 통계용).
 - 풀던 내용은 기기에 바로 저장된다. 앱을 닫거나 '나가기' 후에도 홈에서 **이어 풀기**. 시간은 실제 시각 기준으로 계속 흐른다.
 
+### 경제학원론 추가 — 기획안 10절 1~8단계
+
+- [x] **1단계** — `subject: "경제학원론"`, 홈 과목 탭 3개. DB v5 업그레이드는 스키마·기존 민법·감관법 기록을 바꾸지 않고 **업그레이드 직전 전체 기록을 자동 백업**만 한다(설정 → '경제학원론 추가 전 백업 내려받기', 테스트 `db.migrate-v5.test.ts`)
+- [x] **2단계** — KaTeX 수식(`$…$`, `$$…$$`, 폰트 번들·오프라인), 표 지문, 숫자 보기 자릿수 정렬(tabular-nums). 시드 7문항 `econ-seed-001`
+- [x] **3단계** — `figure` 그래프 렌더러(SVG, 흑백·가는 선·축 화살표, 폭 최대 360px)
+- [x] **4단계** — 해설 '풀이' 단계, 영역(미시·거시)·계산형/개념형·단원별 통계
+- [x] **5단계** — 오답노트 '계산 문제만' 필터, 홈 '계산 문제만 풀기'(틀린·안 푼 문항 우선), 약점 단원 복습
+- [x] **6단계** — `src/solvers/` 풀이 함수 23개와 `npm run validate` 계산 검증(정답 일치·오답 보기 중복·보기 값 중복, 문장 보기는 `calc.claims`), KaTeX 파싱·그래프 좌표 검사. 계산 검증 실패 문항은 `npm run mark`로 검수 완료 표시 불가. `config/econ/blueprint.json` 기반 맞춤 모의고사
+- [x] **7단계** — 첫 세트 `econ-2026-001`(40문항, 단원별 기본 배분, 계산 검증 20문항, 정답 ①~⑤ 각 8, **사람 검수 대기**) + [제작·검수 흐름](docs/econ-content-workflow.md)
+- [x] **8단계(2차)** — 곡선 이동 퀴즈(수요·공급·IS·LM·AD·AS 18개 상황), 시험 화면 계산기(설정에서 켜기, eval 없는 사칙연산)
+
+## 경제학원론
+
+- 시험 포맷: 40문항·2.5점, 기본 40분(1교시 120분을 세 과목이 나눔), 과락 40점. 계산기 허용 여부는 `config/econ/exam.json`의 `calculator`에 Q-Net 공고 확인 후 기록.
+- 시험지: 수식(KaTeX), 그래프(SVG), 표(보수행렬·비교우위 등), 왼쪽 위 '영역 · 단원' 배지.
+- 해설: 계산형은 **풀이 단계**와 '계산 검증 완료 · 내용 검수 필요' 배지(계산은 코드로 확인됨), 개념형 미검수는 '교재 대조 필요'.
+- 통계: 단원별 + 미시·거시 + 계산형·개념형 정답률, 약점 단원 Top3, 홈 '오늘의 추천 약점 복습'.
+- 홈 **계산 문제만 풀기**, **곡선 이동 퀴즈**(상황을 읽고 곡선이 왼쪽/오른쪽/이동 없음 중 고르면 이동한 곡선을 점선으로 보여 줌).
+- 설정 → **시험 화면 계산기**: 켜면 경제학원론 시험 화면 위쪽에 계산기 버튼.
+- 문항 만들기·계산 검증 규칙: [docs/econ-content-workflow.md](docs/econ-content-workflow.md)
+
 ## 감정평가관계법규(감관법)
 
 - 홈 상단 **민법 / 감정평가관계법규** 탭. 고른 탭은 기억한다. 풀던 시험(이어 풀기)은 과목과 관계없이 하나.
@@ -104,6 +125,8 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 | `2026-002` | 40 (같은 배분, 2026-001과 쟁점 겹치지 않음) | 분량·배분 기준 통과(`--strict`), **사람 검수 대기** — [검수 시트](docs/review/2026-002.md) |
 | `2026-003` | 40 (같은 배분, 앞 두 세트와 쟁점 겹치지 않음) | 분량·배분 기준 통과(`--strict`), **사람 검수 대기** — [검수 시트](docs/review/2026-003.md) |
 | `seed-001` | 5 | 포맷 확인용 시드, 분량 기준보다 짧음 |
+| `econ-2026-001` | 경제학원론 40 (미시 23·거시 17, 단원별 기본 배분, 계산 검증 20, 정답 ①~⑤ 각 8) | 계산 검증·분량·배분 통과(`--strict`), **사람 검수 대기**(개념형 교재 대조) — [검수 시트](docs/review/econ-2026-001.md) |
+| `econ-seed-001` | 경제학원론 7 | 기획안 12절 시드 — 계산 5문항 풀이 함수로 검증 통과 — [검수 시트](docs/review/econ-seed-001.md) |
 | `law-2026-001` | 감관법 40 (국토계획법 13·공시법 3·감정평가법 3·국유재산법 4·건축법 4·공간정보법 4·등기법 4·도시정비법 4·동산채권담보법 1, 정답 ①~⑤ 각 8, 표 지문 1) | 분량·배분 기준 통과(`--strict`), **사람 검수 대기 — law.go.kr 조문 대조 필수** — [검수 시트](docs/review/law-2026-001.md) |
 | `law-seed-001` | 감관법 6 | 기획안 12절 시드(포맷 확인용) — [검수 시트](docs/review/law-seed-001.md) |
 
@@ -135,6 +158,14 @@ npm run mark -- 2026-001-q01 --case 1 --citation "대법원 … 판결"   # 판�
 ```
 config/exam.json          민법 시험 포맷 가정치 (Q-Net 공고로 확인 후 수정, scopeVerified)
 config/blueprint.json     민법 40문항 단원·쟁점 배분
+config/econ/exam.json     경제학원론 시험 포맷·과락·계산기 허용(공고 확인)
+config/econ/blueprint.json 경제학원론 단원별 배분(±1, 추정값 — 기출로 보정)
+config/econ/length.json   경제학원론 유형별 분량 기준
+src/solvers/              계산 문항 풀이 함수(검증 스크립트·테스트 공용)
+src/components/FigureView.tsx  경제학 그래프(SVG)
+src/components/Calculator.tsx  시험 화면 계산기 (src/lib/calc.ts: eval 없는 사칙연산)
+src/screens/ShiftQuizScreen.tsx 곡선 이동 퀴즈 (src/data/shift-quiz.json)
+scripts/validate-config.ts 검증 설정(배분·분량·풀이 함수·KaTeX) — validate·mark 공용
 config/law/exam.json      감관법 시험 포맷·과락·기준 법령일·9개 법률 정식 명칭
 config/law/blueprint.json 감관법 40문항 법률별 배분(±1)
 config/law/length.json    감관법 유형별 분량 기준
@@ -154,7 +185,7 @@ src/components/OmrPanel.tsx      답안지(번호 격자)
 src/components/SubmitDialog.tsx  제출 확인 모달
 src/screens/                     Home / Exam / Result 화면
 src/lib/attempt.ts        응시 상태·채점·문항별 시간 누적
-src/lib/db.ts             IndexedDB(Dexie) v4: attempts / results(응시×문항) / drafts / notes(오답노트) / reviews(복습 기록) / settings / cards(암기 카드) / snapshots(업데이트 전 자동 백업). v4에서 subject 필드·색인 추가
+src/lib/db.ts             IndexedDB(Dexie) v5: attempts / results(응시×문항) / drafts / notes(오답노트) / reviews(복습 기록) / settings / cards(암기 카드) / snapshots(업데이트 전 자동 백업). v4에서 subject 필드·색인 추가, v5는 경제학원론 추가 전 자동 백업만
 src/lib/srs.ts            간격 반복(1·3·7일) 규칙
 src/lib/settings.ts       설정(글자 크기·시험시간·연습 모드) — DB v3 settings 테이블
 src/lib/backup.ts         JSON 백업 내보내기·검증·복원

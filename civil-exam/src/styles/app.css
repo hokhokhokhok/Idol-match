@@ -1619,3 +1619,16 @@
     grid-template-columns: 1fr;
   }
 }
+
+.calc-btn-icon {
+  display: none;
+}
+@media (max-width: 480px) {
+  .calc-btn-text {
+    display: none;
+  }
+  .calc-btn-icon {
+    display: inline;
+    font-size: 18px;
+  }
+}

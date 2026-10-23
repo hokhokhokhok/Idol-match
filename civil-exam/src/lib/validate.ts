@@ -109,7 +109,7 @@ export type Token = number | string;
 
 /** "60", "1,600", "+250", "−3", "$\\frac{1}{2}$", "0.5%" → 숫자. 숫자가 없으면 null */
 export function numberOf(raw: string): number | null {
-  const s = raw.replace(/\$/g, '').replace(/[−–]/g, '-').trim();
+  const s = raw.replace(/\$/g, '').replace(/\{,\}/g, ',').replace(/[−–]/g, '-').trim();
   const frac = s.match(/(-?)\\d?frac\{(-?\d+(?:\.\d+)?)\}\{(\d+(?:\.\d+)?)\}/);
   if (frac) return (frac[1] ? -1 : 1) * (Number(frac[2]) / Number(frac[3]));
   const m = s.match(/[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[+-]?\d+(?:\.\d+)?/);
@@ -131,10 +131,14 @@ export function tokensOf(choice: string): { tokens: Token[]; decimals: number[] 
   }
   return { tokens, decimals };
 }
-const round = (x: number, d: number) => Math.round(x * 10 ** d) / 10 ** d;
-/** 보기(소수 자릿수 d로 반올림해 적힌 값)와 풀이값이 같은가 */
-const sameNumber = (shown: number, d: number, exact: number) =>
-  Math.abs(shown - round(exact, d)) <= 1e-9 * Math.max(1, Math.abs(exact)) || Math.abs(shown - exact) <= 1e-9 * Math.max(1, Math.abs(exact));
+/**
+ * 보기에 적힌 값(소수 d자리)과 풀이값이 같은가: 정수로 적힌 보기는 정확히 같아야 하고,
+ * 소수로 적힌 보기는 마지막 자리 반올림 차이(0.5 단위 미만)까지만 허용한다.
+ */
+const sameNumber = (shown: number, d: number, exact: number) => {
+  const eps = 1e-9 * Math.max(1, Math.abs(exact));
+  return d === 0 ? Math.abs(shown - exact) <= eps : Math.abs(shown - exact) < 0.5 * 10 ** -d - eps;
+};
 function sameTokens(shown: { tokens: Token[]; decimals: number[] }, exact: Token[]) {
   if (shown.tokens.length !== exact.length) return false;
   return shown.tokens.every((t, i) => {

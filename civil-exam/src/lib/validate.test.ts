@@ -4,10 +4,18 @@ import lawBlueprint from '../../config/law/blueprint.json';
 import lawExam from '../../config/law/exam.json';
 import lawLength from '../../config/law/length.json';
 import lawSeed from '../data/sets/law-seed-001.json';
+import econBlueprint from '../../config/econ/blueprint.json';
+import econLength from '../../config/econ/length.json';
+import econSeed from '../data/sets/econ-seed-001.json';
+import katex from 'katex';
+import { solvers } from '../solvers';
 import seed from '../data/sets/seed-001.json';
 import {
   crossSetIssues,
+  ECON_LENGTH_RULES,
   LAW_LENGTH_RULES,
+  numberOf,
+  tokensOf,
   lawCoverage,
   splitCase,
   validateQuestion,
@@ -17,8 +25,19 @@ import {
   type ValidateConfig,
 } from './validate';
 
+const parseMath = (tex: string) => {
+  try {
+    katex.renderToString(tex, { throwOnError: true, strict: 'ignore' });
+    return null;
+  } catch (e) {
+    return (e as Error).message;
+  }
+};
 const cfg: ValidateConfig = {
-  blueprints: { 민법: blueprint, 감관법: lawBlueprint },
+  blueprints: { 민법: blueprint, 감관법: lawBlueprint, 경제학원론: econBlueprint },
+  econLength: econLength as unknown as ValidateConfig['econLength'],
+  solvers,
+  parseMath,
   lawLength: lawLength as unknown as ValidateConfig['lawLength'],
   lawAsOf: lawExam.lawAsOf,
 };
@@ -210,4 +229,73 @@ describe('bundled sets', () => {
       expect(warns(validateSet(qs, setId, cfg))).toEqual([]);
     });
   }
+});
+
+describe('validate 경제학원론', () => {
+  const eq = (n: number) => clone(econSeed[n]) as Record<string, any>;
+
+  it('seed set passes, including calculation checks; length defaults match config', () => {
+    expect(errors(validateSet(econSeed, 'econ-seed-001', cfg))).toEqual([]);
+    const { _note, ...rules } = econLength;
+    expect(rules).toEqual(JSON.parse(JSON.stringify(ECON_LENGTH_RULES)));
+  });
+
+  it('reads choice values', () => {
+    expect(numberOf('$Y = 1{,}200$')).toBe(1200);
+    expect(numberOf('자중손실 1,600')).toBe(1600);
+    expect(numberOf('$-\\frac{1}{2}$')).toBe(-0.5);
+    expect(tokensOf('가격 60, 자중손실 800').tokens).toEqual([60, 800]);
+    expect(tokensOf('1.5, 감소').tokens).toEqual([1.5, '감소']);
+    expect(tokensOf('+250, -200').tokens).toEqual([250, -200]);
+  });
+
+  it('catches a wrong answer key, a duplicate correct value and a wrong expected', () => {
+    const wrong = eq(5); // 독점: 정답 ③ 가격 60, 자중손실 800
+    wrong.answer = 2;
+    expect(errors(validateQuestion(wrong, 'econ-seed-001', 5, cfg))).toEqual(
+      expect.arrayContaining([expect.stringContaining('정답 2번 보기 "가격 60, 자중손실 400"가 풀이 결과 60, 800와 다릅니다')]),
+    );
+    const dup = eq(4); // 통화승수: 200
+    dup.choices[0] = '200.0';
+    expect(errors(validateQuestion(dup, 'econ-seed-001', 4, cfg))).toEqual(
+      expect.arrayContaining([expect.stringContaining('정답 외 보기(1번)도 풀이 결과 200')]),
+    );
+    const exp = eq(0);
+    exp.calc.expected = 2;
+    expect(errors(validateQuestion(exp, 'econ-seed-001', 0, cfg))[0]).toContain('풀이 결과 1.5, 감소 ≠ calc.expected 2');
+    const noCalc = eq(4);
+    delete noCalc.calc;
+    expect(errors(validateQuestion(noCalc, 'econ-seed-001', 4, cfg))[0]).toContain('calc(solverId, params, expected)가 없습니다');
+  });
+
+  it('claims: exactly the answer must hold', () => {
+    const tax = eq(1); // 종량세: ② 소비자 가격 55가 유일하게 참
+    tax.calc.claims[2] = { key: 'producerPrice', value: 45 }; // ③도 참이 됨
+    expect(errors(validateQuestion(tax, 'econ-seed-001', 1, cfg))).toEqual(
+      expect.arrayContaining([expect.stringContaining('옳은 보기는 2, 3번인데 answer는 2번')]),
+    );
+    const bad = eq(1);
+    bad.calc.claims[0] = { key: 'nope', value: 1 };
+    expect(errors(validateQuestion(bad, 'econ-seed-001', 1, cfg))[0]).toContain('값 "nope"가 없습니다');
+  });
+
+  it('flags broken TeX, unknown solvers and figure coordinates outside the axes', () => {
+    const tex = eq(0);
+    tex.stem = tex.stem.replace('$Q = 200 - 4P$', '$Q = \\frac{200 - 4P$');
+    expect(errors(validateQuestion(tex, 'econ-seed-001', 0, cfg)).join()).toContain('수식');
+    const sol = eq(0);
+    sol.calc.solverId = 'unknown';
+    expect(errors(validateQuestion(sol, 'econ-seed-001', 0, cfg))[0]).toContain('풀이 함수 "unknown"가 없습니다');
+    const fig = eq(5);
+    fig.figure.series[0].points[1] = [120, 0];
+    fig.figure.series.push({ name: 'MC', points: [[0, 1]] });
+    const e = errors(validateQuestion(fig, 'econ-seed-001', 5, cfg));
+    expect(e).toEqual(expect.arrayContaining([expect.stringContaining('xMax(100)를 넘습니다'), expect.stringContaining('"MC"이 중복')]));
+  });
+
+  it('field must match the unit', () => {
+    const f = eq(0);
+    f.field = '거시';
+    expect(warns(validateQuestion(f, 'econ-seed-001', 0, cfg))).toContain('수요공급·탄력성·조세 단원은 미시 영역입니다 (field: 거시)');
+  });
 });

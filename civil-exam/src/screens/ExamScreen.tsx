@@ -130,8 +130,11 @@ export function ExamScreen({ set, attempt, onChange, onSubmit, onExit, calculato
         )}
         <div className="exam-bar-right">
           {calculator && (
-            <button type="button" className="btn" aria-pressed={calcOpen} onClick={() => setCalcOpen((o) => !o)}>
-              계산기
+            <button type="button" className="btn" aria-label="계산기" aria-pressed={calcOpen} onClick={() => setCalcOpen((o) => !o)}>
+              <span className="calc-btn-text">계산기</span>
+              <span className="calc-btn-icon" aria-hidden>
+                ÷
+              </span>
             </button>
           )}
           <button

@@ -48,3 +48,15 @@ describe('parseBlocks (stem tables)', () => {
     expect(plainText(stem)).toBe('다음 표에 관한 설명으로 옳은 것은? [표] (조례는 고려하지 않음)');
   });
 });
+
+describe('math', () => {
+  it('parses $…$ and $$…$$ without touching markup inside', () => {
+    expect(parseInline('수요 $Q = 100 - P^{**2}$ 이고 $$MR = MC$$')).toEqual([
+      { kind: 'text', text: '수요 ' },
+      { kind: 'math', tex: 'Q = 100 - P^{**2}', display: false },
+      { kind: 'text', text: ' 이고 ' },
+      { kind: 'math', tex: 'MR = MC', display: true },
+    ]);
+    expect(parseInline('가격 $5').map((n) => n.kind)).toEqual(['text']);
+  });
+});
