@@ -2,7 +2,7 @@
   "name": "civil-exam",
   "version": "0.1.0",
   "private": true,
-  "description": "감정평가사 1차 민법 모의고사 — 오프라인 PWA",
+  "description": "감정평가사 1차 민법·감정평가관계법규 모의고사 — 오프라인 PWA",
   "type": "module",
   "scripts": {
     "dev": "vite",

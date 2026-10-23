@@ -209,3 +209,64 @@ button.qv-choice:active {
     right: -4px;
   }
 }
+
+/* ---------- 감관법: 법률명 배지, 표 지문, 긴 법령명 ---------- */
+.qv[data-subject='감관법'] {
+  /* 띄어쓰기 없는 긴 법령명·조문 표기가 잘리거나 가로로 넘치지 않게 */
+  overflow-wrap: anywhere;
+}
+.qv-law {
+  position: absolute;
+  top: -22px;
+  left: calc(var(--tap) * -1 - 4px);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.qv-table-wrap {
+  margin: 0.6em 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.qv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-weight: 400;
+  font-size: 0.94em;
+  line-height: 1.55;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.qv-table caption {
+  margin-bottom: 0.3em;
+  font-weight: 700;
+}
+.qv-table th,
+.qv-table td {
+  border: 1px solid var(--rule);
+  padding: 0.3em 0.5em;
+  vertical-align: middle;
+}
+.qv-table thead th {
+  background: rgb(0 0 0 / 0.04);
+  font-weight: 700;
+}
+.qv-table tbody th {
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .qv-law {
+    left: calc(var(--tap) * -1 - 2px);
+  }
+  .qv-table {
+    min-width: 320px;
+  }
+}

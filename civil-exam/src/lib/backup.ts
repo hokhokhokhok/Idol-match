@@ -1,9 +1,11 @@
-import { db, type AttemptRecord, type ResultRow, type ReviewLog } from './db';
+import type { CardState } from './cards';
+import { db, PRE_SUBJECT_SNAPSHOT, type AttemptRecord, type ResultRow, type ReviewLog } from './db';
 import { normalizeSettings, type SettingsRow } from './settings';
 import type { Note } from './srs';
 
 export const BACKUP_APP = 'civil-exam';
-export const BACKUP_VERSION = 1;
+/** 1: 민법만 / 2: 과목(subject) 필드, 숫자 암기 카드(cards) 추가 */
+export const BACKUP_VERSION = 2;
 
 export type BackupData = {
   attempts: AttemptRecord[];
@@ -12,23 +14,25 @@ export type BackupData = {
   reviews: ReviewLog[];
   drafts: unknown[];
   settings: SettingsRow[];
+  cards: CardState[];
 };
 export type BackupFile = { app: typeof BACKUP_APP; version: number; exportedAt: string; data: BackupData };
 
 export async function exportBackup(now = Date.now()): Promise<BackupFile> {
-  const [attempts, results, notes, reviews, drafts, settings] = await Promise.all([
+  const [attempts, results, notes, reviews, drafts, settings, cards] = await Promise.all([
     db.attempts.toArray(),
     db.results.toArray(),
     db.notes.toArray(),
     db.reviews.toArray(),
     db.drafts.toArray(),
     db.settings.toArray(),
+    db.cards.toArray(),
   ]);
   return {
     app: BACKUP_APP,
     version: BACKUP_VERSION,
     exportedAt: new Date(now).toISOString(),
-    data: { attempts, results, notes, reviews, drafts, settings },
+    data: { attempts, results, notes, reviews, drafts, settings, cards },
   };
 }
 
@@ -55,16 +59,19 @@ export function validateBackup(json: unknown): BackupFile {
     if (!Array.isArray(v) || !v.every((r) => isObj(r) && ok(r))) throw new Error(`백업 파일이 손상되었습니다 (${key}).`);
     return v;
   };
+  // 버전 1 백업(과목 구분 이전)은 모두 민법 기록
+  const civil = <T extends object>(r: T) => ({ subject: '민법' as const, ...r });
   return {
     app: BACKUP_APP,
     version: json.version as number,
     exportedAt: String(json.exportedAt ?? ''),
     data: {
-      attempts: list('attempts', (r) => str(r.id) && str(r.setId) && num(r.submittedAt) && isObj(r.answers)) as AttemptRecord[],
-      results: list('results', (r) => str(r.id) && str(r.attemptId) && str(r.questionId) && typeof r.correct === 'boolean') as ResultRow[],
-      notes: list('notes', (r) => str(r.questionId) && num(r.dueAt) && num(r.stage)) as Note[],
+      attempts: (list('attempts', (r) => str(r.id) && str(r.setId) && num(r.submittedAt) && isObj(r.answers)) as AttemptRecord[]).map(civil),
+      results: (list('results', (r) => str(r.id) && str(r.attemptId) && str(r.questionId) && typeof r.correct === 'boolean') as ResultRow[]).map(civil),
+      notes: (list('notes', (r) => str(r.questionId) && num(r.dueAt) && num(r.stage)) as Note[]).map(civil),
       reviews: list('reviews', (r) => str(r.questionId) && num(r.at)) as ReviewLog[],
-      drafts: list('drafts', (r) => r.id === 'current' && isObj(r.attempt)),
+      drafts: list('drafts', (r) => r.id === 'current' && isObj(r.attempt)).map((d) => ({ ...d, attempt: civil(d.attempt as object) })),
+      cards: list('cards', (r) => str(r.id) && str(r.questionId) && num(r.dueAt) && num(r.stage)) as CardState[],
       settings: (list('settings', (r) => r.id === 'app') as SettingsRow[]).map((s) => ({ ...normalizeSettings(s), id: 'app' as const })),
     },
   };
@@ -73,17 +80,25 @@ export function validateBackup(json: unknown): BackupFile {
 /** 현재 기기의 모든 기록을 백업 내용으로 바꾼다 (한 트랜잭션: 실패하면 그대로) */
 export async function restoreBackup(file: BackupFile) {
   const d = file.data;
-  await db.transaction('rw', [db.attempts, db.results, db.notes, db.reviews, db.drafts, db.settings], async () => {
-    await Promise.all([db.attempts, db.results, db.notes, db.reviews, db.drafts, db.settings].map((t) => t.clear()));
+  const tables = [db.attempts, db.results, db.notes, db.reviews, db.drafts, db.settings, db.cards];
+  await db.transaction('rw', tables, async () => {
+    await Promise.all(tables.map((t) => t.clear()));
     await db.attempts.bulkPut(d.attempts);
     await db.results.bulkPut(d.results);
     await db.notes.bulkPut(d.notes);
     await db.reviews.bulkPut(d.reviews);
     await db.drafts.bulkPut(d.drafts as never[]);
     await db.settings.bulkPut(d.settings);
+    await db.cards.bulkPut(d.cards);
   });
 }
 
 export function summarize(d: BackupData) {
-  return { attempts: d.attempts.length, notes: d.notes.length, reviews: d.reviews.length };
+  const by = (s: string) => d.attempts.filter((a) => (a.subject ?? '민법') === s).length;
+  return { attempts: d.attempts.length, civil: by('민법'), law: by('감관법'), notes: d.notes.length, reviews: d.reviews.length };
+}
+
+/** 마이그레이션 직전 자동 백업 파일 (없으면 null) */
+export async function preMigrationBackup() {
+  return (await db.snapshots.get(PRE_SUBJECT_SNAPSHOT)) ?? null;
 }

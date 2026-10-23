@@ -2,6 +2,7 @@
 //   npm run build && npm run test:e2e
 //   BROWSER=webkit npm run test:e2e   (사파리와 같은 엔진: 먼저 npx playwright install webkit)
 //   SHOTS=1 이면 스크린샷을 e2e-shots/ 에 남긴다
+//   CHROMIUM_PATH=/opt/pw-browsers/chromium 처럼 이미 설치된 크로미움을 지정할 수 있다
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +24,9 @@ const IPADS = {
 
 const server = await preview({ root, preview: { port: 4317, strictPort: true }, logLevel: 'silent' });
 const URL_ = 'http://localhost:4317/';
-const browser = await engine.launch();
+const browser = await engine.launch(
+  process.env.CHROMIUM_PATH && engine === chromium ? { executablePath: process.env.CHROMIUM_PATH } : {},
+);
 let failures = 0;
 
 async function step(name, fn) {

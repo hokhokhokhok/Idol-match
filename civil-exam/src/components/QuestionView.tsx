@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { parseBlocks, type TableBlock } from '../lib/inline';
 import type { ChoiceMark, ChoiceNo, Question } from '../types';
 import { RichText } from './RichText';
 
@@ -35,11 +37,51 @@ function MarkButton({ mark, label, onToggle }: { mark: ChoiceMark; label: string
   );
 }
 
+/** 지문 표(건폐율·용적률, 지목 부호 등). 좁은 화면에서는 표만 가로 스크롤 */
+function StemTable({ t }: { t: TableBlock }) {
+  const cell = (c: TableBlock['body'][number][number], i: number, inHead: boolean) => {
+    const Tag = c.header || inHead ? 'th' : 'td';
+    return (
+      <Tag key={i} colSpan={c.colSpan} rowSpan={c.rowSpan} scope={Tag === 'th' ? (inHead ? 'col' : 'row') : undefined}>
+        <RichText text={c.text} />
+      </Tag>
+    );
+  };
+  return (
+    <div className="qv-table-wrap">
+      <table className="qv-table">
+        {t.caption && (
+          <caption>
+            <RichText text={t.caption} />
+          </caption>
+        )}
+        {t.head.length > 0 && (
+          <thead>
+            {t.head.map((r, i) => (
+              <tr key={i}>{r.map((c, j) => cell(c, j, true))}</tr>
+            ))}
+          </thead>
+        )}
+        <tbody>
+          {t.body.map((r, i) => (
+            <tr key={i}>{r.map((c, j) => cell(c, j, false))}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function QuestionView({ question: q, selected, onSelect, marks = {}, onToggleMark, reveal }: Props) {
-  const paragraphs = q.stem.split(/\n{2,}/);
+  const blocks = useMemo(() => parseBlocks(q.stem), [q.stem]);
 
   return (
-    <article className="qv" data-type={q.type} aria-labelledby={`${q.id}-stem`}>
+    <article className="qv" data-type={q.type} data-subject={q.subject} aria-labelledby={`${q.id}-stem`}>
+      {q.subject === '감관법' && (
+        <span className="qv-law" title="출제 법률">
+          {q.law}
+        </span>
+      )}
       {!q.reviewed && (
         <span className="qv-badge" title="사용자 검수가 끝나지 않은 문항입니다">
           미검수
@@ -49,11 +91,15 @@ export function QuestionView({ question: q, selected, onSelect, marks = {}, onTo
       <div className="qv-stem" id={`${q.id}-stem`}>
         <span className="qv-no">{q.number}.</span>
         <div className="qv-stem-text">
-          {paragraphs.map((p, i) => (
-            <p key={i}>
-              <RichText text={p} />
-            </p>
-          ))}
+          {blocks.map((b, i) =>
+            b.kind === 'table' ? (
+              <StemTable key={i} t={b} />
+            ) : (
+              <p key={i}>
+                <RichText text={b.text} />
+              </p>
+            ),
+          )}
         </div>
       </div>
 

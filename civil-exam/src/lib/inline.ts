@@ -32,3 +32,65 @@ export function parseInline(src: string): InlineNode[] {
   if (buf) out.push({ kind: 'text', text: buf });
   return out;
 }
+
+/* ---------- 지문 블록: 문단(빈 줄로 구분)과 표(<table>) ---------- */
+
+export type TableCell = { header: boolean; text: string; colSpan?: number; rowSpan?: number };
+export type TableBlock = { kind: 'table'; caption?: string; head: TableCell[][]; body: TableCell[][] };
+export type Block = { kind: 'p'; text: string } | TableBlock;
+
+const TABLE_RE = /<table\b[^>]*>([\s\S]*?)<\/table>/g;
+const ROW_RE = /<tr\b[^>]*>([\s\S]*?)<\/tr>/g;
+const CELL_RE = /<(th|td)\b([^>]*)>([\s\S]*?)<\/\1>/g;
+
+const span = (attrs: string, name: string) => {
+  const m = attrs.match(new RegExp(`${name}\\s*=\\s*["']?(\\d+)`, 'i'));
+  const n = m ? Number(m[1]) : 1;
+  return n > 1 ? n : undefined;
+};
+
+function rows(html: string): TableCell[][] {
+  return [...html.matchAll(ROW_RE)].map((r) =>
+    [...r[1].matchAll(CELL_RE)].map((c) => ({
+      header: c[1] === 'th',
+      text: c[3].replace(/\s+/g, ' ').trim(),
+      colSpan: span(c[2], 'colspan'),
+      rowSpan: span(c[2], 'rowspan'),
+    })),
+  );
+}
+
+/** 표 HTML(허용 태그: table, caption, thead, tbody, tr, th, td + colspan/rowspan)을 구조로 바꾼다. 그 밖의 속성은 버린다 */
+export function parseTable(inner: string): TableBlock {
+  const caption = inner.match(/<caption\b[^>]*>([\s\S]*?)<\/caption>/)?.[1].trim();
+  const thead = inner.match(/<thead\b[^>]*>([\s\S]*?)<\/thead>/)?.[1];
+  const rest = inner.replace(/<caption\b[^>]*>[\s\S]*?<\/caption>/, '').replace(/<thead\b[^>]*>[\s\S]*?<\/thead>/, '');
+  return { kind: 'table', ...(caption ? { caption } : {}), head: thead ? rows(thead) : [], body: rows(rest) };
+}
+
+export function parseBlocks(src: string): Block[] {
+  const out: Block[] = [];
+  const paras = (s: string) =>
+    s
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .forEach((text) => out.push({ kind: 'p', text }));
+  let last = 0;
+  for (const m of src.matchAll(TABLE_RE)) {
+    paras(src.slice(last, m.index));
+    out.push(parseTable(m[1]));
+    last = m.index! + m[0].length;
+  }
+  paras(src.slice(last));
+  return out;
+}
+
+const plainInline = (nodes: InlineNode[]): string =>
+  nodes.map((n) => (n.kind === 'text' ? n.text : plainInline(n.children))).join('');
+
+/** 목록 미리보기용 순수 텍스트: 마크업 제거, 표는 [표] */
+export const plainText = (src: string) =>
+  plainInline(parseInline(src.replace(TABLE_RE, ' [표] ')))
+    .replace(/\s+/g, ' ')
+    .trim();

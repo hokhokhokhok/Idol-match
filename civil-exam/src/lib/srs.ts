@@ -1,4 +1,4 @@
-import type { Unit } from '../types';
+import type { Category, Subject } from '../types';
 
 /** 오답 후 재출제 간격(일): 틀리면 1일 뒤 → 맞히면 3일 뒤 → 맞히면 7일 뒤 → 맞히면 졸업 */
 export const INTERVALS = [1, 3, 7] as const;
@@ -6,7 +6,10 @@ export const INTERVALS = [1, 3, 7] as const;
 export type Note = {
   questionId: string;
   setId: string;
-  unit: Unit;
+  /** 없으면 민법(과목 구분 이전 노트) */
+  subject?: Subject;
+  /** 민법 단원 / 감관법 법률 */
+  unit: Category;
   topic: string;
   addedAt: number;
   lastWrongAt: number;
@@ -32,7 +35,7 @@ export function dayStart(t: number, addDays = 0): number {
 
 export const isDue = (n: Note, now = Date.now()) => !n.mastered && n.dueAt <= now;
 
-type Base = Pick<Note, 'questionId' | 'setId' | 'unit' | 'topic'>;
+type Base = Pick<Note, 'questionId' | 'setId' | 'unit' | 'topic' | 'subject'>;
 
 /** 시험이나 복습에서 틀렸을 때: 처음부터(1일 뒤) 다시 */
 export function onWrong(prev: Note | undefined, base: Base, now: number): Note {
@@ -42,7 +45,11 @@ export function onWrong(prev: Note | undefined, base: Base, now: number): Note {
     reviewCount: 0,
     addedAt: now,
     ...prev,
-    ...base,
+    questionId: base.questionId,
+    setId: base.setId,
+    unit: base.unit,
+    topic: base.topic,
+    subject: base.subject ?? prev?.subject ?? '민법',
     lastWrongAt: now,
     wrongCount: (prev?.wrongCount ?? 0) + 1,
     stage: 0,

@@ -23,7 +23,7 @@ describe('backup', () => {
     await saveReview(qs[1].id, false, 2000);
     await db.notes.update(qs[2].id, { memo: '등기', starred: true });
     await saveDraft(newAttempt('seed-001', 300, 5000));
-    await saveSettings({ fontSize: 19, timeLimitMinutes: 50, instantExplanation: true, weakUnitBoost: false });
+    await saveSettings({ fontSize: 19, timeLimitMinutes: 50, instantExplanation: true, weakUnitBoost: false, subject: '감관법' });
 
     const json = JSON.parse(JSON.stringify(await exportBackup()));
     await Promise.all(db.tables.map((t) => t.clear()));
@@ -34,7 +34,7 @@ describe('backup', () => {
     expect(await db.reviews.count()).toBe(1);
     expect(await db.notes.get(qs[2].id)).toMatchObject({ memo: '등기', starred: true });
     expect((await db.drafts.get('current'))?.attempt.startedAt).toBe(5000);
-    expect(await loadSettings()).toEqual({ fontSize: 19, timeLimitMinutes: 50, instantExplanation: true, weakUnitBoost: false });
+    expect(await loadSettings()).toEqual({ fontSize: 19, timeLimitMinutes: 50, instantExplanation: true, weakUnitBoost: false, subject: '감관법' });
   });
 
   it('restore replaces existing data', async () => {
@@ -57,6 +57,35 @@ describe('backup', () => {
       version: 1,
       data: { settings: [{ id: 'app', fontSize: 30, timeLimitMinutes: 999, instantExplanation: 'yes' }] },
     });
-    expect(f.data.settings[0]).toEqual({ id: 'app', fontSize: 17, timeLimitMinutes: 150, instantExplanation: true, weakUnitBoost: true });
+    expect(f.data.settings[0]).toEqual({ id: 'app', fontSize: 17, timeLimitMinutes: 150, instantExplanation: true, weakUnitBoost: true, subject: '민법' });
+  });
+});
+
+describe('backup v1 (before subjects)', () => {
+  it('marks old records as 민법 and accepts files without cards', () => {
+    const f = validateBackup({
+      app: 'civil-exam',
+      version: 1,
+      data: {
+        attempts: [{ id: 'a', setId: 's', submittedAt: 1, answers: {} }],
+        results: [{ id: 'a:q', attemptId: 'a', questionId: 'q', correct: false }],
+        notes: [{ questionId: 'q', dueAt: 1, stage: 0 }],
+        drafts: [{ id: 'current', attempt: { setId: 's' } }],
+      },
+    });
+    expect(f.data.attempts[0].subject).toBe('민법');
+    expect(f.data.results[0].subject).toBe('민법');
+    expect(f.data.notes[0].subject).toBe('민법');
+    expect((f.data.drafts[0] as { attempt: { subject: string } }).attempt.subject).toBe('민법');
+    expect(f.data.cards).toEqual([]);
+  });
+
+  it('keeps the subject of v2 records', () => {
+    const f = validateBackup({
+      app: 'civil-exam',
+      version: 2,
+      data: { attempts: [{ id: 'a', setId: 'law-seed-001', subject: '감관법', submittedAt: 1, answers: {} }] },
+    });
+    expect(f.data.attempts[0].subject).toBe('감관법');
   });
 });
