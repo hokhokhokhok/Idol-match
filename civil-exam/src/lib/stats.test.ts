@@ -24,14 +24,14 @@ describe('stats', () => {
     row('총칙', 'combo', true),
     row('총칙', 'case', false),
     row('총칙', 'single', true),
-    row('계약', 'case', true),
+    row('기타', 'case', true),
   ];
 
   it('accuracy and avg time by unit in canonical order', () => {
     expect(byUnit(rows).map((u) => [u.key, u.correct, u.total, u.avgSec])).toEqual([
       ['총칙', 2, 3, 60],
       ['물권', 1, 3, 60],
-      ['계약', 1, 1, 60],
+      ['기타', 1, 1, 60],
     ]);
     expect(byType(rows).map((t) => t.key)).toEqual(['single', 'combo', 'case']);
   });

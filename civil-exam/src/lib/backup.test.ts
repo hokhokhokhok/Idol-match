@@ -30,7 +30,7 @@ describe('backup', () => {
     await restoreBackup(validateBackup(json));
 
     expect(await db.attempts.count()).toBe(1);
-    expect(await db.results.count()).toBe(5);
+    expect(await db.results.count()).toBe(4);
     expect(await db.reviews.count()).toBe(1);
     expect(await db.notes.get(qs[2].id)).toMatchObject({ memo: '등기', starred: true });
     expect((await db.drafts.get('current'))?.attempt.startedAt).toBe(5000);

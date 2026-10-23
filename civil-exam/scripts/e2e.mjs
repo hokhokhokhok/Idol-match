@@ -114,13 +114,13 @@ for (const [label, viewport] of Object.entries(IPADS)) {
     assert.equal(await page.locator('.qbar-pos strong').innerText(), '2');
     const omrHidden = !(await page.locator('#omr-panel').isVisible());
     if (omrHidden) await page.getByRole('button', { name: /^답안지/ }).click();
-    await page.getByRole('button', { name: /^5번 문항/ }).click();
-    assert.equal(await page.locator('.qbar-pos strong').innerText(), '5');
+    await page.getByRole('button', { name: /^4번 문항/ }).click();
+    assert.equal(await page.locator('.qbar-pos strong').innerText(), '4');
     await noHorizontalOverflow(page);
     await touchTargets(page);
     await shot(page, `${tag}-exam`);
     await page.getByRole('button', { name: '제출', exact: true }).click();
-    assert.match(await page.getByRole('dialog').innerText(), /미응답 4문항/);
+    assert.match(await page.getByRole('dialog').innerText(), /미응답 3문항/);
     await touchTargets(page);
     await page.getByRole('dialog').getByRole('button', { name: '제출', exact: true }).click();
     await page.getByText('채점 결과').waitFor();
@@ -128,7 +128,7 @@ for (const [label, viewport] of Object.entries(IPADS)) {
 
   await step('결과 → 틀린 문항 해설', async () => {
     await noHorizontalOverflow(page);
-    await page.getByRole('button', { name: /틀린 문항 해설 \(4\)/ }).click();
+    await page.getByRole('button', { name: /틀린 문항 해설 \(3\)/ }).click();
     await page.locator('.exp').waitFor();
     assert.match(await page.locator('.verdict').innerText(), /오답/);
     await noHorizontalOverflow(page);
@@ -219,22 +219,22 @@ console.log('\n[기능]');
   await ctx.close();
 }
 
-// 3) 40문항 실전 세트
-console.log('\n[40문항 세트]');
+// 3) 실전 세트(총칙·물권 28문항)와 맞춤 모의고사(40문항)
+console.log('\n[실전 세트 · 맞춤 모의고사]');
 {
   const { ctx, page, errors } = await newPage(IPADS['iPad 가로']);
   await page.goto(URL_);
-  await step('40문항 세트: 답안지 40칸, 40분 타이머, 마지막 문항까지 이동', async () => {
+  await step('2026-001(총칙·물권 28문항): 답안지 28칸, 28분 타이머, 마지막 문항까지 이동', async () => {
     const card = page.locator('.set-card').filter({ hasText: '2026-001' });
     await card.getByRole('button', { name: '실전 시작' }).click();
-    assert.equal(await page.locator('.omr-cell').count(), 40);
-    assert.match(await page.locator('.timer').innerText(), /^(40:00|39:5\d)$/);
-    await page.getByRole('button', { name: /^40번 문항/ }).click();
-    assert.equal(await page.locator('.qbar-pos strong').innerText(), '40');
+    assert.equal(await page.locator('.omr-cell').count(), 28);
+    assert.match(await page.locator('.timer').innerText(), /^(28:00|27:5\d)$/);
+    await page.getByRole('button', { name: /^28번 문항/ }).click();
+    assert.equal(await page.locator('.qbar-pos strong').innerText(), '28');
     await noHorizontalOverflow(page);
-    await shot(page, '40문항-마지막');
+    await shot(page, '실전세트-마지막');
     await submitAll(page);
-    assert.match(await page.locator('.score-card').innerText(), /0 \/ 40문항 정답/);
+    assert.match(await page.locator('.score-card').innerText(), /0 \/ 28문항 정답/);
   });
   await step('오늘의 세트: 푼 세트 다음 세트 또는 다시 풀기 표시', async () => {
     await page.getByRole('button', { name: '홈으로' }).click();

@@ -25,7 +25,7 @@ function accBy<K extends string>(rows: ResultRow[], keyOf: (r: ResultRow) => K, 
     });
 }
 
-export const UNITS: readonly Unit[] = ['총칙', '물권', '계약', '채권총론', '기타'];
+export const UNITS: readonly Unit[] = ['총칙', '물권', '기타'];
 export const TYPES: readonly QuestionType[] = ['single', 'count', 'combo', 'case', 'precedent'];
 export const TYPE_LABEL: Record<QuestionType, string> = {
   single: '단일 정답형',

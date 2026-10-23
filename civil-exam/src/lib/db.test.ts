@@ -36,12 +36,12 @@ describe('db', () => {
     expect(await loadDraft()).toBeNull();
     const saved = await db.attempts.get(a.id);
     expect(saved?.correct).toBe(1);
-    expect(saved?.score100).toBe(20);
+    expect(saved?.score100).toBe(25);
     const res = await db.results.where('attemptId').equals(a.id).toArray();
-    expect(res).toHaveLength(5);
+    expect(res).toHaveLength(4);
     const q1 = res.find((r) => r.questionId === qs[0].id)!;
     expect(q1).toMatchObject({ correct: true, chosen: 4, timeSec: 42, unit: '총칙' });
-    expect(res.filter((r) => !r.correct).map((r) => r.chosen)).toEqual([3, null, null, null]);
+    expect(res.filter((r) => !r.correct).map((r) => r.chosen)).toEqual([3, null, null]);
   });
 
   it('adds wrong answers to the note and applies reviews', async () => {

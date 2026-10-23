@@ -5,7 +5,7 @@ import { db, loadDraft, saveDraft, saveSubmission, type AttemptRecord } from './
 import { buildSubmission } from './lib/records';
 import blueprint from '../config/blueprint.json';
 import { buildMix } from './lib/plan';
-import { isSeedSet, MIX_PREFIX, questionSets, resolveSet } from './lib/sets';
+import { isSeedSet, MIX_PREFIX, questionById, questionSets, resolveSet } from './lib/sets';
 import { weakUnits } from './lib/stats';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from './lib/settings';
 import { ExamScreen } from './screens/ExamScreen';
@@ -171,7 +171,8 @@ export function App() {
           if (!r.correct) h.wrong += 1;
           history.set(r.questionId, h);
         }
-        const weak = settings.weakUnitBoost ? weakUnits(rows.filter((r) => examIds.has(r.attemptId))).map((u) => u.key) : [];
+        const inScope = rows.filter((r) => examIds.has(r.attemptId) && questionById.has(r.questionId));
+        const weak = settings.weakUnitBoost ? weakUnits(inScope).map((u) => u.key) : [];
         const pool = questionSets.filter((s) => !isSeedSet(s.id)).flatMap((s) => s.questions);
         const ids = buildMix({ pool, blueprint, weakUnits: weak, history });
         const now = Date.now();

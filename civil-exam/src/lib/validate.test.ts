@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import blueprint from '../../config/blueprint.json';
+import set1 from '../data/sets/2026-001.json';
 import seed from '../data/sets/seed-001.json';
 import { crossSetIssues, splitCase, validateQuestion, validateSet, visibleLength, type Issue } from './validate';
 
@@ -72,9 +73,9 @@ describe('validate-questions', () => {
 
   it('counts visible characters and splits case facts', () => {
     expect(visibleLength('<u>옳지 않은</u> **것**')).toBe(7);
-    const { facts, question } = splitCase(seed[4].stem);
+    const { facts, question } = splitCase(set1[5].stem);
     expect(question).toBe('이에 관한 설명으로 옳은 것은?');
-    expect(facts.endsWith('의사표시를 하였다.')).toBe(true);
+    expect(facts.endsWith('뒤늦게 알게 되었다.')).toBe(true);
   });
 
   it('40-question set: blueprint and answer distribution', () => {

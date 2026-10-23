@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { RateBars, ScoreTrend } from '../components/Charts';
 import { elapsedSec, isPractice } from '../lib/attempt';
 import { db } from '../lib/db';
-import { resolveSet } from '../lib/sets';
+import { questionById, resolveSet } from '../lib/sets';
 import { formatDuration } from '../lib/format';
 import { byType, byUnit, streakDays, TYPE_LABEL } from '../lib/stats';
 
@@ -20,7 +20,8 @@ export function StatsScreen({ onHome }: { onHome: () => void }) {
     // 점수·정답률은 실전 모드만. 연습 모드 제출은 연속 학습일에만 반영
     const attempts = all.filter((a) => !isPractice(a));
     const examIds = new Set(attempts.map((a) => a.id));
-    const results = allResults.filter((r) => examIds.has(r.attemptId));
+    // 출제범위에서 빠진 문항(예: 계약 단원)의 예전 기록은 정답률·풀이시간 통계에서 뺀다
+    const results = allResults.filter((r) => examIds.has(r.attemptId) && questionById.has(r.questionId));
     return { attempts, results, reviews, notes, activity: [...all.map((a) => a.submittedAt), ...reviews.map((r) => r.at)] };
   }, []);
 

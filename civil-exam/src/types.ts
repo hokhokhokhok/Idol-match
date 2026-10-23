@@ -1,4 +1,5 @@
-export type Unit = '총칙' | '물권' | '계약' | '채권총론' | '기타';
+/** 출제범위: 민법 총칙·물권 ('기타'는 범위 안의 분류 보조용) */
+export type Unit = '총칙' | '물권' | '기타';
 export type QuestionType = 'single' | 'count' | 'combo' | 'case' | 'precedent';
 export type ChoiceNo = 1 | 2 | 3 | 4 | 5;
 

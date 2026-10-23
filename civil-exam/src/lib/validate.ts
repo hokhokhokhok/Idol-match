@@ -13,7 +13,7 @@ export type Issue = { level: Level; where: string; message: string };
 
 export type Blueprint = { total: number; jitter: number; units: Record<string, { count: number }> };
 
-const UNITS: readonly Unit[] = ['총칙', '물권', '계약', '채권총론', '기타'];
+const UNITS: readonly Unit[] = ['총칙', '물권', '기타'];
 const TYPES: readonly QuestionType[] = ['single', 'count', 'combo', 'case', 'precedent'];
 const BOX_LABELS = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ'];
 const CIRCLED = /^\s*[①②③④⑤]|^\s*[1-5][.)]\s/;

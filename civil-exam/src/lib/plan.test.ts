@@ -26,31 +26,31 @@ describe('today set', () => {
 });
 
 describe('mix', () => {
-  const plenty = { 총칙: 50, 물권: 50, 계약: 50 };
+  const plenty = { 총칙: 50, 물권: 50 };
   it('keeps the blueprint total with ±jitter and a weak-unit bonus', () => {
     for (let k = 0; k < 50; k++) {
-      const c = unitCounts(blueprint, plenty, ['계약']);
-      expect(c.총칙 + c.물권 + c.계약).toBe(40);
-      for (const u of ['총칙', '물권'] as const) expect(Math.abs(c[u] - blueprint.units[u].count)).toBeLessThanOrEqual(4);
-      expect(c.계약).toBeGreaterThanOrEqual(12);
+      const c = unitCounts(blueprint, plenty, ['물권']);
+      expect(c.총칙 + c.물권).toBe(40);
+      expect(Math.abs(c.총칙 - blueprint.units.총칙.count)).toBeLessThanOrEqual(4);
+      expect(c.물권).toBeGreaterThanOrEqual(c.총칙);
     }
-    expect(unitCounts(blueprint, plenty, [], () => 0.5)).toEqual({ 총칙: 14, 물권: 14, 계약: 12 });
-    expect(unitCounts(blueprint, plenty, ['물권'], () => 0.5)).toEqual({ 총칙: 12, 물권: 16, 계약: 12 });
+    expect(unitCounts(blueprint, plenty, [], () => 0.5)).toEqual({ 총칙: 20, 물권: 20 });
+    expect(unitCounts(blueprint, plenty, ['물권'], () => 0.5)).toEqual({ 총칙: 18, 물권: 22 });
   });
 
   it('never exceeds what the pool has', () => {
-    const c = unitCounts(blueprint, { 총칙: 14, 물권: 14, 계약: 12 }, ['계약'], seq(0.9, 0.1, 0.5));
-    expect(c).toEqual({ 총칙: 14, 물권: 14, 계약: 12 });
+    const c = unitCounts(blueprint, { 총칙: 14, 물권: 14 }, ['물권'], seq(0.9, 0.1, 0.5));
+    expect(c).toEqual({ 총칙: 14, 물권: 14 });
   });
 
   it('prefers unseen, then wrong questions, ordered like an exam paper', () => {
     const pool = set1 as Question[];
     const history = new Map(pool.slice(0, 10).map((q, i) => [q.id, { seen: 1, wrong: i % 2 }]));
     const ids = buildMix({ pool, blueprint, history, random: () => 0.5 });
-    expect(ids).toHaveLength(40);
-    expect(new Set(ids).size).toBe(40);
+    // 한 세트(총칙 14·물권 14)뿐이면 풀 전체 28문항
+    expect(ids).toHaveLength(pool.length);
+    expect(new Set(ids).size).toBe(pool.length);
     const units = ids.map((id) => pool.find((q) => q.id === id)!.unit);
     expect(units.indexOf('물권')).toBeGreaterThan(units.lastIndexOf('총칙'));
-    expect(units.indexOf('계약')).toBeGreaterThan(units.lastIndexOf('물권'));
   });
 });

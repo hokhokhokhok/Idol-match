@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { isPractice, type Attempt } from '../lib/attempt';
 import { db } from '../lib/db';
 import { pickTodaySet } from '../lib/plan';
-import { isSeedSet, resolveSet } from '../lib/sets';
+import { isSeedSet, questionById, resolveSet } from '../lib/sets';
 import { isDue } from '../lib/srs';
 import { streakDays, weakUnits } from '../lib/stats';
 import { timeLimitSec } from '../lib/config';
@@ -44,7 +44,7 @@ export function HomeScreen({ sets, draft, settings, onStart, onResume, onOpenRec
     return {
       streak: streakDays([...submitted.map((a) => a.submittedAt), ...reviews.map((r) => r.at)], now),
       due: notes.filter((n) => isDue(n, now)).length,
-      weak: weakUnits(results.filter((r) => examIds.has(r.attemptId))),
+      weak: weakUnits(results.filter((r) => examIds.has(r.attemptId) && questionById.has(r.questionId))),
       today: pickTodaySet(realSets, submitted),
       solved: new Set(submitted.map((a) => a.setId)),
     };
