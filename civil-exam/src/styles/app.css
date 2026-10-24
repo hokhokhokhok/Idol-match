@@ -1229,7 +1229,7 @@
 /* ---------- 과목 탭 ---------- */
 .subject-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0;
   margin-bottom: 14px;
   border: 1px solid var(--chrome-border);
@@ -1500,10 +1500,78 @@
   font-size: 14px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 760px) {
+  /* 과목 4개: 좁은 화면에서는 2×2 */
+  .subject-tabs {
+    grid-template-columns: 1fr 1fr;
+  }
   .subject-tab {
     font-size: 14px;
+    border-top: 1px solid var(--chrome-border);
   }
+  .subject-tab:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  .subject-tab:nth-child(odd) {
+    border-left: 0;
+  }
+}
+
+/* ---------- 화폐의 시간가치 6계수 ---------- */
+.tvm-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 14px;
+}
+.tvm-field {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.tvm-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.tvm-table th[scope='row'] {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  font-weight: 600;
+}
+.tvm-col-name {
+  width: 44%;
+}
+.tvm-table td {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.tvm-table td .muted {
+  display: block;
+  white-space: normal;
+}
+.tvm-tex {
+  overflow-x: auto;
+}
+@media (max-width: 480px) {
+  .tvm-table th,
+  .tvm-table td {
+    padding: 8px 3px;
+    font-size: 13px;
+  }
+  .tvm-table td .muted {
+    font-size: 11px;
+  }
+}
+.tvm-tex {
+  font-weight: 400;
 }
 
 /* ---------- 경제학원론: 풀이 단계 ---------- */

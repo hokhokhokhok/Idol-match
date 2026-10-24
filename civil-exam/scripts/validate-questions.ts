@@ -5,7 +5,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { crossSetIssues, econCoverage, lawCoverage, validateSet, type Issue } from '../src/lib/validate.ts';
-import { econBlueprint, lawBlueprint, root, validateConfig as cfg } from './validate-config.ts';
+import { econBlueprint, lawBlueprint, reBlueprint, root, validateConfig as cfg } from './validate-config.ts';
 
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
@@ -35,7 +35,7 @@ for (const file of targets) {
   issues.push(...validateSet(questions, setId, cfg));
 }
 issues.push(...crossSetIssues(sets));
-if (!files.length) issues.push(...lawCoverage(sets, lawBlueprint), ...econCoverage(sets, econBlueprint));
+if (!files.length) issues.push(...lawCoverage(sets, lawBlueprint), ...econCoverage(sets, econBlueprint), ...econCoverage(sets, reBlueprint, '부동산학원론'));
 
 const count = (l: Issue['level']) => issues.filter((i) => i.level === l).length;
 const errors = count('error');

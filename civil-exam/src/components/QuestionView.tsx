@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { parseBlocks, type TableBlock } from '../lib/inline';
-import type { ChoiceMark, ChoiceNo, Question } from '../types';
+import { isQuant, type ChoiceMark, type ChoiceNo, type Question } from '../types';
 import { FigureView } from './FigureView';
 import { RichText } from './RichText';
 
@@ -83,7 +83,7 @@ export function QuestionView({ question: q, selected, onSelect, marks = {}, onTo
           {q.law}
         </span>
       )}
-      {q.subject === '경제학원론' && (
+      {isQuant(q) && (
         <span className="qv-law" title="영역 · 단원">
           {q.field} · {q.unit}
         </span>
@@ -109,7 +109,7 @@ export function QuestionView({ question: q, selected, onSelect, marks = {}, onTo
         </div>
       </div>
 
-      {q.subject === '경제학원론' && q.figure && <FigureView figure={q.figure} />}
+      {isQuant(q) && q.figure && <FigureView figure={q.figure} />}
 
       {q.box && (
         <div className="qv-box" role="group" aria-label={q.box.title?.replace(/\s/g, '') ?? '보기'}>

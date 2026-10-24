@@ -24,9 +24,27 @@ import {
   publicGoodLinear,
   quadraticCost,
 } from './micro.ts';
+import {
+  amortization,
+  bandOfInvestment,
+  cobweb,
+  costApproach,
+  directCapitalization,
+  elasticityMix,
+  expectedReturn,
+  huffModel,
+  loanLimit,
+  npvIrr,
+  operatingCashFlow,
+  portfolioTwo,
+  retailGravity,
+  salesComparison,
+  timeValue,
+} from './realestate.ts';
 import type { Solver } from './types.ts';
 
 export type { Solver, SolverResult } from './types.ts';
+export { tvmFactors } from './realestate.ts';
 
 /** 문항의 calc.solverId → 풀이 함수 */
 export const solvers: Record<string, Solver> = {
@@ -53,4 +71,20 @@ export const solvers: Record<string, Solver> = {
   'solow-cobb-douglas': solowCobbDouglas,
   'comparative-advantage': comparativeAdvantage,
   'purchasing-power-parity': purchasingPowerParity,
+  // 부동산학원론
+  'time-value': timeValue,
+  'npv-irr': npvIrr,
+  'expected-return': expectedReturn,
+  'portfolio-two': portfolioTwo,
+  'operating-cash-flow': operatingCashFlow,
+  'loan-limit': loanLimit,
+  amortization,
+  'cost-approach': costApproach,
+  'sales-comparison': salesComparison,
+  'direct-capitalization': directCapitalization,
+  'band-of-investment': bandOfInvestment,
+  'huff-model': huffModel,
+  'retail-gravity': retailGravity,
+  cobweb,
+  'elasticity-mix': elasticityMix,
 };

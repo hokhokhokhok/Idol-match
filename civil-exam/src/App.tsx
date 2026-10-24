@@ -19,8 +19,9 @@ import { ResultScreen } from './screens/ResultScreen';
 import { ReviewScreen } from './screens/ReviewScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { ShiftQuizScreen } from './screens/ShiftQuizScreen';
+import { TvmScreen } from './screens/TvmScreen';
 import { StatsScreen } from './screens/StatsScreen';
-import { isCalc, type Category, type Subject } from './types';
+import { isCalc, isQuantSubject, type Category, type Subject } from './types';
 
 type View =
   | { name: 'home' }
@@ -33,6 +34,7 @@ type View =
   | { name: 'settings' }
   | { name: 'cards' }
   | { name: 'shift-quiz' }
+  | { name: 'tvm' }
   | { name: 'cite-search' }
   | { name: 'browse'; questionIds: string[]; start: number };
 
@@ -124,7 +126,7 @@ export function App() {
           home();
         }}
         onSubmit={submit}
-        calculator={settings.examCalculator && subjectOf(draft) === '경제학원론'}
+        calculator={settings.examCalculator && isQuantSubject(subjectOf(draft))}
       />
     );
   }
@@ -176,6 +178,7 @@ export function App() {
   if (view.name === 'stats') return <StatsScreen subject={subject} onHome={home} />;
   if (view.name === 'cards') return <CardsScreen onHome={home} />;
   if (view.name === 'shift-quiz') return <ShiftQuizScreen onHome={home} />;
+  if (view.name === 'tvm') return <TvmScreen onHome={home} />;
 
   if (view.name === 'cite-search') {
     return (
@@ -246,6 +249,7 @@ export function App() {
       }}
       onCards={() => setView({ name: 'cards' })}
       onShiftQuiz={() => setView({ name: 'shift-quiz' })}
+      onTvm={() => setView({ name: 'tvm' })}
       onCalcDrill={async () => {
         const [notes, { history }] = await Promise.all([db.notes.toArray(), questionHistory()]);
         const now = Date.now();

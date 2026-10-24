@@ -111,6 +111,7 @@ db.version(4)
 
 // v5: 경제학원론 추가. 스키마·기존 기록(민법·감관법)은 그대로 두고, 바꾸기 전 상태를 snapshots에 한 번 더 백업만 한다.
 export const PRE_ECON_SNAPSHOT = 'before-v5-econ';
+export const PRE_REALESTATE_SNAPSHOT = 'before-v6-realestate';
 db.version(5)
   .stores({})
   .upgrade(async (tx) => {
@@ -120,6 +121,21 @@ db.version(5)
     const now = Date.now();
     await tx.table<SnapshotRow>('snapshots').put({
       id: PRE_ECON_SNAPSHOT,
+      createdAt: now,
+      file: { app: 'civil-exam', version: 2, exportedAt: new Date(now).toISOString(), data },
+    });
+  });
+
+// v6: 부동산학원론 추가. v5와 같이 스키마·기존 기록은 그대로 두고 바꾸기 전 상태만 snapshots에 백업한다.
+db.version(6)
+  .stores({})
+  .upgrade(async (tx) => {
+    const names = ['attempts', 'results', 'notes', 'reviews', 'drafts', 'settings', 'cards'] as const;
+    const data = Object.fromEntries(await Promise.all(names.map(async (n) => [n, await tx.table(n).toArray()] as const)));
+    if (!Object.values(data).some((rows) => rows.length > 0)) return;
+    const now = Date.now();
+    await tx.table<SnapshotRow>('snapshots').put({
+      id: PRE_REALESTATE_SNAPSHOT,
       createdAt: now,
       file: { app: 'civil-exam', version: 2, exportedAt: new Date(now).toISOString(), data },
     });

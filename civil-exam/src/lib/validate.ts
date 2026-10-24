@@ -7,7 +7,7 @@
  * 과목(subject)에 따라 민법 규칙과 감관법 규칙을 나눠 적용한다.
  * Node가 이 파일을 직접 실행하므로 런타임 import 없이 타입만 가져온다.
  */
-import type { CalcClaim, CivilType, EconField, EconType, EconUnit, Figure, Law, LawType, Pattern, Question, Subject, Unit } from '../types';
+import type { CalcClaim, CivilType, EconField, EconType, EconUnit, Figure, Law, LawType, Pattern, Question, ReField, ReUnit, Subject, Unit } from '../types';
 
 export type Level = 'error' | 'warn' | 'info';
 export type Issue = { level: Level; where: string; message: string };
@@ -27,6 +27,8 @@ export type ValidateConfig = {
   parseMath?: (tex: string) => string | null;
   /** 경제학원론 분량 기준 (config/econ/length.json). 없으면 ECON_LENGTH_RULES */
   econLength?: Partial<Record<EconType, LengthRule>>;
+  /** 부동산학원론 분량 기준 (config/realestate/length.json). 없으면 RE_LENGTH_RULES */
+  reLength?: Partial<Record<EconType, LengthRule>>;
   /** 과목별 40문항 배분 기준 */
   blueprints?: Partial<Record<Subject, Blueprint>>;
   /** 감관법 분량 기준 (config/law/length.json). 없으면 LAW_LENGTH_RULES */
@@ -35,7 +37,20 @@ export type ValidateConfig = {
   lawAsOf?: string;
 };
 
-const SUBJECTS: readonly Subject[] = ['민법', '경제학원론', '감관법'];
+const SUBJECTS: readonly Subject[] = ['민법', '경제학원론', '부동산학원론', '감관법'];
+/** 계산·그래프 과목 (경제학원론·부동산학원론) */
+const QUANT = ['경제학원론', '부동산학원론'] as const;
+type Quant = (typeof QUANT)[number];
+const RE_UNITS: Record<ReUnit, ReField> = {
+  '부동산학 총론': '총론·경제·시장',
+  부동산경제론: '총론·경제·시장',
+  '부동산시장·입지론': '총론·경제·시장',
+  부동산정책론: '정책',
+  부동산투자론: '투자·금융',
+  부동산금융론: '투자·금융',
+  '개발·관리·마케팅': '개발·관리',
+  감정평가론: '감정평가',
+};
 const ECON_UNITS: Record<EconUnit, EconField> = {
   '수요공급·탄력성·조세': '미시',
   소비자이론: '미시',
@@ -101,6 +116,15 @@ export const ECON_LENGTH_RULES: Record<EconType, LengthRule> = {
   combo: { stem: [15, 120], boxItem: [15, 90], total: [150, 500] },
   graph: { stem: [20, 300], choice: [5, 90], total: [150, 550] },
   table: { stem: [40, 350], choice: [5, 80], total: [200, 600] },
+};
+
+/** 부동산학원론 분량 기준 기본값 — config/realestate/length.json 과 같은 값 (테스트가 일치 확인) */
+export const RE_LENGTH_RULES: Record<EconType, LengthRule> = {
+  calc: { stem: [40, 400], choice: [1, 60], total: [100, 600] },
+  concept: { stem: [15, 120], choice: [15, 110], total: [150, 650] },
+  combo: { stem: [15, 120], boxItem: [15, 110], total: [150, 600] },
+  graph: { stem: [20, 350], choice: [5, 110], total: [150, 650] },
+  table: { stem: [40, 400], choice: [5, 90], total: [200, 700] },
 };
 
 /* ---------- 계산 문항: 보기 값 읽기·비교 ---------- */
@@ -373,11 +397,13 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
     if (!LAW_TYPES.includes(q.type as LawType)) err(`type "${String(q.type)}"은(는) ${LAW_TYPES.join('/')} 중 하나여야 합니다`);
     if (q.pattern === undefined) warn(`pattern(문항 유형: ${PATTERNS.join('/')})이 없습니다 — 앱이 추정합니다`);
     else if (!PATTERNS.includes(q.pattern as Pattern)) err(`pattern "${String(q.pattern)}"은(는) ${PATTERNS.join('/')} 중 하나여야 합니다`);
-  } else if (subject === '경제학원론') {
-    const unit = q.unit as EconUnit;
-    if (!(unit in ECON_UNITS)) err(`unit "${String(q.unit)}"은(는) ${Object.keys(ECON_UNITS).join('/')} 중 하나여야 합니다`);
-    if (q.field !== '미시' && q.field !== '거시') err(`field는 "미시" 또는 "거시"여야 합니다 (현재 ${String(q.field)})`);
-    else if (unit in ECON_UNITS && ECON_UNITS[unit] !== q.field) warn(`${unit} 단원은 ${ECON_UNITS[unit]} 영역입니다 (field: ${String(q.field)})`);
+  } else if (QUANT.includes(subject as Quant)) {
+    const units: Record<string, string> = subject === '경제학원론' ? ECON_UNITS : RE_UNITS;
+    const fields = [...new Set(Object.values(units))];
+    const unit = String(q.unit);
+    if (!(unit in units)) err(`unit "${unit}"은(는) ${Object.keys(units).join('/')} 중 하나여야 합니다`);
+    if (!fields.includes(q.field as string)) err(`field는 ${fields.map((f) => `"${f}"`).join('/')} 중 하나여야 합니다 (현재 ${String(q.field)})`);
+    else if (unit in units && units[unit] !== q.field) warn(`${unit} 단원은 ${units[unit]} 영역입니다 (field: ${String(q.field)})`);
     if (!ECON_TYPES.includes(q.type as EconType)) err(`type "${String(q.type)}"은(는) ${ECON_TYPES.join('/')} 중 하나여야 합니다`);
   } else if (subject === '민법') {
     if (!UNITS.includes(q.unit as Unit)) err(`unit "${String(q.unit)}"은(는) ${UNITS.join('/')} 중 하나여야 합니다`);
@@ -423,7 +449,7 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
           if (b.instrument !== '고시' && !/제\s*\d+\s*조|별표/.test(cite)) warn(`legalBasis[${i}] "${cite}": 조문 번호(제○조)가 없습니다`);
         });
       if (ex.statutes !== undefined || ex.cases !== undefined) warn('감관법 문항은 statutes/cases 대신 legalBasis를 씁니다');
-    } else if (subject === '경제학원론') {
+    } else if (QUANT.includes(subject as Quant)) {
       if (ex.steps !== undefined && (!Array.isArray(ex.steps) || !ex.steps.every(isStr))) err('explanation.steps는 문자열 배열이어야 합니다');
       if ((q.type === 'calc' || q.calc) && !(Array.isArray(ex.steps) && ex.steps.length)) warn('계산형 해설에 풀이 단계(steps)가 없습니다');
     } else {
@@ -459,8 +485,8 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
       warn(`발문에 법률 이름(${String(q.law)})이 없습니다 — "○○법령상 …" 형식을 권장합니다`);
   }
 
-  // ── 경제학원론: 그래프·계산 검증·수식 ──
-  if (subject === '경제학원론') {
+  // ── 경제학원론·부동산학원론: 그래프·계산 검증·수식 ──
+  if (QUANT.includes(subject as Quant)) {
     if (q.figure !== undefined) figureProblems(q.figure).forEach((m) => err(`figure: ${m}`));
     else if (q.type === 'graph') err('그래프 해석형(graph)인데 figure가 없습니다');
     if (q.type === 'calc' && !isObj(q.calc)) err('계산형(calc) 문항에 calc(solverId, params, expected)가 없습니다');
@@ -497,7 +523,7 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
       warn(`보기별 해설에서 정답으로 설명한 보기(${marked.join(', ')}번)가 answer(${String(q.answer)}번)와 다릅니다`);
 
     // ── 감관법: 복수 정답 의심 — 묻는 쪽(옳은/옳지 않은)으로 판정된 보기 해설이 2개 이상 ──
-    const econSingle = subject === '경제학원론' && ['concept', 'graph', 'table'].includes(q.type as string) && !(isObj(q.calc) && Array.isArray(q.calc.claims));
+    const econSingle = QUANT.includes(subject as Quant) && ['concept', 'graph', 'table'].includes(q.type as string) && !(isObj(q.calc) && Array.isArray(q.calc.claims));
     if (((law && ['single', 'numeric', 'case'].includes(q.type as string)) || econSingle) && isStr(q.stem)) {
       const neg = NEGATIVE_STEM.test((q.stem as string).replace(TABLE_RE, ''));
       const wanted = neg ? 'false' : 'true';
@@ -513,7 +539,7 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
 
   // ── 마크업 (표는 감관법 발문에서만) ──
   const texts: [string, unknown, boolean][] = [
-    ['stem', q.stem, law || subject === '경제학원론'],
+    ['stem', q.stem, law || QUANT.includes(subject as Quant)],
     ...(choices ?? []).map((c, i) => [`${i + 1}번 보기`, c, false] as [string, unknown, boolean]),
   ];
   if (isObj(q.box) && Array.isArray(q.box.items))
@@ -557,6 +583,8 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
     ? { ...LAW_LENGTH_RULES, ...cfg.lawLength }[type as LawType]
     : subject === '경제학원론'
       ? { ...ECON_LENGTH_RULES, ...cfg.econLength }[type as EconType]
+      : subject === '부동산학원론'
+        ? { ...RE_LENGTH_RULES, ...cfg.reLength }[type as EconType]
       : LENGTH_RULES[type as CivilType];
   if (rule && isStr(q.stem) && choices && choices.every((c) => typeof c === 'string')) {
     const stem = q.stem as string;
@@ -585,7 +613,7 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
     info(
       law
         ? '미검수 (reviewed: false) — law.go.kr 현행 조문과 대조 필요'
-        : subject === '경제학원론'
+        : QUANT.includes(subject as Quant)
           ? `미검수 (reviewed: false) — ${isObj(q.calc) ? '계산은 코드로 검증, 발문·해설 내용은 교재 대조' : '교재와 대조'} 필요`
           : '미검수 (reviewed: false)',
     );
@@ -606,6 +634,7 @@ export function validateSet(raw: unknown, setId: string, cfg: ValidateConfig | B
   const subject = subjects[0] as Subject | undefined;
   if (subject === '감관법' && !/^law-/.test(setId)) set('감관법 세트 파일 이름은 "law-"로 시작하기를 권장합니다 (예: law-2027-001)');
   if (subject === '경제학원론' && !/^econ-/.test(setId)) set('경제학원론 세트 파일 이름은 "econ-"으로 시작하기를 권장합니다 (예: econ-2027-001)');
+  if (subject === '부동산학원론' && !/^re-/.test(setId)) set('부동산학원론 세트 파일 이름은 "re-"로 시작하기를 권장합니다 (예: re-2027-001)');
 
   const dup = <T,>(vals: T[]) => [...new Set(vals.filter((v, i) => vals.indexOf(v) !== i))];
   const dupNo = dup(qs.map((q) => q.number).filter((n) => n !== undefined));
@@ -666,17 +695,17 @@ export function lawCoverage(sets: { setId: string; questions: unknown }[], bluep
   return [{ level: 'info', where: '감관법 문항 풀', message: `${pool.length}문항 — ${parts.join(', ')}` }];
 }
 
-/** 경제학원론 문항 풀의 단원별 충족 현황(맞춤 모의고사용) — 시드 세트 제외 */
-export function econCoverage(sets: { setId: string; questions: unknown }[], blueprint: Blueprint): Issue[] {
+/** 경제학원론(또는 부동산학원론) 문항 풀의 단원별 충족 현황(맞춤 모의고사용) — 시드 세트 제외 */
+export function econCoverage(sets: { setId: string; questions: unknown }[], blueprint: Blueprint, subject: Quant = '경제학원론'): Issue[] {
   const pool = sets
     .filter((s) => !/(^|-)seed-/.test(s.setId) && Array.isArray(s.questions))
     .flatMap((s) => (s.questions as unknown[]).filter(isObj))
-    .filter((q) => q.subject === '경제학원론');
+    .filter((q) => q.subject === subject);
   if (!pool.length) return [];
   const parts = Object.entries(blueprint.units).map(([u, { count }]) => {
     const have = pool.filter((q) => q.unit === u).length;
     return `${u} ${have}/${count}${have < count ? '(부족)' : ''}`;
   });
   const calc = pool.filter((q) => isObj(q.calc)).length;
-  return [{ level: 'info', where: '경제학원론 문항 풀', message: `${pool.length}문항(계산 검증 ${calc}) — ${parts.join(', ')}` }];
+  return [{ level: 'info', where: `${subject} 문항 풀`, message: `${pool.length}문항(계산 검증 ${calc}) — ${parts.join(', ')}` }];
 }

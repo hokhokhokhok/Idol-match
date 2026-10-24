@@ -1,0 +1,12 @@
+{
+  "_note": "부동산학원론 시험 포맷. 1교시(민법·경제학원론·부동산학원론 120분)라 과목당 40분을 기본값으로 둔다. 감정평가 관련 내용(감정평가에 관한 규칙 등)은 시험시행 공고일 현행 기준. 계산기 허용 여부는 Q-Net 공고로 확인해 calculator에 기록.",
+  "subject": "부동산학원론",
+  "scopeVerified": false,
+  "questionCount": 40,
+  "choiceCount": 5,
+  "pointsPerQuestion": 2.5,
+  "defaultTimeLimitMinutes": 40,
+  "passCut": 40,
+  "passAverage": 60,
+  "calculator": { "allowed": null, "models": "공고 확인 필요", "calculatorVerified": false }
+}

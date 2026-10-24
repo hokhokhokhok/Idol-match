@@ -398,11 +398,11 @@ for (const label of ['iPad 세로', 'iPad 가로', 'Split View 1/3']) {
     await page.getByRole('button', { name: new RegExp(`^${n}번 문항`) }).click();
   };
 
-  await step('설정: 시험 화면 계산기 켜기 → 과목 탭(3개) 전환', async () => {
+  await step('설정: 시험 화면 계산기 켜기 → 과목 탭(4개) 전환', async () => {
     await page.getByRole('button', { name: '설정' }).click();
     await page.getByRole('switch', { name: /시험 화면 계산기/ }).click();
     await page.getByRole('button', { name: '홈으로' }).click();
-    assert.equal(await page.getByRole('tab').count(), 3);
+    assert.equal(await page.getByRole('tab').count(), 4);
     await page.getByRole('tab', { name: '경제학원론' }).click();
     await page.locator('.set-card', { hasText: 'econ-2026-001' }).waitFor();
     await noHorizontalOverflow(page);
@@ -494,6 +494,108 @@ for (const label of ['iPad 세로', 'iPad 가로', 'Split View 1/3']) {
     await noHorizontalOverflow(page);
     await touchTargets(page);
     await shot(page, `${tag}-shift`);
+    await page.getByRole('button', { name: '홈으로' }).click();
+  });
+
+  await step('콘솔 오류 없음', async () => assert.deepEqual(errors, []));
+  await ctx.close();
+}
+
+// 6) 부동산학원론: 표·그래프 → 계산기 → 채점 → 풀이 단계 → 영역별 통계 → 계산 문제만 풀기 → 6계수 계산기
+for (const label of ['iPad 세로', 'iPad 가로', 'Split View 1/3']) {
+  const viewport = IPADS[label];
+  console.log(`\n[부동산학원론 ${label} ${viewport.width}×${viewport.height}]`);
+  const { ctx, page, errors } = await newPage(viewport);
+  const tag = `re-${label.replace(/[\s/]/g, '_')}`;
+  await page.goto(URL_);
+  const jump = async (n) => {
+    const toggle = page.getByRole('button', { name: /^답안지/ });
+    if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+    await page.getByRole('button', { name: new RegExp(`^${n}번 문항`) }).click();
+  };
+
+  await step('과목 탭 4개 중 부동산학원론: 세트만 보임', async () => {
+    await page.getByRole('button', { name: '설정' }).click();
+    await page.getByRole('switch', { name: /시험 화면 계산기/ }).click();
+    await page.getByRole('button', { name: '홈으로' }).click();
+    assert.equal(await page.getByRole('tab').count(), 4);
+    await page.getByRole('tab', { name: '부동산학원론' }).click();
+    await page.locator('.set-card', { hasText: 're-2026-001' }).waitFor();
+    assert.equal(await page.locator('.set-card', { hasText: 'econ-2026-001' }).count(), 0);
+    await noHorizontalOverflow(page);
+    await touchTargets(page);
+    await shot(page, `${tag}-home`);
+  });
+
+  await step('40문항: 표 지문, 그래프(SVG), 수식, 가로 넘침 없음', async () => {
+    await page.locator('.set-card', { hasText: 're-2026-001' }).getByRole('button', { name: '실전 시작' }).click();
+    assert.equal(await page.locator('.omr-cell').count(), 40);
+    await page.getByRole('radio').nth(4).click(); // 1번 정답 ⑤
+    await jump(15);
+    await page.locator('.qv-figure svg').waitFor();
+    assert.ok((await page.locator('.qv-figure .fig-line').count()) >= 2);
+    await noHorizontalOverflow(page);
+    await shot(page, `${tag}-graph`);
+    await jump(29);
+    await page.locator('.qv-table').waitFor();
+    const sheet = await page.locator('.sheet').evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
+    assert.ok(sheet.sw <= sheet.cw + 1, `시험지 넘침 ${sheet.sw} > ${sheet.cw}`);
+    await noHorizontalOverflow(page);
+    await shot(page, `${tag}-table`);
+    await jump(19);
+    await page.locator('.qv .katex').first().waitFor().catch(() => {});
+    assert.equal(await page.locator('.qv .katex-error').count(), 0);
+    await touchTargets(page);
+  });
+
+  await step('시험 화면 계산기: 1000÷1.1 표시', async () => {
+    await page.getByRole('button', { name: '계산기', exact: true }).click();
+    const calc = page.getByRole('dialog', { name: '계산기' });
+    for (const k of ['1', '2', '1', '0', '÷', '1', '.', '1', '=']) await calc.getByRole('button', { name: k, exact: true }).click();
+    assert.equal(await calc.locator('.calc-expr').innerText(), '1100');
+    await calc.getByRole('button', { name: '계산기 닫기' }).click();
+    await submitAll(page);
+  });
+
+  await step('채점 → 해설: 풀이 단계·계산 검증 배지', async () => {
+    await page.getByText('단원별 정답률').waitFor();
+    await page.getByRole('button', { name: /^19번 .*해설 보기$/ }).click(); // 19번: 연금의 현가(계산형)
+    await page.locator('.exp-steps').waitFor();
+    assert.ok((await page.locator('.exp-steps .katex').count()) > 0);
+    assert.match(await page.locator('.exp-badges').innerText(), /계산 검증 완료/);
+    await noHorizontalOverflow(page);
+    await shot(page, `${tag}-review`);
+    await page.getByRole('button', { name: '‹ 결과' }).click();
+    await page.getByRole('button', { name: '홈으로' }).click();
+  });
+
+  await step('통계: 5개 영역·계산형/개념형 정답률', async () => {
+    await page.getByRole('button', { name: /약점 단원/ }).click();
+    await page.getByText('영역별 · 계산형/개념형 정답률').waitFor();
+    const t = await page.locator('.rate-bars').nth(1).innerText();
+    assert.match(t, /총론·경제·시장[\s\S]*정책[\s\S]*투자·금융[\s\S]*개발·관리[\s\S]*감정평가[\s\S]*계산형[\s\S]*개념형/);
+    await noHorizontalOverflow(page);
+    await page.getByRole('button', { name: '홈으로' }).click();
+  });
+
+  await step('계산 문제만 풀기: 고르면 바로 풀이 단계', async () => {
+    await page.locator('.card-calc').getByRole('button', { name: /^계산 \d+문항 풀기$/ }).click();
+    await page.getByText(/계산 문제 1 \/ \d+/).waitFor();
+    await page.getByRole('radio').first().click();
+    await page.locator('.exp-steps').waitFor();
+    await page.getByRole('button', { name: '‹ 그만하기' }).click();
+  });
+
+  await step('화폐의 시간가치 6계수: 5%·3기 일시불 내가계수 1.157625', async () => {
+    await page.getByRole('button', { name: /화폐의 시간가치 6계수/ }).click();
+    await page.getByRole('textbox', { name: /^이자율/ }).fill('5');
+    await page.getByRole('textbox', { name: /^기간/ }).fill('3');
+    const row = page.locator('.tvm-table tbody tr').first();
+    assert.match(await row.innerText(), /1\.157625/);
+    assert.equal(await page.locator('.tvm-table .katex-error').count(), 0);
+    await noHorizontalOverflow(page);
+    await touchTargets(page);
+    await shot(page, `${tag}-tvm`);
     await page.getByRole('button', { name: '홈으로' }).click();
   });
 

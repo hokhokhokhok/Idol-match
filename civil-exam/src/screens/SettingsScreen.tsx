@@ -43,7 +43,7 @@ async function deliverFile(text: string, name: string) {
 }
 
 /** 업데이트 직전 자동 백업의 이름 */
-const SNAPSHOT_LABEL: Record<string, string> = { 'before-v4-subject': '과목 구분 업데이트', 'before-v5-econ': '경제학원론 추가' };
+const SNAPSHOT_LABEL: Record<string, string> = { 'before-v4-subject': '과목 구분 업데이트', 'before-v5-econ': '경제학원론 추가', 'before-v6-realestate': '부동산학원론 추가' };
 
 export function SettingsScreen({ settings, onChange, onHome, onCiteSearch }: Props) {
   const counts = useLiveQuery(async () => ({ attempts: await db.attempts.count(), notes: await db.notes.count() }), []);
@@ -214,9 +214,9 @@ export function SettingsScreen({ settings, onChange, onHome, onCiteSearch }: Pro
 
         <section className="card set-row">
           <div>
-            <p id="calc-label">시험 화면 계산기 (경제학원론)</p>
+            <p id="calc-label">시험 화면 계산기 (경제학원론·부동산학원론)</p>
             <p className="muted small">
-              켜면 경제학원론 시험 화면 위쪽에 사칙연산 계산기 버튼이 생깁니다. 실제 시험의 계산기 허용 여부·기종은 Q-Net 공고를
+              켜면 경제학원론·부동산학원론 시험 화면 위쪽에 사칙연산 계산기 버튼이 생깁니다. 실제 시험의 계산기 허용 여부·기종은 Q-Net 공고를
               확인하세요.
             </p>
           </div>
