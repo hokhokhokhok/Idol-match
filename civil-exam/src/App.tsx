@@ -239,6 +239,11 @@ export function App() {
         setDraft(newAttempt(`${MIX_PREFIX}${now}`, timeLimitSec(ids.length, settings.timeLimitMinutes), now, mode, ids, subject));
         setView({ name: 'exam' });
       }}
+      onStartDaily={(setId, ids) => {
+        const now = Date.now();
+        setDraft(newAttempt(setId, timeLimitSec(ids.length, settings.timeLimitMinutes), now, mode, ids, subject));
+        setView({ name: 'exam' });
+      }}
       onWeakDrill={async (category: Category) => {
         const [notes, { history }] = await Promise.all([db.notes.toArray(), questionHistory()]);
         const now = Date.now();

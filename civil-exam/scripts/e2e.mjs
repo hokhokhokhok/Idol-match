@@ -244,6 +244,22 @@ console.log('\n[40문항 세트]');
     await page.locator('.card-today').waitFor();
     assert.match(await page.locator('.card-today').innerText(), /오늘의 세트/);
   });
+  await step('오늘의 모의고사: 매일 5세트, 40문항, 제출하면 점수 표시', async () => {
+    const daily = page.getByRole('region', { name: '오늘의 모의고사' });
+    await daily.waitFor();
+    assert.equal(await daily.locator('.daily-item').count(), 5);
+    await noHorizontalOverflow(page);
+    await touchTargets(page);
+    await shot(page, 'daily-home');
+    await daily.locator('.daily-item').nth(1).click();
+    await page.locator('.omr-cell').first().waitFor();
+    assert.equal(await page.locator('.omr-cell').count(), 40);
+    await submitAll(page);
+    assert.match(await page.locator('.topbar-sub').first().innerText(), /오늘의 모의고사 2/);
+    await page.getByRole('button', { name: '홈으로' }).click();
+    await daily.locator('.daily-item.is-done').waitFor();
+    assert.match(await daily.locator('.daily-item').nth(1).innerText(), /점/);
+  });
   await step('맞춤 모의고사: 40문항을 단원 순서대로 구성, 기록에 이름 표시', async () => {
     await page.getByRole('button', { name: '맞춤 세트 만들기' }).click();
     await page.locator('.omr-cell').first().waitFor(); // 맞춤 세트는 기록을 읽은 뒤 만들어진다

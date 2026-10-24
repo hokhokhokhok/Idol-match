@@ -1700,3 +1700,48 @@
     font-size: 18px;
   }
 }
+
+/* ---------- 오늘의 모의고사 5세트 ---------- */
+.card-daily {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.daily-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.daily-item {
+  width: 100%;
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 12px;
+  background: var(--chrome);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.daily-item strong {
+  font-size: 20px;
+}
+.daily-item span {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.daily-item.is-done {
+  border-color: var(--correct);
+  background: color-mix(in srgb, var(--correct) 8%, var(--chrome));
+}
+.daily-item.is-done span {
+  color: var(--correct);
+  font-weight: 600;
+}
