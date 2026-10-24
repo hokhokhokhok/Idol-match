@@ -47,12 +47,13 @@ for (const [name, opts] of VIEWS) {
   page.on("dialog", d => d.accept());
 
   await page.goto(URL, { waitUntil: "networkidle" });
-  check(await page.textContent("h2") .then(t => t.includes("오늘 복습 3개")), `${name}: 첫 실행 샘플 3개 대기`);
+  check((await page.textContent("h2")).includes("오늘 조문 0/10"), `${name}: 첫 실행 하루 목표 10개`);
+  check((await page.textContent(".card")).includes("오늘 낼 조문이 3개뿐"), `${name}: 조문이 부족하면 가져오기 안내`);
   await page.screenshot({ path: `${SHOTS}/${name}-home.png` });
   await layout(page, name, "홈");
 
   // 복습: 첫 카드 정답 입력 → 확인 → 알았다
-  await page.click("button:text('복습 시작')");
+  await page.click("button:text('오늘 조문 시작 (3개)')");
   check(await page.locator(".card .flag:text('원문 대조 필요')").count() === 1, `${name}: 복습 카드에 '원문 대조 필요' 표시`);
   const blanks = page.locator("input.blank");
   const first = await page.textContent(".card b");
@@ -73,8 +74,8 @@ for (const [name, opts] of VIEWS) {
   await page.click("button:text('포기·보기')");
   check(await page.textContent(".card b") === missed, `${name}: '몰랐다' 조문 세션 내 재출제`);
   await page.click("button:text('애매')");
-  check(await page.locator("h2:text('오늘 복습 끝!')").count() === 1, `${name}: 세션 완료 화면`);
-  check((await page.textContent(".card")).includes("오늘 누적 4회 평가 · 정답률 50%"), `${name}: 완료 화면 오늘 기록(4회, 50%)`);
+  check(await page.locator("h2:text('오늘 조문 끝!')").count() === 1, `${name}: 세션 완료 화면`);
+  check((await page.textContent(".card")).includes("오늘 조문 3/10 · 누적 4회 평가 · 정답률 50%"), `${name}: 완료 화면 오늘 기록(4회, 50%)`);
   await page.click("button:text('홈으로')");
   const stats = await page.textContent(".stats");
   check(stats.includes("4") && stats.includes("50%") && stats.includes("1일"), `${name}: 홈 학습 기록 4회·50%·연속 1일 (${stats.replace(/\s+/g, " ")})`);
@@ -138,6 +139,12 @@ for (const [name, opts] of VIEWS) {
   await page.click("nav button:text('오늘')");
   check((await page.textContent(".dday")).includes("D-60"), `${name}: 홈 D-day 표시`);
 
+  // 조문 목록 템플릿 → 텍스트 칸, 본문 빈 조문만 있으면 안내
+  await page.click("nav button:text('관리')");
+  await page.click("button:text('템플릿을 텍스트 칸에')");
+  await page.waitForFunction(() => document.querySelector("#io").value.includes("bosang-68"));
+  await page.click("button:text('가져오기·복원')");
+  check((await page.textContent("#impres")).includes("모든 조문(44개)의 본문"), `${name}: 템플릿 그대로 가져오면 본문 채우라는 안내`);
   // 가져오기 검증 오류
   await page.click("nav button:text('관리')");
   await layout(page, name, "관리");
@@ -182,7 +189,7 @@ for (const [name, opts] of VIEWS) {
   await page.reload({ waitUntil: "networkidle" });
   await ctx.setOffline(true);
   await page.reload({ waitUntil: "load" });
-  check((await page.textContent("h2")).includes("오늘 복습") && await page.evaluate(() => !!navigator.serviceWorker.controller), `${name}: 오프라인 새로고침에서도 동작`);
+  check((await page.textContent("h2")).includes("오늘 조문") && await page.evaluate(() => !!navigator.serviceWorker.controller), `${name}: 오프라인 새로고침에서도 동작`);
   await ctx.setOffline(false);
 
   check(!errors.length, `${name}: 콘솔 에러 0건 ${errors.join(" | ")}`);
@@ -202,7 +209,7 @@ for (const [name, opts] of VIEWS) {
   await page.evaluate(() => localStorage.setItem("jomun-v1", JSON.stringify({ items: [{ id: "x", law: "L", article: "제1조", grade: "B", text: "a {{b}}", box: 2, due: "2020-01-01", log: [] }], cap: 25 })));
   await page.reload();
   const s = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")));
-  check(s.schema === 2 && s.cap === 25 && s.items[0].box === 2 && s.chains.length === 1, "v1 저장 데이터 마이그레이션 (학습 상태 유지)");
+  check(s.schema === 3 && s.cap === 25 && s.items[0].box === 2 && s.chains.length === 1, "v1 저장 데이터 마이그레이션 (학습 상태 유지)");
   await ctx.close();
 }
 

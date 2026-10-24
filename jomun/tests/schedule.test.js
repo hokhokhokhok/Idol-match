@@ -90,3 +90,23 @@ test("날짜 계산: 월·연 경계", () => {
   assert.equal(C.isDate("2026-02-30"), false);
   assert.equal(C.isDate("2026-02-28"), true);
 });
+
+test("오늘 조문: 하루 목표(기본 10)에서 오늘 한 조문 수를 빼고, 복습이 새 조문보다 먼저", () => {
+  assert.equal(C.DAILY, 10);
+  const items = [
+    ...[...Array(8)].map((_, k) => ({ id: "new" + k, grade: "A", box: 0, due: T, log: [] })),
+    ...[...Array(6)].map((_, k) => ({ id: "rev" + k, grade: "C", box: 2, due: T, log: [{ d: "2026-10-20", r: 2 }] })),
+  ];
+  const q = C.todayQueue(items, T, 10);
+  assert.equal(q.length, 10);
+  assert.deepEqual(q.slice(0, 6).map(i => i.id), ["rev0", "rev1", "rev2", "rev3", "rev4", "rev5"]);
+  assert.ok(q.slice(6).every(C.isNew));
+  // 오늘 4개를 했으면(몰랐다 재출제는 한 조문) 6개만 더 낸다
+  q.slice(0, 4).forEach((it, k) => { C.rate(it, k === 0 ? 0 : 2, T); if (k === 0) C.rate(it, 2, T); });
+  assert.equal(C.doneToday(items, T), 4);
+  assert.equal(C.todayQueue(items, T, 10).length, 6);
+  // 목표를 채운 뒤 '더 하기'는 남은 대기에서 목표만큼
+  q.slice(4).forEach(it => C.rate(it, 2, T));
+  assert.equal(C.todayQueue(items, T, 10).length, 0);
+  assert.equal(C.todayQueue(items, T, 10, true).length, 4);
+});
