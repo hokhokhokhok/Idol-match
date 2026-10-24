@@ -42,3 +42,29 @@ export const purchasingPowerParity: Solver = {
     };
   },
 };
+
+/** 소국 개방경제의 관세: 국내 수요 Qd = a − bP, 공급 Qs = c + dP, 세계가격 pw, 단위당 관세 t */
+export const tariffSmallCountry: Solver = {
+  title: '소국의 수입관세 효과',
+  params: ['demandIntercept', 'demandSlope', 'supplyIntercept', 'supplySlope', 'worldPrice', 'tariff'],
+  solve: ({ demandIntercept: a, demandSlope: b, supplyIntercept: c, supplySlope: d, worldPrice: pw, tariff: t }) => {
+    const p = pw + t;
+    const imports0 = a - b * pw - (c + d * pw);
+    const imports1 = a - b * p - (c + d * p);
+    const dwl = 0.5 * t * (imports0 - imports1);
+    return {
+      answer: [imports1, dwl],
+      values: { domesticPrice: p, importsBefore: imports0, importsAfter: imports1, tariffRevenue: t * imports1, deadweightLoss: dwl, productionIncrease: d * t, consumptionDecrease: b * t },
+    };
+  },
+};
+
+/** 이자율평가: 무위험 이자율평가 근사 i = i* + (F − S)/S (단위: %, 환율은 자국통화/외국통화) */
+export const interestParity: Solver = {
+  title: '이자율평가와 선물환율',
+  params: ['iHome', 'iForeign', 'spot'],
+  solve: ({ iHome, iForeign, spot }) => {
+    const forward = spot * (1 + (iHome - iForeign) / 100);
+    return { answer: [forward], values: { forward, expectedDepreciation: iHome - iForeign, premium: forward - spot } };
+  },
+};

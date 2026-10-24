@@ -214,3 +214,70 @@ export const publicGoodLinear: Solver = {
     return { answer: [q], values: { optimalQ: q, mb1: a1 - b1 * q, mb2: a2 - b2 * q } };
   },
 };
+
+/** 선형 수요 Qd = a − bP, 공급 Qs = c + dP 의 균형과 소비자·생산자 잉여 */
+export const marketSurplusLinear: Solver = {
+  title: '선형 시장의 균형과 소비자·생산자 잉여',
+  params: ['demandIntercept', 'demandSlope', 'supplyIntercept', 'supplySlope'],
+  solve: ({ demandIntercept: a, demandSlope: b, supplyIntercept: c, supplySlope: d }) => {
+    const P = (a - c) / (b + d);
+    const Q = a - b * P;
+    const choke = a / b; // 수요가 0이 되는 가격
+    const floor = -c / d; // 공급이 시작되는 가격
+    const cs = 0.5 * (choke - P) * Q;
+    const ps = c >= 0 ? (P * (c + Q)) / 2 : 0.5 * (P - floor) * Q;
+    return { answer: [cs, ps], values: { price: P, quantity: Q, consumerSurplus: cs, producerSurplus: ps, totalSurplus: cs + ps } };
+  },
+};
+
+/** 호탄력성(중간점 공식): 가격 p1→p2, 수량 q1→q2 */
+export const arcElasticity: Solver = {
+  title: '중간점 공식에 의한 가격탄력성',
+  params: ['p1', 'p2', 'q1', 'q2'],
+  solve: ({ p1, p2, q1, q2 }) => {
+    const e = Math.abs((q2 - q1) / ((q1 + q2) / 2) / ((p2 - p1) / ((p1 + p2) / 2)));
+    const tr = p2 * q2 - p1 * q1;
+    return { answer: [e], values: { elasticity: e, elastic: e > 1 ? 1 : 0, revenueBefore: p1 * q1, revenueAfter: p2 * q2, revenueChange: tr } };
+  },
+};
+
+/** 효용 U = √W, 확률 p로 w1, 1−p로 w2: 기대효용·확실성등가·위험프리미엄 */
+export const expectedUtilitySqrt: Solver = {
+  title: '기대효용과 확실성등가(U = √W)',
+  params: ['p', 'w1', 'w2'],
+  solve: ({ p, w1, w2 }) => {
+    const ew = p * w1 + (1 - p) * w2;
+    const eu = p * Math.sqrt(w1) + (1 - p) * Math.sqrt(w2);
+    const ce = eu * eu;
+    return { answer: [ce], values: { expectedWealth: ew, expectedUtility: eu, certaintyEquivalent: ce, riskPremium: ew - ce } };
+  },
+};
+
+/** 슈타켈버그 복점: 시장수요 P = a − bQ, 두 기업 한계비용 c, 기업1 선도자 */
+export const stackelbergDuopoly: Solver = {
+  title: '슈타켈버그 복점',
+  params: ['a', 'b', 'c'],
+  solve: ({ a, b, c }) => {
+    const q1 = (a - c) / (2 * b);
+    const q2 = (a - c) / (4 * b);
+    const P = a - b * (q1 + q2);
+    return {
+      answer: [q1, q2],
+      values: { leaderQ: q1, followerQ: q2, total: q1 + q2, price: P, leaderProfit: (P - c) * q1, followerProfit: (P - c) * q2, cournotEach: (a - c) / (3 * b) },
+    };
+  },
+};
+
+/** 가격하한(최저가격제): 선형 수요·공급에서 초과공급 */
+export const priceFloorLinear: Solver = {
+  title: '가격하한제의 초과공급',
+  params: ['demandIntercept', 'demandSlope', 'supplyIntercept', 'supplySlope', 'floor'],
+  solve: ({ demandIntercept: a, demandSlope: b, supplyIntercept: c, supplySlope: d, floor }) => {
+    const P0 = (a - c) / (b + d);
+    const binding = floor > P0 ? 1 : 0;
+    const qd = a - b * floor;
+    const qs = c + d * floor;
+    const surplus = binding ? qs - qd : 0;
+    return { answer: [surplus], values: { priceBefore: P0, quantityBefore: a - b * P0, qd, qs, surplus, binding, traded: binding ? qd : a - b * P0 } };
+  },
+};

@@ -28,6 +28,27 @@ describe('solvers', () => {
     expect(run('labor-stats', { pop15: 1000, employed: 570, unemployed: 30 }).answer.map((x) => Math.round(Number(x) * 1e9) / 1e9)).toEqual([5, 60, 57]);
   });
 
+  it('추가 경제학 풀이 함수', () => {
+    expect(run('market-surplus-linear', { demandIntercept: 100, demandSlope: 2, supplyIntercept: -20, supplySlope: 2 }).answer).toEqual([400, 400]);
+    expect(run('market-surplus-linear', { demandIntercept: 100, demandSlope: 1, supplyIntercept: 20, supplySlope: 1 }).values).toMatchObject({ price: 40, quantity: 60, consumerSurplus: 1800, producerSurplus: 1600 });
+    expect(run('arc-elasticity', { p1: 10, p2: 12, q1: 110, q2: 90 }).answer[0]).toBeCloseTo(1.1);
+    expect(run('expected-utility-sqrt', { p: 0.5, w1: 100, w2: 0 }).values).toMatchObject({ expectedWealth: 50, expectedUtility: 5, certaintyEquivalent: 25, riskPremium: 25 });
+    expect(run('stackelberg-duopoly', { a: 100, b: 1, c: 10 }).values).toMatchObject({ leaderQ: 45, followerQ: 22.5, price: 32.5, cournotEach: 30 });
+    expect(run('price-floor-linear', { demandIntercept: 100, demandSlope: 1, supplyIntercept: -20, supplySlope: 1, floor: 70 }).values).toMatchObject({ surplus: 20, binding: 1, traded: 30 });
+    expect(run('price-floor-linear', { demandIntercept: 100, demandSlope: 1, supplyIntercept: -20, supplySlope: 1, floor: 50 }).values.surplus).toBe(0);
+    expect(run('cpi-laspeyres', { p0a: 10, q0a: 10, p0b: 20, q0b: 5, p1a: 12, q1a: 8, p1b: 25, q1b: 6 }).values).toMatchObject({ laspeyres: expect.closeTo(122.5, 9), paasche: expect.closeTo(123, 9) });
+    expect(run('taylor-rule', { neutralReal: 2, inflation: 4, target: 2, h: 0.5, g: 0.5, gap: -2 }).answer).toEqual([6]);
+    expect(run('growth-accounting', { gY: 5, gK: 6, gL: 2, alpha: 0.3 }).answer[0]).toBeCloseTo(1.8);
+    expect(run('okun-law', { beta: 2, u: 6, un: 4 }).answer).toEqual([-4]);
+    expect(run('tariff-small-country', { demandIntercept: 200, demandSlope: 1, supplyIntercept: -40, supplySlope: 1, worldPrice: 60, tariff: 20 }).values).toMatchObject({
+      importsBefore: 120,
+      importsAfter: 80,
+      tariffRevenue: 1600,
+      deadweightLoss: 400,
+    });
+    expect(run('interest-parity', { iHome: 5, iForeign: 2, spot: 1200 }).answer[0]).toBeCloseTo(1236);
+  });
+
   it('부동산학원론 cases', () => {
     expect(run('time-value', { r: 0.05, n: 3, amount: 100000000 }).answer[0]).toBeCloseTo(115762500, 0);
     expect(run('time-value', { r: 0.1, n: 3, payment: 1000 }).values.annuityPresent).toBeCloseTo(2486.85, 2);
@@ -46,6 +67,15 @@ describe('solvers', () => {
     expect(run('band-of-investment', { w1: 0.6, rate1: 5, rate2: 10 }).answer[0]).toBeCloseTo(7);
     expect(run('expected-return', { p1: 0.3, r1: 20, p2: 0.5, r2: 10, p3: 0.2, r3: -5, required: 9 }).values).toMatchObject({ expected: expect.closeTo(10, 9), variance: expect.closeTo(75, 9), invest: 1 });
     expect(run('portfolio-two', { w1: 0.6, r1: 10, r2: 5, sd1: 20, sd2: 10, rho: 0 }).values.expected).toBeCloseTo(8);
+  });
+
+  it('부동산학원론 추가 풀이 함수', () => {
+    expect(run('location-quotient', { xA: 300, xB: 100, yA: 300, yB: 300 }).values).toMatchObject({ lqXA: 1.25, lqXB: 0.625, lqYB: 1.25, basicYA: 0 });
+    expect(run('information-value', { p: 0.6, v1: 12100, v0: 6050, r: 0.1, n: 2 }).answer[0]).toBeCloseTo(2000);
+    expect(run('leverage-return', { totalReturn: 8, loanRate: 5, ltv: 0.6 }).values).toMatchObject({ equityReturn: expect.closeTo(12.5, 9), positive: 1 });
+    expect(run('leverage-return', { totalReturn: 4, loanRate: 6, ltv: 0.5 }).values).toMatchObject({ equityReturn: 2, negative: 1 });
+    expect(run('percentage-lease', { baseRent: 1200, sales: 30000, breakeven: 20000, rate: 0.05 }).answer).toEqual([1700]);
+    expect(run('percentage-lease', { baseRent: 1200, sales: 15000, breakeven: 20000, rate: 0.05 }).answer).toEqual([1200]);
   });
 
   it('every solver declares the params it reads', () => {
