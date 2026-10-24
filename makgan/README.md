@@ -1,0 +1,58 @@
+# 막간
+
+뮤지컬·연극 공연, 배우, 혜택(로터리·할인·티켓오픈)을 한곳에서 보고 찜·팔로우·관극 후기로 내 관극을 기록하는 모바일 웹앱.
+
+- 기획: [`SPEC.md`](SPEC.md)(1부, 재구성본) · [`SPEC-2.md`](SPEC-2.md)(2부, 충돌 시 우선)
+- 스택: Next.js(App Router) + Supabase(Postgres·Auth·RLS)
+- 이 폴더는 같은 저장소의 다른 앱과 달리 **GitHub Pages로 배포되지 않습니다**(서버 필요). Vercel 등에 배포합니다.
+
+## 진행 상황
+| 단계 | 내용 | 상태 |
+|---|---|---|
+| 1 | 뼈대: Next.js·Supabase 연결, 스키마·RLS, [샘플] 시드, 5탭, KST 날짜 유틸 | ✅ |
+| 2~9 | 로그인 → 공연 → 배우 → 혜택 → 찜 → 홈 → 후기 → 관리자·검색 | 예정 |
+
+## 폴더
+```
+app/                     화면(5탭: / · /shows · /benefits · /actors · /me, 검색 /search)
+components/              TabBar, PageHeader, Placeholder(구현 전 자리)
+lib/date.ts              KST 날짜·마감 표기("오늘 18:00 마감" 등)
+lib/supabase/            브라우저/서버 클라이언트, 환경 변수 확인
+supabase/migrations/     스키마 + RLS
+supabase/seed.sql        [샘플] 데이터(실제 극장·공연·배우 아님)
+supabase/tests/          로컬 auth 흉내(auth_stub.sql), RLS 테스트
+scripts/test-db.sh       빈 Postgres에 마이그레이션·시드·RLS 테스트 적용
+scripts/e2e.mjs          5탭 이동·360px 레이아웃 검사 + 스크린샷
+```
+
+## 개발
+```bash
+cd makgan
+npm install
+cp .env.example .env.local   # Supabase 값 입력 (없어도 뼈대 화면은 뜸)
+npm run dev                  # http://localhost:3000
+
+npm test                     # 날짜 유틸 단위 테스트
+npm run typecheck
+npm run test:db              # 로컬 Postgres(또는 DATABASE_URL)에 스키마·RLS 테스트
+npm run build && npm run test:e2e
+```
+
+## Supabase 연결
+1. [supabase.com](https://supabase.com)에서 프로젝트 생성
+2. SQL Editor에서 `supabase/migrations/0001_init.sql` 실행 (화면 확인용 데이터가 필요하면 `supabase/seed.sql`도)
+3. Project Settings → API의 URL·anon key를 `.env.local`에 입력
+4. Authentication → Providers에서 Email 사용, Authentication → URL Configuration에 배포 주소 추가(매직링크 로그인은 2단계)
+
+> `supabase/tests/auth_stub.sql`은 로컬 테스트 전용입니다. 실제 Supabase에는 실행하지 마세요.
+
+## 관리자 권한 주기
+관리자는 화면에서 만들 수 없고 DB에서 직접 지정합니다(사용자는 `is_admin`을 바꿀 수 없게 막혀 있음).
+SQL Editor에서:
+```sql
+update public.profiles set is_admin = true
+where id = (select id from auth.users where email = '관리자@이메일');
+```
+
+## 데이터 원칙
+- 실제 극장 좌석 배치, 실제 배우·공연 정보를 임의로 만들지 않습니다. 시드·예시 데이터에는 **[샘플]** 을 붙입니다.

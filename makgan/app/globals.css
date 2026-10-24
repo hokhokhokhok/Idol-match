@@ -1,0 +1,55 @@
+:root {
+  --burgundy: #8b1e3f;
+  --burgundy-soft: #f6e9ee;
+  --orange: #e8590c;          /* 오늘 마감 배지 */
+  --text: #1f1d1e;
+  --text-sub: #6b6567;
+  --line: #ebe6e8;
+  --bg: #ffffff;
+  --bg-sub: #f7f5f6;
+  --tabbar-h: 56px;
+  --header-h: 52px;
+  --max-w: 480px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg-sub);
+  color: var(--text);
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+a { color: inherit; text-decoration: none; }
+
+.app {
+  max-width: var(--max-w);
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--bg);
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+}
+
+.page-body { padding: 16px; }
+
+.placeholder {
+  margin: 48px 0;
+  text-align: center;
+  color: var(--text-sub);
+}
+.placeholder .icon { font-size: 32px; margin-bottom: 8px; }
+.placeholder strong { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--burgundy-soft);
+  color: var(--burgundy);
+  font-size: 13px;
+}
