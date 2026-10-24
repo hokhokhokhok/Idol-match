@@ -4,8 +4,9 @@ import { extractCards, pickCards } from '../lib/cards';
 import { CATEGORY_NAME, passCut, timeLimitSec } from '../lib/config';
 import { db } from '../lib/db';
 import { formatClock } from '../lib/format';
-import { pickTodaySet } from '../lib/plan';
-import { isSeedSet, resolveSet, subjectOf } from '../lib/sets';
+import { dailySets } from '../lib/daily';
+import { dailySetId, dateKey, DAILY_COUNT, pickTodaySet } from '../lib/plan';
+import { isSeedSet, mixTitle, resolveSet, subjectOf } from '../lib/sets';
 import type { Settings } from '../lib/settings';
 import { isDue } from '../lib/srs';
 import { streakDays, weakCategories } from '../lib/stats';
@@ -26,6 +27,8 @@ type Props = {
   onStats: () => void;
   onSettings: () => void;
   onStartMix: () => void;
+  /** 오늘의 모의고사(매일 새로 구성하는 5세트) 시작 */
+  onStartDaily: (setId: string, questionIds: string[]) => void;
   onWeakDrill: (category: Category) => void;
   onCards: () => void;
   /** 경제학원론: 계산 문제만 풀기 */
@@ -36,7 +39,7 @@ type Props = {
   onTvm: () => void;
 };
 
-/** 홈: 과목 탭, 이어 풀기, 오늘의 세트, 연속 학습일·오늘 복습·약점, (감관법) 추천 약점 복습·암기 카드, 최근 기록, 맞춤 모의고사, 세트 목록 */
+/** 홈: 과목 탭, 이어 풀기, 오늘의 세트, 오늘의 모의고사 5세트, 연속 학습일·오늘 복습·약점, (감관법) 추천 약점 복습·암기 카드, 최근 기록, 맞춤 모의고사, 세트 목록 */
 export function HomeScreen(p: Props) {
   const { sets, subject, draft, settings } = p;
   const practice = settings.instantExplanation;
@@ -73,6 +76,20 @@ export function HomeScreen(p: Props) {
       const states = new Map(cardStates.map((c) => [c.id, c]));
       cardsDue = pickCards(cards, states, new Set(notes.filter((n) => !n.mastered).map((n) => n.questionId)), now, 999).length;
     }
+    // 오늘의 모의고사: 문항별 푼 기록(안 푼·틀린 문항 우선)으로 그날 처음 구성하고 하루 동안 유지
+    const history = new Map<string, { seen: number; wrong: number }>();
+    for (const r of allResults) {
+      const h = history.get(r.questionId) ?? { seen: 0, wrong: 0 };
+      h.seen += 1;
+      if (!r.correct) h.wrong += 1;
+      history.set(r.questionId, h);
+    }
+    const date = dateKey(now);
+    const daily = dailySets(subject, history, now).map((ids, k) => {
+      const id = dailySetId(date, k);
+      const done = submitted.filter((a) => a.setId === id);
+      return { id, ids, best: done.length ? Math.max(...done.map((a) => a.score100)) : null };
+    });
     const calcRows = quant ? allResults.filter((r) => examIds.has(r.attemptId) && isCalc(questionById.get(r.questionId)!)) : [];
     const calcCount = quant ? sets.reduce((k, s) => k + s.questions.filter(isCalc).length, 0) : 0;
     return {
@@ -83,6 +100,7 @@ export function HomeScreen(p: Props) {
       weakDue: weak[0] ? notes.filter((n) => n.unit === weak[0].key && isDue(n, now)).length : 0,
       drillSize: weak[0] ? Math.min(10, sets.reduce((k, s) => k + s.questions.filter((q) => categoryOf(q) === weak[0].key).length, 0)) : 0,
       today: pickTodaySet(realSets, submitted),
+      daily,
       solved: new Set(submitted.map((a) => a.setId)),
       recent: submitted.sort((a, b) => b.submittedAt - a.submittedAt).slice(0, 3),
       cardsDue,
@@ -154,6 +172,32 @@ export function HomeScreen(p: Props) {
             >
               {startLabel}
             </button>
+          </section>
+        )}
+
+        {summary && summary.daily.length > 0 && (
+          <section className="card card-daily" aria-label="오늘의 모의고사">
+            <div className="daily-head">
+              <span className="today-label">오늘의 모의고사 · 매일 새로 {DAILY_COUNT}세트</span>
+              <p className="muted">
+                전체 {poolSize}문항에서 {catName} 배분대로 40문항씩 · 안 푼 문항·틀린 문항 우선 · 세트끼리 문항이 겹치지 않게
+              </p>
+            </div>
+            <ol className="daily-list">
+              {summary.daily.map((d, k) => (
+                <li key={d.id}>
+                  <button
+                    type="button"
+                    className={`daily-item${d.best !== null ? ' is-done' : ''}`}
+                    aria-label={`${mixTitle(d.id)} ${d.best !== null ? `완료 ${d.best}점, 다시 풀기` : startLabel}`}
+                    onClick={() => confirmNew() && p.onStartDaily(d.id, d.ids)}
+                  >
+                    <strong>{k + 1}</strong>
+                    <span>{d.best !== null ? `${d.best}점` : `${d.ids.length}문항`}</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
           </section>
         )}
 

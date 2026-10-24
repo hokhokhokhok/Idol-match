@@ -132,3 +132,80 @@ export function buildDrill(
 /** 오늘의 추천 약점 복습: 약점 분류(감관법 법률·경제학 단원 등) 문항으로 buildDrill */
 export const buildWeakDrill = (pool: Question[], category: Category, opts: Parameters<typeof buildDrill>[2] = {}) =>
   buildDrill(pool, (q) => categoryOf(q) === category, opts);
+
+/* ---------- 오늘의 모의고사: 매일 새로 구성하는 5세트 ---------- */
+
+export const DAILY_COUNT = 5;
+export const DAILY_PREFIX = 'mix-daily-';
+
+/** 문자열 → 32비트 시드 (FNV-1a) */
+const hashSeed = (s: string) => {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+};
+/** 같은 시드면 같은 난수열 (mulberry32) */
+export function seededRandom(seed: string): () => number {
+  let a = hashSeed(seed);
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** 로컬 날짜 키 YYYY-MM-DD */
+export const dateKey = (now = Date.now()) => {
+  const d = new Date(now);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+export const dailySetId = (date: string, k: number) => `${DAILY_PREFIX}${date}-${k + 1}`;
+/** "mix-daily-2026-10-24-3" → { date: '2026-10-24', no: 3 } */
+export function parseDailySetId(setId: string): { date: string; no: number } | null {
+  const m = /^mix-daily-(\d{4}-\d{2}-\d{2})-(\d+)$/.exec(setId);
+  return m ? { date: m[1], no: Number(m[2]) } : null;
+}
+
+type DailyInput = {
+  pool: Question[];
+  blueprint: Blueprint;
+  /** 날짜·과목 등으로 만든 시드: 같은 시드면 같은 세트 */
+  seed: string;
+  history?: History;
+  /** 최근(어제 등) 오늘의 모의고사에 나온 문항: 되도록 뒤로 미룬다 */
+  recent?: Set<string>;
+  count?: number;
+};
+
+/**
+ * 오늘의 모의고사 count개(기본 5): 세트마다 blueprint 배분(±jitter)으로 40문항.
+ * 분류마다 ① 오늘 앞선 세트에 덜 나온 문항 ② 안 푼 문항 → 틀린 문항 → 맞힌 문항 ③ 최근 세트에 안 나온 문항 순으로 고른다.
+ * 그래서 같은 날 5세트는 문항 풀을 고르게 돌아가며 쓰고, 날마다 다른 조합이 된다.
+ */
+export function buildDailySets({ pool, blueprint, seed, history = new Map(), recent = new Set(), count = DAILY_COUNT }: DailyInput): string[][] {
+  const random = seededRandom(seed);
+  const byUnit: Record<string, Question[]> = {};
+  for (const q of pool) (byUnit[categoryOf(q)] ??= []).push(q);
+  const available = Object.fromEntries(Object.entries(byUnit).map(([u, qs]) => [u, qs.length]));
+  const rank = rankBy(history);
+  const used = new Map<string, number>();
+  const sets: string[][] = [];
+  for (let k = 0; k < count; k++) {
+    const counts = unitCounts(blueprint, available, [], random);
+    const ids = Object.keys(blueprint.units).flatMap((u) => {
+      const picked = shuffle(byUnit[u] ?? [], random)
+        .sort(
+          (a, b) =>
+            (used.get(a.id) ?? 0) - (used.get(b.id) ?? 0) ||
+            rank(a) - rank(b) ||
+            Number(recent.has(a.id)) - Number(recent.has(b.id)),
+        )
+        .slice(0, counts[u] ?? 0);
+      for (const q of picked) used.set(q.id, (used.get(q.id) ?? 0) + 1);
+      return picked.sort((a, b) => a.setId.localeCompare(b.setId) || a.number - b.number).map((q) => q.id);
+    });
+    sets.push(ids);
+  }
+  return sets;
+}

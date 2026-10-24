@@ -31,6 +31,12 @@ export const isSeedSet = (id: string) => /(^|-)seed-/.test(id);
 export const MIX_PREFIX = 'mix-';
 export const MIX_TITLE = '맞춤 모의고사';
 
+/** 맞춤 세트 이름: 오늘의 모의고사(mix-daily-YYYY-MM-DD-n)는 "오늘의 모의고사 n · 10.24" */
+export function mixTitle(setId: string): string {
+  const m = /^mix-daily-\d{4}-(\d{2})-(\d{2})-(\d+)$/.exec(setId);
+  return m ? `오늘의 모의고사 ${m[3]} · ${Number(m[1])}.${Number(m[2])}` : MIX_TITLE;
+}
+
 /** 응시·기록·노트의 과목. 과목 필드가 없는 예전 기록은 민법 */
 export const subjectOf = (a: { subject?: Subject }): Subject => a.subject ?? '민법';
 
@@ -46,9 +52,7 @@ export function resolveSet(a: { setId: string; questionIds?: string[]; subject?:
     .map((id) => questionById.get(id))
     .filter((q): q is Question => !!q)
     .map((q, i) => ({ ...q, number: i + 1 }));
-  return questions.length
-    ? { id: a.setId, title: MIX_TITLE, subject: a.subject ?? questions[0].subject, questions }
-    : undefined;
+  return questions.length ? { id: a.setId, title: mixTitle(a.setId), subject: a.subject ?? questions[0].subject, questions } : undefined;
 }
 
 export { categoryOf };

@@ -3,8 +3,11 @@ import blueprint from '../../config/blueprint.json';
 import lawBlueprint from '../../config/law/blueprint.json';
 import lawSeed from '../data/sets/law-seed-001.json';
 import set1 from '../data/sets/2026-001.json';
+import set2 from '../data/sets/2026-002.json';
+import set3 from '../data/sets/2026-003.json';
+import set4 from '../data/sets/2026-004.json';
 import { categoryOf, type Question, type QuestionSet } from '../types';
-import { buildMix, buildWeakDrill, pickTodaySet, unitCounts } from './plan';
+import { buildDailySets, buildMix, buildWeakDrill, dailySetId, dateKey, parseDailySetId, pickTodaySet, unitCounts } from './plan';
 
 const sets = ['2026-001', '2026-002', '2026-003'].map((id) => ({ id, title: id, subject: '민법', questions: [] }) as QuestionSet);
 const seq = (...xs: number[]) => {
@@ -77,5 +80,42 @@ describe('감관법 mix and weak drill', () => {
     expect(buildWeakDrill(pool, '국토계획법', { history, random: () => 0.3 })).toEqual([gukto[1], gukto[0]]);
     expect(buildWeakDrill(pool, '국토계획법', { history, dueIds: new Set([gukto[0]]), random: () => 0.3 })).toEqual([gukto[0], gukto[1]]);
     expect(buildWeakDrill(pool, '건축법', { n: 1 })).toHaveLength(1);
+  });
+});
+
+describe('daily sets', () => {
+  const pool = [set1, set2, set3, set4].flat() as unknown as Question[];
+  it('같은 날 같은 구성, 날이 바뀌면 다른 구성; 세트마다 40문항·단원 배분 ±jitter', () => {
+    const a = buildDailySets({ pool, blueprint, seed: '민법:2026-10-24' });
+    expect(a).toEqual(buildDailySets({ pool, blueprint, seed: '민법:2026-10-24' }));
+    expect(a).toHaveLength(5);
+    expect(a).not.toEqual(buildDailySets({ pool, blueprint, seed: '민법:2026-10-25' }));
+    const byId = new Map(pool.map((q) => [q.id, q]));
+    for (const ids of a) {
+      expect(ids).toHaveLength(40);
+      expect(new Set(ids).size).toBe(40);
+      for (const [u, { count }] of Object.entries(blueprint.units)) {
+        const n = ids.filter((id) => categoryOf(byId.get(id)!) === u).length;
+        expect(Math.abs(n - count)).toBeLessThanOrEqual(blueprint.jitter);
+      }
+    }
+  });
+  it('5세트가 문항 풀을 고르게 돌아가며 쓴다(160문항 → 각 문항 1~2회)', () => {
+    const counts = new Map<string, number>();
+    for (const id of buildDailySets({ pool, blueprint, seed: 'x' }).flat()) counts.set(id, (counts.get(id) ?? 0) + 1);
+    expect(counts.size).toBe(pool.length);
+    expect(Math.max(...counts.values())).toBeLessThanOrEqual(2);
+  });
+  it('안 푼 문항을 맞힌 문항보다 먼저 고른다', () => {
+    const history = new Map(pool.slice(0, 120).map((q) => [q.id, { seen: 1, wrong: 0 }]));
+    const first = buildDailySets({ pool, blueprint, seed: 'y', history, count: 1 })[0];
+    const unseen = first.filter((id) => !history.has(id)).length;
+    expect(unseen).toBeGreaterThanOrEqual(30);
+  });
+  it('날짜 키와 세트 id', () => {
+    expect(dailySetId('2026-10-24', 2)).toBe('mix-daily-2026-10-24-3');
+    expect(parseDailySetId('mix-daily-2026-10-24-3')).toEqual({ date: '2026-10-24', no: 3 });
+    expect(parseDailySetId('mix-123')).toBeNull();
+    expect(dateKey(new Date(2026, 0, 5, 23, 59).getTime())).toBe('2026-01-05');
   });
 });
