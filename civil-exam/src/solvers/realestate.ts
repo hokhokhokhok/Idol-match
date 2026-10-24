@@ -268,3 +268,62 @@ export const elasticityMix: Solver = {
     return { answer: [dq], values: { dq, fromPrice: ep * dp, fromIncome: ey * dy, fromCross: ec * dc } };
   },
 };
+
+/* ---------- 입지·정보·레버리지·임대차 (2·3세트 추가) ---------- */
+
+/** 입지계수 LQ = (지역 X의 A산업 고용 / 지역 X 전체 고용) ÷ (전국 A산업 고용 / 전국 전체 고용). 지역 X·Y, 산업 A·B 두 개씩 */
+export const locationQuotient: Solver = {
+  title: '입지계수(LQ)',
+  params: ['xA', 'xB', 'yA', 'yB'],
+  solve: ({ xA, xB, yA, yB }) => {
+    const total = xA + xB + yA + yB;
+    const natA = (xA + yA) / total;
+    const natB = (xB + yB) / total;
+    const lq = (r: number, rTotal: number, nat: number) => r / rTotal / nat;
+    const values = {
+      lqXA: lq(xA, xA + xB, natA),
+      lqXB: lq(xB, xA + xB, natB),
+      lqYA: lq(yA, yA + yB, natA),
+      lqYB: lq(yB, yA + yB, natB),
+    };
+    return { answer: [values.lqXA], values: { ...values, basicXA: values.lqXA > 1 ? 1 : 0, basicYA: values.lqYA > 1 ? 1 : 0 } };
+  },
+};
+
+/**
+ * 개발정보의 현재가치: n년 후 개발되면 v1, 안 되면 v0인 토지. 개발 확률 p, 요구수익률 r.
+ * 정보가치 = (확실할 때 현재가치 − 불확실할 때 현재가치) = (1 − p)(v1 − v0) / (1 + r)^n
+ */
+export const informationValue: Solver = {
+  title: '개발정보의 현재가치',
+  params: ['p', 'v1', 'v0', 'r', 'n'],
+  solve: ({ p, v1, v0, r, n }) => {
+    const d = (1 + r) ** n;
+    const certain = v1 / d;
+    const uncertain = (p * v1 + (1 - p) * v0) / d;
+    return { answer: [certain - uncertain], values: { certainPV: certain, uncertainPV: uncertain, informationValue: certain - uncertain } };
+  },
+};
+
+/** 레버리지: 총자본수익률 R(%), 대출금리 i(%), 대출비율 ltv → 자기자본수익률 = (R − i·ltv) / (1 − ltv) */
+export const leverageReturn: Solver = {
+  title: '레버리지와 자기자본수익률',
+  params: ['totalReturn', 'loanRate', 'ltv'],
+  solve: ({ totalReturn: R, loanRate: i, ltv }) => {
+    const equity = (R - i * ltv) / (1 - ltv);
+    return {
+      answer: [equity],
+      values: { equityReturn: equity, positive: R > i ? 1 : 0, negative: R < i ? 1 : 0, neutral: R === i ? 1 : 0, leverageEffect: equity - R },
+    };
+  },
+};
+
+/** 비율임대차: 기본임대료 + max(0, 매출 − 손익분기 매출) × 추가임대료율 */
+export const percentageLease: Solver = {
+  title: '비율임대차의 임대료',
+  params: ['baseRent', 'sales', 'breakeven', 'rate'],
+  solve: ({ baseRent, sales, breakeven, rate }) => {
+    const extra = Math.max(0, sales - breakeven) * rate;
+    return { answer: [baseRent + extra], values: { extraRent: extra, totalRent: baseRent + extra } };
+  },
+};

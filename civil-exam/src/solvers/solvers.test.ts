@@ -69,6 +69,15 @@ describe('solvers', () => {
     expect(run('portfolio-two', { w1: 0.6, r1: 10, r2: 5, sd1: 20, sd2: 10, rho: 0 }).values.expected).toBeCloseTo(8);
   });
 
+  it('부동산학원론 추가 풀이 함수', () => {
+    expect(run('location-quotient', { xA: 300, xB: 100, yA: 300, yB: 300 }).values).toMatchObject({ lqXA: 1.25, lqXB: 0.625, lqYB: 1.25, basicYA: 0 });
+    expect(run('information-value', { p: 0.6, v1: 12100, v0: 6050, r: 0.1, n: 2 }).answer[0]).toBeCloseTo(2000);
+    expect(run('leverage-return', { totalReturn: 8, loanRate: 5, ltv: 0.6 }).values).toMatchObject({ equityReturn: expect.closeTo(12.5, 9), positive: 1 });
+    expect(run('leverage-return', { totalReturn: 4, loanRate: 6, ltv: 0.5 }).values).toMatchObject({ equityReturn: 2, negative: 1 });
+    expect(run('percentage-lease', { baseRent: 1200, sales: 30000, breakeven: 20000, rate: 0.05 }).answer).toEqual([1700]);
+    expect(run('percentage-lease', { baseRent: 1200, sales: 15000, breakeven: 20000, rate: 0.05 }).answer).toEqual([1200]);
+  });
+
   it('every solver declares the params it reads', () => {
     for (const [id, s] of Object.entries(solvers)) expect(s.params.length, id).toBeGreaterThan(0);
   });
