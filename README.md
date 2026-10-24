@@ -4,7 +4,7 @@
 
 **배포 URL:** https://hokhokhokhok.github.io/Idol-match/  (GitHub Pages, 저장소 hokhokhokhok/Idol-match)
 
-> 같은 저장소의 별도 앱: [`civil-exam/`](civil-exam/README.md) 감정평가사 1차 모의고사 — 민법·경제학원론·부동산학원론·감정평가관계법규 (`/Idol-match/civil-exam/`), [`jomun/`](jomun/README.md) 감정평가 및 보상법규 조문 암기 트레이너 (`/Idol-match/jomun/`), [`makgan/`](makgan/README.md) 막간 — 뮤지컬·연극 공연·혜택·관극 기록 앱 (Next.js + Supabase, Pages 미배포)
+> 같은 저장소의 별도 앱: [`civil-exam/`](civil-exam/README.md) 감정평가사 1차 모의고사 — 민법·경제학원론·부동산학원론·감정평가관계법규 (`/Idol-match/civil-exam/`), [`jomun/`](jomun/README.md) 감정평가 및 보상법규 조문 암기 트레이너 (`/Idol-match/jomun/`), [`makgan/`](makgan/README.md) 막간 — 뮤지컬·연극 공연·혜택·관극 기록 앱 (Next.js + Supabase, Pages 미배포), [`magok-academy/`](magok-academy/README.md) 마곡 뮤지컬 학원 찾기 — 초·중등 학원·강사 경력 비교 (Next.js, Pages 미배포)
 
 ## 아이패드 설치법
 

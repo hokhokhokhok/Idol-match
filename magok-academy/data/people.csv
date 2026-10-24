@@ -1,0 +1,9 @@
+id,academy_id,role,name_public,subjects,profile_source_url,disclosure_basis,collected_at
+P001,A001,원장,(예시)홍길동 원장,뮤지컬종합;연기,https://example.com/about,학원 홈페이지에 본인 공개,2026-10-25
+P002,A001,강사,(예시)김보컬 강사,보컬,https://instagram.com/example,학원 SNS에 공개,2026-10-25
+P003,A002,원장,(예시)이하모 원장,보컬,https://example.com/harmony/about,학원 홈페이지에 본인 공개,2026-10-20
+P004,A003,원장,(예시)박스텝 원장,댄스,https://instagram.com/example_dance,학원 공식 SNS에 공개,2026-09-30
+P005,A003,강사,(예시)최리듬 강사,댄스,https://instagram.com/example_dance,학원 공식 SNS에 이름·담당 반만 공개,2026-09-30
+P006,A004,원장,(예시)정무대 원장,연기;뮤지컬종합,https://example.com/atelier/about,학원 홈페이지에 본인 공개,2026-10-01
+P007,A005,원장,(예시)한등대 원장,뮤지컬종합,https://example.com/lighthouse/team,학원 홈페이지에 본인 공개,2026-04-01
+P008,A005,강사,(예시)윤하모니 강사,보컬;뮤지컬종합,https://example.com/lighthouse/team,학원 홈페이지에 본인 공개,2026-04-01

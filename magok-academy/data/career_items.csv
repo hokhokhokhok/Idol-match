@@ -1,0 +1,16 @@
+id,person_id,type,title,organization,year_from,year_to,source_url,source_type,collected_at,verified
+C001,P001,academy_operation,(예시)뮤지컬 학원 운영,샘플뮤지컬학원,2018,,https://example.com/about,홈페이지,2026-10-25,FALSE
+C002,P001,musical_performance,(예시)작품명 앙상블 출연,(예시)제작사,2015,2015,https://www.kopis.or.kr/,KOPIS,2026-10-25,TRUE
+C003,P002,teaching,(예시)초등 보컬 강사,(예시)기관명,2020,,https://instagram.com/example,SNS,2026-10-25,FALSE
+C004,P003,academy_operation,(예시)보컬 교습소 운영,하모니보컬교습소,2020,,https://example.com/harmony/about,홈페이지,2026-10-20,FALSE
+C005,P003,education,(예시)실용음악 전공 학사,(예시)대학명,2008,2012,https://example.com/harmony/about,홈페이지,2026-10-20,FALSE
+C006,P003,musical_performance,(예시)작품명 조연 출연(본인 공개·공연 DB 미확인),(예시)제작사,2013,2014,https://example.com/harmony/about,홈페이지,2026-10-20,FALSE
+C007,P004,academy_operation,(예시)키즈 댄스 학원 운영,스텝업키즈댄스학원,2016,,https://instagram.com/example_dance,SNS,2026-09-30,FALSE
+C008,P004,award,(예시)청소년 댄스 경연 지도자상,(예시)주최 단체,2022,2022,https://instagram.com/example_dance,SNS,2026-09-30,FALSE
+C009,P006,musical_performance,(예시)작품명 주연 출연,(예시)제작사,2017,2018,https://www.kopis.or.kr/,KOPIS,2026-10-01,TRUE
+C010,P006,musical_performance,(예시)작품명 앙상블 출연,(예시)제작사,2012,2012,https://www.kopis.or.kr/,KOPIS,2026-10-01,TRUE
+C011,P006,teaching,(예시)청소년 연기 워크숍 강사,(예시)문화재단,2019,2023,https://example.com/atelier/about,홈페이지,2026-10-01,FALSE
+C012,P007,academy_operation,(예시)뮤지컬 스쿨 운영,라이트하우스뮤지컬스쿨,2014,,https://example.com/lighthouse/team,홈페이지,2026-04-01,FALSE
+C013,P007,musical_performance,(예시)작품명 음악감독(스태프),(예시)제작사,2010,2011,https://www.kopis.or.kr/,KOPIS,2026-04-01,TRUE
+C014,P008,musical_performance,(예시)작품명 앙상블 출연,(예시)제작사,2019,2019,https://www.kopis.or.kr/,KOPIS,2026-04-01,TRUE
+C015,P008,teaching,(예시)어린이 뮤지컬 보컬 강사,(예시)기관명,2021,,https://example.com/lighthouse/team,홈페이지,2026-04-01,FALSE
