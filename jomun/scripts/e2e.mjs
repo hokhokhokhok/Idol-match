@@ -103,7 +103,7 @@ for (const [name, opts] of VIEWS) {
   await page.click("button:text('훈련')");
   await layout(page, name, "연결");
   for (const a of ["제67조 제1항", "제67조 제2항", "제70조 제1항"]) await page.click(`#cpool .chip:has-text('${a}')`);
-  await page.fill("#cq", "가격시점");
+  await page.fill("#cq", "개발이익");
   check(await page.locator("#cpool .chip").count() === 1, `${name}: 연결 훈련 검색으로 전체 조문 찾기`);
   await page.screenshot({ path: `${SHOTS}/${name}-chain.png` });
   await page.click("button:text('정답 순서 확인')");
@@ -212,12 +212,17 @@ for (const [name, opts] of VIEWS) {
   await page.reload();
   const s = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")));
   const pn = await page.evaluate(() => JOMUN_PACK.items.length);
-  check(s.schema === 3 && s.cap === 25 && s.items[0].box === 2 && s.items.length === 1 + pn && s.packVer === 1, "v1 저장 데이터 마이그레이션 (학습 상태 유지 + 기본 조문 팩 추가)");
+  check(s.schema === 3 && s.cap === 25 && s.items[0].box === 2 && s.items.length === 1 + pn && s.packVer === await page.evaluate(() => JOMUN_PACK.version), "v1 저장 데이터 마이그레이션 (학습 상태 유지 + 기본 조문 팩 추가)");
   check((await page.textContent("#warn")).includes(`기본 조문 ${pn}개를 추가`), "기존 사용자에게 조문 팩 추가 안내");
   // 이미 팩을 받은 기기에서 팩 조문을 지워도 다시 생기지 않음
   await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("jomun-v1")); s.items = s.items.filter(i => i.id !== "bosang-61"); localStorage.setItem("jomun-v1", JSON.stringify(s)); });
   await page.reload();
   check(await page.evaluate(() => !JSON.parse(localStorage.getItem("jomun-v1")).items.some(i => i.id === "bosang-61")), "지운 팩 조문은 같은 팩 버전에서 다시 추가되지 않음");
+  // 이전 팩 버전(1)을 받은 기기: 팩 버전이 오르면 없는 조문(새 조문)만 추가되고 기존 학습 상태는 유지
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("jomun-v1")); s.packVer = 1; s.items = s.items.filter(i => i.id !== "adminappeal-27"); s.items.find(i => i.id === "bosang-62").box = 4; localStorage.setItem("jomun-v1", JSON.stringify(s)); });
+  await page.reload();
+  const s2 = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")));
+  check(s2.items.some(i => i.id === "adminappeal-27") && s2.items.find(i => i.id === "bosang-62").box === 4 && s2.packVer === 2, "팩 v1 → v2 업데이트: 새 조문 추가, 기존 학습 상태 유지");
   await ctx.close();
 }
 
