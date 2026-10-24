@@ -45,9 +45,21 @@ function rate(item, r, today) {
 // 세션 큐에서 i번째를 맨 뒤로 보낸다(재출제).
 function requeue(q, i) { q.push(q.splice(i, 1)[0]); return q; }
 
-// 오늘 대기: 등급 A 우선 → 낮은 박스 우선 → 오래 밀린 것 우선
-const byPriority = (a, b) => GRADES.indexOf(a.grade) - GRADES.indexOf(b.grade) || (a.box | 0) - (b.box | 0) || (a.due < b.due ? -1 : a.due > b.due ? 1 : 0);
+// 오늘 대기: 이미 공부한 조문의 복습이 처음 보는 조문보다 먼저(새 조문을 많이 가져와도 복습이 밀리지 않게),
+// 그 안에서 등급 A 우선 → 낮은 박스 우선 → 오래 밀린 것 우선
+const isNew = i => !(i.log && i.log.length);
+const byPriority = (a, b) => isNew(a) - isNew(b) || GRADES.indexOf(a.grade) - GRADES.indexOf(b.grade) || (a.box | 0) - (b.box | 0) || (a.due < b.due ? -1 : a.due > b.due ? 1 : 0);
 const dueItems = (items, today) => items.filter(i => i.due <= today).sort(byPriority);
+
+/* ===== 하루 조문 수 ===== */
+const DAILY = 10;                                                   // 하루 조문 수 기본값
+// 오늘 한 번이라도 평가한 조문 수(재출제는 한 조문으로 센다)
+const doneToday = (items, today) => items.filter(i => (i.log || []).some(l => l.d === today)).length;
+// 오늘 낼 조문: 하루 목표(cap)에서 오늘 이미 한 조문 수를 뺀 만큼. more=true면 목표를 채운 뒤 '더 하기'로 cap개 더.
+function todayQueue(items, today, cap, more = false) {
+ const left = more ? cap : Math.max(0, cap - doneToday(items, today));
+ return dueItems(items, today).slice(0, left);
+}
 
 /* ===== 학습 기록 ===== */
 // days: { "YYYY-MM-DD": { n: 평가 수, k: 알았다, a: 애매, x: 몰랐다 } }
@@ -96,7 +108,7 @@ function capSuggestion(items, daysLeft) {
 }
 
 /* ===== 가져오기 검증 ===== */
-const APP = "jomun-trainer", SCHEMA = 2;
+const APP = "jomun-trainer", SCHEMA = 3;
 const isStr = v => typeof v === "string" && v.trim() !== "";
 const show = v => { try { const s = JSON.stringify(v); return s === undefined ? String(v) : s.length > 40 ? s.slice(0, 40) + "…" : s; } catch (e) { return String(v); } };
 
@@ -171,8 +183,11 @@ function validateImport(data, knownIds = []) {
  if (!Array.isArray(rawItems)) return fail(mode === "restore" ? "백업의 state.items가 배열이 아닙니다" : "조문 배열이 없습니다 (배열 [...] 또는 {\"items\":[...]} 형식)");
  if (rawChains != null && !Array.isArray(rawChains)) return fail("chains는 배열이어야 합니다");
  const seen = new Set();
+ let skipped = 0;
  rawItems.forEach((x, i) => {
   const where = `조문 ${i + 1}번째${x && isStr(x.id) ? ` (id: ${x.id})` : ""}`;
+  // 템플릿에서 본문을 아직 안 채운 조문은 오류 대신 건너뛴다(채운 것만 들어감)
+  if (x && typeof x.text === "string" && !x.text.trim()) { skipped++; return; }
   const it = checkItem(x, where, errors, warnings);
   if (!it) return;
   if (seen.has(it.id)) { errors.push(`${where}: 같은 id가 파일 안에 두 번 있습니다`); return; }
@@ -189,7 +204,8 @@ function validateImport(data, knownIds = []) {
   if (miss.length) warnings.push(`${where}: 아직 없는 조문 id ${miss.join(", ")} — 해당 조문을 가져오기 전까지 "미등록"으로 표시됩니다`);
   chains.push(ch);
  });
- if (!items.length && !chains.length && !errors.length) errors.push("가져올 조문이나 연결 쟁점이 없습니다");
+ if (skipped) warnings.unshift(`본문(text)이 비어 있는 조문 ${skipped}개는 건너뛰었습니다 — law.go.kr 원문을 채운 뒤 다시 가져오세요`);
+ if (!items.length && !chains.length && !errors.length) errors.push(skipped ? `모든 조문(${skipped}개)의 본문(text)이 비어 있습니다 — 조문 원문을 "text"에 채워 넣으세요` : "가져올 조문이나 연결 쟁점이 없습니다");
  if (mode === "restore" && !errors.length) {
   const s = src, days = {};
   if (s.days != null && (typeof s.days !== "object" || Array.isArray(s.days))) errors.push("백업의 days(학습 기록)가 객체가 아닙니다");
@@ -200,19 +216,21 @@ function validateImport(data, knownIds = []) {
   }
   if (s.cap != null && !(Number.isInteger(s.cap) && s.cap >= 1 && s.cap <= 500)) errors.push(`백업의 cap(일일 한도)이 잘못됐습니다 (받은 값: ${show(s.cap)})`);
   if (s.examDate != null && s.examDate !== "" && !isDate(s.examDate)) errors.push(`백업의 examDate(시험일)가 날짜가 아닙니다 (받은 값: ${show(s.examDate)})`);
-  state = { items, chains, days, cap: s.cap || 30, examDate: s.examDate || "", chainLog: s.chainLog && typeof s.chainLog === "object" ? s.chainLog : {} };
+  state = { schema: data.schema, items, chains, days, cap: s.cap || DAILY, examDate: s.examDate || "", chainLog: s.chainLog && typeof s.chainLog === "object" ? s.chainLog : {} };
  }
  return { ok: !errors.length, mode, items, chains, state, errors, warnings };
 }
 
 // 저장된 상태(구버전 포함)를 현재 형식으로 맞춘다.
 function migrate(s, today) {
+ // schema 3: 하루 조문 수 기본값 30 → 10. 예전 기본값(30)을 그대로 쓰던 경우만 바꾼다.
+ if (!(s.schema >= 3) && (s.cap == null || s.cap === 30)) s.cap = DAILY;
  s.schema = SCHEMA;
  s.items = (s.items || []).map(i => ({ ...i, box: i.box | 0, due: isDate(i.due) ? i.due : today, log: Array.isArray(i.log) ? i.log : [], verified: i.verified === true }));
  s.chains = Array.isArray(s.chains) ? s.chains : [];
  s.days = s.days && typeof s.days === "object" ? s.days : {};
  s.chainLog = s.chainLog && typeof s.chainLog === "object" ? s.chainLog : {};
- s.cap = s.cap > 0 ? s.cap : 30;
+ s.cap = s.cap > 0 ? s.cap : DAILY;
  s.examDate = s.examDate || "";
  return s;
 }
@@ -221,6 +239,6 @@ const backup = (state, now = new Date()) => ({ app: APP, schema: SCHEMA, exporte
 
 return { GRADES, GMAX, BOX, LOG_MAX, WEIGHTS, SCORE_LABELS, APP, SCHEMA,
  todayKST, addDays, diffDays, isDate, norm, parts, blanks,
- interval, rate, requeue, dueItems, record, accuracy, streak, wrongNotes,
+ interval, rate, requeue, isNew, dueItems, DAILY, doneToday, todayQueue, record, accuracy, streak, wrongNotes,
  gradeScore, scoreToGrade, capSuggestion, validateImport, migrate, backup };
 });
