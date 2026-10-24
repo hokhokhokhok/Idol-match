@@ -112,3 +112,44 @@ export const solowCobbDouglas: Solver = {
     };
   },
 };
+
+/** 라스파이레스 물가지수: 기준연도 수량 가중 (두 재화), 기준연도 지수 100 */
+export const cpiLaspeyres: Solver = {
+  title: '라스파이레스·파셰 물가지수',
+  params: ['p0a', 'q0a', 'p0b', 'q0b', 'p1a', 'q1a', 'p1b', 'q1b'],
+  solve: ({ p0a, q0a, p0b, q0b, p1a, q1a, p1b, q1b }) => {
+    const lasp = ((p1a * q0a + p1b * q0b) / (p0a * q0a + p0b * q0b)) * 100;
+    const paas = ((p1a * q1a + p1b * q1b) / (p0a * q1a + p0b * q1b)) * 100;
+    return { answer: [lasp], values: { laspeyres: lasp, paasche: paas, inflationL: lasp - 100, inflationP: paas - 100 } };
+  },
+};
+
+/** 테일러 준칙: i = r* + π + h(π − π*) + g(산출갭) (단위: %) */
+export const taylorRule: Solver = {
+  title: '테일러 준칙 정책금리',
+  params: ['neutralReal', 'inflation', 'target', 'h', 'g', 'gap'],
+  solve: ({ neutralReal, inflation, target, h, g, gap }) => {
+    const i = neutralReal + inflation + h * (inflation - target) + g * gap;
+    return { answer: [i], values: { policyRate: i, realPolicyRate: i - inflation } };
+  },
+};
+
+/** 성장회계 Y = A K^α L^(1−α): 총요소생산성 증가율(솔로우 잔차) (단위: %) */
+export const growthAccounting: Solver = {
+  title: '성장회계와 솔로우 잔차',
+  params: ['gY', 'gK', 'gL', 'alpha'],
+  solve: ({ gY, gK, gL, alpha }) => {
+    const tfp = gY - alpha * gK - (1 - alpha) * gL;
+    return { answer: [tfp], values: { tfp, capitalContribution: alpha * gK, laborContribution: (1 - alpha) * gL, perWorkerGrowth: gY - gL } };
+  },
+};
+
+/** 오쿤의 법칙: (Y − Y*)/Y* = −β(u − u_n) (단위: %) */
+export const okunLaw: Solver = {
+  title: '오쿤의 법칙',
+  params: ['beta', 'u', 'un'],
+  solve: ({ beta, u, un }) => {
+    const gap = -beta * (u - un);
+    return { answer: [gap], values: { outputGap: gap, cyclicalUnemployment: u - un } };
+  },
+};
