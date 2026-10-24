@@ -279,6 +279,8 @@ function verdictOf(text: string): 'answer' | 'true' | 'false' | null {
 }
 
 const NEGATIVE_STEM = /옳지 않은|틀린 것|아닌 것|해당하지 않는|없는 것/;
+/** 발문의 부정 표현 판정 (표·<u> 강조 표시는 걷어 낸다: "<u>아닌</u> 것") */
+const isNegativeStem = (stem: string) => NEGATIVE_STEM.test(stem.replace(TABLE_RE, '').replace(/<\/?u>/g, ''));
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
@@ -334,7 +336,7 @@ function econCalcIssues(q: EconLike, cfg: ValidateConfig, { err, warn, info }: R
   if (calc.claims !== undefined) {
     // (2') 보기별 주장 판정
     if (!Array.isArray(calc.claims) || calc.claims.length !== 5) return err('calc.claims는 길이 5 배열이어야 합니다 (판정하지 않는 보기는 null)');
-    const neg = NEGATIVE_STEM.test(String(q.stem ?? '').replace(TABLE_RE, ''));
+    const neg = isNegativeStem(String(q.stem ?? ''));
     const truth = (calc.claims as unknown[]).map((c, i) => {
       if (c === null) return null;
       if (!isObj(c) || !isStr(c.key) || typeof c.value !== 'number' || (c.op !== undefined && !['=', '>', '<'].includes(c.op as string))) {
@@ -525,7 +527,7 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
     // ── 감관법: 복수 정답 의심 — 묻는 쪽(옳은/옳지 않은)으로 판정된 보기 해설이 2개 이상 ──
     const econSingle = QUANT.includes(subject as Quant) && ['concept', 'graph', 'table'].includes(q.type as string) && !(isObj(q.calc) && Array.isArray(q.calc.claims));
     if (((law && ['single', 'numeric', 'case'].includes(q.type as string)) || econSingle) && isStr(q.stem)) {
-      const neg = NEGATIVE_STEM.test((q.stem as string).replace(TABLE_RE, ''));
+      const neg = isNegativeStem(q.stem as string);
       const wanted = neg ? 'false' : 'true';
       const hits = per.flatMap((p, i) => {
         const v = typeof p === 'string' ? verdictOf(p) : null;
