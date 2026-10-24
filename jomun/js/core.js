@@ -216,7 +216,7 @@ function validateImport(data, knownIds = []) {
   }
   if (s.cap != null && !(Number.isInteger(s.cap) && s.cap >= 1 && s.cap <= 500)) errors.push(`백업의 cap(일일 한도)이 잘못됐습니다 (받은 값: ${show(s.cap)})`);
   if (s.examDate != null && s.examDate !== "" && !isDate(s.examDate)) errors.push(`백업의 examDate(시험일)가 날짜가 아닙니다 (받은 값: ${show(s.examDate)})`);
-  state = { schema: data.schema, items, chains, days, cap: s.cap || DAILY, examDate: s.examDate || "", chainLog: s.chainLog && typeof s.chainLog === "object" ? s.chainLog : {} };
+  state = { schema: data.schema, items, chains, days, cap: s.cap || DAILY, packVer: s.packVer | 0, examDate: s.examDate || "", chainLog: s.chainLog && typeof s.chainLog === "object" ? s.chainLog : {} };
  }
  return { ok: !errors.length, mode, items, chains, state, errors, warnings };
 }

@@ -1,7 +1,7 @@
 // 조문 암기 트레이너 서비스 워커: 앱 파일 전부 cache-first(오프라인 동작). 파일을 바꿔 배포할 때는 VERSION을 올린다.
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `jomun-${VERSION}`;
-const FILES = ["./", "index.html", "js/core.js", "manifest.webmanifest",
+const FILES = ["./", "index.html", "js/core.js", "data/pack.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

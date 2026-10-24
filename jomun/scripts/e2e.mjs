@@ -48,9 +48,16 @@ for (const [name, opts] of VIEWS) {
 
   await page.goto(URL, { waitUntil: "networkidle" });
   check((await page.textContent("h2")).includes("오늘 조문 0/10"), `${name}: 첫 실행 하루 목표 10개`);
-  check((await page.textContent(".card")).includes("오늘 낼 조문이 3개뿐"), `${name}: 조문이 부족하면 가져오기 안내`);
+  const PACK_N = await page.evaluate(() => JOMUN_PACK.items.length);
+  check((await page.textContent(".card")).includes(`전체 ${PACK_N + 3}`) && await page.locator("button:text('오늘 조문 시작 (10개)')").count() === 1, `${name}: 기본 조문 팩 ${PACK_N}개 + 샘플 3개, 오늘 10개`);
+  check(!(await page.textContent(".card")).includes("채우지 못합니다") && !await page.isVisible("#warn"), `${name}: 첫 실행엔 부족·추가 안내 없음`);
   await page.screenshot({ path: `${SHOTS}/${name}-home.png` });
   await layout(page, name, "홈");
+  // 아래 복습 흐름은 샘플 3개만 쓰도록 하루 목표를 3으로 (A급 새 조문 중 샘플이 맨 앞)
+  await page.click("nav button:text('관리')");
+  await page.fill("input[data-chg=cap]", "3");
+  await page.dispatchEvent("input[data-chg=cap]", "change");
+  await page.click("nav button:text('오늘')");
 
   // 복습: 첫 카드 정답 입력 → 확인 → 알았다
   await page.click("button:text('오늘 조문 시작 (3개)')");
@@ -75,7 +82,7 @@ for (const [name, opts] of VIEWS) {
   check(await page.textContent(".card b") === missed, `${name}: '몰랐다' 조문 세션 내 재출제`);
   await page.click("button:text('애매')");
   check(await page.locator("h2:text('오늘 조문 끝!')").count() === 1, `${name}: 세션 완료 화면`);
-  check((await page.textContent(".card")).includes("오늘 조문 3/10 · 누적 4회 평가 · 정답률 50%"), `${name}: 완료 화면 오늘 기록(4회, 50%)`);
+  check((await page.textContent(".card")).includes("오늘 조문 3/3 · 누적 4회 평가 · 정답률 50%"), `${name}: 완료 화면 오늘 기록(4회, 50%)`);
   await page.click("button:text('홈으로')");
   const stats = await page.textContent(".stats");
   check(stats.includes("4") && stats.includes("50%") && stats.includes("1일"), `${name}: 홈 학습 기록 4회·50%·연속 1일 (${stats.replace(/\s+/g, " ")})`);
@@ -96,7 +103,7 @@ for (const [name, opts] of VIEWS) {
   await page.click("button:text('훈련')");
   await layout(page, name, "연결");
   for (const a of ["제67조 제1항", "제67조 제2항", "제70조 제1항"]) await page.click(`#cpool .chip:has-text('${a}')`);
-  await page.fill("#cq", "70조");
+  await page.fill("#cq", "가격시점");
   check(await page.locator("#cpool .chip").count() === 1, `${name}: 연결 훈련 검색으로 전체 조문 찾기`);
   await page.screenshot({ path: `${SHOTS}/${name}-chain.png` });
   await page.click("button:text('정답 순서 확인')");
@@ -139,16 +146,11 @@ for (const [name, opts] of VIEWS) {
   await page.click("nav button:text('오늘')");
   check((await page.textContent(".dday")).includes("D-60"), `${name}: 홈 D-day 표시`);
 
-  // 조문 목록 템플릿 → 텍스트 칸, 본문 빈 조문만 있으면 안내
-  await page.click("nav button:text('관리')");
-  await page.click("button:text('템플릿을 텍스트 칸에')");
-  await page.waitForFunction(() => document.querySelector("#io").value.includes("bosang-68"));
-  await page.click("button:text('가져오기·복원')");
-  check((await page.textContent("#impres")).includes("모든 조문(44개)의 본문"), `${name}: 템플릿 그대로 가져오면 본문 채우라는 안내`);
   // 가져오기 검증 오류
   await page.click("nav button:text('관리')");
   await layout(page, name, "관리");
   await page.screenshot({ path: `${SHOTS}/${name}-manage.png`, fullPage: true });
+  const n0 = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")).items.length);
   await page.fill("#io", '[{"id":"a","law":"토지보상법"');
   await page.click("button:text('가져오기·복원')");
   check((await page.textContent("#impres")).includes("JSON 문법 오류"), `${name}: JSON 문법 오류 안내`);
@@ -157,7 +159,7 @@ for (const [name, opts] of VIEWS) {
   const err = await page.textContent("#impres");
   check(err.includes("grade") && err.includes("괄호 짝") && err.includes("article") === false, `${name}: 스키마 오류 목록 (grade·빈칸 괄호)`);
   const before = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")).items.length);
-  check(before === 3, `${name}: 오류가 있으면 아무것도 바꾸지 않음`);
+  check(before === n0, `${name}: 오류가 있으면 아무것도 바꾸지 않음`);
   await page.fill("#io", JSON.stringify({ items: [{ id: "t-1", law: "감정평가법", article: "제1조", grade: "C", text: "테스트 {{빈칸}}" }], chains: [{ id: "c-x", title: "가져온 쟁점", ids: ["t-1", "bosang-67-1"] }] }));
   await page.click("button:text('가져오기·복원')");
   check((await page.textContent("#impres")).includes("조문 추가 1 · 갱신 0 · 연결 쟁점 추가 1"), `${name}: 정상 가져오기 결과`);
@@ -167,11 +169,11 @@ for (const [name, opts] of VIEWS) {
   const bpath = `${SHOTS}/${name}-backup.json`;
   await dl.saveAs(bpath);
   const bk = JSON.parse(await readFile(bpath, "utf8"));
-  check(bk.app === "jomun-trainer" && bk.state.items.length === 4 && Object.keys(bk.state.days).length === 1, `${name}: 백업 파일 내용`);
+  check(bk.app === "jomun-trainer" && bk.state.items.length === n0 + 1 && Object.keys(bk.state.days).length === 1, `${name}: 백업 파일 내용`);
   await page.click("button:text('초기화')");
   await page.setInputFiles("#file", bpath);
   await page.waitForSelector(".okmsg");
-  check((await page.textContent(".okmsg")).includes("복원 완료: 조문 4개 · 연결 쟁점 3개 · 학습 기록 1일"), `${name}: 백업 파일로 복원 (${await page.textContent(".okmsg")})`);
+  check((await page.textContent(".okmsg")).includes(`복원 완료: 조문 ${n0 + 1}개`) && (await page.textContent(".okmsg")).includes("학습 기록 1일"), `${name}: 백업 파일로 복원 (${await page.textContent(".okmsg")})`);
   check(await page.inputValue("input[data-chg=cap]") === String(sug), `${name}: 복원 후 설정 유지`);
 
   // 원문 대조 완료 체크 → 표시 사라짐
@@ -209,7 +211,13 @@ for (const [name, opts] of VIEWS) {
   await page.evaluate(() => localStorage.setItem("jomun-v1", JSON.stringify({ items: [{ id: "x", law: "L", article: "제1조", grade: "B", text: "a {{b}}", box: 2, due: "2020-01-01", log: [] }], cap: 25 })));
   await page.reload();
   const s = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")));
-  check(s.schema === 3 && s.cap === 25 && s.items[0].box === 2 && s.chains.length === 1, "v1 저장 데이터 마이그레이션 (학습 상태 유지)");
+  const pn = await page.evaluate(() => JOMUN_PACK.items.length);
+  check(s.schema === 3 && s.cap === 25 && s.items[0].box === 2 && s.items.length === 1 + pn && s.packVer === 1, "v1 저장 데이터 마이그레이션 (학습 상태 유지 + 기본 조문 팩 추가)");
+  check((await page.textContent("#warn")).includes(`기본 조문 ${pn}개를 추가`), "기존 사용자에게 조문 팩 추가 안내");
+  // 이미 팩을 받은 기기에서 팩 조문을 지워도 다시 생기지 않음
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("jomun-v1")); s.items = s.items.filter(i => i.id !== "bosang-61"); localStorage.setItem("jomun-v1", JSON.stringify(s)); });
+  await page.reload();
+  check(await page.evaluate(() => !JSON.parse(localStorage.getItem("jomun-v1")).items.some(i => i.id === "bosang-61")), "지운 팩 조문은 같은 팩 버전에서 다시 추가되지 않음");
   await ctx.close();
 }
 

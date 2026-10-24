@@ -128,17 +128,26 @@ test("하루 조문 수: 예전 기본값 30은 10으로, 직접 바꾼 값과 �
   assert.equal(C.migrate(r.state, T).cap, 30);
 });
 
-test("템플릿: 본문이 빈 조문은 건너뛰고 채운 것만 가져온다", () => {
-  const tpl = require("../data/template-core.json");
-  const all = C.validateImport(tpl);
-  assert.equal(all.ok, false);
-  assert.match(all.errors[0], /모든 조문\(44개\)의 본문/);
-  tpl.items[0].text = "이 법은 {{테스트}} 본문";
-  const one = C.validateImport(tpl);
-  assert.equal(one.ok, true, one.errors.join("\n"));
-  assert.equal(one.items.length, 1);
-  assert.match(one.warnings[0], /43개는 건너뛰었습니다/);
-  // 템플릿 자체 형식: id 중복 없음, 등급 A~D, verified false
-  assert.equal(new Set(tpl.items.map(i => i.id)).size, tpl.items.length);
-  assert.ok(tpl.items.every(i => "ABCD".includes(i.grade) && i.verified === false));
+test("가져오기: 본문(text)이 빈 조문은 건너뛰고 채운 것만", () => {
+  const r = C.validateImport([{ ...good, id: "e1", text: "" }, good]);
+  assert.equal(r.ok, true);
+  assert.equal(r.items.length, 1);
+  assert.match(r.warnings[0], /1개는 건너뛰었습니다/);
+  assert.match(C.validateImport([{ ...good, text: " " }]).errors[0], /모든 조문\(1개\)의 본문/);
+});
+
+test("기본 조문 팩: 형식 검증 통과, 모두 원문 대조 필요, 빈칸 있음, 샘플과 id 안 겹침, 연결 쟁점 id 모두 존재", () => {
+  const pack = require("../data/pack.js");
+  const seed = ["bosang-67-1", "bosang-67-2", "bosang-70-1"];
+  assert.ok(Number.isInteger(pack.version) && pack.version >= 1);
+  const r = C.validateImport({ items: pack.items, chains: pack.chains }, seed);
+  assert.equal(r.ok, true, r.errors.join("\n"));
+  assert.ok(pack.items.length >= 100);
+  assert.ok(pack.items.every(i => i.verified === false && C.blanks(i.text).length > 0));
+  assert.ok(!pack.items.some(i => seed.includes(i.id)));
+  const all = new Set([...seed, ...pack.items.map(i => i.id)]);
+  assert.ok(pack.chains.every(c => c.ids.every(id => all.has(id))), "연결 쟁점이 없는 조문을 가리킴");
+  assert.ok(!r.warnings.some(w => w.includes("아직 없는 조문")));
+  for (const law of ["토지보상법", "부동산공시법", "감정평가법", "행정기본법", "행정소송법", "행정절차법"])
+    assert.ok(pack.items.some(i => i.law === law), law);
 });

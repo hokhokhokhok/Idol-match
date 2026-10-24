@@ -83,6 +83,7 @@ details summary{min-height:44px;display:flex;align-items:center;cursor:pointer;c
 <div id="warn" hidden></div>
 <div id="app"></div>
 <script src="js/core.js"></script>
+<script src="data/pack.js"></script>
 <script>
 const C=window.Core;
 /* ===== 시드 데이터 (샘플) =====
@@ -112,7 +113,16 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const $=s=>document.querySelector(s);
 let WARN="";
 let S=load();
-function fresh(){return C.migrate({items:SEED.map(x=>({...x,box:0,due:KST(),log:[]})),chains:SEED_CHAINS.map(c=>({...c,ids:[...c.ids]})),cap:C.DAILY,schema:C.SCHEMA},KST())}
+function fresh(){const s=C.migrate({items:SEED.map(x=>({...x,box:0,due:KST(),log:[]})),chains:SEED_CHAINS.map(c=>({...c,ids:[...c.ids]})),cap:C.DAILY,schema:C.SCHEMA},KST());mergePack(s);return s}
+/* 기본 조문 팩(data/pack.js): 팩 버전이 오르면 이 기기에 없는 id만 추가한다(학습 기록·직접 고친 내용은 그대로) */
+function mergePack(s){
+ const P=window.JOMUN_PACK;
+ if(!P||(s.packVer|0)>=P.version)return 0;
+ const have=new Set(s.items.map(i=>i.id)),chs=new Set(s.chains.map(c=>c.id));let n=0;
+ P.items.forEach(x=>{if(!have.has(x.id)){s.items.push({...x,tags:[...(x.tags||[])],box:0,due:KST(),log:[]});n++}});
+ P.chains.forEach(c=>{if(!chs.has(c.id))s.chains.push({...c,ids:[...c.ids]})});
+ s.packVer=P.version;return n;
+}
 function load(){
  let raw;
  try{raw=localStorage.getItem(KEY)}catch(e){WARN="이 브라우저에서는 기기 저장소를 쓸 수 없습니다(비공개 브라우징이면 해제하세요). 지금 학습한 내용은 앱을 닫으면 사라집니다.";return fresh()}
@@ -121,7 +131,9 @@ function load(){
   const s=JSON.parse(raw);
   if(!s||!Array.isArray(s.items))throw new Error("형식 오류");
   const old=!(s.schema>=2);C.migrate(s,KST());
-  if(old&&!s.chains.length)s.chains=fresh().chains;   // v1에서 넘어오면 샘플 연결 쟁점 추가
+  if(old&&!s.chains.length)s.chains=SEED_CHAINS.map(c=>({...c,ids:[...c.ids]}));   // v1에서 넘어오면 샘플 연결 쟁점 추가
+  const n=mergePack(s);
+  if(n)WARN=`기본 조문 ${n}개를 추가했습니다(토지보상법·부동산공시법·감정평가법·행정기본법·행정소송법·행정절차법·헌법). 모두 '원문 대조 필요' — 국가법령정보센터 원문과 대조하며 외우세요.`;
   return s;
  }catch(e){
   const k=KEY+"-broken-"+Date.now();try{localStorage.setItem(k,raw)}catch(_){}
@@ -354,9 +366,7 @@ function manage(){
  <p class="sub">조문 추가: JSON 배열 <code>[...]</code> 또는 <code>{"items":[...],"chains":[...]}</code>. 필드: id, law, article, title, grade(A~D), text({{빈칸}}), tags, source, verified. 같은 id는 내용만 갱신하고 학습 기록은 유지합니다. 백업 파일을 넣으면 전체를 복원(교체)합니다. 오류가 하나라도 있으면 아무것도 바꾸지 않습니다.</p>
  <textarea id="io" placeholder='[{"id":"...","law":"토지보상법","article":"제00조","title":"","grade":"B","text":"...{{빈칸}}...","verified":false}]' autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
  <div class="row"><button class="pri" data-act="imp">가져오기·복원</button><label class="btn">파일 열기<input type="file" id="file" accept=".json,application/json,text/plain" hidden></label></div>
- <p class="sub">조문 목록 템플릿: 토지보상법·부동산공시법·감정평가법 핵심 조문 44개의 번호·제목·제안 등급만 들어 있고 본문(text)은 비어 있습니다. law.go.kr 원문을 "text"에 붙여 넣고 빈칸을 {{ }}로 감싼 뒤 가져오세요. 본문이 빈 조문은 건너뜁니다.</p>
- <div class="row"><a class="btn" href="data/template-core.json" download="jomun-template-core.json">조문 목록 템플릿 받기</a><button data-act="tpl">템플릿을 텍스트 칸에</button></div>
- <div id="impres">${impres()}</div>
+  <div id="impres">${impres()}</div>
  <div class="row"><button data-act="backup">백업 파일 저장</button><button data-act="exptext">백업을 텍스트로</button><button data-act="expdata">조문 데이터만</button></div>
  <p class="sub" id="stor">저장 데이터 ${Math.round(JSON.stringify(S).length/1024)}KB</p>
  <div class="row"><button data-act="reset">초기화</button></div></div>
@@ -390,7 +400,7 @@ function doImport(){
  let msg;
  if(r.mode==="restore"){
   if(!confirm(`백업(조문 ${r.state.items.length}개, 학습 기록 ${Object.keys(r.state.days).length}일)으로 현재 데이터를 모두 바꿀까요?`))return;
-  S=C.migrate(r.state,KST());
+  S=C.migrate(r.state,KST());mergePack(S);
   msg=`복원 완료: 조문 ${S.items.length}개 · 연결 쟁점 ${S.chains.length}개 · 학습 기록 ${Object.keys(S.days).length}일`;
  }else{
   let add=0,upd=0,cadd=0,cupd=0;
@@ -450,7 +460,6 @@ const ACT={
  acceptall:()=>{const p=pending();if(p.length&&confirm(`${p.length}개 조문의 등급을 제안대로 바꿀까요?`)){p.forEach(i=>i.grade=proposal(i).g);save();render()}},
  gradehelp:()=>alert("등급 기준(최대 복습 간격): A=매 회차 출제·답안 뼈대(2일) · B=자주 출제(4일) · C=가끔, 쟁점 연결용(7일) · D=세부 숫자·절차(14일). 목록의 드롭다운으로 직접 바꾸거나 '등급 점수 계산'에서 제안을 수락하세요."),
  imp:doImport,
- tpl:()=>fetch("data/template-core.json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(j=>toText(j)).catch(e=>{IMP={errors:["템플릿을 불러오지 못했습니다("+e.message+"). 인터넷 연결을 확인하세요."]};$("#impres").innerHTML=impres()}),
  backup:backupFile,
  exptext:()=>toText(C.backup(S)),
  expdata:()=>toText({items:S.items.map(({box,due,log,...x})=>x),chains:S.chains}),
