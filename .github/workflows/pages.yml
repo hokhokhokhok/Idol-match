@@ -38,7 +38,7 @@ jobs:
       # 조문 암기 트레이너(jomun/)는 빌드 없이 정적 파일 그대로 /Idol-match/jomun/ 에 배포
       - run: |
           mkdir www/jomun
-          cp -r jomun/index.html jomun/sw.js jomun/manifest.webmanifest jomun/js jomun/icons www/jomun/
+          cp -r jomun/index.html jomun/sw.js jomun/manifest.webmanifest jomun/js jomun/icons jomun/data www/jomun/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
