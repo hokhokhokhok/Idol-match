@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatAsOf } from '../lib/law';
-import type { ChoiceNo, CivilQuestion, EconQuestion, LawQuestion, Question } from '../types';
+import { isQuant, type ChoiceNo, type CivilQuestion, type LawQuestion, type QuantQuestion, type Question } from '../types';
 import { LawTextDialog } from './LawTextDialog';
 import { CIRCLED } from './QuestionView';
 import { RichText } from './RichText';
@@ -13,7 +13,7 @@ export function ExplanationView({ question: q, chosen }: Props) {
   return (
     <section className="exp" aria-label={`${q.number}번 해설`}>
       {q.subject === '감관법' && <LawBadges q={q} />}
-      {q.subject === '경제학원론' && !q.reviewed && (
+      {isQuant(q) && !q.reviewed && (
         <p className="exp-badges">
           <span className="tag tag-verify" title="교재와 대조해 검수한 뒤 reviewed: true로 바꾸세요">
             {q.calc ? '계산 검증 완료 · 내용 검수 필요' : '교재 대조 필요'}
@@ -25,7 +25,7 @@ export function ExplanationView({ question: q, chosen }: Props) {
         <RichText text={ex.summary} />
       </p>
 
-      {q.subject === '경제학원론' && <Steps q={q} />}
+      {isQuant(q) && <Steps q={q} />}
 
       <h3 className="exp-h">보기별 해설</h3>
       <ol className="exp-choices">
@@ -59,7 +59,7 @@ export function ExplanationView({ question: q, chosen }: Props) {
 }
 
 /** 경제학 계산 풀이 단계 */
-function Steps({ q }: { q: EconQuestion }) {
+function Steps({ q }: { q: QuantQuestion }) {
   const steps = q.explanation.steps;
   if (!steps?.length) return null;
   return (

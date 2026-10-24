@@ -9,7 +9,7 @@ import { isSeedSet, resolveSet, subjectOf } from '../lib/sets';
 import type { Settings } from '../lib/settings';
 import { isDue } from '../lib/srs';
 import { streakDays, weakCategories } from '../lib/stats';
-import { categoryOf, isCalc, SUBJECT_LABEL, SUBJECTS, type Category, type QuestionSet, type Subject } from '../types';
+import { categoryOf, isCalc, isQuantSubject, SUBJECT_LABEL, SUBJECTS, type Category, type QuestionSet, type Subject } from '../types';
 import { questionById } from '../lib/sets';
 
 type Props = {
@@ -32,6 +32,8 @@ type Props = {
   onCalcDrill: () => void;
   /** 경제학원론: 곡선 이동 퀴즈 */
   onShiftQuiz: () => void;
+  /** 부동산학원론: 화폐의 시간가치 6계수 계산기 */
+  onTvm: () => void;
 };
 
 /** 홈: 과목 탭, 이어 풀기, 오늘의 세트, 연속 학습일·오늘 복습·약점, (감관법) 추천 약점 복습·암기 카드, 최근 기록, 맞춤 모의고사, 세트 목록 */
@@ -46,6 +48,8 @@ export function HomeScreen(p: Props) {
   const catName = CATEGORY_NAME[subject];
   const law = subject === '감관법';
   const econ = subject === '경제학원론';
+  const quant = isQuantSubject(subject);
+  const realEstate = subject === '부동산학원론';
 
   const summary = useLiveQuery(async () => {
     const [allAttempts, reviews, allNotes, allResults, cardStates] = await Promise.all([
@@ -69,8 +73,8 @@ export function HomeScreen(p: Props) {
       const states = new Map(cardStates.map((c) => [c.id, c]));
       cardsDue = pickCards(cards, states, new Set(notes.filter((n) => !n.mastered).map((n) => n.questionId)), now, 999).length;
     }
-    const calcRows = econ ? allResults.filter((r) => examIds.has(r.attemptId) && isCalc(questionById.get(r.questionId)!)) : [];
-    const calcCount = econ ? sets.reduce((k, s) => k + s.questions.filter(isCalc).length, 0) : 0;
+    const calcRows = quant ? allResults.filter((r) => examIds.has(r.attemptId) && isCalc(questionById.get(r.questionId)!)) : [];
+    const calcCount = quant ? sets.reduce((k, s) => k + s.questions.filter(isCalc).length, 0) : 0;
     return {
       calc: { total: calcRows.length, correct: calcRows.filter((r) => r.correct).length, size: Math.min(10, calcCount) },
       streak: streakDays([...allAttempts.map((a) => a.submittedAt), ...reviews.map((r) => r.at)], now),
@@ -153,7 +157,7 @@ export function HomeScreen(p: Props) {
           </section>
         )}
 
-        {econ && summary && summary.calc.size > 0 && (
+        {quant && summary && summary.calc.size > 0 && (
           <section className="card card-drill card-calc">
             <div>
               <span className="today-label">계산 문제만 풀기</span>
@@ -171,7 +175,7 @@ export function HomeScreen(p: Props) {
           </section>
         )}
 
-        {(law || econ) && summary && summary.weak.length > 0 && (
+        {(law || quant) && summary && summary.weak.length > 0 && (
           <section className="card card-drill">
             <div>
               <span className="today-label">오늘의 추천 약점 복습</span>
@@ -212,6 +216,13 @@ export function HomeScreen(p: Props) {
             )}
             <span className="tile-sub">통계 ›</span>
           </button>
+          {realEstate && (
+            <button type="button" className="tile tile-btn" onClick={p.onTvm}>
+              <span className="tile-label">화폐의 시간가치 6계수</span>
+              <strong>내가·현가·연금·저당상수</strong>
+              <span className="tile-sub">계수 계산기 ›</span>
+            </button>
+          )}
           {econ && (
             <button type="button" className="tile tile-btn" onClick={p.onShiftQuiz}>
               <span className="tile-label">곡선 이동 퀴즈</span>
@@ -257,7 +268,7 @@ export function HomeScreen(p: Props) {
               <div>
                 <h3>전체 {poolSize}문항에서 40문항</h3>
                 <p className="muted">
-                  {catName} 배분 ±{law || econ ? 1 : 2} 무작위 · 안 푼 문항·틀린 문항 우선
+                  {catName} 배분 ±{law || quant ? 1 : 2} 무작위 · 안 푼 문항·틀린 문항 우선
                   {settings.weakUnitBoost ? ` · 약점 ${catName} +2` : ''}
                 </p>
               </div>

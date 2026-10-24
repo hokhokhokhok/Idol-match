@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { expect, it } from 'vitest';
 
-it('v4 → v5 snapshots 민법·감관법 data and leaves every record unchanged', async () => {
+it('v4 → v5(→ v6) snapshots 민법·감관법 data and leaves every record unchanged', async () => {
   const v4 = new Dexie('civil-exam');
   v4.version(4).stores({
     attempts: 'id, setId, submittedAt, subject',
@@ -22,7 +22,7 @@ it('v4 → v5 snapshots 민법·감관법 data and leaves every record unchanged
   await v4.table('snapshots').add({ id: 'before-v4-subject', createdAt: 1, file: { app: 'civil-exam', version: 1, exportedAt: '', data: {} } });
   v4.close();
 
-  const { db, PRE_ECON_SNAPSHOT } = await import('./db');
+  const { db, PRE_ECON_SNAPSHOT, PRE_REALESTATE_SNAPSHOT } = await import('./db');
   expect(await db.attempts.toArray()).toEqual([civil, law]);
   expect(await db.notes.get('law-2026-001-q01')).toMatchObject({ subject: '감관법', unit: '국토계획법' });
   expect(await db.cards.get('c1')).toMatchObject({ stage: 2 });
@@ -33,6 +33,6 @@ it('v4 → v5 snapshots 민법·감관법 data and leaves every record unchanged
 
   const { preMigrationBackups, validateBackup } = await import('./backup');
   const list = await preMigrationBackups();
-  expect(list.map((x) => x.id)).toEqual([PRE_ECON_SNAPSHOT, 'before-v4-subject']);
-  expect(validateBackup(JSON.parse(JSON.stringify(list[0].file))).data.attempts.map((a) => a.subject)).toEqual(['민법', '감관법']);
+  expect(list.map((x) => x.id)).toEqual([PRE_REALESTATE_SNAPSHOT, PRE_ECON_SNAPSHOT, 'before-v4-subject']);
+  expect(validateBackup(JSON.parse(JSON.stringify(list[1].file))).data.attempts.map((a) => a.subject)).toEqual(['민법', '감관법']);
 });

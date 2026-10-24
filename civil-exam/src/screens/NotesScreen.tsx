@@ -7,7 +7,7 @@ import { patternOf } from '../lib/law';
 import { questionById, subjectOf } from '../lib/sets';
 import { dueLabel, isDue, type Note } from '../lib/srs';
 import { PATTERN_LABEL, PATTERNS } from '../lib/stats';
-import { categoryOf, isCalc, SUBJECT_LABEL, type Category, type Pattern, type Subject } from '../types';
+import { categoryOf, isCalc, isQuantSubject, SUBJECT_LABEL, type Category, type Pattern, type Subject } from '../types';
 
 type Filter = 'due' | 'active' | 'starred' | 'mastered';
 const FILTERS: { key: Filter; label: string; test: (n: Note, now: number) => boolean }[] = [
@@ -29,7 +29,7 @@ export function NotesScreen({ subject, onPractice, onHome }: Props) {
   const [memoOpen, setMemoOpen] = useState<string | null>(null);
   const now = Date.now();
   const law = subject === '감관법';
-  const econ = subject === '경제학원론';
+  const econ = isQuantSubject(subject);
 
   const inSubject = (all ?? []).filter((n) => questionById.has(n.questionId) && subjectOf(n) === subject);
   const notes = inSubject.filter((n) => {

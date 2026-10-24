@@ -15,7 +15,7 @@ if (!setId) {
 const qs = JSON.parse(readFileSync(join(root, 'src/data/sets', `${setId}.json`), 'utf8')) as Question[];
 const C = ['①', '②', '③', '④', '⑤'];
 const TYPE = { single: '단일', count: '개수', combo: '조합', case: '사례', precedent: '판례', numeric: '숫자·기간', calc: '계산', concept: '개념', graph: '그래프', table: '표' } as const;
-const econ = qs[0]?.subject === '경제학원론';
+const econ = qs[0]?.subject === '경제학원론' || qs[0]?.subject === '부동산학원론';
 const law = qs[0]?.subject === '감관법';
 const casesOf = (q: Question) => (q.subject === '민법' ? (q.explanation.cases ?? []) : []);
 /** 표 지문을 마크다운 표로 */
@@ -43,7 +43,7 @@ const out: string[] = [
         '',
         '- 정답이 **하나뿐**인가 — 발문에 빠진 조건(완전경쟁, 단기/장기, 정상재 등)이 없는가',
         '- 보기별 해설의 옳고 그름이 정답과 맞는가, 풀이 단계가 맞는가',
-        '- 개념형은 교재(미시·거시 원론)와 대조했는가',
+        '- 개념형은 교재(경제학원론·부동산학원론)와 대조했는가, 감정평가 관련 내용은 현행 「감정평가에 관한 규칙」과 맞는가',
         '- 그래프·표가 발문과 맞는가',
         '',
       ]
@@ -70,7 +70,7 @@ const out: string[] = [
       ]),
 ];
 for (const q of qs) {
-  const cat = q.subject === '감관법' ? q.law : q.subject === '경제학원론' ? `${q.field}·${q.unit}` : q.unit;
+  const cat = q.subject === '감관법' ? q.law : q.subject === '경제학원론' || q.subject === '부동산학원론' ? `${q.field}·${q.unit}` : q.unit;
   const flags = q.subject === '감관법' ? `${q.volatile ? ' · ⚠ 개정 위험' : ''} · 기준 ${q.lawAsOf}` : '';
   out.push(`---`, '', `## ${q.number}. [${cat} · ${q.topic} · ${TYPE[q.type]}형 · 난이도 ${q.difficulty}${flags}] \`${q.id}\`${q.reviewed ? ' ✅ 검수 완료' : ''}`, '');
   out.push(plain(q.stem.replace(/<table\b[\s\S]*?<\/table>/g, (t) => '\n' + tableToMd(t) + '\n')), '');
@@ -82,7 +82,7 @@ for (const q of qs) {
   q.choices.forEach((c, i) => out.push(`${C[i]} ${plain(c)}  `));
   out.push('', `**정답 ${C[q.answer - 1]}** — ${q.explanation.summary}`, '');
   q.explanation.perChoice.forEach((p, i) => out.push(`- ${C[i]}${i + 1 === q.answer ? ' (정답)' : ''} ${p}`));
-  if (q.subject === '경제학원론') {
+  if (q.subject === '경제학원론' || q.subject === '부동산학원론') {
     if (q.figure) out.push('', `그래프: ${q.figure.yLabel}-${q.figure.xLabel}, ${q.figure.series.map((x) => `${x.name} ${JSON.stringify(x.points)}`).join(' / ')}`);
     if (q.explanation.steps?.length) out.push('', '풀이:', ...q.explanation.steps.map((st, i) => `${i + 1}. ${st}`));
     if (q.calc) out.push('', `계산 검증: \`${q.calc.solverId}\` ${JSON.stringify(q.calc.params)} → ${q.calc.expected}${q.calc.claims ? ' (보기별 주장 판정)' : ''} — npm run validate 통과 시 정답 확인됨`);

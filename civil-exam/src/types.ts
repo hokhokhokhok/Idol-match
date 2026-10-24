@@ -1,8 +1,15 @@
 /** 과목. 감관법 = 감정평가관계법규 */
-export type Subject = '민법' | '경제학원론' | '감관법';
-/** 시험 순서: 1교시 민법·경제학원론, 2교시 감관법 */
-export const SUBJECTS: readonly Subject[] = ['민법', '경제학원론', '감관법'];
-export const SUBJECT_LABEL: Record<Subject, string> = { 민법: '민법', 경제학원론: '경제학원론', 감관법: '감정평가관계법규' };
+export type Subject = '민법' | '경제학원론' | '부동산학원론' | '감관법';
+/** 시험 순서: 1교시 민법·경제학원론·부동산학원론, 2교시 감관법 */
+export const SUBJECTS: readonly Subject[] = ['민법', '경제학원론', '부동산학원론', '감관법'];
+export const SUBJECT_LABEL: Record<Subject, string> = {
+  민법: '민법',
+  경제학원론: '경제학원론',
+  부동산학원론: '부동산학원론',
+  감관법: '감정평가관계법규',
+};
+/** 수식·그래프·계산 검증을 쓰는 과목 */
+export type QuantSubject = '경제학원론' | '부동산학원론';
 
 /** 민법 단원 */
 export type Unit = '총칙' | '물권' | '계약' | '채권총론' | '기타';
@@ -34,8 +41,20 @@ export type EconUnit =
   | '국제경제';
 export type EconField = '미시' | '거시';
 
-/** 통계·오답노트의 분류 단위: 민법·경제학원론은 단원, 감관법은 법률 */
-export type Category = Unit | Law | EconUnit;
+/** 부동산학원론 단원 */
+export type ReUnit =
+  | '부동산학 총론'
+  | '부동산경제론'
+  | '부동산시장·입지론'
+  | '부동산정책론'
+  | '부동산투자론'
+  | '부동산금융론'
+  | '개발·관리·마케팅'
+  | '감정평가론';
+export type ReField = '총론·경제·시장' | '정책' | '투자·금융' | '개발·관리' | '감정평가';
+
+/** 통계·오답노트의 분류 단위: 민법·경제학원론·부동산학원론은 단원, 감관법은 법률 */
+export type Category = Unit | Law | EconUnit | ReUnit;
 
 export type CivilType = 'single' | 'count' | 'combo' | 'case' | 'precedent';
 export type LawType = 'single' | 'count' | 'combo' | 'case' | 'numeric';
@@ -131,7 +150,17 @@ export type EconQuestion = QuestionBase & {
   };
 };
 
-export type Question = CivilQuestion | LawQuestion | EconQuestion;
+/** 부동산학원론: 경제학원론과 같은 형식(수식·그래프·표·계산 검증·풀이 단계) */
+export type RealEstateQuestion = Omit<EconQuestion, 'subject' | 'field' | 'unit'> & {
+  subject: '부동산학원론';
+  field: ReField;
+  unit: ReUnit;
+};
+
+/** 계산·그래프를 쓰는 과목의 문항 */
+export type QuantQuestion = EconQuestion | RealEstateQuestion;
+
+export type Question = CivilQuestion | LawQuestion | EconQuestion | RealEstateQuestion;
 
 export type QuestionSet = { id: string; title: string; subject: Subject; questions: Question[] };
 
@@ -141,4 +170,6 @@ export type ChoiceMark = 'none' | 'underline' | 'cross';
 /** 문항의 분류(민법 단원 / 감관법 법률) */
 export const categoryOf = (q: Question): Category => (q.subject === '감관법' ? q.law : q.unit);
 /** 계산형 문항(정답을 풀이 코드로 검증하는 문항) */
-export const isCalc = (q: Question) => q.subject === '경제학원론' && (q.type === 'calc' || !!q.calc);
+export const isQuantSubject = (s: Subject): s is QuantSubject => s === '경제학원론' || s === '부동산학원론';
+export const isQuant = (q: Question): q is QuantQuestion => isQuantSubject(q.subject);
+export const isCalc = (q: Question) => isQuant(q) && (q.type === 'calc' || !!q.calc);

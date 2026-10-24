@@ -21,12 +21,14 @@ export function parseMath(tex: string): string | null {
 
 export const lawBlueprint = readJson<Blueprint>('config/law/blueprint.json');
 export const econBlueprint = readJson<Blueprint>('config/econ/blueprint.json');
+export const reBlueprint = readJson<Blueprint>('config/realestate/blueprint.json');
 
 export const validateConfig: ValidateConfig = {
-  blueprints: { 민법: readJson<Blueprint>('config/blueprint.json'), 감관법: lawBlueprint, 경제학원론: econBlueprint },
+  blueprints: { 민법: readJson<Blueprint>('config/blueprint.json'), 감관법: lawBlueprint, 경제학원론: econBlueprint, 부동산학원론: reBlueprint },
   lawLength: readJson<ValidateConfig['lawLength']>('config/law/length.json'),
   lawAsOf: readJson<{ lawAsOf: string }>('config/law/exam.json').lawAsOf,
   econLength: readJson<ValidateConfig['econLength']>('config/econ/length.json'),
+  reLength: readJson<ValidateConfig['reLength']>('config/realestate/length.json'),
   solvers,
   parseMath,
 };

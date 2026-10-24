@@ -7,12 +7,18 @@ import lawSeed from '../data/sets/law-seed-001.json';
 import econBlueprint from '../../config/econ/blueprint.json';
 import econLength from '../../config/econ/length.json';
 import econSeed from '../data/sets/econ-seed-001.json';
+import reBlueprint from '../../config/realestate/blueprint.json';
+import reLength from '../../config/realestate/length.json';
+import reSeed from '../data/sets/re-seed-001.json';
+import reSet from '../data/sets/re-2026-001.json';
 import katex from 'katex';
 import { solvers } from '../solvers';
 import seed from '../data/sets/seed-001.json';
 import {
   crossSetIssues,
   ECON_LENGTH_RULES,
+  econCoverage,
+  RE_LENGTH_RULES,
   LAW_LENGTH_RULES,
   numberOf,
   tokensOf,
@@ -34,8 +40,9 @@ const parseMath = (tex: string) => {
   }
 };
 const cfg: ValidateConfig = {
-  blueprints: { 민법: blueprint, 감관법: lawBlueprint, 경제학원론: econBlueprint },
+  blueprints: { 민법: blueprint, 감관법: lawBlueprint, 경제학원론: econBlueprint, 부동산학원론: reBlueprint },
   econLength: econLength as unknown as ValidateConfig['econLength'],
+  reLength: reLength as unknown as ValidateConfig['reLength'],
   solvers,
   parseMath,
   lawLength: lawLength as unknown as ValidateConfig['lawLength'],
@@ -297,5 +304,35 @@ describe('validate 경제학원론', () => {
     const f = eq(0);
     f.field = '거시';
     expect(warns(validateQuestion(f, 'econ-seed-001', 0, cfg))).toContain('수요공급·탄력성·조세 단원은 미시 영역입니다 (field: 거시)');
+  });
+});
+
+describe('validate 부동산학원론', () => {
+  const rq = (n: number) => clone(reSeed[n]) as Record<string, any>;
+
+  it('seed and 40-question set pass, including calculation checks; length defaults match config', () => {
+    expect(errors(validateSet(reSeed, 're-seed-001', cfg))).toEqual([]);
+    expect(validateSet(reSet, 're-2026-001', cfg).filter((i) => i.level !== 'info')).toEqual([]);
+    const { _note, ...rules } = reLength;
+    expect(rules).toEqual(JSON.parse(JSON.stringify(RE_LENGTH_RULES)));
+    expect(econCoverage([{ setId: 're-2026-001', questions: reSet }], reBlueprint, '부동산학원론').filter((i) => i.level !== 'info')).toEqual([]);
+  });
+
+  it('catches a wrong answer key in value mode', () => {
+    const fv = rq(0);
+    fv.answer = fv.answer === 1 ? 2 : 1;
+    expect(errors(validateQuestion(fv, 're-seed-001', 0, cfg)).join()).toContain('정답');
+  });
+
+  it('judges claims against solver values', () => {
+    const npv = rq(1);
+    npv.calc.claims[npv.answer - 1].value += 1000; // 정답 보기의 주장이 거짓이 된다
+    expect(errors(validateQuestion(npv, 're-seed-001', 1, cfg)).length).toBeGreaterThan(0);
+  });
+
+  it('field must match the unit', () => {
+    const f = rq(0);
+    f.field = '감정평가';
+    expect(warns(validateQuestion(f, 're-seed-001', 0, cfg)).join()).toContain('field');
   });
 });

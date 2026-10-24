@@ -18,7 +18,7 @@ export type Settings = {
   instantExplanation: boolean;
   /** 맞춤 모의고사에서 정답률이 가장 낮은 단원(감관법은 법률)에 문항 가중치(+2) */
   weakUnitBoost: boolean;
-  /** 경제학원론 시험 화면에 계산기 버튼 (실제 허용 여부는 Q-Net 공고 확인) */
+  /** 경제학원론·부동산학원론 시험 화면에 계산기 버튼 (실제 허용 여부는 Q-Net 공고 확인) */
   examCalculator: boolean;
   /** 홈에서 마지막으로 고른 과목 탭 */
   subject: Subject;

@@ -4,7 +4,8 @@ import lawExam from '../../config/law/exam.json';
 import lawBlueprint from '../../config/law/blueprint.json';
 import econExam from '../../config/econ/exam.json';
 import econBlueprint from '../../config/econ/blueprint.json';
-import type { Category, EconField, EconUnit, Law, Subject, Unit } from '../types';
+import reBlueprint from '../../config/realestate/blueprint.json';
+import type { Category, EconField, EconUnit, Law, QuantSubject, ReUnit, Subject, Unit } from '../types';
 
 /** 문항 수·배점·시간은 두 과목이 같다 (40문항, 2.5점, 40분) */
 export const examConfig = {
@@ -25,7 +26,7 @@ export const LAW_FULL_NAME = lawExam.laws as Record<Law, string>;
 
 export type Blueprint = { total: number; jitter: number; weakUnitBonus: number; units: Record<string, { count: number }> };
 
-export const blueprints: Record<Subject, Blueprint> = { 민법: civilBlueprint, 경제학원론: econBlueprint, 감관법: lawBlueprint };
+export const blueprints: Record<Subject, Blueprint> = { 민법: civilBlueprint, 경제학원론: econBlueprint, 부동산학원론: reBlueprint, 감관법: lawBlueprint };
 
 export const UNITS: readonly Unit[] = ['총칙', '물권', '계약', '채권총론', '기타'];
 export const LAWS = Object.keys(lawBlueprint.units) as Law[];
@@ -34,12 +35,21 @@ export const ECON_UNITS = Object.keys(econBlueprint.units) as EconUnit[];
 export const ECON_FIELD = Object.fromEntries(
   Object.entries(econBlueprint.units).map(([u, v]) => [u, v.field as EconField]),
 ) as Record<EconUnit, EconField>;
+export const RE_UNITS = Object.keys(reBlueprint.units) as ReUnit[];
+/** 계산 과목의 단원 → 영역, 영역 순서 */
+export const FIELD_OF: Record<string, string> = Object.fromEntries(
+  [...Object.entries(econBlueprint.units), ...Object.entries(reBlueprint.units)].map(([u, v]) => [u, v.field]),
+);
+export const FIELDS: Record<QuantSubject, string[]> = {
+  경제학원론: [...new Set(Object.values(econBlueprint.units).map((v) => v.field))],
+  부동산학원론: [...new Set(Object.values(reBlueprint.units).map((v) => v.field))],
+};
 /** 시험 화면 계산기: Q-Net 공고로 확인한 값(미확인이면 null) */
 export const econCalculator = econExam.calculator;
 
 /** 과목별 분류 순서: 민법·경제학원론은 단원, 감관법은 법률(시험지 순서) */
-export const CATEGORIES: Record<Subject, readonly Category[]> = { 민법: UNITS, 경제학원론: ECON_UNITS, 감관법: LAWS };
-export const CATEGORY_NAME: Record<Subject, string> = { 민법: '단원', 경제학원론: '단원', 감관법: '법률' };
+export const CATEGORIES: Record<Subject, readonly Category[]> = { 민법: UNITS, 경제학원론: ECON_UNITS, 부동산학원론: RE_UNITS, 감관법: LAWS };
+export const CATEGORY_NAME: Record<Subject, string> = { 민법: '단원', 경제학원론: '단원', 부동산학원론: '단원', 감관법: '법률' };
 
 /**
  * 세트 문항 수에 비례한 제한시간(초). 40문항이면 설정값 그대로,

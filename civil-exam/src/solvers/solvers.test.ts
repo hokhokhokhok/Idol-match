@@ -28,6 +28,26 @@ describe('solvers', () => {
     expect(run('labor-stats', { pop15: 1000, employed: 570, unemployed: 30 }).answer.map((x) => Math.round(Number(x) * 1e9) / 1e9)).toEqual([5, 60, 57]);
   });
 
+  it('부동산학원론 cases', () => {
+    expect(run('time-value', { r: 0.05, n: 3, amount: 100000000 }).answer[0]).toBeCloseTo(115762500, 0);
+    expect(run('time-value', { r: 0.1, n: 3, payment: 1000 }).values.annuityPresent).toBeCloseTo(2486.85, 2);
+    expect(run('npv-irr', { cf0: 2000, n: 2, r: 0.1, cf1: 1100, cf2: 1210 }).values).toMatchObject({ pvInflow: expect.closeTo(2000, 6), npv: expect.closeTo(0, 6) });
+    expect(run('npv-irr', { cf0: 2000, n: 2, r: 0.1, cf1: 1100, cf2: 1210 }).values.irr).toBeCloseTo(10, 4);
+    expect(run('cost-approach', { cost: 200000000, life: 50, elapsed: 10, residual: 0.1 }).answer[0]).toBeCloseTo(164000000, 0);
+    expect(run('huff-model', { s1: 1000, d1: 5, s2: 2000, d2: 10, s3: 4500, d3: 15, lambda: 2, pop: 1000 }).values.prob1).toBeCloseTo(0.5);
+    expect(run('cobweb', { a: 120, b: 2, c: 0, d: 1 }).answer).toEqual(['수렴']);
+    expect(run('loan-limit', { value: 50000, ltv: 0.6, income: 6000, dti: 0.4, mc: 0.1 }).answer[0]).toBeCloseTo(24000);
+    expect(run('amortization', { loan: 10000, r: 0.05, n: 20, k: 1 }).values).toMatchObject({ epPayment: 1000, epInterest: 500, cpmInterest: 500 });
+    const ocf = run('operating-cash-flow', { pgi: 20000, vacancy: 0.1, other: 200, opex: 5000, debtService: 6000, equity: 50000, price: 150000 }).values;
+    expect(ocf.noi).toBeCloseTo(13200);
+    expect(ocf.dscr).toBeCloseTo(2.2);
+    expect(ocf.equityDividendRate).toBeCloseTo(14.4);
+    expect(run('sales-comparison', { unitPrice: 200, situation: 0.8, time: 1.25, regional: 1.1, individual: 0.9, area: 100 }).answer[0]).toBeCloseTo(19800);
+    expect(run('band-of-investment', { w1: 0.6, rate1: 5, rate2: 10 }).answer[0]).toBeCloseTo(7);
+    expect(run('expected-return', { p1: 0.3, r1: 20, p2: 0.5, r2: 10, p3: 0.2, r3: -5, required: 9 }).values).toMatchObject({ expected: expect.closeTo(10, 9), variance: expect.closeTo(75, 9), invest: 1 });
+    expect(run('portfolio-two', { w1: 0.6, r1: 10, r2: 5, sd1: 20, sd2: 10, rho: 0 }).values.expected).toBeCloseTo(8);
+  });
+
   it('every solver declares the params it reads', () => {
     for (const [id, s] of Object.entries(solvers)) expect(s.params.length, id).toBeGreaterThan(0);
   });
