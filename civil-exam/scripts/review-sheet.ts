@@ -4,7 +4,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Question } from '../src/types.ts';
+import { pastExamLabel, type Question } from '../src/types.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const setId = process.argv.slice(2).find((a) => !a.startsWith('--'));
@@ -35,7 +35,7 @@ const out: string[] = [
   '',
   law
     ? `${qs.length}문항 · 검수 완료 ${qs.filter((q) => q.reviewed).length} · 개정 위험(volatile) ${qs.filter((q) => q.subject === '감관법' && q.volatile).length} · 기준 법령 ${[...new Set(qs.map((q) => (q.subject === '감관법' ? q.lawAsOf : '')))].join(', ')}`
-    : `${qs.length}문항 · 검수 완료 ${qs.filter((q) => q.reviewed).length} · 판례 확인 ${qs.flatMap(casesOf).filter((c) => c.verified).length}/${qs.flatMap(casesOf).length}`,
+    : `${qs.length}문항 · 검수 완료 ${qs.filter((q) => q.reviewed).length} · 기출 정보 ${qs.filter((q) => q.pastExam?.length).length} · 판례 확인 ${qs.flatMap(casesOf).filter((c) => c.verified).length}/${qs.flatMap(casesOf).length}`,
   '',
   ...(econ
     ? [
@@ -73,6 +73,12 @@ for (const q of qs) {
   const cat = q.subject === '감관법' ? q.law : q.subject === '경제학원론' || q.subject === '부동산학원론' ? `${q.field}·${q.unit}` : q.unit;
   const flags = q.subject === '감관법' ? `${q.volatile ? ' · ⚠ 개정 위험' : ''} · 기준 ${q.lawAsOf}` : '';
   out.push(`---`, '', `## ${q.number}. [${cat} · ${q.topic} · ${TYPE[q.type]}형 · 난이도 ${q.difficulty}${flags}] \`${q.id}\`${q.reviewed ? ' ✅ 검수 완료' : ''}`, '');
+  out.push(
+    q.pastExam?.length
+      ? `기출 정보: ${q.pastExam.map((r) => `${pastExamLabel(r)}${r.verified ? '' : ' (확인 필요)'}`).join(', ')}`
+      : '기출 정보: 없음 (창작 문항) — 기출과 같거나 비슷하면 `npm run mark -- ' + q.id + ' --past 연도:회차:번호 --kind 기출|변형|유사`',
+    '',
+  );
   out.push(plain(q.stem.replace(/<table\b[\s\S]*?<\/table>/g, (t) => '\n' + tableToMd(t) + '\n')), '');
   if (q.box) {
     out.push(`> <${q.box.title ?? '보 기'}>`);

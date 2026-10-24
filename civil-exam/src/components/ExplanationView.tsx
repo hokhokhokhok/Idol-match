@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatAsOf } from '../lib/law';
-import { isQuant, type ChoiceNo, type CivilQuestion, type LawQuestion, type QuantQuestion, type Question } from '../types';
+import { isQuant, pastExamLabel, type ChoiceNo, type CivilQuestion, type LawQuestion, type QuantQuestion, type Question } from '../types';
 import { LawTextDialog } from './LawTextDialog';
 import { CIRCLED } from './QuestionView';
 import { RichText } from './RichText';
@@ -12,6 +12,16 @@ export function ExplanationView({ question: q, chosen }: Props) {
   const ex = q.explanation;
   return (
     <section className="exp" aria-label={`${q.number}번 해설`}>
+      {q.pastExam?.length ? (
+        <p className="exp-badges" aria-label="기출 정보">
+          {q.pastExam.map((r, i) => (
+            <span key={i} className={`tag tag-past${r.verified ? '' : ' is-unverified'}`} title={r.note ?? (r.verified ? '기출 원문과 대조해 확인함' : '기출 원문과 대조 필요')}>
+              {pastExamLabel(r)}
+              {!r.verified && ' · 확인 필요'}
+            </span>
+          ))}
+        </p>
+      ) : null}
       {q.subject === '감관법' && <LawBadges q={q} />}
       {isQuant(q) && !q.reviewed && (
         <p className="exp-badges">

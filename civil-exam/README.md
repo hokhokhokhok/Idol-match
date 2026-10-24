@@ -169,7 +169,12 @@ Node 22.18 이상 필요(검증 스크립트를 TypeScript 그대로 실행). �
 npm run review-sheet -- 2026-001                 # 검수 시트(docs/review/2026-001.md) 생성
 npm run mark -- 2026-001-q01                     # 검수 완료 표시
 npm run mark -- 2026-001-q01 --case 1 --citation "대법원 … 판결"   # 판례 확인 표시
+npm run mark -- 2026-001-q01 --past 2024:35:3 --kind 유사          # 기출 정보 기록
 ```
+
+## 기출 정보
+
+수록 문항은 모두 창작 문항이며 기출 문항은 없다. 기출과 같거나 비슷한 문항은 기출 원문과 대조한 뒤 `npm run mark -- <문항id> --past 연도:회차:번호 --kind 기출|변형|유사`로 기록하면 해설에 "2024년 제35회 1차 3번 유사" 배지가 붙는다 — [docs/past-exam.md](docs/past-exam.md)
 
 ## 문항 검증 (`npm run validate`)
 
@@ -178,7 +183,7 @@ npm run mark -- 2026-001-q01 --case 1 --citation "대법원 … 판결"   # 판�
 
 | 수준 | 내용 |
 |---|---|
-| ✗ 오류 (실패) | 스키마: id·setId(=파일 이름)·number 1~40·unit·type·difficulty·`source: "original"`·reviewed, 보기 정확히 5개(번호 기호 없이, 중복 없이), 정답 1~5, 해설 summary·perChoice 5개·statutes·cases(gist, verified), 마크업(`**`, `<u>` 짝, 다른 태그 금지), 조합형·개수형 박스 ㄱ~ㄹ 순서와 조합 보기의 기호, 번호·id 중복(세트 간 포함), JSON 문법 |
+| ✗ 오류 (실패) | 스키마: id·setId(=파일 이름)·number 1~40·unit·type·difficulty·`source`("original" 창작 / "past" 기출 — 기출이면 `pastExam` 필수)·reviewed, 보기 정확히 5개(번호 기호 없이, 중복 없이), 정답 1~5, 해설 summary·perChoice 5개·statutes·cases(gist, verified), 마크업(`**`, `<u>` 짝, 다른 태그 금지), 조합형·개수형 박스 ㄱ~ㄹ 순서와 조합 보기의 기호, 번호·id 중복(세트 간 포함), JSON 문법 |
 | △ 경고 | 보기별 해설에서 '정답'으로 설명한 보기와 `answer` 불일치 / 기획안 7절 분량(공백 포함, 마크업·"(다툼이 있는 경우 판례에 따름)" 제외): 발문·사실관계·보기·박스 항목·문항 전체 글자 수 / 유형별 발문 표현("모두 고른 것은", "몇 개", "판례", 갑·을·병) / id 형식 `세트-qNN` / 40문항 세트의 단원 배분(`config/blueprint.json` ±2)과 정답 번호 분포 |
 | · 참고 | 미검수(`reviewed: false`), 판례 미확인(`verified: false`), 40문항이 아닌 세트 |
 

@@ -14,6 +14,7 @@ import reSet from '../data/sets/re-2026-001.json';
 import katex from 'katex';
 import { solvers } from '../solvers';
 import seed from '../data/sets/seed-001.json';
+import { pastExamLabel } from '../types';
 import {
   crossSetIssues,
   ECON_LENGTH_RULES,
@@ -334,5 +335,28 @@ describe('validate 부동산학원론', () => {
     const f = rq(0);
     f.field = '감정평가';
     expect(warns(validateQuestion(f, 're-seed-001', 0, cfg)).join()).toContain('field');
+  });
+});
+
+describe('기출 정보(pastExam)', () => {
+  const base = () => clone(seed[0]) as Record<string, any>;
+  it('창작 문항에 유사·변형 기출 기록, 연도·회차 검사', () => {
+    const v = base();
+    v.pastExam = [{ year: 2024, round: 35, number: 3, kind: '유사', verified: true }];
+    expect(errors(validateQuestion(v, 'seed-001', 0, cfg))).toEqual([]);
+    v.pastExam[0].round = 30;
+    expect(warns(validateQuestion(v, 'seed-001', 0, cfg))).toContain('pastExam[0]: 2024년은 제35회입니다 (기록: 제30회)');
+    v.pastExam[0] = { year: 1980, number: 41, kind: '유사', verified: true };
+    expect(errors(validateQuestion(v, 'seed-001', 0, cfg)).join()).toMatch(/year 1980[\s\S]*number는 1~40/);
+  });
+  it('기출 문항은 source "past"와 kind "기출"이 짝을 이룬다', () => {
+    const v = base();
+    v.source = 'past';
+    expect(errors(validateQuestion(v, 'seed-001', 0, cfg))[0]).toContain('pastExam에 연도·회차·번호를 기록');
+    v.pastExam = [{ year: 2024, kind: '기출', verified: false }];
+    expect(errors(validateQuestion(v, 'seed-001', 0, cfg))).toEqual([]);
+    v.source = 'original';
+    expect(errors(validateQuestion(v, 'seed-001', 0, cfg))[0]).toContain('source를 "past"로');
+    expect(pastExamLabel({ year: 2024, round: 35, number: 12, kind: '기출', verified: true })).toBe('2024년 제35회 1차 12번 기출');
   });
 });

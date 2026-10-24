@@ -414,7 +414,8 @@ export function validateQuestion(raw: unknown, setId: string, index: number, cfg
   if (!isStr(q.topic)) err('topic이 비어 있습니다');
   if (!isStr(q.stem)) err('stem(발문)이 비어 있습니다');
   if (![1, 2, 3].includes(q.difficulty as number)) err('difficulty는 1, 2, 3 중 하나여야 합니다');
-  if (q.source !== 'original') err('source는 "original"이어야 합니다 (기출·학원 문항 전재 금지)');
+  if (q.source !== 'original' && q.source !== 'past') err('source는 "original"(창작) 또는 "past"(기출)여야 합니다');
+  pastExamIssues(q, { err, warn, info });
   if (typeof q.reviewed !== 'boolean') err('reviewed는 true/false여야 합니다');
 
   // ── 보기·정답 ──
@@ -710,4 +711,27 @@ export function econCoverage(sets: { setId: string; questions: unknown }[], blue
   });
   const calc = pool.filter((q) => isObj(q.calc)).length;
   return [{ level: 'info', where: `${subject} 문항 풀`, message: `${pool.length}문항(계산 검증 ${calc}) — ${parts.join(', ')}` }];
+}
+
+/** 기출 정보(pastExam) 검사: 연도·회차(제1회 1990년)·문항 번호, source: past이면 kind '기출' 기록 필수 */
+function pastExamIssues(q: Record<string, unknown>, { err, warn, info }: Report) {
+  const refs = q.pastExam;
+  if (refs === undefined) {
+    if (q.source === 'past') err('source가 "past"(기출)이면 pastExam에 연도·회차·번호를 기록해야 합니다');
+    return;
+  }
+  if (!Array.isArray(refs) || !refs.length) return err('pastExam은 비어 있지 않은 배열이어야 합니다');
+  refs.forEach((r, i) => {
+    if (!isObj(r) || typeof r.year !== 'number' || !['기출', '변형', '유사'].includes(r.kind as string) || typeof r.verified !== 'boolean')
+      return err(`pastExam[${i}]는 year(숫자), kind(기출/변형/유사), verified(true/false)가 필요합니다`);
+    const thisYear = new Date().getFullYear();
+    if (!Number.isInteger(r.year) || r.year < 1990 || r.year > thisYear + 1) err(`pastExam[${i}].year ${r.year}가 범위(1990~${thisYear + 1}) 밖입니다`);
+    if (r.round !== undefined && (!Number.isInteger(r.round) || (r.round as number) < 1)) err(`pastExam[${i}].round는 1 이상의 정수여야 합니다`);
+    else if (r.round !== undefined && r.round !== r.year - 1989) warn(`pastExam[${i}]: ${r.year}년은 제${r.year - 1989}회입니다 (기록: 제${r.round}회)`);
+    if (r.number !== undefined && (!Number.isInteger(r.number) || (r.number as number) < 1 || (r.number as number) > 40)) err(`pastExam[${i}].number는 1~40이어야 합니다`);
+    if (!r.verified) info(`기출 정보 미확인: ${r.year}년 ${r.number ?? ''}번 (${r.kind})`);
+  });
+  const hasPast = refs.some((r) => isObj(r) && r.kind === '기출');
+  if (q.source === 'past' && !hasPast) err('source가 "past"이면 pastExam에 kind "기출" 항목이 있어야 합니다');
+  if (q.source === 'original' && hasPast) err('kind "기출"을 기록하려면 source를 "past"로 바꾸세요 (창작 문항은 "변형" 또는 "유사")');
 }

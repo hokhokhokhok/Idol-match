@@ -1745,3 +1745,16 @@
   color: var(--correct);
   font-weight: 600;
 }
+
+/* ---------- 기출 정보 ---------- */
+.tag-past {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.tag-past.is-unverified {
+  border: 1px dashed var(--accent);
+}
+.pill-past {
+  background: var(--accent-soft);
+  color: var(--accent);
+}

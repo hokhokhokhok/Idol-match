@@ -70,6 +70,18 @@ export type CaseRef = { gist: string; citation?: string; verified: boolean };
 export type Instrument = '법' | '시행령' | '시행규칙' | '고시';
 export type LegalBasis = { instrument: Instrument; cite: string };
 
+/**
+ * 한국산업인력공단(Q-Net) 감정평가사 1차 시험 기출과의 관계.
+ * kind: 기출(그 기출 문항 그대로) · 변형(기출을 고쳐 만든 문항) · 유사(같은 쟁점을 다룬 창작 문항)
+ * verified: 사용자가 기출 원문과 대조해 확인했는지 (npm run mark -- <id> --past 연도:회차:번호)
+ */
+export type PastExamRef = { year: number; round?: number; number?: number; kind: '기출' | '변형' | '유사'; verified: boolean; note?: string };
+
+/** "2024년 제35회 1차 12번 기출" */
+export function pastExamLabel(r: PastExamRef): string {
+  return [`${r.year}년`, r.round ? `제${r.round}회` : '', '1차', r.number ? `${r.number}번` : '', r.kind].filter(Boolean).join(' ');
+}
+
 type QuestionBase = {
   id: string;
   setId: string;
@@ -82,7 +94,10 @@ type QuestionBase = {
   choices: string[];
   answer: ChoiceNo;
   difficulty: 1 | 2 | 3;
-  source: 'original';
+  /** original: 창작 문항, past: 기출 문항(pastExam에 kind '기출' 기록 필수) */
+  source: 'original' | 'past';
+  /** 기출 정보(있을 때만) */
+  pastExam?: PastExamRef[];
   reviewed: boolean;
 };
 

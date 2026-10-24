@@ -329,6 +329,7 @@ export function HomeScreen(p: Props) {
           {sets.map((s) => {
             const limit = timeLimitSec(s.questions.length, settings.timeLimitMinutes);
             const unreviewed = s.questions.filter((q) => !q.reviewed).length;
+            const past = s.questions.filter((q) => q.pastExam?.some((r) => r.kind !== '유사')).length;
             return (
               <li key={s.id} className="card set-card">
                 <div>
@@ -336,6 +337,7 @@ export function HomeScreen(p: Props) {
                   <p className="muted">
                     {s.questions.length}문항 · {practice ? '연습 모드(시간 제한 없음)' : `${Math.round(limit / 60)}분`}
                     {unreviewed > 0 && <span className="pill">미검수 {unreviewed}</span>}
+                    {past > 0 && <span className="pill pill-past">기출·변형 {past}</span>}
                   </p>
                 </div>
                 <button type="button" className="btn btn-primary btn-lg" onClick={() => confirmNew() && p.onStart(s.id)}>
