@@ -1,0 +1,25 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: var(--header-h);
+  padding: 0 16px;
+  background: var(--bg);
+  transition: box-shadow 0.15s;
+}
+.header[data-scrolled="true"] { box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08); }
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.action { flex-shrink: 0; display: flex; align-items: center; }
+.iconBtn { display: flex; padding: 6px; margin-right: -6px; color: var(--text); }
