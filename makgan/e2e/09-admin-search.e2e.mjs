@@ -1,5 +1,5 @@
 // 관리자(접근 제한·서버 액션 재검증·혜택/공연/캐스팅 CRUD) + 전체 검색(최근 검색어)
-export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql }) {
+export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql, count }) {
   // ── 관리자 아님 ──
   const user = await newPage();
   await login(user, "plain@example.com", "일반인");
@@ -120,12 +120,18 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await s.goto(`${BASE}/search?q=${encodeURIComponent("%")}`);
   check(await visible(s.getByText("찾는 공연이 없어요")), "% 는 글자 그대로 검색(전체가 나오지 않음)");
 
-  for (const t of ["가", "나", "다", "샘플"]) await s.goto(`${BASE}/search?q=${encodeURIComponent(t)}`);
+  for (const t of ["가", "나", "다", "샘플"]) {
+    await s.goto(`${BASE}/search?q=${encodeURIComponent(t)}`);
+    // 최근 검색어는 화면이 뜬 뒤 기기에 저장된다 — 저장될 때까지 기다린다
+    await s.waitForFunction((term) => (localStorage.getItem("makgan:recent-searches") ?? "").includes(`"${term}"`), t);
+  }
   await s.goto(`${BASE}/search`);
+  // 최근 검색어는 화면이 뜬 뒤 기기 저장소에서 읽어 그린다 — 다 그려질 때까지 기다린다
+  await count(s.locator(".recent-list .chip"), 5);
   const recent = await s.locator(".recent-list .chip").allInnerTexts();
   check(recent.length === 5 && recent[0] === "샘플", `최근 검색어 5개, 최신순 (${recent.join(", ")})`);
   await s.getByRole("button", { name: "샘플 지우기" }).click();
-  check((await s.locator(".recent-list .chip").count()) === 4, "최근 검색어 지우기");
+  check((await count(s.locator(".recent-list .chip"), 4)) === 4, "최근 검색어 지우기");
   await s.locator(".recent-list .chip", { hasText: "다" }).click();
   await s.waitForURL(/q=/);
   check(true, "최근 검색어 누르면 다시 검색");
