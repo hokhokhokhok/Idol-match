@@ -275,3 +275,16 @@ a.badge { text-decoration: none; }
 .yt-thumb { position: absolute; inset: 0; width: 100%; border: 0; padding: 0; cursor: pointer; background: #222 center / cover no-repeat; }
 .yt-play { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 44px; border-radius: 12px; background: rgba(255, 0, 0, 0.9); color: #fff; font-size: 18px; }
 .video-title { margin: 6px 0 0; font-size: 14px; font-weight: 600; }
+
+/* 극장·구역 */
+.theater-meta { margin-bottom: 16px; }
+.link-inline { color: var(--burgundy); }
+.floor-tabs { margin-bottom: 16px; }
+.zone-grid { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.zone-card { display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; min-height: 96px; }
+.zone-name { font-size: 15px; }
+.zone-score { font-size: 18px; font-weight: 700; }
+.zone-count { font-size: 12px; }
+.seat-write { margin-top: 8px; }
+.theater-link { text-decoration: underline; text-underline-offset: 2px; }
+.field-row .field.zone-sort { flex: 0 0 72px; }

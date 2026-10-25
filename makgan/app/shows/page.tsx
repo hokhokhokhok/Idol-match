@@ -84,6 +84,7 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
               <button className="btn btn-primary btn-block">적용</button>
             </form>
           </BottomSheet>
+          <Link href="/theaters" className="btn filter-btn">극장 보기</Link>
         </div>
         {filtered && (
           <p className="filter-note">

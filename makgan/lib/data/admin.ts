@@ -37,3 +37,10 @@ export async function adminCasts(showId: string) {
     .order("perf_date", { nullsFirst: true }).order("role_name");
   return (data ?? []) as unknown as { id: string; role_name: string; perf_date: string | null; actor: { name: string } }[];
 }
+
+export async function adminZones(theaterId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("seat_zones").select("id, floor, name, sort_order").eq("theater_id", theaterId)
+    .order("floor").order("sort_order").order("name");
+  return (data ?? []) as { id: string; floor: string; name: string; sort_order: number }[];
+}

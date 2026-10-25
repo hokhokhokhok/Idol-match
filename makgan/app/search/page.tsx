@@ -57,7 +57,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                 <h2 className="section-title" id="sr-theaters">극장</h2>
                 <ul className="search-list">
                   {result.theaters.map((t) => (
-                    <li key={t.id}><Link href={`/shows?theater=${t.id}&status=all`}><strong>{t.name}</strong>{t.address && <span className="muted">{t.address}</span>}</Link></li>
+                    <li key={t.id}><Link href={`/theaters/${t.id}`}><strong>{t.name}</strong>{t.address && <span className="muted">{t.address}</span>}</Link></li>
                   ))}
                 </ul>
               </section>
