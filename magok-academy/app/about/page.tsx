@@ -22,7 +22,7 @@ export default function AboutPage() {
         <section>
           <h2 className="mb-1 text-base font-bold">수집 기준</h2>
           <ul className="list-disc space-y-1 pl-5">
-            <li>학원알리미·공공데이터, 학원 홈페이지, 공식 SNS, 네이버 플레이스처럼 <strong>공개된 정보만</strong> 사람이 직접 확인해 입력합니다. 자동 수집(크롤링)은 하지 않습니다.</li>
+            <li>교육청 공공데이터(오늘학교 아카데미), 학원 정보 플랫폼(런즈), 학원 홈페이지·공식 SNS처럼 <strong>공개된 정보만</strong> 사람이 직접 확인해 입력합니다. 자동 수집(크롤링)은 하지 않습니다.</li>
             <li>강사 경력은 <strong>본인 또는 학원이 직접 공개한 것만</strong> 싣고, 공개 근거를 함께 적습니다.</li>
             <li>모든 경력 항목에 <strong>출처 링크와 수집일</strong>을 표시합니다.</li>
             <li>확인하지 못한 항목은 비워 두거나 &lsquo;미확인&rsquo;으로 표시하며, 추측해서 채우지 않습니다.</li>
@@ -35,9 +35,9 @@ export default function AboutPage() {
           <h2 className="mb-1 text-base font-bold">표시 읽는 법</h2>
           <dl className="grid grid-cols-[6.5rem_1fr] gap-x-2 gap-y-2">
             <dt><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-ok">확인됨</span></dt>
-            <dd>학원 기본 정보(등록·주소·과목 등)를 공개 자료로 확인함</dd>
+            <dd>교육청 공공데이터로 학원 등록·주소·과목을 확인함</dd>
             <dt><span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-warn">미확인</span></dt>
-            <dd>아직 확인 전이거나 출처끼리 내용이 다름</dd>
+            <dd>학원 정보 플랫폼·학원 소개로만 확인했거나 출처끼리 내용이 다름. 대상 학년이 플랫폼의 &lsquo;수업대상&rsquo; 표기에만 근거한 곳도 있음</dd>
             <dt><span className="rounded bg-emerald-50 px-1.5 text-xs text-ok">공연 DB 확인</span></dt>
             <dd>뮤지컬 출연·스태프 경력을 KOPIS 등 공연 DB에서 작품·연도까지 교차 확인함</dd>
             <dt><span className="rounded bg-amber-50 px-1.5 text-xs text-warn">미확인</span> (경력)</dt>

@@ -50,6 +50,7 @@ export function sourceLabel(url: string): string {
   }
   const known: Record<string, string> = {
     "academy.prompie.com": "오늘학교 아카데미",
+    "learns.academy": "런즈",
     "hakwonalimi.go.kr": "학원알리미",
     "map.naver.com": "네이버 플레이스",
     "kopis.or.kr": "KOPIS",

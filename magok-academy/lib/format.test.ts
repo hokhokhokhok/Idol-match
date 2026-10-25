@@ -46,5 +46,6 @@ test("정정 요청 링크에 학원 이름이 채워짐", () => {
 test("출처 이름", () => {
   assert.equal(sourceLabel("https://academy.prompie.com/academies/detail/x/"), "오늘학교 아카데미");
   assert.equal(sourceLabel("https://www.kopis.or.kr/"), "KOPIS");
+  assert.equal(sourceLabel("https://learns.academy/academies/UI2IMY58BL"), "런즈");
   assert.equal(sourceLabel("https://blog.example.com/a"), "blog.example.com");
 });
