@@ -37,6 +37,7 @@ select pg_temp.expect((select count(*) from public.shows) > 0, '비로그인: �
 select pg_temp.expect((select count(*) from public.actors) > 0, '비로그인: 배우 열람');
 select pg_temp.expect((select count(*) from public.benefits) > 0, '비로그인: 혜택 열람');
 select pg_temp.expect((select count(*) from public.videos) >= 0, '비로그인: 영상 열람 가능');
+select pg_temp.expect((select count(*) from public.glossary) = 0, '비로그인: 초안 용어는 안 보임');
 select pg_temp.expect_denied($$insert into public.wishlists (user_id, show_id) values
   ('aaaaaaaa-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000201')$$, '비로그인: 찜 저장 거부');
 select pg_temp.expect_denied($$insert into public.benefits (type, title) values ('event', 'x')$$, '비로그인: 혜택 등록 거부');
@@ -132,6 +133,7 @@ select pg_temp.expect((select count(*) from public.push_subscriptions) = 0, '남
 select pg_temp.expect_denied($$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('bbbbbbbb-0000-4000-8000-000000000002', 'https://push.example/x', 'k', 'a')$$, '남의 이름으로 구독 저장 거부');
 select pg_temp.expect_denied($$insert into public.benefit_alerts (user_id, benefit_id, sent_at) select auth.uid(), id, now() from public.benefits limit 1$$, '알림을 보낸 것처럼 꾸며 등록 거부');
 select pg_temp.expect((select count(*) from public.notification_outbox) = 0, '알림 대기열은 사용자에게 안 보임');
+select pg_temp.expect((select count(*) from public.glossary where status = 'draft') > 0, '관리자: 초안 용어 보임');
 select pg_temp.expect_denied($$insert into public.notification_outbox (user_id, kind, title, body) values (auth.uid(), 'test', 'x', 'y')$$, '알림 대기열에 직접 쓰기 거부');
 reset role;
 

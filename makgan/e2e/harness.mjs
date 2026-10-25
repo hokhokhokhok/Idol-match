@@ -55,6 +55,8 @@ const env = {
   VAPID_PRIVATE_KEY: VAPID.privateKey,
   VAPID_SUBJECT: "mailto:e2e@example.com",
   CRON_SECRET,
+  // 테스트 전용: 링크 자동 채우기가 로컬 가짜 페이지(localhost)에 접속하도록 허용
+  LINK_META_ALLOW_HOSTS: "localhost",
 };
 if (!process.env.E2E_SKIP_BUILD) {
   console.log("next build (로컬 Supabase 값으로)…");

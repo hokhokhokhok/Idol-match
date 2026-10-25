@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { adminClient } from "@/lib/admin";
 import { ADMIN_ENTITIES, isEntityKey, parseEntityForm } from "@/lib/admin-entities";
 import { isDay, isUuid } from "@/lib/data/shows";
+import { fetchLinkMeta } from "@/lib/link-fetch";
 
 export type AdminFormState = { error?: string; values?: Record<string, string> };
 const echo = (form: FormData) => Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)]));
@@ -92,4 +93,14 @@ export async function adminDeleteZone(zoneId: string): Promise<{ error?: string 
   if (error || !data?.length) return { error: "삭제하지 못했어요" };
   revalidatePath("/", "layout");
   return {};
+}
+
+/** 링크로 채우기(SPEC-2 B-4): 제목 후보·출처 이름만. 날짜는 사람이 입력한다. 실패하면 조용히 수동 입력으로. */
+export async function adminFetchLinkMeta(url: string): Promise<{ title?: string; sourceName?: string; sourceUrl?: string; image?: string; error?: string }> {
+  const admin = await adminClient();
+  if (!admin) return { error: DENIED };
+  if (typeof url !== "string" || url.length > 1000) return { error: "주소를 확인해 주세요" };
+  const meta = await fetchLinkMeta(url);
+  if (!meta || (!meta.title && !meta.siteName)) return { error: "자동으로 채우지 못했어요. 직접 입력해 주세요" };
+  return { title: meta.title ?? undefined, sourceName: meta.siteName ?? meta.host, sourceUrl: meta.url, image: meta.image ?? undefined };
 }

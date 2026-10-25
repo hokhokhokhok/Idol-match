@@ -21,6 +21,7 @@ export default async function AdminListPage({ params }: { params: Promise<{ enti
     if (key === "benefits") return r.ends_at ? formatDeadline(String(r.ends_at)) : "마감 없음";
     if (key === "theaters") return (r.address as string) ?? "";
     if (key === "videos") return `youtu.be/${r.youtube_id}`;
+    if (key === "glossary") return `${r.status === "published" ? "공개" : "초안"}${r.category ? ` · ${r.category}` : ""}`;
     return "";
   };
 

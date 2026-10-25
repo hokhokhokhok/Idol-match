@@ -7,18 +7,19 @@ type Option = { value: string; label: string };
 
 /** 관리자 공용 폼: 필드 정의대로 그린다. 검증 실패 시 입력 유지. */
 export default function EntityForm({
-  action, fields, initial, optionSets, submitLabel,
+  action, fields, initial, optionSets, submitLabel, formId,
 }: {
   action: (s: AdminFormState, f: FormData) => Promise<AdminFormState>;
   fields: readonly Field[];
   initial: Record<string, string>;
   optionSets: Record<string, Option[]>;
   submitLabel: string;
+  formId?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const v = { ...initial, ...state.values };
   return (
-    <form action={formAction} className="form" key={JSON.stringify(state.values ?? {})}>
+    <form action={formAction} className="form" id={formId} key={JSON.stringify(state.values ?? {})}>
       {v.id && <input type="hidden" name="id" value={v.id} />}
       {fields.map((f) => {
         const options = Array.isArray(f.options) ? (f.options as Option[]) : f.options ? optionSets[f.options as string] ?? [] : [];
