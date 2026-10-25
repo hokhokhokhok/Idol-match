@@ -25,6 +25,7 @@ npm install
 npm run dev          # http://localhost:3000
 npm test             # CSV 파서·스키마 검증·데이터셋 단위 테스트
 npm run check:data   # data/*.csv 검사 (오류 있으면 종료 코드 1)
+KOPIS_API_KEY=<키> npm run kopis:check   # 뮤지컬 경력을 KOPIS 공연 DB 출연진·제작진과 대조 (프록시 환경이면 NODE_USE_ENV_PROXY=1)
 npm run typecheck
 npm run build        # 정적 HTML → out/
 npm run test:e2e     # 가상 예시로 빌드한 out/를 띄워 필터·지도·즐겨찾기·비교·상세 흐름 검사, 360·390px 스크린샷 → screenshots/
