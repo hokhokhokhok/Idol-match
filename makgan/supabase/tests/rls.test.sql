@@ -50,6 +50,9 @@ select pg_temp.expect_denied($$update public.profiles set is_admin = true where 
 insert into public.wishlists (user_id, show_id) values (auth.uid(), '00000000-0000-4000-8000-000000000201');
 select pg_temp.expect_denied($$insert into public.wishlists (user_id, show_id) values
   ('bbbbbbbb-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000202')$$, '남의 찜 저장 거부');
+insert into public.follows (user_id, actor_id) values (auth.uid(), '00000000-0000-4000-8000-000000000301');
+select pg_temp.expect_denied($$insert into public.follows (user_id, actor_id) values
+  ('bbbbbbbb-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000301')$$, '남의 팔로우 저장 거부');
 insert into public.reviews (id, show_id, watched_at, rating, body, is_public) values
   ('11111111-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000201', current_date, 5, '비공개 후기', false),
   ('11111111-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000201', current_date, 3, '공개 후기', true);
@@ -69,6 +72,7 @@ set role authenticated;
 set request.jwt.claims = '{"sub":"bbbbbbbb-0000-4000-8000-000000000002"}';
 select pg_temp.expect((select count(*) from public.reviews) = 1, 'bob: 타인 비공개 후기 안 보임(공개 1개만)');
 select pg_temp.expect((select count(*) from public.wishlists) = 0, 'bob: 타인 찜 안 보임');
+select pg_temp.expect((select count(*) from public.follows) = 0, 'bob: 타인 팔로우 안 보임');
 update public.reviews set body = '수정됨' where id = '11111111-0000-4000-8000-000000000002';
 delete from public.reviews where user_id = 'aaaaaaaa-0000-4000-8000-000000000001';
 delete from public.seat_reviews;
