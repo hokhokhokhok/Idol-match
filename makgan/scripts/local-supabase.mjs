@@ -176,6 +176,23 @@ const server = createServer(async (req, res) => {
       res.writeHead(201, cors);
       return res.end();
     }
+    // 링크 자동 채우기 테스트용 페이지
+    if (url.pathname === "/__mock/og-page") {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      return res.end(`<!doctype html><html><head><title>기본 제목</title><meta property="og:title" content="[샘플] 11월 로터리 안내 &amp; 할인"><meta property="og:site_name" content="[샘플] 공식 SNS"><meta property="og:image" content="/poster.jpg"><meta name="date" content="2026-11-05"></head><body>본문</body></html>`);
+    }
+    if (url.pathname === "/__mock/big-page") {
+      res.writeHead(200, { "content-type": "text/html" });
+      return res.end(`<title>너무 큼</title>${"x".repeat(2 * 1024 * 1024)}`);
+    }
+    if (url.pathname === "/__mock/slow-page") {
+      setTimeout(() => { res.writeHead(200, { "content-type": "text/html" }); res.end("<title>느림</title>"); }, 7000);
+      return;
+    }
+    if (url.pathname === "/__mock/redirect-internal") {
+      res.writeHead(302, { location: `http://127.0.0.1:${API_PORT}/__mock/og-page` });
+      return res.end();
+    }
     if (url.pathname === "/__mock/pushes") return json(res, 200, pushes.filter((p) => !url.searchParams.get("id") || p.id === url.searchParams.get("id")));
     if (url.pathname === "/__mock/sql" && req.method === "POST") return json(res, 200, { out: sql((await readBody(req)).query) });
     if (url.pathname.startsWith("/rest/v1")) {

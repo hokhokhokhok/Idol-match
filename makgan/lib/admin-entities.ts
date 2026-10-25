@@ -12,7 +12,7 @@ export type Field = {
   hint?: string;
 };
 export type Entity = {
-  key: "shows" | "actors" | "theaters" | "benefits" | "videos";
+  key: "shows" | "actors" | "theaters" | "benefits" | "videos" | "glossary";
   label: string;
   titleField: string;
   order: { column: string; ascending: boolean };
@@ -75,6 +75,23 @@ export const ADMIN_ENTITIES: Record<Entity["key"], Entity> = {
       { name: "show_id", label: "공연", type: "select", options: "shows" },
       { name: "actor_id", label: "배우", type: "select", options: "actors" },
       { name: "published_on", label: "공개일", type: "date" },
+    ],
+  },
+  glossary: {
+    key: "glossary", label: "용어", titleField: "term", order: { column: "term", ascending: true },
+    fields: [
+      { name: "term", label: "용어", type: "text", required: true, max: 50 },
+      {
+        name: "category", label: "분류", type: "select",
+        options: [{ value: "관극", label: "관극" }, { value: "예매", label: "예매" }, { value: "좌석", label: "좌석" }, { value: "기타", label: "기타" }],
+      },
+      { name: "meaning", label: "뜻", type: "textarea", required: true, max: 1000 },
+      { name: "example", label: "예시", type: "textarea", max: 500 },
+      {
+        name: "status", label: "상태", type: "select", required: true,
+        options: [{ value: "draft", label: "초안(관리자만 보임)" }, { value: "published", label: "공개" }],
+        hint: "초안은 뜻을 검수한 뒤 공개로 바꿔 주세요",
+      },
     ],
   },
 };

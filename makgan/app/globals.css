@@ -343,3 +343,16 @@ a.badge { text-decoration: none; }
 .switch-row { justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .device-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .test-push { margin-top: 4px; }
+.autofill { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line); }
+
+/* 용어 사전 */
+.glossary-index { margin-top: 12px; }
+.glossary-group { margin-top: 16px; scroll-margin-top: calc(var(--header-h) + 8px); }
+.glossary-head { margin: 0 0 4px; font-size: 14px; color: var(--burgundy); }
+.glossary-list { list-style: none; margin: 0; padding: 0; }
+.glossary-list li + li { border-top: 1px solid var(--line); }
+.glossary-term { display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; color: var(--text); }
+.glossary-term .muted { margin-left: auto; font-size: 12px; }
+.glossary-meaning { margin: 0 0 12px; font-size: 16px; line-height: 1.6; }
+.glossary-example { margin: 0 0 8px; padding: 10px 12px; border-radius: 10px; background: var(--bg-sub); }
+.glossary-link { margin-top: 12px; }

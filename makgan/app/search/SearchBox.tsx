@@ -50,6 +50,7 @@ export default function SearchBox({ initial }: { initial: string }) {
         />
         <button className="btn btn-primary">검색</button>
       </form>
+      {!initial && <a href="/glossary" className="link glossary-link">모르는 말이 있나요? 막간 용어 사전 →</a>}
       {!initial && recent.length > 0 && (
         <section className="recent" aria-labelledby="recent-title">
           <h2 className="section-title" id="recent-title">최근 검색어</h2>

@@ -3,6 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import EntityForm from "@/components/admin/EntityForm";
 import CastForm from "@/components/admin/CastForm";
 import ZoneForm from "@/components/admin/ZoneForm";
+import LinkAutofill from "@/components/admin/LinkAutofill";
 import DeleteButton from "@/components/admin/DeleteButton";
 import { requireAdmin } from "@/lib/admin";
 import { ADMIN_ENTITIES, isEntityKey, isoToKstLocal } from "@/lib/admin-entities";
@@ -38,7 +39,9 @@ export default async function AdminEditPage({ params }: { params: Promise<{ enti
     <>
       <PageHeader title={isNew ? `${entity.label} 추가` : `${entity.label} 수정`} back={`/admin/${key}`} action={<span />} />
       <main className="page-body">
+        {key === "benefits" && <LinkAutofill formId="entity-form" />}
         <EntityForm
+          formId="entity-form"
           action={adminSave.bind(null, key)}
           fields={entity.fields}
           initial={initial}
