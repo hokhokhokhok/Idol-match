@@ -1,5 +1,5 @@
 // 관리자(접근 제한·서버 액션 재검증·혜택/공연/캐스팅 CRUD) + 전체 검색(최근 검색어)
-export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql, count }) {
+export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql, count, pick }) {
   // ── 관리자 아님 ──
   const user = await newPage();
   await login(user, "plain@example.com", "일반인");
@@ -40,7 +40,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await admin.goto(`${BASE}/admin/benefits/new`);
   await admin.locator('select[name="type"]').selectOption("lottery");
   await admin.locator('input[name="title"]').fill("[샘플] 관리자 로터리");
-  await admin.locator('select[name="show_id"]').selectOption({ label: "[샘플] 뮤지컬 첫공" });
+  await pick(admin, "show_id", "[샘플] 뮤지컬 첫공");
   await admin.locator('input[name="starts_at"]').fill(`${tomorrow}T20:00`);
   await admin.locator('input[name="ends_at"]').fill(`${tomorrow}T18:00`);
   await admin.getByRole("button", { name: "추가" }).click();
@@ -72,7 +72,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   // 공연 추가 + 캐스팅
   await admin.goto(`${BASE}/admin/shows/new`);
   await admin.locator('input[name="title"]').fill("[샘플] 관리자 공연");
-  await admin.locator('select[name="theater_id"]').selectOption({ label: "[샘플] 커튼콜극장" });
+  await pick(admin, "theater_id", "[샘플] 커튼콜극장");
   await admin.locator('input[name="starts_on"]').fill("2026-01-01");
   await admin.locator('input[name="ends_on"]').fill("2030-12-31");
   await admin.getByRole("button", { name: "추가" }).click();
@@ -80,12 +80,12 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await admin.getByText("[샘플] 관리자 공연").click();
   await admin.waitForURL(/\/admin\/shows\/[0-9a-f-]{36}$/);
   const showId = admin.url().split("/").pop();
-  await admin.locator('select[name="actor_id"]').selectOption({ label: "[샘플] 배우 다" });
+  await pick(admin, "actor_id", "[샘플] 배우 다");
   await admin.locator('input[name="role_name"]').fill("[샘플] 역할");
   await admin.getByRole("button", { name: "캐스팅 추가" }).click();
   await admin.locator(".admin-row", { hasText: "[샘플] 배우 다 · [샘플] 역할" }).waitFor({ timeout: 5000 });
   check(true, "캐스팅 추가");
-  await admin.locator('select[name="actor_id"]').selectOption({ label: "[샘플] 배우 다" });
+  await pick(admin, "actor_id", "[샘플] 배우 다");
   await admin.locator('input[name="role_name"]').fill("[샘플] 역할");
   await admin.getByRole("button", { name: "캐스팅 추가" }).click();
   check(await visible(admin.getByRole("alert").filter({ hasText: "이미 등록된 캐스팅이에요" })), "같은 캐스팅 중복 거부");

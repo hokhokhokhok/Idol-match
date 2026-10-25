@@ -1,16 +1,20 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import BenefitCard from "@/components/BenefitCard";
+import ShowCard from "@/components/ShowCard";
 import ShowCardVertical from "@/components/ShowCardVertical";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import { getHome } from "@/lib/data/home";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { formatOpening } from "@/lib/date";
+import { myWishlistIds } from "@/lib/data/wishlist";
 
 export default async function HomePage() {
   let home: Awaited<ReturnType<typeof getHome>> | null;
+  let wished = new Set<string>();
   try {
-    home = await getHome();
+    [home, wished] = await Promise.all([getHome(), myWishlistIds()]);
   } catch {
     home = null;
   }
@@ -30,16 +34,37 @@ export default async function HomePage() {
             <section className="home-section" aria-labelledby="today-title">
               <div className="section-head">
                 <h2 className="section-title" id="today-title">오늘 마감</h2>
-                <Link href="/benefits?when=today" className="more-link">전체 보기</Link>
+                <Link href={home.endingToday.length || !home.endingShows.length ? "/benefits?when=today" : "/shows?status=running"} className="more-link">전체 보기</Link>
               </div>
-              {home.endingToday.length === 0 ? (
+              {home.endingToday.length === 0 && home.endingShows.length === 0 ? (
                 <EmptyState icon="⏰" message="오늘 마감되는 혜택은 없어요" action={{ label: "전체 혜택 보기", href: "/benefits" }} />
               ) : (
-                <ul className="benefit-list">
-                  {home.endingToday.map((b) => <li key={b.id}><BenefitCard benefit={b} now={now} /></li>)}
-                </ul>
+                <>
+                  {home.endingToday.length > 0 && (
+                    <ul className="benefit-list">
+                      {home.endingToday.map((b) => <li key={b.id}><BenefitCard benefit={b} now={now} /></li>)}
+                    </ul>
+                  )}
+                  {home.endingShows.length > 0 && (
+                    <ul className="card-list" aria-label="오늘 막공">
+                      {home.endingShows.map((s) => <li key={s.id}><ShowCard show={s} note="오늘 막공 · 마지막 공연이에요" wished={wished.has(s.id)} /></li>)}
+                    </ul>
+                  )}
+                </>
               )}
             </section>
+
+            {home.openingSoon.length > 0 && (
+              <section className="home-section" aria-labelledby="soon-title">
+                <div className="section-head">
+                  <h2 className="section-title" id="soon-title">곧 개막</h2>
+                  <Link href="/shows?status=upcoming&sort=opening" className="more-link">전체 보기</Link>
+                </div>
+                <ul className="hscroll">
+                  {home.openingSoon.map((s) => <li key={s.id}><ShowCardVertical show={s} note={formatOpening(s.starts_on)} wished={wished.has(s.id)} /></li>)}
+                </ul>
+              </section>
+            )}
 
             <section className="home-section" aria-labelledby="open-title">
               <div className="section-head">

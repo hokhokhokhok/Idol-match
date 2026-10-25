@@ -2,6 +2,9 @@
 import { useActionState, useState } from "react";
 import RatingInput from "./RatingInput";
 import CastPicker from "./CastPicker";
+import Combobox from "./Combobox";
+import { formatPeriod } from "@/lib/date";
+import { uniqueLabels } from "@/lib/labels";
 import type { ReviewFormState } from "@/lib/actions/reviews";
 import { REVIEW_LIMITS } from "@/lib/review-input";
 
@@ -12,7 +15,7 @@ export default function ReviewForm({
   action, shows, initial, today, submitLabel, actors, initialCasts = [],
 }: {
   action: (s: ReviewFormState, f: FormData) => Promise<ReviewFormState>;
-  shows: { id: string; title: string; theater_id?: string | null }[];
+  shows: { id: string; title: string; starts_on: string; ends_on: string; theater_id?: string | null }[];
   initial: Values;
   today: string;
   submitLabel: string;
@@ -25,6 +28,7 @@ export default function ReviewForm({
   const key = JSON.stringify(state.values ?? {});
   const [showId, setShowId] = useState(v.show_id ?? "");
   const [seat, setSeat] = useState(v.seat_text ?? "");
+  const showOptions = uniqueLabels(shows.map((s) => ({ value: s.id, label: `${s.title} · ${formatPeriod(s.starts_on, s.ends_on)}` })));
   const canShareSeat = !v.id && seat.trim() !== "" && Boolean(shows.find((s) => s.id === showId)?.theater_id);
 
   return (
@@ -32,10 +36,7 @@ export default function ReviewForm({
       {v.id && <input type="hidden" name="id" value={v.id} />}
       <label className="field">
         <span>공연</span>
-        <select name="show_id" required defaultValue={v.show_id ?? ""} onChange={(e) => setShowId(e.target.value)}>
-          <option value="" disabled>공연을 골라 주세요</option>
-          {shows.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-        </select>
+        <Combobox name="show_id" options={showOptions} defaultValue={v.show_id} required placeholder="공연 이름을 입력해서 찾기" onSelect={setShowId} />
       </label>
       <label className="field">
         <span>관람일</span>

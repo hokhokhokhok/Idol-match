@@ -6,7 +6,7 @@ import type { CastResult, ShowDetail, ShowSummary } from "@/lib/types";
 
 export const SHOW_PAGE_SIZE = 20;
 export const SHOW_STATUSES = ["current", "running", "upcoming", "ended", "all"] as const;
-export const SHOW_SORTS = ["ending", "newest", "title"] as const;
+export const SHOW_SORTS = ["ending", "opening", "newest", "title"] as const;
 export type ShowStatusFilter = (typeof SHOW_STATUSES)[number];
 export type ShowSort = (typeof SHOW_SORTS)[number];
 
@@ -25,7 +25,7 @@ export type ListShowsParams = {
 export const hidesShort = (p: ListShowsParams) => !p.includeShort && !p.theaterId && !p.actorId && !p.from && !p.to;
 export const SHORT_RUN_DAYS = 3;
 
-const SHOW_COLUMNS = "id, title, starts_on, ends_on, poster_url, theater:theaters(id, name)";
+export const SHOW_COLUMNS = "id, title, starts_on, ends_on, poster_url, theater:theaters(id, name)";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const isUuid = (v: unknown): v is string => typeof v === "string" && UUID_RE.test(v);
@@ -53,6 +53,7 @@ export async function listShows(params: ListShowsParams = {}): Promise<{ items: 
   if (to) q = q.lte("starts_on", to);
 
   if (sort === "ending") q = status === "ended" ? q.order("ends_on", { ascending: false }) : q.order("ends_on");
+  if (sort === "opening") q = q.order("starts_on").order("ends_on");
   if (sort === "newest") q = q.order("starts_on", { ascending: false });
   if (sort === "title") q = q.order("title");
   q = q.order("id");

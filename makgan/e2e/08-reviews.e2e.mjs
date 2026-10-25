@@ -10,7 +10,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   check(await visible(reviewsSection.getByText("첫 후기를 남겨볼까요?")), "후기 없을 때: 첫 후기를 남겨볼까요?");
   await reviewsSection.getByRole("link", { name: "후기 쓰기" }).click();
   await a.waitForURL(`${BASE}/me/reviews/new?show=${S2}`);
-  check((await a.locator('select[name="show_id"]').inputValue()) === S2, "공연 상세에서 오면 공연이 미리 선택됨");
+  check((await a.locator('input[type="hidden"][name="show_id"]').inputValue()) === S2, "공연 상세에서 오면 공연이 미리 선택됨");
   await layout(a, "후기 쓰기");
   await shot(a, "360-review-new");
 

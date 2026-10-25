@@ -10,6 +10,7 @@ import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import { listShowReviews, type ShowReview } from "@/lib/data/reviews";
 import { listVideos, type Video } from "@/lib/data/videos";
+import { getProfile } from "@/lib/auth";
 import VideoSection from "@/components/VideoSection";
 import { myWishlistIds } from "@/lib/data/wishlist";
 import { listBenefits, type Benefit } from "@/lib/data/benefits";
@@ -34,6 +35,7 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
   let wished = new Set<string>();
   let reviews: ShowReview[] = [];
   let videos: Video[] = [];
+  const isAdmin = Boolean((await getProfile())?.is_admin);
   try {
     show = await getShow(id);
     // 날짜를 고르지 않았으면 공연 기간 중엔 오늘 캐스팅을 보여 준다
@@ -56,6 +58,15 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
     <>
       <PageHeader title={show.title} back="/shows" />
       <main className="page-body show-detail">
+        {isAdmin && (
+          <nav className="admin-bar" aria-label="관리자 메뉴">
+            <span className="badge">관리자</span>
+            <Link href={`/admin/benefits/new?show=${show.id}&type=lottery`}>+ 로터리</Link>
+            <Link href={`/admin/benefits/new?show=${show.id}&type=discount`}>+ 할인</Link>
+            <Link href={`/admin/benefits/new?show=${show.id}&type=ticket_open`}>+ 티켓오픈</Link>
+            <Link href={`/admin/shows/${show.id}`}>공연 수정</Link>
+          </nav>
+        )}
         <section className="show-hero">
           <Poster src={show.poster_url} alt={show.title} className="show-hero-poster" />
           <div className="show-hero-body">
