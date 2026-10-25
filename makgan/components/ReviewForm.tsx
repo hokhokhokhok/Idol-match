@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import RatingInput from "./RatingInput";
 import type { ReviewFormState } from "@/lib/actions/reviews";
 import { REVIEW_LIMITS } from "@/lib/review-input";
@@ -11,7 +11,7 @@ export default function ReviewForm({
   action, shows, initial, today, submitLabel,
 }: {
   action: (s: ReviewFormState, f: FormData) => Promise<ReviewFormState>;
-  shows: { id: string; title: string }[];
+  shows: { id: string; title: string; theater_id?: string | null }[];
   initial: Values;
   today: string;
   submitLabel: string;
@@ -20,13 +20,16 @@ export default function ReviewForm({
   // 검증 실패로 돌아오면 입력값 유지(React가 폼을 비우므로 defaultValue로 되살림)
   const v: Values = { ...initial, ...state.values };
   const key = JSON.stringify(state.values ?? {});
+  const [showId, setShowId] = useState(v.show_id ?? "");
+  const [seat, setSeat] = useState(v.seat_text ?? "");
+  const canShareSeat = !v.id && seat.trim() !== "" && Boolean(shows.find((s) => s.id === showId)?.theater_id);
 
   return (
     <form action={formAction} className="form" key={key}>
       {v.id && <input type="hidden" name="id" value={v.id} />}
       <label className="field">
         <span>공연</span>
-        <select name="show_id" required defaultValue={v.show_id ?? ""}>
+        <select name="show_id" required defaultValue={v.show_id ?? ""} onChange={(e) => setShowId(e.target.value)}>
           <option value="" disabled>공연을 골라 주세요</option>
           {shows.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
         </select>
@@ -47,7 +50,7 @@ export default function ReviewForm({
       <div className="field-row">
         <label className="field">
           <span>좌석</span>
-          <input name="seat_text" maxLength={REVIEW_LIMITS.seat_text} defaultValue={v.seat_text ?? ""} placeholder="예: 1층 B구역 5열" />
+          <input name="seat_text" maxLength={REVIEW_LIMITS.seat_text} defaultValue={v.seat_text ?? ""} placeholder="예: 1층 B구역 5열" onChange={(e) => setSeat(e.target.value)} />
         </label>
         <label className="field">
           <span>관람료(원)</span>
@@ -58,6 +61,12 @@ export default function ReviewForm({
         <input type="checkbox" name="is_public" defaultChecked={v.is_public === "on" || v.is_public === "true"} />
         <span>공연 페이지에 공개하기 <small className="muted">(끄면 나만 봐요)</small></span>
       </label>
+      {canShareSeat && (
+        <label className="check">
+          <input type="checkbox" name="seat_to_theater" />
+          <span>이 좌석 후기도 극장 정보에 올릴까요? <small className="muted">(저장 후 좌석 후기 쓰기로 이어져요)</small></span>
+        </label>
+      )}
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
       <button className="btn btn-primary btn-block" disabled={pending}>{pending ? "저장 중…" : submitLabel}</button>
     </form>

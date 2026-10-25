@@ -60,6 +60,6 @@ export async function getMyReview(id: string): Promise<Review | null> {
 export async function listShowOptions() {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
-  const { data } = await supabase.from("shows").select("id, title, starts_on").order("title").limit(1000);
-  return data ?? [];
+  const { data } = await supabase.from("shows").select("id, title, starts_on, theater_id").order("title").limit(1000);
+  return (data ?? []) as { id: string; title: string; starts_on: string; theater_id: string | null }[];
 }

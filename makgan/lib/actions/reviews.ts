@@ -24,9 +24,18 @@ export async function createReview(_: ReviewFormState, form: FormData): Promise<
   if ("error" in parsed) return { error: parsed.error, values: echo(form) };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("reviews").insert({ ...parsed.value, user_id: user.id });
+  const { data: created, error } = await supabase.from("reviews").insert({ ...parsed.value, user_id: user.id }).select("id").single();
   if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요", values: echo(form) };
   revalidate(parsed.value.show_id);
+
+  // "이 좌석 후기도 극장 정보에 올릴까요?" → 좌석 후기 폼으로(관극 후기와 연결)
+  if (form.get("seat_to_theater") === "on" && parsed.value.seat_text) {
+    const { data: show } = await supabase.from("shows").select("theater_id").eq("id", parsed.value.show_id).maybeSingle();
+    if (show?.theater_id) {
+      const q = new URLSearchParams({ review: created.id, show: parsed.value.show_id, watched: parsed.value.watched_at, seat: parsed.value.seat_text, toast: "review-saved" });
+      redirect(`/theaters/${show.theater_id}/seat-reviews/new?${q}`);
+    }
+  }
   redirect("/me?toast=review-saved");
 }
 
