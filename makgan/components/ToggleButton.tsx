@@ -1,7 +1,7 @@
 "use client";
 import { useOptimistic, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import type { ToggleResult } from "@/lib/actions/follow";
+import type { ToggleResult } from "@/lib/types";
 
 /**
  * 팔로우·찜 공용 토글. 누르면 바로 바뀌고(낙관적), 비로그인이면 로그인 화면으로 보낸다.
@@ -18,7 +18,7 @@ export default function ToggleButton({
   const [state, setState] = useState(on);
   const [optimistic, setOptimistic] = useOptimistic(state);
   const [error, setError] = useState("");
-  const [, start] = useTransition();
+  const [pending, start] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -34,7 +34,7 @@ export default function ToggleButton({
 
   return (
     <>
-      <button type="button" className={className} aria-pressed={optimistic} aria-label={labels.aria} onClick={click}>
+      <button type="button" className={className} aria-pressed={optimistic} aria-label={labels.aria} onClick={click} data-pending={pending || undefined}>
         {optimistic ? labels.on : labels.off}
       </button>
       {error && <span className="form-error" role="alert">{error}</span>}

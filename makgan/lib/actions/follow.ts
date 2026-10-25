@@ -3,8 +3,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
 import { isUuid } from "@/lib/data/shows";
+import type { ToggleResult } from "@/lib/types";
 
-export type ToggleResult = { on: boolean } | { needLogin: true } | { error: string };
 
 /** 팔로우 토글(SPEC-2 A-6 toggleFollow). 비로그인이면 needLogin. 권한은 RLS가 한 번 더 막는다. */
 export async function toggleFollow(actorId: string): Promise<ToggleResult> {

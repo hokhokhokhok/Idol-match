@@ -4,6 +4,7 @@ import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import { listShows, listTheaterOptions } from "@/lib/data/shows";
 import { parseShowParams } from "@/lib/show-params";
+import { myWishlistIds } from "@/lib/data/wishlist";
 import ShowList from "./ShowList";
 
 export const metadata = { title: "공연 · 막간" };
@@ -39,8 +40,9 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
 
   let result: Awaited<ReturnType<typeof listShows>> | null = null;
   let theaters: { id: string; name: string }[] = [];
+  let wished = new Set<string>();
   try {
-    [result, theaters] = await Promise.all([listShows(params), listTheaterOptions()]);
+    [result, theaters, wished] = await Promise.all([listShows(params), listTheaterOptions(), myWishlistIds()]);
   } catch {
     result = null;
   }
@@ -81,7 +83,7 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
         ) : result.items.length === 0 ? (
           <EmptyState icon="🎭" message="조건에 맞는 공연이 없어요" action={{ label: "전체 공연 보기", href: "/shows" }} />
         ) : (
-          <ShowList key={JSON.stringify(query)} initial={result.items} nextCursor={result.nextCursor} query={query} />
+          <ShowList key={JSON.stringify(query)} initial={result.items} nextCursor={result.nextCursor} query={query} wished={result.items.filter((s) => wished.has(s.id)).map((s) => s.id)} />
         )}
       </main>
     </>
