@@ -1,7 +1,7 @@
 "use client";
 import { useOptimistic, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import type { ToggleResult } from "@/lib/actions/follow";
+import type { ToggleResult } from "@/lib/types";
 
 /**
  * 팔로우·찜 공용 토글. 누르면 바로 바뀌고(낙관적), 비로그인이면 로그인 화면으로 보낸다.

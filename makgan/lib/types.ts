@@ -18,3 +18,6 @@ export type ShowDetail = ShowSummary & {
 
 export type CastMember = { actor_id: string; name: string; photo_url: string | null; role_name: string };
 export type CastResult = { kind: "date" | "season"; date: string | null; members: CastMember[] };
+
+/** 팔로우·찜 토글 서버 액션 결과 */
+export type ToggleResult = { on: boolean } | { needLogin: true } | { error: string };

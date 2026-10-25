@@ -4,9 +4,10 @@ import ShowCard from "@/components/ShowCard";
 import { loadMoreShows } from "@/lib/actions/shows";
 import type { ShowSummary } from "@/lib/types";
 
-export default function ShowList({ initial, nextCursor, query }: { initial: ShowSummary[]; nextCursor: number | null; query: Record<string, string> }) {
+export default function ShowList({ initial, nextCursor, query, wished: initialWished }: { initial: ShowSummary[]; nextCursor: number | null; query: Record<string, string>; wished: string[] }) {
   const [items, setItems] = useState(initial);
   const [cursor, setCursor] = useState(nextCursor);
+  const [wished, setWished] = useState(() => new Set(initialWished));
   const [failed, setFailed] = useState(false);
   const [pending, start] = useTransition();
 
@@ -16,6 +17,7 @@ export default function ShowList({ initial, nextCursor, query }: { initial: Show
         const r = await loadMoreShows(query, cursor!);
         setItems((prev) => [...prev, ...r.items.filter((s) => !prev.some((p) => p.id === s.id))]);
         setCursor(r.nextCursor);
+        setWished((prev) => new Set([...prev, ...r.wished]));
         setFailed(false);
       } catch {
         setFailed(true);
@@ -25,7 +27,7 @@ export default function ShowList({ initial, nextCursor, query }: { initial: Show
   return (
     <>
       <ul className="card-list">
-        {items.map((s) => <li key={s.id}><ShowCard show={s} /></li>)}
+        {items.map((s) => <li key={s.id}><ShowCard show={s} wished={wished.has(s.id)} /></li>)}
       </ul>
       {failed && <p className="form-error" role="alert">불러오지 못했어요. 다시 눌러 주세요.</p>}
       {cursor !== null && (

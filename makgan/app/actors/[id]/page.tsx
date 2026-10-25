@@ -6,6 +6,7 @@ import ShowCard from "@/components/ShowCard";
 import FollowButton from "@/components/FollowButton";
 import ErrorState from "@/components/ErrorState";
 import { getActor } from "@/lib/data/actors";
+import { myWishlistIds } from "@/lib/data/wishlist";
 import { kstDateString } from "@/lib/date";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -16,8 +17,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ActorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let actor;
+  let wished = new Set<string>();
   try {
-    actor = await getActor(id);
+    [actor, wished] = await Promise.all([getActor(id), myWishlistIds()]);
   } catch {
     return (
       <>
@@ -49,7 +51,7 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
           <h3 className="section-title">공연 중 · 예정 <span className="muted">{current.length}</span></h3>
           {current.length === 0 ? <p className="muted">지금 출연 중인 공연이 없어요</p> : (
             <ul className="card-list">
-              {current.map((s) => <li key={s.id}><ShowCard show={s} note={s.roles.join(", ")} /></li>)}
+              {current.map((s) => <li key={s.id}><ShowCard show={s} note={s.roles.join(", ")} wished={wished.has(s.id)} /></li>)}
             </ul>
           )}
         </section>
@@ -57,7 +59,7 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
           <section className="section">
             <h3 className="section-title">지난 공연 <span className="muted">{past.length}</span></h3>
             <ul className="card-list">
-              {past.map((s) => <li key={s.id}><ShowCard show={s} note={s.roles.join(", ")} /></li>)}
+              {past.map((s) => <li key={s.id}><ShowCard show={s} note={s.roles.join(", ")} wished={wished.has(s.id)} /></li>)}
             </ul>
           </section>
         )}
