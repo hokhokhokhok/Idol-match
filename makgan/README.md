@@ -16,7 +16,8 @@
 | 5 | 혜택 목록(종류·오늘 마감 필터, 마감 지난 혜택 숨김/보기), 마감 배지 3단계, 티켓오픈 시각, 공연 상세에 혜택 | ✅ |
 | 6 | 찜(toggleWishlist): 목록·상세·출연작 카드 ♡, 비로그인 → 로그인 후 복귀, MY 찜 목록 | ✅ |
 | 7 | 홈(getHome): 오늘 마감 3 + 곧 열리는 티켓 3 + 내 찜 공연(가로 스크롤), 빈 화면·비로그인 안내 | ✅ |
-| 8~9 | 후기 → 관리자·검색 | 예정 |
+| 8 | 관극 후기 CRUD(공개/비공개, 본인만 수정·삭제), 공연 상세 후기, MY 탭(관극 기록·찜·팔로잉) | ✅ |
+| 9 | 관리자·검색 | 예정 |
 
 ## 폴더
 ```
@@ -24,8 +25,9 @@ app/                     화면(5탭: / · /shows · /benefits · /actors · /me
 app/login, app/onboarding, app/auth/confirm   매직링크 로그인 · 닉네임 · 링크 도착 지점
 components/              TabBar, PageHeader, ShowCard(가로)·ShowCardVertical(세로), BenefitCard, WishButton·FollowButton, ActorChip, Poster·Avatar(기본 이미지), EmptyState, ErrorState, Skeleton, LoginRequired
 lib/auth.ts              getUser · getProfile · requireProfile · safeNext
-lib/data/                조회 함수(listShows · getShow · getCast · listActors · getActor · listBenefits · getHome)
+lib/data/                조회 함수(listShows · getShow · getCast · listActors · getActor · listBenefits · getHome · 후기)
 lib/actions/             서버 액션
+lib/review-input.ts      후기 입력 검증(서버 액션·단위 테스트 공용)
 lib/date.ts              KST 날짜·마감 표기("오늘 18:00 마감" 등)
 lib/supabase/            브라우저/서버 클라이언트, proxy 세션 갱신, 환경 변수 확인
 proxy.ts                 요청마다 로그인 세션 쿠키 갱신(Next 16의 middleware)

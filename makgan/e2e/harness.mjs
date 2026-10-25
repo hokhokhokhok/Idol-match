@@ -93,6 +93,8 @@ const ctx = {
     }
     return page;
   },
+  /** 진행 중인 토글(찜·팔로우) 저장이 모두 끝날 때까지 */
+  settled: (page) => page.waitForFunction(() => !document.querySelector("[data-pending]"), null, { timeout: 10000 }),
   /** 잠깐 기다려서 보이면 true (서버 액션 응답 대기용) */
   visible: (locator, timeout = 5000) => locator.first().waitFor({ timeout }).then(() => true, () => false),
   async lastLink(email) {
