@@ -47,3 +47,11 @@ test("기간·날짜 표기", async () => {
   assert.equal(formatPeriod("2026-11-01", "2027-02-28"), "2026.11.01 ~ 2027.02.28");
   assert.equal(formatDay("2026-11-05"), "11.05(목)");
 });
+
+test("티켓오픈 표기", async () => {
+  const { formatOpen } = await import("./date.ts");
+  assert.equal(formatOpen("2026-11-03T11:00:00Z", now), "오늘 20:00 오픈");
+  assert.equal(formatOpen("2026-11-04T05:00:00Z", now), "내일 14:00 오픈");
+  assert.equal(formatOpen("2026-11-05T11:00:00Z", now), "11.05(목) 20:00 오픈");
+  assert.equal(formatOpen("2026-11-03T00:00:00Z", now), "오픈됨");
+});
