@@ -4,7 +4,7 @@ import path from "node:path";
 import { loadDatasetFromDir } from "./dataset.ts";
 import { EMPTY_FILTERS, activeFilterCount, applyFilters, filtersFromParams, filtersToParams, type Filters } from "./filters.ts";
 
-const { academies } = loadDatasetFromDir(path.join(import.meta.dirname, "..", "data"), { today: new Date("2026-10-24") }).dataset;
+const { academies } = loadDatasetFromDir(path.join(import.meta.dirname, "..", "data", "sample"), { today: new Date("2026-10-24") }).dataset;
 const ids = (f: Partial<Filters>, fav: string[] = []) => applyFilters(academies, { ...EMPTY_FILTERS, ...f }, fav).academies.map((a) => a.id);
 
 test("필터 없음: 전체", () => {
