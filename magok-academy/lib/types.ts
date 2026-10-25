@@ -20,13 +20,15 @@ export type Role = (typeof ROLES)[number];
 export const CAREER_TYPES = [
   "academy_operation",
   "musical_performance",
+  "stage",
   "teaching",
   "education",
   "award",
 ] as const;
 export type CareerType = (typeof CAREER_TYPES)[number];
 
-export const SOURCE_TYPES = ["학원알리미", "홈페이지", "SNS", "네이버플레이스", "KOPIS", "직접문의"] as const;
+/** 학원정보사이트: 오늘학교 아카데미·런즈 등의 학원 소개 페이지, 언론: 본인 인터뷰·소개 기사 */
+export const SOURCE_TYPES = ["학원알리미", "홈페이지", "SNS", "네이버플레이스", "KOPIS", "학원정보사이트", "언론", "직접문의"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"] as const;
@@ -132,6 +134,7 @@ export const GRADE_LABEL: Record<Grade, string> = {
 export const CAREER_TYPE_LABEL: Record<CareerType, string> = {
   academy_operation: "학원 운영",
   musical_performance: "뮤지컬 활동",
+  stage: "공연·방송 활동",
   teaching: "강의",
   education: "학력",
   award: "수상",
