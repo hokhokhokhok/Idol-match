@@ -9,6 +9,8 @@ import ReviewItem from "@/components/ReviewItem";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import { listShowReviews, type ShowReview } from "@/lib/data/reviews";
+import { listVideos, type Video } from "@/lib/data/videos";
+import VideoSection from "@/components/VideoSection";
 import { myWishlistIds } from "@/lib/data/wishlist";
 import { listBenefits, type Benefit } from "@/lib/data/benefits";
 import { getCast, getShow, isDay } from "@/lib/data/shows";
@@ -31,13 +33,14 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
   let benefits: Benefit[] = [];
   let wished = new Set<string>();
   let reviews: ShowReview[] = [];
+  let videos: Video[] = [];
   try {
     show = await getShow(id);
     // 날짜를 고르지 않았으면 공연 기간 중엔 오늘 캐스팅을 보여 준다
     const date = picked ?? (show && show.starts_on <= today && today <= show.ends_on ? today : null);
-    [cast, benefits, wished, reviews] = show
-      ? await Promise.all([getCast(id, date), listBenefits({ showId: id, limit: 10 }), myWishlistIds(), listShowReviews(id)])
-      : [null, [], wished, []];
+    [cast, benefits, wished, reviews, videos] = show
+      ? await Promise.all([getCast(id, date), listBenefits({ showId: id, limit: 10 }), myWishlistIds(), listShowReviews(id), listVideos({ showId: id })])
+      : [null, [], wished, [], []];
   } catch {
     return (
       <>
@@ -102,6 +105,8 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
             </ul>
           )}
         </section>
+        <VideoSection videos={videos} />
+
         <section className="section" aria-labelledby="reviews-title">
           <div className="section-head">
             <h3 className="section-title" id="reviews-title">관극 후기 <span className="muted">{show.review_count}</span></h3>

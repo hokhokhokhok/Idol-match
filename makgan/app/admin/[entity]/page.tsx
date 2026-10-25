@@ -20,6 +20,7 @@ export default async function AdminListPage({ params }: { params: Promise<{ enti
     if (key === "shows") return formatPeriod(String(r.starts_on), String(r.ends_on));
     if (key === "benefits") return r.ends_at ? formatDeadline(String(r.ends_at)) : "마감 없음";
     if (key === "theaters") return (r.address as string) ?? "";
+    if (key === "videos") return `youtu.be/${r.youtube_id}`;
     return "";
   };
 

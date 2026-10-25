@@ -34,3 +34,12 @@ test("검증 실패", () => {
   assert.match(err("actors", { name: "x", photo_url: "javascript:alert(1)" })!, /http/);
   assert.match(err("theaters", { name: "x", seat_count: "-3" })!, /양의 정수/);
 });
+
+test("영상: 주소 → id, 공연·배우 중 하나 필수", () => {
+  const ok = parseEntityForm(ADMIN_ENTITIES.videos, form({ youtube_id: "https://youtu.be/dQw4w9WgXcQ", title: "x", actor_id: "00000000-0000-4000-8000-000000000301" }));
+  assert.ok("value" in ok && ok.value.youtube_id === "dQw4w9WgXcQ");
+  const none = parseEntityForm(ADMIN_ENTITIES.videos, form({ youtube_id: "dQw4w9WgXcQ", title: "x" }));
+  assert.ok("error" in none && /하나는/.test(none.error));
+  const bad = parseEntityForm(ADMIN_ENTITIES.videos, form({ youtube_id: "https://vimeo.com/1", title: "x", actor_id: "00000000-0000-4000-8000-000000000301" }));
+  assert.ok("error" in bad && /유튜브/.test(bad.error));
+});

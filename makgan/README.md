@@ -19,7 +19,8 @@
 | 8 | 관극 후기 CRUD(공개/비공개, 본인만 수정·삭제), 공연 상세 후기, MY 탭(관극 기록·찜·팔로잉) | ✅ |
 | 9 | 관리자(/admin: 공연·배우·극장·혜택·캐스팅, 서버에서 is_admin 재검증), 전체 검색(최근 검색어 5개) | ✅ |
 | 10 | 공통 컴포넌트: BottomSheet(끌어서 닫기)·Toast(3초)·전역 오류/404, 모든 목록·상세에 Skeleton·EmptyState | ✅ |
-| 11~16 | 영상 → 극장·구역 → 좌석 후기 → 통계 → 푸시 → 용어 사전·링크 채우기 | 예정 |
+| 11 | 영상(유튜브, 썸네일 먼저·누르면 재생), 공연·배우 상세 영상, 관리자 영상 등록 | ✅ |
+| 12~16 | 극장·구역 → 좌석 후기 → 통계 → 푸시 → 용어 사전·링크 채우기 | 예정 |
 
 ## 폴더
 ```
@@ -66,7 +67,7 @@ npm run dev                  # 터미널 2
 
 ## Supabase 연결
 1. [supabase.com](https://supabase.com)에서 프로젝트 생성
-2. SQL Editor에서 `supabase/migrations/0001_init.sql` 실행 (화면 확인용 데이터가 필요하면 `supabase/seed.sql`도)
+2. SQL Editor에서 `supabase/migrations/`의 파일을 번호 순서대로 실행 (화면 확인용 데이터가 필요하면 `supabase/seed.sql`도)
 3. Project Settings → API의 URL·anon key를 `.env.local`에 입력
 4. Authentication → Sign In / Providers에서 Email 사용
 5. Authentication → URL Configuration의 Site URL을 배포 주소로(로컬은 `http://localhost:3000`)
