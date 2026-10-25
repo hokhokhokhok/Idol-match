@@ -18,7 +18,7 @@ export default function ToggleButton({
   const [state, setState] = useState(on);
   const [optimistic, setOptimistic] = useOptimistic(state);
   const [error, setError] = useState("");
-  const [, start] = useTransition();
+  const [pending, start] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -34,7 +34,7 @@ export default function ToggleButton({
 
   return (
     <>
-      <button type="button" className={className} aria-pressed={optimistic} aria-label={labels.aria} onClick={click}>
+      <button type="button" className={className} aria-pressed={optimistic} aria-label={labels.aria} onClick={click} data-pending={pending || undefined}>
         {optimistic ? labels.on : labels.off}
       </button>
       {error && <span className="form-error" role="alert">{error}</span>}

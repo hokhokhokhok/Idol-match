@@ -1,7 +1,7 @@
 // 배우 목록·상세(출연작), 팔로우(비로그인 → 로그인 후 복귀, 토글, 팔로잉 탭)
 const NA = "00000000-0000-4000-8000-000000000302";
 
-export default async function ({ BASE, check, newPage, layout, shot, visible, lastLink }) {
+export default async function ({ BASE, check, newPage, layout, shot, visible, lastLink, settled }) {
   const page = await newPage();
 
   await page.goto(`${BASE}/actors`);
@@ -41,7 +41,7 @@ export default async function ({ BASE, check, newPage, layout, shot, visible, la
   check((await btn.getAttribute("aria-pressed")) === "false", "처음엔 팔로우 안 함");
   await btn.click();
   await page.waitForFunction(() => document.querySelector(".follow-btn")?.textContent === "팔로잉");
-  await page.waitForTimeout(500);
+  await settled(page);
   await page.reload();
   check((await btn.innerText()) === "팔로잉", "팔로우 저장(새로고침 후 유지)");
 
@@ -55,7 +55,7 @@ export default async function ({ BASE, check, newPage, layout, shot, visible, la
   await page.goto(`${BASE}/actors/${NA}`);
   await btn.click();
   await page.waitForFunction(() => document.querySelector(".follow-btn")?.textContent === "팔로우");
-  await page.waitForTimeout(500);
+  await settled(page);
   await page.goto(`${BASE}/actors?tab=following`);
   check(await visible(page.getByText("아직 팔로우한 배우가 없어요")), "언팔로우 후 팔로잉 탭 비어 있음");
 
