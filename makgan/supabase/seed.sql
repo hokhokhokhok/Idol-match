@@ -11,7 +11,12 @@ insert into public.shows (id, title, theater_id, starts_on, ends_on) values
   ('00000000-0000-4000-8000-000000000202', '[샘플] 연극 막공', '00000000-0000-4000-8000-000000000102',
     (now() at time zone 'Asia/Seoul')::date - 60, (now() at time zone 'Asia/Seoul')::date + 5),
   ('00000000-0000-4000-8000-000000000203', '[샘플] 뮤지컬 회전문', '00000000-0000-4000-8000-000000000101',
-    (now() at time zone 'Asia/Seoul')::date + 20, (now() at time zone 'Asia/Seoul')::date + 120);
+    (now() at time zone 'Asia/Seoul')::date + 20, (now() at time zone 'Asia/Seoul')::date + 120),
+  ('00000000-0000-4000-8000-000000000204', '[샘플] 연극 지난 시즌', '00000000-0000-4000-8000-000000000102',
+    (now() at time zone 'Asia/Seoul')::date - 120, (now() at time zone 'Asia/Seoul')::date - 10);
+
+update public.shows set synopsis = '[샘플] 화면 확인용 공연 소개입니다.
+실제 공연이 아닙니다.' where id = '00000000-0000-4000-8000-000000000201';
 
 insert into public.actors (id, name) values
   ('00000000-0000-4000-8000-000000000301', '[샘플] 배우 가'),

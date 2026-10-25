@@ -15,19 +15,29 @@ const BASE = `http://localhost:${APP_PORT}`;
 const SUPA = `http://localhost:${SUPA_PORT}`;
 
 const children = [];
-const stopAll = () => children.forEach((c) => { try { process.kill(-c.pid); } catch {} });
-process.on("exit", stopAll);
-for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(1));
+/** 자식들을 끄고 실제로 끝날 때까지 기다린다(로컬 Supabase 대역이 Postgres를 정리할 시간). */
+async function stopAll() {
+  await Promise.all(children.map((c) => new Promise((resolve) => {
+    if (c.exitCode !== null || c.signalCode !== null) return resolve();
+    c.once("exit", resolve);
+    try { c.supabase ? c.kill("SIGTERM") : process.kill(-c.pid, "SIGTERM"); } catch { resolve(); }
+    setTimeout(() => { try { process.kill(-c.pid, "SIGKILL"); } catch {} resolve(); }, 10000);
+  })));
+}
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => stopAll().then(() => process.exit(1)));
+process.on("uncaughtException", (e) => { console.error(e); stopAll().then(() => process.exit(1)); });
+process.on("unhandledRejection", (e) => { console.error(e); stopAll().then(() => process.exit(1)); });
 
 function start(cmd, args, env, readyRe) {
   return new Promise((resolve, reject) => {
     const c = spawn(cmd, args, { cwd: ROOT, env: { ...process.env, ...env }, detached: true, stdio: ["ignore", "pipe", "pipe"] });
     children.push(c);
+    c.supabase = args[0]?.includes("local-supabase");
     let out = "";
     const onData = (d) => { out += d; if (readyRe.test(out)) resolve(out); };
     c.stdout.on("data", onData);
     c.stderr.on("data", (d) => { out += d; });
-    c.on("exit", (code) => reject(new Error(`${cmd} 종료(${code})\n${out}`)));
+    c.once("exit", (code) => reject(new Error(`${cmd} 종료(${code})\n${out}`)));
   });
 }
 
@@ -94,7 +104,7 @@ const ctx = {
       const de = document.documentElement;
       const clipped = [...document.querySelectorAll("main *, nav a span, h1")].filter((el) => {
         const cs = getComputedStyle(el);
-        return el.children.length === 0 && el.scrollWidth > el.clientWidth + 1 && cs.textOverflow !== "ellipsis" && cs.overflowX !== "auto" && cs.overflowX !== "scroll";
+        return el.children.length === 0 && !el.closest(".sr-only") && el.scrollWidth > el.clientWidth + 1 && cs.textOverflow !== "ellipsis" && cs.overflowX !== "auto" && cs.overflowX !== "scroll";
       }).map((el) => el.textContent?.slice(0, 20));
       return { overflow: de.scrollWidth - de.clientWidth, clipped };
     });
@@ -115,7 +125,7 @@ for (const f of files) {
   }
 }
 await browser.close();
-stopAll();
+await stopAll();
 if (failures.length) { console.error(`\n${failures.length}개 실패:\n- ${failures.join("\n- ")}`); process.exit(1); }
 console.log("\nE2E 통과");
 process.exit(0);

@@ -83,8 +83,9 @@ let stopped = false;
 function stop() {
   if (stopped) return;
   stopped = true;
-  rest.kill();
-  try { run(`${pgBin}/pg_ctl`, ["-D", `${dir}/data`, "-m", "fast", "stop"]); } catch {}
+  rest.kill("SIGKILL");
+  // Postgres가 확실히 내려간 뒤에만 데이터 폴더를 지운다(지우고 나면 pg_ctl로 끌 수 없음)
+  try { run(`${pgBin}/pg_ctl`, ["-D", `${dir}/data`, "-m", "immediate", "-w", "stop"]); } catch {}
   rmSync(dir, { recursive: true, force: true });
 }
 process.on("exit", stop);
