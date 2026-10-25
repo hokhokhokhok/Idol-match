@@ -136,6 +136,11 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
             지금 보이는 학원·강사는 모두 <strong>가상의 예시 데이터</strong>입니다. 실제 학원이 아닙니다.
           </p>
         )}
+        {academies.length > 0 && academies.every((a) => a.verification_status === "미확인") && !academies.some((a) => a.name.startsWith("(예시)")) && (
+          <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-warn">
+            지금은 공개 자료로 찾은 학원을 <strong>확인하는 중</strong>입니다. 수강료·시간·대상 학년은 학원에 직접 확인해 주세요.
+          </p>
+        )}
         <p className="mb-2 text-sm" aria-live="polite">
           <strong>{results.length}곳</strong>
           {unknown.tuition > 0 && <span className="text-sub"> · 수강료 미확인 {unknown.tuition}곳 제외</span>}
