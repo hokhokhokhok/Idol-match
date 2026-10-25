@@ -21,7 +21,7 @@ export default async function HomePage() {
       <PageHeader title="막간" />
       <main className="page-body">
         {!isSupabaseConfigured && (
-          <p className="notice">Supabase 연결 전이에요. README의 “Supabase 연결”을 따라 .env.local을 만들어 주세요.</p>
+          <p className="notice">Supabase 연결 전이에요. README의 “배포하기”를 따라 환경 변수를 넣어 주세요.</p>
         )}
         {home === null ? (
           <ErrorState retryHref="/" />

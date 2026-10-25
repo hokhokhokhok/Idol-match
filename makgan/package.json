@@ -11,7 +11,10 @@
     "test": "node --test 'lib/**/*.test.ts'",
     "test:db": "bash scripts/test-db.sh",
     "test:e2e": "node e2e/harness.mjs",
-    "local:supabase": "node scripts/local-supabase.mjs"
+    "local:supabase": "node scripts/local-supabase.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "db:bundle": "node scripts/bundle-sql.mjs",
+    "setup:env": "node scripts/setup-env.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

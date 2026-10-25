@@ -1,0 +1,5 @@
+<!-- Supabase → Authentication → Emails → "Magic Link"와 "Confirm signup" 두 템플릿의 본문을 이것으로 바꾸세요. -->
+<h2>막간 로그인</h2>
+<p>아래 버튼을 누르면 막간에 로그인돼요. 직접 요청하지 않았다면 이 메일은 무시하세요.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#8b1e3f;color:#ffffff;text-decoration:none;font-weight:600">막간 로그인</a></p>
+<p style="color:#6b6567;font-size:12px">링크는 한 번만 쓸 수 있고 곧 만료돼요.</p>

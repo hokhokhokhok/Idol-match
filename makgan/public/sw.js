@@ -2,7 +2,7 @@
 self.addEventListener("push", (event) => {
   let data = { title: "막간", body: "", url: "/" };
   try { data = { ...data, ...event.data.json() }; } catch { if (event.data) data.body = event.data.text(); }
-  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: "/icon.svg", badge: "/icon.svg", data: { url: data.url }, lang: "ko" }));
+  event.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", data: { url: data.url }, lang: "ko" }));
 });
 
 self.addEventListener("notificationclick", (event) => {

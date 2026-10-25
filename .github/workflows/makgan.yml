@@ -22,6 +22,8 @@ jobs:
           cache-dependency-path: makgan/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      # supabase/setup.sql이 마이그레이션과 같은지
+      - run: npm run db:bundle -- --check
       - run: npm test
       # 러너에 설치된 PostgreSQL 16으로 임시 클러스터를 띄워 스키마·RLS 테스트
       - run: npm run test:db

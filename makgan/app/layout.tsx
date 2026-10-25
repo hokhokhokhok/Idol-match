@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "막간",
   description: "뮤지컬·연극 공연, 배우, 혜택을 한곳에서. 내 관극 기록까지.",
   appleWebApp: { capable: true, title: "막간", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
