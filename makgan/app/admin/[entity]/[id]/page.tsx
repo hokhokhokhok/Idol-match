@@ -9,6 +9,7 @@ import { adminAddCast, adminDeleteCast, adminSave } from "@/lib/actions/admin";
 import { adminCasts, adminGet, adminOptionSets } from "@/lib/data/admin";
 import { isUuid } from "@/lib/data/shows";
 import { formatDay } from "@/lib/date";
+import { youTubeWatch } from "@/lib/youtube";
 
 export default async function AdminEditPage({ params }: { params: Promise<{ entity: string; id: string }> }) {
   await requireAdmin();
@@ -26,7 +27,7 @@ export default async function AdminEditPage({ params }: { params: Promise<{ enti
     initial.id = String(row.id);
     for (const f of entity.fields) {
       const v = row[f.name];
-      initial[f.name] = v == null ? "" : f.type === "datetime" ? isoToKstLocal(String(v)) : String(v);
+      initial[f.name] = v == null ? "" : f.type === "datetime" ? isoToKstLocal(String(v)) : f.type === "youtube" ? youTubeWatch(String(v)) : String(v);
     }
   }
   const casts = key === "shows" && row ? await adminCasts(id) : [];
@@ -39,7 +40,7 @@ export default async function AdminEditPage({ params }: { params: Promise<{ enti
           action={adminSave.bind(null, key)}
           fields={entity.fields}
           initial={initial}
-          optionSets={{ theaters: options.theaters, shows: options.shows }}
+          optionSets={{ theaters: options.theaters, shows: options.shows, actors: options.actorOptions }}
           submitLabel={isNew ? "추가" : "저장"}
         />
 

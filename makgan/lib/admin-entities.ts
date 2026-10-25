@@ -1,16 +1,18 @@
 // 관리자 화면에서 다루는 테이블 정의(서버 검증·폼 렌더링 공용). 캐스팅은 공연 편집 화면에서 따로 다룬다.
-export type FieldType = "text" | "textarea" | "date" | "datetime" | "number" | "url" | "select";
+import { parseYouTubeId } from "./youtube.ts";
+
+export type FieldType = "text" | "textarea" | "date" | "datetime" | "number" | "url" | "select" | "youtube";
 export type Field = {
   name: string;
   label: string;
   type: FieldType;
   required?: boolean;
   max?: number;                                    // 글자 수(텍스트) 또는 최댓값(숫자)
-  options?: "theaters" | "shows" | readonly { value: string; label: string }[];
+  options?: "theaters" | "shows" | "actors" | readonly { value: string; label: string }[];
   hint?: string;
 };
 export type Entity = {
-  key: "shows" | "actors" | "theaters" | "benefits";
+  key: "shows" | "actors" | "theaters" | "benefits" | "videos";
   label: string;
   titleField: string;
   order: { column: string; ascending: boolean };
@@ -65,6 +67,16 @@ export const ADMIN_ENTITIES: Record<Entity["key"], Entity> = {
       { name: "note", label: "메모", type: "textarea", max: 2000 },
     ],
   },
+  videos: {
+    key: "videos", label: "영상", titleField: "title", order: { column: "created_at", ascending: false },
+    fields: [
+      { name: "youtube_id", label: "유튜브 주소", type: "youtube", required: true, hint: "공식 채널 영상 주소를 붙여 넣어 주세요" },
+      { name: "title", label: "제목", type: "text", required: true, max: 200 },
+      { name: "show_id", label: "공연", type: "select", options: "shows" },
+      { name: "actor_id", label: "배우", type: "select", options: "actors" },
+      { name: "published_on", label: "공개일", type: "date" },
+    ],
+  },
 };
 
 export const isEntityKey = (v: string): v is Entity["key"] => v in ADMIN_ENTITIES;
@@ -112,6 +124,12 @@ export function parseEntityForm(entity: Entity, form: FormData): { value: Record
         out[f.name] = n;
         break;
       }
+      case "youtube": {
+        const id = parseYouTubeId(raw);
+        if (!id) return { error: `${f.label}를 확인해 주세요(youtube.com 또는 youtu.be 주소)` };
+        out[f.name] = id;
+        break;
+      }
       case "select":
         if (Array.isArray(f.options)) {
           if (!f.options.some((o) => o.value === raw)) return { error: `${f.label}을(를) 다시 골라 주세요` };
@@ -121,6 +139,7 @@ export function parseEntityForm(entity: Entity, form: FormData): { value: Record
     }
   }
   if (entity.key === "shows" && String(out.ends_on) < String(out.starts_on)) return { error: "종료일이 개막일보다 빨라요" };
+  if (entity.key === "videos" && !out.show_id && !out.actor_id) return { error: "공연이나 배우 중 하나는 골라 주세요" };
   if (entity.key === "benefits" && out.starts_at && out.ends_at && String(out.ends_at) < String(out.starts_at)) return { error: "마감이 시작보다 빨라요" };
   return { value: out };
 }

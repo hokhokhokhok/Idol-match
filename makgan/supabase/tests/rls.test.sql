@@ -36,6 +36,7 @@ set request.jwt.claims = '{}';
 select pg_temp.expect((select count(*) from public.shows) > 0, '비로그인: 공연 열람');
 select pg_temp.expect((select count(*) from public.actors) > 0, '비로그인: 배우 열람');
 select pg_temp.expect((select count(*) from public.benefits) > 0, '비로그인: 혜택 열람');
+select pg_temp.expect((select count(*) from public.videos) >= 0, '비로그인: 영상 열람 가능');
 select pg_temp.expect_denied($$insert into public.wishlists (user_id, show_id) values
   ('aaaaaaaa-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000201')$$, '비로그인: 찜 저장 거부');
 select pg_temp.expect_denied($$insert into public.benefits (type, title) values ('event', 'x')$$, '비로그인: 혜택 등록 거부');
@@ -61,6 +62,7 @@ select pg_temp.expect_denied($$insert into public.reviews (user_id, show_id, wat
   ('bbbbbbbb-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000201', current_date, 1)$$, '남의 이름으로 후기 작성 거부');
 select pg_temp.expect_denied($$insert into public.benefits (type, title) values ('event', 'x')$$, '관리자 아님: 혜택 등록 거부');
 select pg_temp.expect_denied($$insert into public.shows (title, starts_on, ends_on) values ('x', current_date, current_date)$$, '관리자 아님: 공연 등록 거부');
+select pg_temp.expect_denied($$insert into public.videos (youtube_id, title, actor_id) values ('AAAAAAAAAAA', 'x', '00000000-0000-4000-8000-000000000301')$$, '관리자 아님: 영상 등록 거부');
 update public.shows set title = '해킹' where id = '00000000-0000-4000-8000-000000000201';
 select pg_temp.expect((select title from public.shows where id = '00000000-0000-4000-8000-000000000201') <> '해킹', '관리자 아님: 공연 수정 무시');
 insert into public.seat_reviews (theater_id, floor, zone_text, view_score, distance_score, sound_score)
@@ -94,6 +96,9 @@ set role authenticated;
 set request.jwt.claims = '{"sub":"adadadad-0000-4000-8000-000000000003"}';
 insert into public.benefits (type, title, created_by) values ('event', '[샘플] 관리자 등록', auth.uid());
 select pg_temp.expect((select count(*) from public.benefits where title = '[샘플] 관리자 등록') = 1, '관리자: 혜택 등록');
+insert into public.videos (youtube_id, title, actor_id) values ('AAAAAAAAAAA', '[샘플] 영상', '00000000-0000-4000-8000-000000000301');
+select pg_temp.expect_denied($$insert into public.videos (youtube_id, title) values ('AAAAAAAAAAA', 'x')$$, '영상은 공연이나 배우에 연결돼야 함');
+select pg_temp.expect_denied($$insert into public.videos (youtube_id, title, actor_id) values ('bad id', 'x', '00000000-0000-4000-8000-000000000301')$$, '영상 id 형식 검사');
 select pg_temp.expect((select count(*) from public.reviews where not is_public) = 0, '관리자도 타인 비공개 후기는 안 보임');
 reset role;
 

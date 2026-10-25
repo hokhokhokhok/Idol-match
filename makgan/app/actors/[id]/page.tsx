@@ -7,6 +7,8 @@ import FollowButton from "@/components/FollowButton";
 import ErrorState from "@/components/ErrorState";
 import { getActor } from "@/lib/data/actors";
 import { myWishlistIds } from "@/lib/data/wishlist";
+import { listVideos, type Video } from "@/lib/data/videos";
+import VideoSection from "@/components/VideoSection";
 import { kstDateString } from "@/lib/date";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -18,8 +20,9 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   let actor;
   let wished = new Set<string>();
+  let videos: Video[] = [];
   try {
-    [actor, wished] = await Promise.all([getActor(id), myWishlistIds()]);
+    [actor, wished, videos] = await Promise.all([getActor(id), myWishlistIds(), listVideos({ actorId: id })]);
   } catch {
     return (
       <>
@@ -63,6 +66,7 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
             </ul>
           </section>
         )}
+        <VideoSection videos={videos} />
         {actor.shows.length > 0 && (
           <Link href={`/shows?actor=${actor.id}&status=all`} className="filter-note link">공연 목록에서 출연작 모두 보기 →</Link>
         )}

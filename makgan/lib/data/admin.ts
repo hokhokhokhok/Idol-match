@@ -27,6 +27,7 @@ export async function adminOptionSets() {
     theaters: (theaters ?? []).map((t) => ({ value: t.id as string, label: t.name as string })),
     shows: (shows ?? []).map((s) => ({ value: s.id as string, label: s.title as string })),
     actors: (actors ?? []).map((a) => ({ id: a.id as string, name: a.name as string })),
+    actorOptions: (actors ?? []).map((a) => ({ value: a.id as string, label: a.name as string })),
   };
 }
 

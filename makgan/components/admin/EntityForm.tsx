@@ -35,7 +35,7 @@ export default function EntityForm({
             ) : (
               <input
                 name={f.name}
-                type={{ text: "text", url: "url", date: "date", datetime: "datetime-local", number: "number" }[f.type]}
+                type={{ text: "text", url: "url", date: "date", datetime: "datetime-local", number: "number", youtube: "text" }[f.type]}
                 maxLength={f.type === "text" || f.type === "url" ? f.max : undefined}
                 max={f.type === "number" ? f.max : undefined}
                 defaultValue={v[f.name] ?? ""}
