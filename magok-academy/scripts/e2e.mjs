@@ -1,5 +1,4 @@
 // 정적 빌드(out/)를 띄워 주요 흐름을 검사하고 screenshots/에 저장한다. 먼저 `npm run build`.
-// 지도 키 없이 빌드된 상태(간이 약도)를 기준으로 한다.
 import { createServer } from "node:http";
 import { mkdir, readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -51,15 +50,20 @@ for (const width of [360, 390]) {
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  // 지도 타일은 네트워크 사정(샌드박스 등)에 따라 막힐 수 있어 콘솔 에러 집계에서 뺀다
+  page.on("console", (m) => m.type() === "error" && !/tile\.openstreetmap|ERR_TUNNEL|Failed to load resource/.test(m.text() + (m.location()?.url ?? "")) && errors.push(m.text()));
   const W = `${width}px`;
 
   // 홈·필터
   await page.goto(BASE + "/");
   await cards(page).first().waitFor();
-  check((await cards(page).count()) === 5, `${W} 홈: 학원 5곳`);
+  check(await countIs(cards(page), 6), `${W} 홈: 학원 6곳`);
   check(await page.getByText("가상의 예시 데이터").first().isVisible(), `${W} 홈: 예시 데이터 안내`);
   await page.screenshot({ path: `screenshots/${width}-home.png` });
+  const filterBtn = await page.getByRole("button", { name: /필터/ }).boundingBox();
+  check(!!filterBtn && filterBtn.x + filterBtn.width <= width, `${W} 홈: 필터 버튼이 화면 안에 보임`);
+  const toggleH = await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "목록" }).boundingBox();
+  check(!!toggleH && toggleH.height < 40, `${W} 홈: 목록/지도 토글 한 줄`);
   await noOverflow(page, `${W} 홈`);
 
   await page.getByRole("group", { name: "분야" }).getByRole("button", { name: "댄스" }).click();
@@ -79,12 +83,18 @@ for (const width of [360, 390]) {
   check(await countIs(cards(page), 1), `${W} 새로고침 후 필터 유지`);
   await page.goto(BASE + "/");
 
-  // 지도 (키 없음 → 간이 약도)
+  // 발레 분야
+  await page.getByRole("group", { name: "분야" }).getByRole("button", { name: "발레" }).click();
+  check((await countIs(cards(page), 1)) && (await cards(page).first().innerText()).includes("토슈즈키즈발레"), `${W} 분야=발레 → 1곳`);
+  await page.goto(BASE + "/");
+
+  // 지도 (Leaflet + OSM. 테스트 환경에서 타일이 막혀도 마커는 그려진다)
   await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click();
-  const sketch = page.getByRole("region", { name: "학원 위치 약도" });
-  await sketch.waitFor();
-  check((await sketch.getByRole("button").count()) === 5, `${W} 지도: 표시 5개`);
-  await sketch.getByRole("button", { name: "(예시)무대연기아틀리에" }).click();
+  const mapRegion = page.getByRole("region", { name: "학원 지도" });
+  await mapRegion.waitFor();
+  check(await countIs(mapRegion.locator(".leaflet-marker-icon"), 6), `${W} 지도: 마커 6개`);
+  check(await mapRegion.getByRole("link", { name: "OpenStreetMap" }).isVisible(), `${W} 지도: OSM 출처 표기`);
+  await mapRegion.locator('.leaflet-marker-icon[title="(예시)무대연기아틀리에"]').click();
   check((await countIs(cards(page), 1)) && (await cards(page).first().innerText()).includes("무대연기아틀리에"), `${W} 지도: 표시 누르면 학원 카드`);
   await page.screenshot({ path: `screenshots/${width}-map.png` });
   await noOverflow(page, `${W} 지도`);

@@ -8,10 +8,10 @@ import { ACADEMY_COLUMNS, CAREER_COLUMNS, PERSON_COLUMNS } from "./schema.ts";
 const DATA_DIR = path.join(import.meta.dirname, "..", "data");
 const TODAY = new Date("2026-10-24T00:00:00Z");
 
-test("샘플 시드: 학원 5곳, 오류 없음, 모두 (예시)", () => {
+test("샘플 시드: 학원 6곳, 오류 없음, 모두 (예시)", () => {
   const { dataset, issues } = loadDatasetFromDir(DATA_DIR, { today: TODAY });
   assert.deepEqual(issues.filter((i) => i.level === "error"), []);
-  assert.equal(dataset.academies.length, 5);
+  assert.equal(dataset.academies.length, 6);
   for (const a of dataset.academies) assert.ok(a.name.startsWith("(예시)"), a.name);
   for (const p of dataset.people) assert.ok(p.name_public.startsWith("(예시)"), p.name_public);
   for (const c of dataset.careerItems) assert.ok(c.title.startsWith("(예시)"), c.title);

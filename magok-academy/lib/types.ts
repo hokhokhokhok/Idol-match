@@ -1,7 +1,7 @@
 // 데이터 모델. CSV(data/*.csv)와 이후 Supabase 테이블이 같은 모양을 쓴다.
 // Node의 타입 제거 실행(node --test)과 호환되도록 enum 대신 상수 배열 + 유니온을 쓴다.
 
-export const CATEGORIES = ["보컬", "댄스", "연기", "뮤지컬종합"] as const;
+export const CATEGORIES = ["보컬", "댄스", "발레", "연기", "뮤지컬종합"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export const GRADES = ["초저", "초고", "중등"] as const;
@@ -109,6 +109,7 @@ export interface AcademyDetail extends Academy {
 export const CATEGORY_LABEL: Record<Category, string> = {
   보컬: "보컬",
   댄스: "댄스",
+  발레: "발레",
   연기: "연기",
   뮤지컬종합: "뮤지컬 종합",
 };

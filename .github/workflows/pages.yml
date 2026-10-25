@@ -44,8 +44,6 @@ jobs:
         working-directory: magok-academy
         env:
           BASE_PATH: /Idol-match/magok-academy
-          # 저장소 Settings → Secrets → Actions에 KAKAO_MAP_KEY를 넣으면 카카오맵, 없으면 간이 약도
-          NEXT_PUBLIC_KAKAO_MAP_KEY: ${{ secrets.KAKAO_MAP_KEY }}
           NEXT_PUBLIC_CORRECTION_URL: ${{ vars.MAGOK_CORRECTION_URL }}
         run: |
           npm ci

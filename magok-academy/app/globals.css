@@ -17,3 +17,20 @@ body {
   overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
 }
+
+/* 지도 마커 (Leaflet divIcon) */
+.pin {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 0 50%;
+  transform: rotate(45deg);
+  background: #fff;
+  color: var(--color-brand);
+  font: 700 12px/1 var(--font-sans);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.pin > span { transform: rotate(-45deg); }
+.pin-selected { background: var(--color-brand); color: #fff; }

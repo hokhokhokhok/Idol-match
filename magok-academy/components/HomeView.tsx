@@ -48,19 +48,19 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
   return (
     <>
       <div className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
-        <header className="flex items-center justify-between px-4 pt-3">
-          <div>
+        <header className="flex items-center justify-between gap-2 px-4 pt-3">
+          <div className="min-w-0">
             <h1 className="text-lg font-bold">마곡 뮤지컬 학원 찾기</h1>
-            <p className="text-xs text-sub">초·중등 보컬 · 댄스 · 연기 · 뮤지컬 종합</p>
+            <p className="text-xs text-sub">초·중등 보컬 · 댄스 · 발레 · 연기 · 뮤지컬 종합</p>
           </div>
-          <div role="group" aria-label="보기 방식" className="flex rounded-full bg-surface p-0.5 text-sm">
+          <div role="group" aria-label="보기 방식" className="flex shrink-0 rounded-full bg-surface p-0.5 text-sm">
             {(["list", "map"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
                 aria-pressed={view === v}
                 onClick={() => setParam("v", v === "map" ? "map" : null)}
-                className={`rounded-full px-3 py-1 ${view === v ? "bg-white font-semibold text-brand shadow-sm" : "text-sub"}`}
+                className={`rounded-full px-3 py-1 whitespace-nowrap ${view === v ? "bg-white font-semibold text-brand shadow-sm" : "text-sub"}`}
               >
                 {v === "list" ? "목록" : "지도"}
               </button>
@@ -68,18 +68,21 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
           </div>
         </header>
 
-        <div className="flex gap-1.5 overflow-x-auto px-4 py-2.5 [scrollbar-width:none]" role="group" aria-label="분야">
-          {CATEGORIES.map((c) => (
-            <Chip key={c} selected={filters.categories.includes(c)} onClick={() => setFilters({ ...filters, categories: toggle(filters.categories, c) })}>
-              {CATEGORY_LABEL[c]}
-            </Chip>
-          ))}
+        <div className="flex items-center gap-1.5 py-2.5 pr-4">
+          {/* 분야 칩은 가로로 넘기고, 필터 버튼은 항상 보이게 오른쪽에 고정 */}
+          <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pl-4 [scrollbar-width:none]" role="group" aria-label="분야">
+            {CATEGORIES.map((c) => (
+              <Chip key={c} selected={filters.categories.includes(c)} onClick={() => setFilters({ ...filters, categories: toggle(filters.categories, c) })}>
+                {CATEGORY_LABEL[c]}
+              </Chip>
+            ))}
+          </div>
           <button
             type="button"
             aria-expanded={panelOpen}
             aria-controls="filter-panel"
             onClick={() => setPanelOpen((o) => !o)}
-            className={`ml-auto shrink-0 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap ${extraCount ? "border-brand text-brand" : "border-line"}`}
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap ${extraCount ? "border-brand text-brand" : "border-line"}`}
           >
             필터{extraCount ? ` ${extraCount}` : ""} {panelOpen ? "▴" : "▾"}
           </button>

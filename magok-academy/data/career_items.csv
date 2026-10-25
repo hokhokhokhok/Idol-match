@@ -14,3 +14,6 @@ C012,P007,academy_operation,(예시)뮤지컬 스쿨 운영,라이트하우스�
 C013,P007,musical_performance,(예시)작품명 음악감독(스태프),(예시)제작사,2010,2011,https://www.kopis.or.kr/,KOPIS,2026-04-01,TRUE
 C014,P008,musical_performance,(예시)작품명 앙상블 출연,(예시)제작사,2019,2019,https://www.kopis.or.kr/,KOPIS,2026-04-01,TRUE
 C015,P008,teaching,(예시)어린이 뮤지컬 보컬 강사,(예시)기관명,2021,,https://example.com/lighthouse/team,홈페이지,2026-04-01,FALSE
+C016,P009,education,(예시)무용 전공 학사,(예시)대학명,2009,2013,https://example.com/ballet/about,홈페이지,2026-10-10,FALSE
+C017,P009,teaching,(예시)어린이 발레 강사,(예시)기관명,2014,2020,https://example.com/ballet/about,홈페이지,2026-10-10,FALSE
+C018,P009,academy_operation,(예시)키즈 발레 학원 운영,토슈즈키즈발레,2021,,https://example.com/ballet/about,홈페이지,2026-10-10,FALSE

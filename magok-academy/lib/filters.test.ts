@@ -8,12 +8,14 @@ const { academies } = loadDatasetFromDir(path.join(import.meta.dirname, "..", "d
 const ids = (f: Partial<Filters>, fav: string[] = []) => applyFilters(academies, { ...EMPTY_FILTERS, ...f }, fav).academies.map((a) => a.id);
 
 test("필터 없음: 전체", () => {
-  assert.deepEqual(ids({}), ["A001", "A002", "A003", "A004", "A005"]);
+  assert.deepEqual(ids({}), ["A001", "A002", "A003", "A004", "A005", "A006"]);
 });
 
 test("분야는 그룹 안 OR", () => {
   assert.deepEqual(ids({ categories: ["댄스"] }), ["A003", "A005"]);
   assert.deepEqual(ids({ categories: ["댄스", "연기"] }), ["A001", "A003", "A004", "A005"]);
+  assert.deepEqual(ids({ categories: ["발레"] }), ["A006"]);
+  assert.deepEqual(ids({ categories: ["댄스", "발레"] }), ["A003", "A005", "A006"]);
 });
 
 test("그룹 사이 AND", () => {
@@ -22,7 +24,7 @@ test("그룹 사이 AND", () => {
 
 test("수강료 구간: 범위가 겹치면 포함, 미확인은 제외하고 셈", () => {
   // A003은 12만~16만이라 두 구간 모두에 걸침
-  assert.deepEqual(ids({ tuition: "lt15" }), ["A003"]);
+  assert.deepEqual(ids({ tuition: "lt15" }), ["A003", "A006"]);
   assert.deepEqual(ids({ tuition: "15to20" }), ["A001", "A002", "A003"]);
   assert.deepEqual(ids({ tuition: "gt20" }), ["A005"]);
   assert.deepEqual(applyFilters(academies, { ...EMPTY_FILTERS, tuition: "gt20" }).unknown, { tuition: 1, schedule: 0 });
@@ -34,6 +36,7 @@ test("요일·시간대는 같은 수업 칸에서 함께 맞아야 함", () => 
   // A003: 토 10:00 수업(방과후 대) → 토+저녁은 없음
   assert.deepEqual(ids({ days: ["토"], times: ["evening"] }), []);
   assert.deepEqual(ids({ days: ["화"], times: ["afternoon"] }), ["A001", "A003"]);
+  assert.deepEqual(ids({ days: ["월"], times: ["afternoon"] }), ["A006"]);
 });
 
 test("즐겨찾기만", () => {
