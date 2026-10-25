@@ -3,7 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import ReviewForm from "@/components/ReviewForm";
 import { requireProfile } from "@/lib/auth";
 import { updateReview } from "@/lib/actions/reviews";
-import { getMyReview, listShowOptions } from "@/lib/data/reviews";
+import { getMyReview, getReviewCasts, listActorOptions, listShowOptions } from "@/lib/data/reviews";
 import { kstDateString } from "@/lib/date";
 
 export const metadata = { title: "후기 수정 · 막간" };
@@ -11,7 +11,7 @@ export const metadata = { title: "후기 수정 · 막간" };
 export default async function EditReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await requireProfile(`/me/reviews/${id}/edit`);
-  const [review, shows] = await Promise.all([getMyReview(id), listShowOptions()]);
+  const [review, shows, actors, casts] = await Promise.all([getMyReview(id), listShowOptions(), listActorOptions(), getReviewCasts(id)]);
   if (!review) notFound();   // 남의 후기도 여기로(존재 여부를 알려 주지 않음)
 
   return (
@@ -23,6 +23,8 @@ export default async function EditReviewPage({ params }: { params: Promise<{ id:
           shows={shows}
           today={kstDateString()}
           submitLabel="수정 저장"
+          actors={actors}
+          initialCasts={casts}
           initial={{
             id: review.id, show_id: review.show_id, watched_at: review.watched_at, rating: String(review.rating),
             body: review.body ?? "", cast_note: review.cast_note ?? "", seat_text: review.seat_text ?? "",

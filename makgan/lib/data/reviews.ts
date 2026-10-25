@@ -63,3 +63,30 @@ export async function listShowOptions() {
   const { data } = await supabase.from("shows").select("id, title, starts_on, theater_id").order("title").limit(1000);
   return (data ?? []) as { id: string; title: string; starts_on: string; theater_id: string | null }[];
 }
+
+/** 후기 폼 배우 자동완성 */
+export async function listActorOptions() {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from("actors").select("id, name").order("name").limit(2000);
+  return data ?? [];
+}
+
+/** 내 후기의 그날 캐스트(수정 화면) */
+export async function getReviewCasts(reviewId: string) {
+  if (!isSupabaseConfigured || !isUuid(reviewId)) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from("review_casts").select("actor_id, role_name, actor:actors(name)").eq("review_id", reviewId);
+  return ((data ?? []) as unknown as { actor_id: string; role_name: string; actor: { name: string } }[])
+    .map((c) => ({ actor_id: c.actor_id, role_name: c.role_name, name: c.actor.name }));
+}
+
+/** 통계용: 내 후기들의 그날 캐스트 */
+export async function listMyReviewCasts() {
+  const user = await getUser();
+  if (!user) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from("review_casts").select("review_id, actor_id, actor:actors(name), review:reviews!inner(user_id)").eq("review.user_id", user.id);
+  return ((data ?? []) as unknown as { review_id: string; actor_id: string; actor: { name: string } }[])
+    .map((c) => ({ review_id: c.review_id, actor_id: c.actor_id, name: c.actor.name }));
+}

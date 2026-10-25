@@ -6,10 +6,29 @@ import { getUser } from "@/lib/auth";
 import { isUuid } from "@/lib/data/shows";
 import { kstDateString } from "@/lib/date";
 import { parseReviewForm } from "@/lib/review-input";
+import { parseReviewCasts, type CastPick } from "@/lib/review-casts";
+import type { createClient as CreateClient } from "@/lib/supabase/server";
 
 export type ReviewFormState = { error?: string; values?: Record<string, string> };
 
 const echo = (form: FormData) => Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)]));
+
+/** 후기의 그날 캐스트를 통째로 바꾼다(RLS: 내 후기만) */
+async function saveCasts(supabase: Awaited<ReturnType<typeof CreateClient>>, reviewId: string, casts: CastPick[]) {
+  await supabase.from("review_casts").delete().eq("review_id", reviewId);
+  if (casts.length) await supabase.from("review_casts").insert(casts.map((c) => ({ ...c, review_id: reviewId })));
+}
+
+/** 후기 폼: 공연의 등록된 캐스팅(배역·배우) — 그날 캐스트 추천 */
+export async function getCastOptions(showId: string) {
+  if (!isUuid(showId)) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from("casts").select("actor_id, role_name, actor:actors(name)").eq("show_id", showId).order("role_name");
+  const seen = new Set<string>();
+  return ((data ?? []) as unknown as { actor_id: string; role_name: string; actor: { name: string } }[])
+    .filter((c) => !seen.has(`${c.actor_id}:${c.role_name}`) && seen.add(`${c.actor_id}:${c.role_name}`))
+    .map((c) => ({ actor_id: c.actor_id, role_name: c.role_name, name: c.actor.name }));
+}
 
 function revalidate(showId: string) {
   revalidatePath("/me");
@@ -22,10 +41,13 @@ export async function createReview(_: ReviewFormState, form: FormData): Promise<
   if (!user) redirect("/login?next=/me/reviews/new");
   const parsed = parseReviewForm(form, kstDateString());
   if ("error" in parsed) return { error: parsed.error, values: echo(form) };
+  const casts = parseReviewCasts(form.get("casts"));
+  if ("error" in casts) return { error: casts.error, values: echo(form) };
 
   const supabase = await createClient();
   const { data: created, error } = await supabase.from("reviews").insert({ ...parsed.value, user_id: user.id }).select("id").single();
   if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요", values: echo(form) };
+  await saveCasts(supabase, created.id, casts.value);
   revalidate(parsed.value.show_id);
 
   // "이 좌석 후기도 극장 정보에 올릴까요?" → 좌석 후기 폼으로(관극 후기와 연결)
@@ -47,11 +69,14 @@ export async function updateReview(_: ReviewFormState, form: FormData): Promise<
   if (!isUuid(id)) return { error: "수정할 수 없는 후기예요", values: echo(form) };
   const parsed = parseReviewForm(form, kstDateString());
   if ("error" in parsed) return { error: parsed.error, values: echo(form) };
+  const casts = parseReviewCasts(form.get("casts"));
+  if ("error" in casts) return { error: casts.error, values: echo(form) };
 
   const supabase = await createClient();
   const { data, error } = await supabase.from("reviews").update(parsed.value).eq("id", id).eq("user_id", user.id).select("id");
   if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요", values: echo(form) };
   if (!data?.length) return { error: "수정할 수 없는 후기예요", values: echo(form) };
+  await saveCasts(supabase, id, casts.value);
   revalidate(parsed.value.show_id);
   redirect("/me?toast=review-saved");
 }
