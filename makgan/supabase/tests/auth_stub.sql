@@ -21,3 +21,12 @@ do $$ begin
   end if;
 end $$;
 grant anon, authenticated to authenticator;
+
+-- 서버 전용 서비스 역할(RLS 우회). Supabase의 service_role과 같음
+do $$ begin
+  if not exists (select from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+end $$;
+grant service_role to authenticator;
+grant usage on schema public to service_role;
+alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant all on functions to service_role;

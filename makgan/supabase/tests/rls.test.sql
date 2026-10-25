@@ -79,6 +79,7 @@ set request.jwt.claims = '{"sub":"bbbbbbbb-0000-4000-8000-000000000002"}';
 select pg_temp.expect((select count(*) from public.reviews) = 1, 'bob: 타인 비공개 후기 안 보임(공개 1개만)');
 select pg_temp.expect((select count(*) from public.wishlists) = 0, 'bob: 타인 찜 안 보임');
 select pg_temp.expect((select count(*) from public.follows) = 0, 'bob: 타인 팔로우 안 보임');
+insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), 'https://push.example/bob', 'k', 'a');
 select pg_temp.expect((select count(*) from public.review_casts) = 1, 'bob: 공개 후기의 캐스트만 보임(비공개 후기 캐스트 숨김)');
 select pg_temp.expect_denied($$insert into public.review_casts (review_id, actor_id, role_name) values
   ('11111111-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000303', 'x')$$, '남의 후기에 캐스트 추가 거부');
@@ -127,6 +128,11 @@ insert into public.videos (youtube_id, title, actor_id) values ('AAAAAAAAAAA', '
 select pg_temp.expect_denied($$insert into public.videos (youtube_id, title) values ('AAAAAAAAAAA', 'x')$$, '영상은 공연이나 배우에 연결돼야 함');
 select pg_temp.expect_denied($$insert into public.videos (youtube_id, title, actor_id) values ('bad id', 'x', '00000000-0000-4000-8000-000000000301')$$, '영상 id 형식 검사');
 select pg_temp.expect((select count(*) from public.reviews where not is_public) = 0, '관리자도 타인 비공개 후기는 안 보임');
+select pg_temp.expect((select count(*) from public.push_subscriptions) = 0, '남의 푸시 구독 안 보임');
+select pg_temp.expect_denied($$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ('bbbbbbbb-0000-4000-8000-000000000002', 'https://push.example/x', 'k', 'a')$$, '남의 이름으로 구독 저장 거부');
+select pg_temp.expect_denied($$insert into public.benefit_alerts (user_id, benefit_id, sent_at) select auth.uid(), id, now() from public.benefits limit 1$$, '알림을 보낸 것처럼 꾸며 등록 거부');
+select pg_temp.expect((select count(*) from public.notification_outbox) = 0, '알림 대기열은 사용자에게 안 보임');
+select pg_temp.expect_denied($$insert into public.notification_outbox (user_id, kind, title, body) values (auth.uid(), 'test', 'x', 'y')$$, '알림 대기열에 직접 쓰기 거부');
 reset role;
 
 -- ── 시드 날짜(KST) ──

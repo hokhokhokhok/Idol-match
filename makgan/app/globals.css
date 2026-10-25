@@ -332,3 +332,14 @@ a.badge { text-decoration: none; }
 .cast-picked button { border: 0; background: none; color: inherit; cursor: pointer; font-size: 15px; }
 .cast-add { align-items: flex-end; }
 .cast-add .btn { flex-shrink: 0; }
+
+/* 알림 */
+.alert-btn { align-self: flex-start; margin-top: 4px; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font: inherit; font-size: 13px; color: var(--text-sub); cursor: pointer; }
+.alert-btn[aria-pressed="true"] { border-color: var(--burgundy); color: var(--burgundy); background: var(--burgundy-soft); font-weight: 600; }
+.settings-link { margin-left: auto; }
+.settings-link + form { margin-left: 0; }
+.settings-group { border: 0; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; gap: 4px; }
+.settings-group legend { font-weight: 700; margin-bottom: 8px; }
+.switch-row { justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.device-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.test-push { margin-top: 4px; }

@@ -47,6 +47,7 @@ export default async function MePage({ searchParams }: { searchParams: Promise<{
         <section className="profile-row">
           <strong data-testid="nickname">{profile.nickname}</strong>
           {profile.is_admin && <Link href="/admin" className="badge">관리자</Link>}
+          <Link href="/me/settings" className="btn btn-text settings-link">알림 설정</Link>
           <form action={signOut}><button className="btn btn-text">로그아웃</button></form>
         </section>
 
