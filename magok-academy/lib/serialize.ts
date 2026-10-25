@@ -30,6 +30,7 @@ function academyRow(a: Academy): Record<string, string> {
     tuition_monthly_min: s(a.tuition_monthly_min),
     tuition_monthly_max: s(a.tuition_monthly_max),
     schedule_slots: a.schedule_slots.map((x) => `${x.day} ${x.start}-${x.end}`).join(";"),
+    source_urls: a.source_urls.join(";"),
   };
 }
 

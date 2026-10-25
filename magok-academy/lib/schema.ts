@@ -32,7 +32,7 @@ export const ACADEMY_COLUMNS = [
   "performance_history", "opened_year", "description", "last_verified_at", "verification_status",
 ] as const;
 /** 필터용 선택 컬럼. 없어도 읽힌다. */
-export const ACADEMY_OPTIONAL_COLUMNS = ["tuition_monthly_min", "tuition_monthly_max", "schedule_slots"] as const;
+export const ACADEMY_OPTIONAL_COLUMNS = ["tuition_monthly_min", "tuition_monthly_max", "schedule_slots", "source_urls"] as const;
 export const PERSON_COLUMNS = [
   "id", "academy_id", "role", "name_public", "subjects", "profile_source_url", "disclosure_basis", "collected_at",
 ] as const;
@@ -129,6 +129,13 @@ class RowReader {
       return null;
     }
     return v;
+  }
+  urls(field: string): string[] {
+    const items = splitList(this.raw(field));
+    for (const it of items) {
+      if (!/^https?:\/\/\S+$/.test(it)) this.report("error", field, `URL 형식이 아님: "${it}"`);
+    }
+    return items;
   }
   bool(field: string): boolean {
     const v = this.raw(field).toLowerCase();
@@ -247,6 +254,7 @@ export function parseAcademies(text: string, file = "academies.csv"): ParseResul
       tuition_monthly_min: min,
       tuition_monthly_max: max ?? min,
       schedule_slots: slots,
+      source_urls: r.urls("source_urls"),
     };
   });
 }
