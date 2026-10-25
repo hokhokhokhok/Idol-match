@@ -36,6 +36,7 @@ test("경력 요약", () => {
   const p = { careers: [c("musical_performance", { verified: true }), c("musical_performance"), c("academy_operation", { year_from: 2016 }), c("academy_operation", { year_from: 2014 }), c("teaching")] } as PersonWithCareer;
   assert.equal(describeSummary(summarizeCareers(p)), "뮤지컬 2건(공연 DB 확인 1) · 학원 운영 2014~ · 강의 1건");
   assert.equal(describeSummary(summarizeCareers({ careers: [] } as unknown as PersonWithCareer)), "공개 경력 없음");
+  assert.equal(describeSummary(summarizeCareers({ careers: [c("stage"), c("award")] } as PersonWithCareer)), "공연·방송 1건 · 수상 1건");
 });
 
 test("정정 요청 링크에 학원 이름이 채워짐", () => {

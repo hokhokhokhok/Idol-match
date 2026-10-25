@@ -53,7 +53,7 @@ function CareerRow({ career: c }: { career: CareerItem }) {
     <li className="text-sm">
       <div className="flex flex-wrap items-baseline gap-x-1.5">
         <span className="font-medium">{c.title}</span>
-        <span className="text-sub">{formatYears(c)}</span>
+        {(c.year_from !== null || c.year_to !== null) && <span className="text-sub">{formatYears(c)}</span>}
         {c.type === "musical_performance" &&
           (c.verified ? (
             <span className="rounded bg-emerald-50 px-1.5 text-xs text-ok" title="공연 DB(KOPIS 등)로 작품·연도 교차 확인">

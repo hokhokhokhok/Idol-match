@@ -87,7 +87,7 @@ npm run dev                  # 터미널 2
    (Supabase 값은 Project Settings → API의 URL·anon key·service_role key, `NEXT_PUBLIC_SITE_URL`은 배포 주소) → Deploy
 5. **주소 맞추기**: Supabase Authentication → URL Configuration의 Site URL을 Vercel 배포 주소로
 6. **관리자 지정**: 배포 주소에서 한 번 로그인한 뒤, 아래 "관리자 권한 주기"의 SQL 실행
-7. **알림 크론**: Vercel Pro면 자동. Hobby면 GitHub 저장소 Settings → Secrets → Actions에 `MAKGAN_CRON_URL`(`https://배포주소/api/cron/send-alerts`)과 `MAKGAN_CRON_SECRET`(3번의 `CRON_SECRET`) 추가
+7. **알림 크론**: `vercel.json`의 Vercel Cron은 Hobby 플랜 제한 때문에 하루 1번(09:00 KST)만 돕니다(Pro면 `*/5 * * * *`로 바꿔도 됨). 5분마다 보내려면 GitHub 저장소 Settings → Secrets → Actions에 `MAKGAN_CRON_URL`(`https://배포주소/api/cron/send-alerts`)과 `MAKGAN_CRON_SECRET`(3번의 `CRON_SECRET`) 추가
 8. **용어 사전 검수**: `/admin/glossary`에서 초안 10개를 확인하고 공개로 바꾸기
 
 > `supabase/tests/auth_stub.sql`은 로컬 테스트 전용입니다. 실제 Supabase에는 실행하지 마세요.
@@ -98,8 +98,8 @@ npm run dev                  # 터미널 2
 1. VAPID 키 만들기: `npx web-push generate-vapid-keys` → `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`(mailto:주소)
 2. `SUPABASE_SERVICE_ROLE_KEY`(Supabase → Project Settings → API → service_role, **서버 환경 변수로만**)와 `CRON_SECRET`(임의의 긴 문자열)
 3. 5분마다 `GET /api/cron/send-alerts`를 `Authorization: Bearer <CRON_SECRET>`로 호출
-   - Vercel Pro: `vercel.json`의 Cron이 그대로 동작
-   - Vercel Hobby(하루 1번 제한): 저장소 Secrets에 `MAKGAN_CRON_URL`·`MAKGAN_CRON_SECRET`을 넣으면 `.github/workflows/makgan-cron.yml`이 5분마다 호출
+   - Vercel Cron(`vercel.json`): Hobby 플랜은 하루 1번만 허용돼 09:00 KST에 한 번 — Pro면 `*/5 * * * *`로 바꿔도 됨
+   - 5분마다: 저장소 Secrets에 `MAKGAN_CRON_URL`·`MAKGAN_CRON_SECRET`을 넣으면 `.github/workflows/makgan-cron.yml`이 5분마다 호출
 4. 아이폰·아이패드는 **홈 화면에 추가한 앱**에서만 알림이 와요(설정 화면에 안내가 나옵니다)
 
 알림 권한은 사용자가 "알림 받기"를 처음 누를 때만 요청합니다. 방해금지 시간(기본 23:00~08:00)에 생긴 알림은 끝나는 시각 뒤 첫 발송 때 한 번에 묶어서 보냅니다.
