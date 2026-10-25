@@ -75,7 +75,7 @@ export default function AcademyMap({
       markers.current.set(a.id, m);
     });
     if (located.length > 1) {
-      map.current.fitBounds(L.latLngBounds(located.map((a) => [a.lat, a.lng])), { padding: [36, 36], maxZoom: 16 });
+      map.current.fitBounds(L.latLngBounds(located.map((a) => [a.lat, a.lng])), { paddingTopLeft: [36, 56], paddingBottomRight: [36, 24], maxZoom: 16 }); // 핀이 좌표 위로 솟아 있어 위쪽 여백을 더 둔다
     } else if (located.length === 1) {
       map.current.setView([located[0].lat, located[0].lng], 16);
     }
