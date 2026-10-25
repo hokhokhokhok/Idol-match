@@ -100,6 +100,50 @@ const lastCodeLink = new Map(); // email → ?code= 링크
 const refresh = new Map();   // refresh_token → user id
 const pushes = [];           // 가짜 푸시 서비스가 받은 요청(/__mock/push/:id)
 
+// ───────── 가짜 KOPIS (E2E): /__mock/kopis/{pblprfr,pblprfr/:id,prfplc/:id}?service=e2e-kopis-key ─────────
+const KOPIS_KEY = "e2e-kopis-key";
+const kopisLog = [];  // 받은 요청(키 제외)
+const fmtDay = (offset) => new Date(Date.now() + 9 * 3600e3 + offset * 86400e3).toISOString().slice(0, 10).replaceAll("-", ".");
+const kopisShows = [
+  { id: "PF900001", name: "[테스트] 뮤지컬 알파", genre: "뮤지컬", state: "공연중", from: fmtDay(-10), to: fmtDay(60), fac: "FC9001", cast: "배우가(주인공), 배우나 등", ticket: true },
+  { id: "PF900002", name: "[테스트] 뮤지컬 베타 & 감마", genre: "뮤지컬", state: "공연예정", from: fmtDay(20), to: fmtDay(80), fac: "FC9001", cast: "배우나, 배우다", ticket: false },
+  { id: "PF900003", name: "[테스트] 연극 델타", genre: "연극", state: "공연중", from: fmtDay(-3), to: fmtDay(30), fac: "FC9002", cast: "배우다, 배우라", ticket: false },
+  // 연극·공연예정 103편 → 100개씩 2쪽(페이지 넘김 확인)
+  ...Array.from({ length: 103 }, (_, i) => ({ id: `PF9100${String(i + 1).padStart(2, "0")}`, name: `[테스트] 연극 ${i + 1}`, genre: "연극", state: "공연예정", from: fmtDay(5), to: fmtDay(40), fac: "FC9002", cast: "", ticket: false })),
+];
+const kopisFacilities = {
+  FC9001: { name: "[테스트] 아트홀", seats: 1000, addr: "서울특별시 테스트구 아트로 1", la: "37.5", lo: "127.0" },
+  FC9002: { name: "[테스트] 소극장", seats: 200, addr: "서울특별시 테스트구 소극장로 2", la: "37.58", lo: "127.002" },
+};
+const xmlEsc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const kopisListDb = (s) => `<db><mt20id>${s.id}</mt20id><prfnm>${xmlEsc(s.name)}</prfnm><prfpdfrom>${s.from}</prfpdfrom><prfpdto>${s.to}</prfpdto><fcltynm>${kopisFacilities[s.fac].name}</fcltynm><poster>http://www.kopis.or.kr/upload/pfmPoster/PF_${s.id}.png</poster><area>서울특별시</area><genrenm>${s.genre}</genrenm><openrun>N</openrun><prfstate>${s.state}</prfstate></db>`;
+const kopisDetail = (s) => `<db><mt20id>${s.id}</mt20id><mt10id>${s.fac}</mt10id><prfnm>${xmlEsc(s.name)}</prfnm><prfpdfrom>${s.from}</prfpdfrom><prfpdto>${s.to}</prfpdto><fcltynm>${kopisFacilities[s.fac].name} (${kopisFacilities[s.fac].name})</fcltynm><prfcast>${xmlEsc(s.cast || " ")}</prfcast><poster>http://www.kopis.or.kr/upload/pfmPoster/PF_${s.id}.png</poster><sty>[공연소개]\n\n${xmlEsc(s.name)}의 줄거리입니다.</sty><genrenm>${s.genre}</genrenm><prfstate>${s.state}</prfstate>${s.ticket ? `<relates><relate><relatenm>테스트예매처</relatenm><relateurl>https://tickets.example/booking?a=1&amp;b=2</relateurl></relate></relates>` : ""}</db>`;
+function kopisHandle(url, res) {
+  const rest = url.pathname.slice("/__mock/kopis".length).replace(/^\//, "");
+  const params = Object.fromEntries(url.searchParams);
+  const key = params.service;
+  delete params.service;
+  kopisLog.push({ path: rest, ...params });
+  const xml = (body) => { res.writeHead(200, { "content-type": "application/xml; charset=UTF-8" }); res.end(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><dbs>${body}</dbs>`); };
+  if (key !== KOPIS_KEY) return xml(`<db><returncode>01</returncode><errmsg>SERVICE KEY IS NOT REGISTERED ERROR.</errmsg></db>`);
+  if (rest === "pblprfr") {
+    const genre = { GGGA: "뮤지컬", AAAA: "연극" }[params.shcate];
+    const state = { "01": "공연예정", "02": "공연중" }[params.prfstate];
+    const rows = Number(params.rows) || 10;
+    const page = Number(params.cpage) || 1;
+    const hits = kopisShows.filter((s) => s.genre === genre && s.state === state);
+    return xml(hits.slice((page - 1) * rows, page * rows).map(kopisListDb).join(""));
+  }
+  const detail = /^pblprfr\/(PF\w+)$/.exec(rest);
+  if (detail) { const s = kopisShows.find((x) => x.id === detail[1]); return xml(s ? kopisDetail(s) : ""); }
+  const fac = /^prfplc\/(FC\w+)$/.exec(rest);
+  if (fac && kopisFacilities[fac[1]]) {
+    const f = kopisFacilities[fac[1]];
+    return xml(`<db><fcltynm>${f.name}</fcltynm><mt10id>${fac[1]}</mt10id><seatscale>${f.seats}</seatscale><adres>${f.addr}</adres><la>${f.la}</la><lo>${f.lo}</lo><mt13s><mt13><seatscale>10</seatscale></mt13></mt13s></db>`);
+  }
+  return xml("");
+}
+
 function userById(id) {
   const row = sql(`select json_build_object('id', id, 'email', email) from auth.users where id = '${id}'`);
   if (!row) return null;
@@ -212,6 +256,13 @@ const server = createServer(async (req, res) => {
     if (url.pathname === "/__mock/redirect-internal") {
       res.writeHead(302, { location: `http://127.0.0.1:${API_PORT}/__mock/og-page` });
       return res.end();
+    }
+    if (url.pathname.startsWith("/__mock/kopis/")) return kopisHandle(url, res);
+    if (url.pathname === "/__mock/kopis-log") return json(res, 200, kopisLog);
+    if (url.pathname === "/__mock/kopis-mutate" && req.method === "POST") {
+      const { id, ...patch } = await readBody(req);
+      Object.assign(kopisShows.find((s) => s.id === id) ?? {}, patch);
+      return json(res, 200, {});
     }
     if (url.pathname === "/__mock/pushes") return json(res, 200, pushes.filter((p) => !url.searchParams.get("id") || p.id === url.searchParams.get("id")));
     if (url.pathname === "/__mock/sql" && req.method === "POST") return json(res, 200, { out: sql((await readBody(req)).query) });

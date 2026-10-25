@@ -64,7 +64,7 @@ export async function getShow(id: string): Promise<ShowDetail | null> {
   if (!isSupabaseConfigured || !isUuid(id)) return null;
   const supabase = await createClient();
   const [{ data: show, error }, { data: stats }] = await Promise.all([
-    supabase.from("shows").select(`${SHOW_COLUMNS}, synopsis`).eq("id", id).maybeSingle(),
+    supabase.from("shows").select(`${SHOW_COLUMNS}, synopsis, external_id, ticket_url, ticket_name`).eq("id", id).maybeSingle(),
     supabase.from("show_rating_stats").select("avg_rating, review_count").eq("show_id", id).maybeSingle(),
   ]);
   if (error) throw new DataError(error.message);

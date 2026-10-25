@@ -441,3 +441,16 @@ insert into public.glossary (term, category, meaning, example, status) values
   ('블록', '좌석', '좌석을 통로 등을 기준으로 나눈 구역. 극장마다 이름 붙이는 방식이 다르다.', '1층 가운데 블록이 시야가 좋다.', 'draft'),
   ('시야방해석', '좌석', '기둥·난간·조명 장비 등 때문에 무대 일부가 가려 보이는 좌석. 보통 미리 안내하고 싸게 판다.', '시야방해석이지만 가격 대비 괜찮았다.', 'draft')
 on conflict (term) do nothing;
+
+-- ===== 0007_kopis_import.sql =====
+-- 막간: 공연예술통합전산망(KOPIS) 공식 데이터 가져오기. external_id가 있는 행만 가져오기가 갱신한다(관리자가 직접 넣은 행은 건드리지 않음).
+alter table public.shows
+  add column external_id text unique,            -- 'kopis:PF123456'
+  add column external_synced_at timestamptz,     -- 상세(소개·출연진)를 마지막으로 가져온 시각
+  add column ticket_url text check (ticket_url ~ '^https?://'),
+  add column ticket_name text;
+
+alter table public.theaters
+  add column external_id text unique,            -- 'kopis:FC000485'
+  add column lat double precision,
+  add column lng double precision;

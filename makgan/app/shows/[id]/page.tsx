@@ -64,6 +64,11 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
             {show.theater && <p className="show-meta"><Link href={`/theaters/${show.theater.id}`} className="theater-link">{show.theater.name}</Link></p>}
             <p className="show-meta">{formatPeriod(show.starts_on, show.ends_on)}</p>
             <WishButton showId={show.id} title={show.title} wished={wished.has(show.id)} />
+            {show.ticket_url && (
+              <a href={show.ticket_url} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-small ticket-link">
+                예매하기{show.ticket_name ? ` · ${show.ticket_name}` : ""} ↗
+              </a>
+            )}
             <p className="show-rating" data-testid="rating">
               {show.review_count > 0 ? (
                 <><span className="star" aria-hidden="true">★</span> {show.avg_rating?.toFixed(1)} <span className="muted">· 후기 {show.review_count}개</span></>
@@ -120,6 +125,9 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
             </ul>
           )}
         </section>
+        {show.external_id?.startsWith("kopis:") && (
+          <p className="source-note">공연 정보 출처: 공연예술통합전산망(KOPIS). 일정·캐스팅은 변경될 수 있으니 예매처에서 확인해 주세요.</p>
+        )}
       </main>
     </>
   );

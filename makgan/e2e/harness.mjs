@@ -57,6 +57,9 @@ const env = {
   CRON_SECRET,
   // 테스트 전용: 링크 자동 채우기가 로컬 가짜 페이지(localhost)에 접속하도록 허용
   LINK_META_ALLOW_HOSTS: "localhost",
+  // 가짜 KOPIS(로컬 Supabase 대역이 제공)
+  KOPIS_SERVICE_KEY: "e2e-kopis-key",
+  KOPIS_BASE_URL: `${SUPA}/__mock/kopis`,
 };
 if (!process.env.E2E_SKIP_BUILD) {
   console.log("next build (로컬 Supabase 값으로)…");
@@ -139,8 +142,8 @@ const ctx = {
   CRON_SECRET,
   SUPA,
   /** 크론 엔드포인트 호출 */
-  runCron: async (secret = CRON_SECRET) => {
-    const r = await fetch(`${BASE}/api/cron/send-alerts`, { headers: secret ? { authorization: `Bearer ${secret}` } : {} });
+  runCron: async (secret = CRON_SECRET, path = "send-alerts") => {
+    const r = await fetch(`${BASE}/api/cron/${path}`, { headers: secret ? { authorization: `Bearer ${secret}` } : {} });
     return { status: r.status, body: await r.json().catch(() => null) };
   },
   /** 가짜 푸시 구독(브라우저 PushManager 대신): endpoint는 로컬 Supabase 대역의 /__mock/push/:id */
