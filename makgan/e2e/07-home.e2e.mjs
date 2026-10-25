@@ -1,5 +1,5 @@
 // 홈: 오늘 마감 최대 3 + 곧 열리는 티켓 3 + 내 찜 공연(비로그인 안내 / 빈 화면 / 가로 스크롤)
-export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql }) {
+export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql, settled }) {
   const page = await newPage();
   const section = (id) => page.locator(`section[aria-labelledby="${id}"]`);
 
@@ -34,9 +34,8 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await page.goto(`${BASE}/shows`);
   for (const t of ["[샘플] 뮤지컬 첫공", "[샘플] 연극 막공"]) {
     await page.getByRole("button", { name: `${t} 찜` }).click();
-    await page.waitForFunction((n) => document.querySelector(`[aria-label="${n}"]`)?.getAttribute("aria-pressed") === "true", `${t} 찜`);
+    await settled(page);
   }
-  await page.waitForTimeout(500);
   await page.goto(`${BASE}/`);
   const wished = await section("wish-title").locator(".vcard-title").allInnerTexts();
   check(wished.length === 2, `내 찜 공연 가로 스크롤 2개 (${wished.join(", ")})`);
