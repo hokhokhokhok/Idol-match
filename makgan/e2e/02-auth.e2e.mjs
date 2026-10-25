@@ -1,5 +1,5 @@
 // 매직링크 로그인 → 닉네임 → MY → 로그아웃, 닉네임 중복, 잘못된 링크
-export default async function ({ BASE, check, newPage, login, lastLink, layout, shot, visible }) {
+export default async function ({ BASE, SUPA, check, newPage, login, lastLink, layout, shot, visible }) {
   const page = await newPage();
 
   await page.goto(`${BASE}/me`);
@@ -56,6 +56,32 @@ export default async function ({ BASE, check, newPage, login, lastLink, layout, 
   await login(page, "fan1@example.com");
   check(!page.url().includes("/onboarding"), "닉네임 있는 사용자는 재로그인 시 닉네임 화면 생략");
 
+  // Supabase 기본 메일 템플릿(무료 플랜) 흐름: ?code= (PKCE), 같은 브라우저에서 열기
+  const p3 = await newPage();
+  await p3.goto(`${BASE}/login?next=%2Fme`);
+  await p3.getByLabel("이메일").fill("pkce@example.com");
+  await p3.getByRole("button", { name: "로그인 링크 받기" }).click();
+  await p3.getByText("로그인 링크를 보냈어요").waitFor();
+  const codeLink = (await (await fetch(`${SUPA}/__mock/last-code-link?email=pkce@example.com`)).json()).link;
+  check(Boolean(codeLink?.includes("/auth/confirm?code=")), "기본 템플릿 링크(?code=)");
+  await p3.goto(codeLink);
+  await p3.waitForURL(/\/onboarding\?next=%2Fme/);
+  check(true, "?code= 링크로 로그인(PKCE) → 닉네임 화면");
+  // 다른 브라우저(코드 검증값 쿠키 없음)에서 열면 만료 안내
+  await p3.getByLabel("닉네임").fill("피케이씨이");
+  await p3.getByRole("button", { name: "시작하기" }).click();
+  await p3.waitForURL(`${BASE}/me`);
+  const p4 = await newPage();
+  await p4.goto(`${BASE}/login`);
+  await p4.getByLabel("이메일").fill("pkce@example.com");
+  await p4.getByRole("button", { name: "로그인 링크 받기" }).click();
+  await p4.getByText("로그인 링크를 보냈어요").waitFor();
+  const otherLink = (await (await fetch(`${SUPA}/__mock/last-code-link?email=pkce@example.com`)).json()).link;
+  const p5 = await newPage();
+  await p5.goto(otherLink);
+  await p5.waitForURL(/\/login\?error=link/);
+  check(await visible(p5.getByText("요청한 브라우저에서 열어")), "다른 브라우저에서 ?code= 링크 → 안내");
+  for (const p of [p3, p4, p5]) await p.close();
   check(page.errors.length + p2.errors.length === 0, `콘솔 에러 없음 ${[...page.errors, ...p2.errors].join(" | ")}`);
   await page.close();
   await p2.close();

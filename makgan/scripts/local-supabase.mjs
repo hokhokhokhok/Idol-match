@@ -6,7 +6,7 @@
 //
 // 매번 빈 DB에 마이그레이션 + [샘플] 시드를 새로 넣는다.
 import { spawn, execFileSync } from "node:child_process";
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, chownSync } from "node:fs";
 import { createServer, request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
@@ -95,6 +95,8 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(0));
 // ───────── 가짜 Auth (매직링크) ─────────
 const otps = new Map();      // token_hash → email
 const lastLink = new Map();  // email → link
+const pkceCodes = new Map(); // auth_code → { email, challenge }  (Supabase 기본 메일 템플릿 흐름)
+const lastCodeLink = new Map(); // email → ?code= 링크
 const refresh = new Map();   // refresh_token → user id
 const pushes = [];           // 가짜 푸시 서비스가 받은 요청(/__mock/push/:id)
 
@@ -129,12 +131,19 @@ const authErr = (res, status, msg, code) => json(res, status, { code: status, er
 
 async function auth(req, res, path, url) {
   if (path === "/otp" && req.method === "POST") {
-    const { email } = await readBody(req);
+    const { email, code_challenge } = await readBody(req);
     if (!email || !/^[^@\s]+@[^@\s]+$/.test(email)) return authErr(res, 400, "Invalid email", "validation_failed");
     const th = randomBytes(16).toString("hex");
     otps.set(th, email.toLowerCase());
     const link = `${SITE_URL}/auth/confirm?token_hash=${th}&type=email`;
     lastLink.set(email.toLowerCase(), link);
+    if (code_challenge) {
+      // 기본 템플릿: Supabase가 확인 후 redirect_to?code=… 로 보낸다
+      const ac = randomUUID();
+      pkceCodes.set(ac, { email: email.toLowerCase(), challenge: code_challenge });
+      const redirectTo = url.searchParams.get("redirect_to") ?? `${SITE_URL}/auth/confirm`;
+      lastCodeLink.set(email.toLowerCase(), `${redirectTo}${redirectTo.includes("?") ? "&" : "?"}code=${ac}`);
+    }
     console.log(`📧 매직링크 (${email}): ${link}`);
     return json(res, 200, {});
   }
@@ -145,6 +154,16 @@ async function auth(req, res, path, url) {
     otps.delete(token_hash);
     let id = sql(`select id from auth.users where email = '${email.replace(/'/g, "''")}'`);
     if (!id) { id = randomUUID(); sql(`insert into auth.users (id, email) values ('${id}', '${email.replace(/'/g, "''")}')`); }
+    return json(res, 200, session(userById(id)));
+  }
+  if (path === "/token" && url.searchParams.get("grant_type") === "pkce") {
+    const { auth_code, code_verifier } = await readBody(req);
+    const entry = pkceCodes.get(auth_code);
+    const expect = code_verifier && createHash("sha256").update(code_verifier).digest("base64url");
+    if (!entry || entry.challenge !== expect) return authErr(res, 400, "invalid flow state, no valid flow state found", "flow_state_not_found");
+    pkceCodes.delete(auth_code);
+    let id = sql(`select id from auth.users where email = '${entry.email.replace(/'/g, "''")}'`);
+    if (!id) { id = randomUUID(); sql(`insert into auth.users (id, email) values ('${id}', '${entry.email.replace(/'/g, "''")}')`); }
     return json(res, 200, session(userById(id)));
   }
   if (path === "/token" && url.searchParams.get("grant_type") === "refresh_token") {
@@ -168,6 +187,7 @@ const server = createServer(async (req, res) => {
   try {
     if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
     if (url.pathname.startsWith("/auth/v1")) return await auth(req, res, url.pathname.slice(8), url);
+    if (url.pathname === "/__mock/last-code-link") return json(res, 200, { link: lastCodeLink.get((url.searchParams.get("email") ?? "").toLowerCase()) ?? null });
     if (url.pathname === "/__mock/last-link") return json(res, 200, { link: lastLink.get((url.searchParams.get("email") ?? "").toLowerCase()) ?? null });
     if (url.pathname.startsWith("/__mock/push/") && req.method === "POST") {
       const chunks = [];
