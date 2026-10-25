@@ -81,7 +81,7 @@ npm run dev                  # 터미널 2
 
 1. **Supabase**: [supabase.com](https://supabase.com)에서 새 프로젝트 → SQL Editor에 `supabase/setup.sql`을 통째로 붙여 넣고 실행
    (화면 확인용 [샘플] 데이터가 필요하면 `supabase/seed.sql`도 실행 — 실제 서비스 전엔 지우세요)
-2. **로그인 메일**: Authentication → Emails에서 **Magic Link**와 **Confirm signup** 템플릿 본문을 `supabase/templates/magic-link.html`로 바꾸기
+2. **로그인 메일**(선택): 무료 플랜의 기본 메일 발송은 템플릿을 바꿀 수 없어 기본 템플릿 그대로 써도 됩니다(링크는 로그인을 요청한 같은 브라우저에서 열어야 함). 직접 SMTP를 연결했거나 유료 플랜이면 Authentication → Emails의 **Magic Link**·**Confirm signup** 본문을 `supabase/templates/magic-link.html`로 바꾸면 다른 브라우저(메일 앱)에서 열어도 로그인돼요
 3. **비밀값 만들기**: `cd makgan && npm install && npm run setup:env` → 출력된 줄을 메모
 4. **Vercel**: [vercel.com/new](https://vercel.com/new)에서 이 저장소 가져오기 → **Root Directory를 `makgan`** 으로 → 3번의 환경 변수 입력
    (Supabase 값은 Project Settings → API의 URL·anon key·service_role key, `NEXT_PUBLIC_SITE_URL`은 배포 주소) → Deploy
