@@ -36,6 +36,9 @@
 - 배열 칸(categories, target_grades, subjects, schedule_slots)은 세미콜론 `;`으로 구분
 - 값에 쉼표가 들어가면 칸 전체를 큰따옴표로 감싸기 (엑셀·구글시트 내보내기는 자동 처리)
 - 날짜는 `YYYY-MM-DD`, verified는 `TRUE`/`FALSE`
+- 경력 유형(type): `academy_operation`(학원 운영) / `musical_performance`(뮤지컬) / `stage`(뮤지컬 외 공연·방송: 발레단, 댄서, 방송 출연 등) / `teaching`(강의·심사) / `education`(학력) / `award`(수상)
+- 출처 종류(source_type): 학원알리미 / 홈페이지 / SNS / 네이버플레이스 / KOPIS / 학원정보사이트(오늘학교 아카데미·런즈 등) / 언론(본인 인터뷰·소개 기사) / 직접문의
+- 원장·강사 이름이 공개되지 않았으면 `원장 (이름 미공개)`로 적고 추측해서 채우지 않기
 - 필터용 선택 컬럼(academies.csv 끝 3개, 비워도 됨):
   - `tuition_monthly_min`, `tuition_monthly_max`: tuition_note에서 **확인된** 월 금액(원)만 숫자로. 문의 필요면 비움
   - `schedule_slots`: `화 16:00-18:00;목 16:00-18:00` 형식. 확인 안 됐으면 비움

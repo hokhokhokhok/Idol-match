@@ -83,3 +83,11 @@ test("경력: 템플릿 예시 KOPIS 행", () => {
   assert.equal(records[0].verified, true);
   assert.equal(records[0].year_to, 2015);
 });
+
+test("경력: 공연·방송 활동 + 학원정보사이트·언론 출처", () => {
+  const { records, issues } = parseCareerItems(
+    `${CAREER_HEADER}\nC1,P1,stage,국립발레단 솔리스트,,,,https://x.example,학원정보사이트,2026-10-25,FALSE\nC2,P1,teaching,개인 레슨,,,,https://y.example,언론,2026-10-25,FALSE\n`,
+  );
+  assert.deepEqual(issues, []);
+  assert.deepEqual(records.map((r) => r.type), ["stage", "teaching"]);
+});

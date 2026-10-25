@@ -1,1 +1,18 @@
 id,person_id,type,title,organization,year_from,year_to,source_url,source_type,collected_at,verified
+RC001,R001,education,백제예술대학교 실용댄스과 수석 졸업,백제예술대학교,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
+RC002,R001,award,NBC 'World of Dance' 시즌3 BEST 4 진출,NBC,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
+RC003,R001,award,한류 힙합문화대상 서울시장상 특별대상,,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
+RC004,R001,award,전국무용 한국문화예술총연합회 장관상,,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
+RC005,R001,stage,"방송 출연: tvN '유 퀴즈 온 더 블럭', SBS '동상이몽2'·'모닝와이드', 뮤직비디오 등",,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
+RC006,R001,stage,"국내외 공연: 예술의전당·국립극장 '댄타지아', 보스턴 이사벨라 스튜어트 가드너 미술관, 해외 살사 페스티벌 등 / 아이돌 안무 제작",,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
+RC007,R001,teaching,"댄스 대회 심사 (Dancers Park, SHOW ME 등)",,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
+RC008,R002,academy_operation,투래빗 댄스 스튜디오 운영 (초등~전문반),투래빗댄스스튜디오,,,https://lady.khan.co.kr/travel/article/202407041059001,언론,2026-10-25,FALSE
+RC009,R002,stage,"유튜브 채널 '춤추는 이강사' 운영 (구독자 31만, 2024.07 기사 기준)",YouTube,,,https://lady.khan.co.kr/travel/article/202407041059001,언론,2026-10-25,FALSE
+RC010,R002,teaching,"개인 레슨 1,500명 이상, 연예인 댄스 강사 활동 (2024.07 기사 기준)",,,,https://lady.khan.co.kr/travel/article/202407041059001,언론,2026-10-25,FALSE
+RC011,R003,stage,국립발레단 솔리스트 출신,국립발레단,,,https://learns.academy/academies/27SF3E61H7,학원정보사이트,2026-10-25,FALSE
+RC012,R004,stage,유니버설발레단 정단원 출신,유니버설발레단,,,https://learns.academy/academies/HSQSEB1HSL,학원정보사이트,2026-10-25,FALSE
+RC013,R005,teaching,발레 지도 경력 20년,,,,https://learns.academy/academies/VBA7MP8CBV,학원정보사이트,2026-10-25,FALSE
+RC014,R006,education,서울대학교 출신 (성악),서울대학교,,,https://learns.academy/academies/BYJHQLLZTI,학원정보사이트,2026-10-25,FALSE
+RC015,R007,stage,음악계 활동 20년 이상,,,,https://learns.academy/academies/WP6AN8IQ5M,학원정보사이트,2026-10-25,FALSE
+RC016,R008,academy_operation,액팅쏘울 연기학원 개원·운영 (학원 소개: 마곡 최초 연기학원),액팅쏘울 연기학원,2020,,https://learns.academy/academies/W6B2DGKHME,학원정보사이트,2026-10-25,FALSE
+RC017,R009,academy_operation,웃는아이 더설쌤 키즈 공연·뮤지컬 교육 (학원 소개: 2007년부터),웃는아이 더설쌤 뮤지컬댄스학원,2007,,https://learns.academy/academies/UNALJIVMZP,학원정보사이트,2026-10-25,FALSE
