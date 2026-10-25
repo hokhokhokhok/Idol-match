@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import TabBar from "@/components/TabBar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body className="bg-surface font-sans text-[15px] leading-normal text-ink">
-        <div className="mx-auto min-h-dvh max-w-[480px] bg-white">{children}</div>
+        <div className="mx-auto min-h-dvh max-w-[480px] bg-white pb-[calc(60px+env(safe-area-inset-bottom))]">
+          {children}
+          <TabBar />
+        </div>
       </body>
     </html>
   );

@@ -86,3 +86,14 @@ export function splitList(value: string): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+/** 칸 하나를 CSV용으로: 쉼표·따옴표·줄바꿈이 있으면 큰따옴표로 감싼다. */
+export function escapeCell(value: string): string {
+  return /[",\r\n]/.test(value) || value !== value.trim() ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+export function toCsv(header: readonly string[], rows: Record<string, string>[]): string {
+  const lines = [header.map(escapeCell).join(",")];
+  for (const r of rows) lines.push(header.map((h) => escapeCell(r[h] ?? "")).join(","));
+  return lines.join("\n") + "\n";
+}

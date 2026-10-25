@@ -39,6 +39,20 @@ jobs:
       - run: |
           mkdir www/jomun
           cp -r jomun/index.html jomun/sw.js jomun/manifest.webmanifest jomun/js jomun/icons jomun/data www/jomun/
+      # 마곡 뮤지컬 학원 찾기(magok-academy/)는 Next.js 정적 내보내기로 /Idol-match/magok-academy/ 에 배포
+      - name: Build magok-academy
+        working-directory: magok-academy
+        env:
+          BASE_PATH: /Idol-match/magok-academy
+          # 저장소 Settings → Secrets → Actions에 KAKAO_MAP_KEY를 넣으면 카카오맵, 없으면 간이 약도
+          NEXT_PUBLIC_KAKAO_MAP_KEY: ${{ secrets.KAKAO_MAP_KEY }}
+          NEXT_PUBLIC_CORRECTION_URL: ${{ vars.MAGOK_CORRECTION_URL }}
+        run: |
+          npm ci
+          npm test
+          npm run check:data
+          npm run build
+      - run: cp -r magok-academy/out www/magok-academy && touch www/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

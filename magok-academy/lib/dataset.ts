@@ -2,6 +2,8 @@
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { REVERIFY_MONTHS } from "./constants.ts";
+import { isStale } from "./format.ts";
 import { parseAcademies, parseCareerItems, parsePeople, type Issue } from "./schema.ts";
 import type { Dataset } from "./types.ts";
 
@@ -10,9 +12,6 @@ export const DATA_FILES = {
   people: "people.csv",
   careerItems: "career_items.csv",
 } as const;
-
-/** last_verified_at이 이 개월 수를 넘으면 재확인 경고 */
-export const REVERIFY_MONTHS = 6;
 
 export interface LoadResult {
   dataset: Dataset;
@@ -41,11 +40,8 @@ export function buildDataset(
     } else seen.set(key, ac.id);
   }
 
-  const cutoff = new Date(today);
-  cutoff.setMonth(cutoff.getMonth() - REVERIFY_MONTHS);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
   for (const ac of academies) {
-    if (ac.last_verified_at && ac.last_verified_at < cutoffStr) {
+    if (ac.last_verified_at && isStale(ac.last_verified_at, today)) {
       issues.push({ level: "warning", file: DATA_FILES.academies, line: 0, id: ac.id, field: "last_verified_at", message: `마지막 확인(${ac.last_verified_at})이 ${REVERIFY_MONTHS}개월을 넘음 — 재확인 필요` });
     }
   }
