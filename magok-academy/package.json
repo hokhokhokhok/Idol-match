@@ -12,7 +12,8 @@
     "test": "node --test 'lib/**/*.test.ts'",
     "check:data": "node scripts/check-data.ts && node scripts/check-data.ts data/sample",
     "import": "node scripts/import-csv.ts",
-    "test:e2e": "DATA_DIR=data/sample next build && node scripts/e2e.mjs && echo \"(out/는 예시 데이터 빌드 — 배포 전 npm run build로 다시 빌드)\""
+    "test:e2e": "DATA_DIR=data/sample next build && node scripts/e2e.mjs && echo \"(out/는 예시 데이터 빌드 — 배포 전 npm run build로 다시 빌드)\"",
+    "kopis:check": "node scripts/kopis-check.ts"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
