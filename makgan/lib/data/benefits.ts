@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { kstDayRange } from "@/lib/date";
 import { DataError } from "./shows";
+import { getUser } from "@/lib/auth";
 
 export const BENEFIT_TYPES = ["lottery", "discount", "ticket_open", "event"] as const;
 export type BenefitType = (typeof BENEFIT_TYPES)[number];
@@ -59,4 +60,13 @@ export async function listBenefits(params: ListBenefitsParams = {}): Promise<Ben
   const { data, error } = await q.order("id").limit(limit);
   if (error) throw new DataError(error.message);
   return (data ?? []) as unknown as Benefit[];
+}
+
+/** 내가 "알림 받기" 누른 혜택 id */
+export async function myAlertIds(): Promise<Set<string>> {
+  const user = await getUser();
+  if (!user) return new Set();
+  const supabase = await createClient();
+  const { data } = await supabase.from("benefit_alerts").select("benefit_id");
+  return new Set((data ?? []).map((r) => r.benefit_id as string));
 }

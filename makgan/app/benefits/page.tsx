@@ -3,7 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import BenefitCard from "@/components/BenefitCard";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
-import { BENEFIT_TYPES, BENEFIT_TYPE_LABEL, listBenefits, type Benefit, type BenefitType } from "@/lib/data/benefits";
+import { BENEFIT_TYPES, BENEFIT_TYPE_LABEL, listBenefits, myAlertIds, type Benefit, type BenefitType } from "@/lib/data/benefits";
 
 export const metadata = { title: "혜택 · 막간" };
 
@@ -24,8 +24,9 @@ export default async function BenefitsPage({ searchParams }: { searchParams: Pro
   };
 
   let items: Benefit[] | null;
+  let alerts = new Set<string>();
   try {
-    items = await listBenefits({ type, includeExpired, endingToday });
+    [items, alerts] = await Promise.all([listBenefits({ type, includeExpired, endingToday }), myAlertIds()]);
   } catch {
     items = null;
   }
@@ -57,7 +58,7 @@ export default async function BenefitsPage({ searchParams }: { searchParams: Pro
             : <EmptyState icon="🎁" message="지금 받을 수 있는 혜택이 없어요" action={type ? { label: "전체 혜택 보기", href: "/benefits" } : undefined} />
         ) : (
           <ul className="benefit-list">
-            {items.map((b) => <li key={b.id}><BenefitCard benefit={b} now={now} /></li>)}
+            {items.map((b) => <li key={b.id}><BenefitCard benefit={b} now={now} alerted={alerts.has(b.id)} /></li>)}
           </ul>
         )}
       </main>

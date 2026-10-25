@@ -1,0 +1,21 @@
+name: makgan-cron
+# 막간 푸시 알림 발송(5분마다). Vercel Hobby 플랜의 Cron은 하루 1번만 돌아서 대신 쓴다.
+# 저장소 Settings → Secrets → Actions 에 MAKGAN_CRON_URL(https://배포주소/api/cron/send-alerts)과
+# MAKGAN_CRON_SECRET(CRON_SECRET과 같은 값)을 넣어야 동작한다. 없으면 아무것도 하지 않는다.
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  send:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - env:
+          URL: ${{ secrets.MAKGAN_CRON_URL }}
+          SECRET: ${{ secrets.MAKGAN_CRON_SECRET }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$SECRET" ]; then echo "MAKGAN_CRON_URL / MAKGAN_CRON_SECRET 미설정 — 건너뜀"; exit 0; fi
+          curl -fsS --max-time 60 -H "Authorization: Bearer $SECRET" "$URL"

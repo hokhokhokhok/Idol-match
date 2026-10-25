@@ -7,6 +7,7 @@ import { mkdir, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { createECDH, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const APP_PORT = 4321;
@@ -41,11 +42,19 @@ function start(cmd, args, env, readyRe) {
   });
 }
 
-const supaOut = await start("node", ["scripts/local-supabase.mjs"], { LOCAL_SUPABASE_PORT: String(SUPA_PORT), SITE_URL: BASE }, /local-supabase ready[\s\S]*ANON_KEY=\S+/);
+const supaOut = await start("node", ["scripts/local-supabase.mjs"], { LOCAL_SUPABASE_PORT: String(SUPA_PORT), SITE_URL: BASE }, /local-supabase ready[\s\S]*SERVICE_ROLE_KEY=\S+/);
+// VAPID 키는 고정(빌드 캐시가 바뀌지 않게) — 테스트 전용
+const VAPID = { publicKey: "BE7unnCcbZVEZ8ytauBOMhTKHJbRlswUHT47iTNIihgQW3H47ANprzO7PDGRgKjOUg_By4KtmdjsDXZ9F06L7aY", privateKey: "MUl5JZeGxLpZMdvqmfCVAwSzHHIvYWavB_Dm8bxc0vU" };
+const CRON_SECRET = "e2e-cron-secret";
 const env = {
   NEXT_PUBLIC_SUPABASE_URL: SUPA,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: supaOut.match(/ANON_KEY=(\S+)/)[1],
+  SUPABASE_SERVICE_ROLE_KEY: supaOut.match(/SERVICE_ROLE_KEY=(\S+)/)[1],
   NEXT_PUBLIC_SITE_URL: BASE,
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID.publicKey,
+  VAPID_PRIVATE_KEY: VAPID.privateKey,
+  VAPID_SUBJECT: "mailto:e2e@example.com",
+  CRON_SECRET,
 };
 if (!process.env.E2E_SKIP_BUILD) {
   console.log("next build (로컬 Supabase 값으로)…");
@@ -118,6 +127,43 @@ const ctx = {
     });
     ctx.check(m.overflow <= 0, `${label}: 가로 스크롤 없음 (${m.overflow}px)`);
     ctx.check(m.clipped.length === 0, `${label}: 글자 잘림 없음 ${m.clipped.join(", ")}`);
+  },
+  CRON_SECRET,
+  SUPA,
+  /** 크론 엔드포인트 호출 */
+  runCron: async (secret = CRON_SECRET) => {
+    const r = await fetch(`${BASE}/api/cron/send-alerts`, { headers: secret ? { authorization: `Bearer ${secret}` } : {} });
+    return { status: r.status, body: await r.json().catch(() => null) };
+  },
+  /** 가짜 푸시 구독(브라우저 PushManager 대신): endpoint는 로컬 Supabase 대역의 /__mock/push/:id */
+  fakePushSubscription() {
+    const ecdh = createECDH("prime256v1");
+    ecdh.generateKeys();
+    const id = randomBytes(8).toString("hex");
+    return {
+      id, ecdh, authSecret: randomBytes(16),
+      get json() { return { endpoint: `${SUPA}/__mock/push/${id}`, keys: { p256dh: ecdh.getPublicKey().toString("base64url"), auth: this.authSecret.toString("base64url") } }; },
+    };
+  },
+  /** 가짜 구독으로 받은 푸시들을 RFC 8291(aes128gcm)로 풀어 JSON 배열로 */
+  async receivedPushes(sub) {
+    const list = await (await fetch(`${SUPA}/__mock/pushes?id=${sub.id}`)).json();
+    return list.map((p) => {
+      const buf = Buffer.from(p.body, "base64");
+      const salt = buf.subarray(0, 16);
+      const idlen = buf[20];
+      const serverPub = buf.subarray(21, 21 + idlen);
+      const ct = buf.subarray(21 + idlen);
+      const shared = sub.ecdh.computeSecret(serverPub);
+      const keyInfo = Buffer.concat([Buffer.from("WebPush: info\0"), sub.ecdh.getPublicKey(), serverPub]);
+      const ikm = Buffer.from(hkdfSync("sha256", shared, sub.authSecret, keyInfo, 32));
+      const cek = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: aes128gcm\0"), 16));
+      const nonce = Buffer.from(hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: nonce\0"), 12));
+      const d = createDecipheriv("aes-128-gcm", cek, nonce);
+      d.setAuthTag(ct.subarray(ct.length - 16));
+      const plain = Buffer.concat([d.update(ct.subarray(0, ct.length - 16)), d.final()]);
+      return JSON.parse(plain.subarray(0, plain.lastIndexOf(2)).toString());
+    });
   },
   shot: (page, name) => page.screenshot({ path: join(ROOT, "screenshots", `${name}.png`), fullPage: true }),
 };

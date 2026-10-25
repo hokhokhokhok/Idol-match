@@ -23,7 +23,8 @@
 | 12 | 극장 목록·상세(층 탭, 구역 카드 2열), 관리자 구역 관리, 좌석 후기 확장 스키마(0003) | ✅ |
 | 13 | 좌석 후기 작성·조회·도움돼요, 구역 평균 막대, 열·시야 방해 필터, 관극 후기 연동 | ✅ |
 | 14 | 통계 탭(연도별 횟수·지출·평균 별점·월별 차트·공연/배우 TOP3), 후기 그날 캐스트(구조화) | ✅ |
-| 15~16 | 푸시 → 용어 사전·링크 채우기 | 예정 |
+| 15 | 푸시 알림(혜택 마감 1시간 전·티켓오픈 10분 전·팔로우 배우 캐스팅·찜 종료 7일 전), 알림 설정·방해금지 묶음 발송, 크론 | ✅ |
+| 16 | 용어 사전·링크 채우기 | 예정 |
 
 ## 폴더
 ```
@@ -41,6 +42,8 @@ lib/stats.ts             시즌 통계 계산
 lib/review-casts.ts      그날 캐스트 입력 검증
 lib/date.ts              KST 날짜·마감 표기("오늘 18:00 마감" 등)
 lib/supabase/            브라우저/서버 클라이언트, proxy 세션 갱신, 환경 변수 확인
+lib/push/                푸시 발송·크론(runAlerts)·방해금지 시간·브라우저 구독
+public/sw.js             서비스 워커(푸시 표시, 알림 누르면 화면 열기)
 proxy.ts                 요청마다 로그인 세션 쿠키 갱신(Next 16의 middleware)
 supabase/migrations/     스키마 + RLS
 supabase/seed.sql        [샘플] 데이터(실제 극장·공연·배우 아님)
@@ -86,6 +89,16 @@ npm run dev                  # 터미널 2
 7. 배포 환경 변수에 `NEXT_PUBLIC_SITE_URL`(배포 주소)도 넣기
 
 > `supabase/tests/auth_stub.sql`은 로컬 테스트 전용입니다. 실제 Supabase에는 실행하지 마세요.
+
+## 푸시 알림 켜기(15단계)
+1. VAPID 키 만들기: `npx web-push generate-vapid-keys` → `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`(mailto:주소)
+2. `SUPABASE_SERVICE_ROLE_KEY`(Supabase → Project Settings → API → service_role, **서버 환경 변수로만**)와 `CRON_SECRET`(임의의 긴 문자열)
+3. 5분마다 `GET /api/cron/send-alerts`를 `Authorization: Bearer <CRON_SECRET>`로 호출
+   - Vercel Pro: `vercel.json`의 Cron이 그대로 동작
+   - Vercel Hobby(하루 1번 제한): 저장소 Secrets에 `MAKGAN_CRON_URL`·`MAKGAN_CRON_SECRET`을 넣으면 `.github/workflows/makgan-cron.yml`이 5분마다 호출
+4. 아이폰·아이패드는 **홈 화면에 추가한 앱**에서만 알림이 와요(설정 화면에 안내가 나옵니다)
+
+알림 권한은 사용자가 "알림 받기"를 처음 누를 때만 요청합니다. 방해금지 시간(기본 23:00~08:00)에 생긴 알림은 끝나는 시각 뒤 첫 발송 때 한 번에 묶어서 보냅니다.
 
 ## 관리자 권한 주기
 관리자는 화면에서 만들 수 없고 DB에서 직접 지정합니다(사용자는 `is_admin`을 바꿀 수 없게 막혀 있음).

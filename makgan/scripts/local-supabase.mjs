@@ -39,6 +39,7 @@ function verifyJwt(token) {
 }
 const now = () => Math.floor(Date.now() / 1000);
 export const ANON_KEY = signJwt({ role: "anon", iss: "local-supabase", iat: 1700000000, exp: 4102444800 });
+export const SERVICE_ROLE_KEY = signJwt({ role: "service_role", iss: "local-supabase", iat: 1700000000, exp: 4102444800 });
 
 // ───────── Postgres ─────────
 const pgBin = readdirSync("/usr/lib/postgresql").sort((a, b) => Number(a) - Number(b)).map((v) => `/usr/lib/postgresql/${v}/bin`).pop();
@@ -95,6 +96,7 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(0));
 const otps = new Map();      // token_hash → email
 const lastLink = new Map();  // email → link
 const refresh = new Map();   // refresh_token → user id
+const pushes = [];           // 가짜 푸시 서비스가 받은 요청(/__mock/push/:id)
 
 function userById(id) {
   const row = sql(`select json_build_object('id', id, 'email', email) from auth.users where id = '${id}'`);
@@ -167,6 +169,14 @@ const server = createServer(async (req, res) => {
     if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
     if (url.pathname.startsWith("/auth/v1")) return await auth(req, res, url.pathname.slice(8), url);
     if (url.pathname === "/__mock/last-link") return json(res, 200, { link: lastLink.get((url.searchParams.get("email") ?? "").toLowerCase()) ?? null });
+    if (url.pathname.startsWith("/__mock/push/") && req.method === "POST") {
+      const chunks = [];
+      for await (const c of req) chunks.push(c);
+      pushes.push({ id: url.pathname.slice(13), headers: req.headers, body: Buffer.concat(chunks).toString("base64"), at: Date.now() });
+      res.writeHead(201, cors);
+      return res.end();
+    }
+    if (url.pathname === "/__mock/pushes") return json(res, 200, pushes.filter((p) => !url.searchParams.get("id") || p.id === url.searchParams.get("id")));
     if (url.pathname === "/__mock/sql" && req.method === "POST") return json(res, 200, { out: sql((await readBody(req)).query) });
     if (url.pathname.startsWith("/rest/v1")) {
       const headers = { ...req.headers, host: `localhost:${REST_PORT}` };
@@ -193,5 +203,6 @@ for (let i = 0; ; i++) {
 server.listen(API_PORT, "127.0.0.1", () => {
   console.log(`local-supabase ready
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:${API_PORT}
-NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}`);
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}`);
 });
