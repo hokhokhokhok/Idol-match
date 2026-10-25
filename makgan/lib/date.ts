@@ -50,3 +50,27 @@ export function formatDeadline(endsAt: DateInput, now: DateInput = new Date()) {
   if (days === 1) return "내일 마감";
   return `${pad(w.getUTCMonth() + 1)}.${pad(w.getUTCDate())}(${WEEKDAYS[w.getUTCDay()]}) 마감`;
 }
+
+export type ShowStatus = "upcoming" | "running" | "ended";
+
+/** 공연 상태(KST 오늘 기준). startsOn/endsOn은 DB date 'YYYY-MM-DD' */
+export function showStatus(startsOn: string, endsOn: string, now: DateInput = new Date()): ShowStatus {
+  const today = kstDateString(now);
+  if (endsOn < today) return "ended";
+  if (startsOn > today) return "upcoming";
+  return "running";
+}
+
+/** "2026.10.01 ~ 12.31" (연도가 다르면 끝에도 연도) */
+export function formatPeriod(startsOn: string, endsOn: string) {
+  const [sy, sm, sd] = startsOn.split("-");
+  const [ey, em, ed] = endsOn.split("-");
+  return `${sy}.${sm}.${sd} ~ ${ey === sy ? "" : `${ey}.`}${em}.${ed}`;
+}
+
+/** 'YYYY-MM-DD' → "11.05(목)" */
+export function formatDay(day: string) {
+  const [y, m, d] = day.split("-").map(Number);
+  const w = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return `${String(m).padStart(2, "0")}.${String(d).padStart(2, "0")}(${WEEKDAYS[w]})`;
+}

@@ -1,0 +1,197 @@
+// 로컬 Supabase 대역: Postgres + PostgREST + 매직링크만 흉내 내는 가짜 Auth.
+// 실제 Supabase 계정 없이 앱 전체를 띄워 보거나 E2E를 돌릴 때 쓴다. 실제 서비스에는 쓰지 않는다.
+//
+//   npm run local:supabase        → 띄우고, .env.local에 넣을 값을 출력
+//   http://localhost:54321/__mock/last-link?email=…  → 마지막 매직링크(메일 대신)
+//
+// 매번 빈 DB에 마이그레이션 + [샘플] 시드를 새로 넣는다.
+import { spawn, execFileSync } from "node:child_process";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, chownSync } from "node:fs";
+import { createServer, request as httpRequest } from "node:http";
+import { tmpdir } from "node:os";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const API_PORT = Number(process.env.LOCAL_SUPABASE_PORT ?? 54321);
+const PG_PORT = API_PORT + 1;
+const REST_PORT = API_PORT + 2;
+const SITE_URL = process.env.SITE_URL ?? "http://localhost:3000";
+const JWT_SECRET = "local-only-jwt-secret-at-least-32-characters";
+const POSTGREST_VERSION = "v12.2.3";
+
+// ───────── JWT(HS256) ─────────
+const b64url = (b) => Buffer.from(b).toString("base64url");
+function signJwt(payload) {
+  const head = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const body = b64url(JSON.stringify(payload));
+  const sig = createHmac("sha256", JWT_SECRET).update(`${head}.${body}`).digest("base64url");
+  return `${head}.${body}.${sig}`;
+}
+function verifyJwt(token) {
+  const [head, body, sig] = (token ?? "").split(".");
+  if (!sig) return null;
+  const expect = createHmac("sha256", JWT_SECRET).update(`${head}.${body}`).digest("base64url");
+  if (expect !== sig) return null;
+  const p = JSON.parse(Buffer.from(body, "base64url").toString());
+  return p.exp && p.exp * 1000 < Date.now() ? null : p;
+}
+const now = () => Math.floor(Date.now() / 1000);
+export const ANON_KEY = signJwt({ role: "anon", iss: "local-supabase", iat: 1700000000, exp: 4102444800 });
+
+// ───────── Postgres ─────────
+const pgBin = readdirSync("/usr/lib/postgresql").sort((a, b) => Number(a) - Number(b)).map((v) => `/usr/lib/postgresql/${v}/bin`).pop();
+const isRoot = process.getuid?.() === 0;
+const asPg = (cmd, args) => (isRoot ? ["runuser", ["-u", "postgres", "--", cmd, ...args]] : [cmd, args]);
+const dir = mkdtempSync(join(tmpdir(), "makgan-pg-"));
+if (isRoot) chownSync(dir, Number(execFileSync("id", ["-u", "postgres"]).toString()), 0);
+const run = (cmd, args) => { const [c, a] = asPg(cmd, args); execFileSync(c, a, { stdio: ["ignore", "ignore", "inherit"] }); };
+run(`${pgBin}/initdb`, ["-D", `${dir}/data`, "-U", "postgres", "-A", "trust"]);
+run(`${pgBin}/pg_ctl`, ["-D", `${dir}/data`, "-o", `-p ${PG_PORT} -k ${dir} -c TimeZone=UTC`, "-l", `${dir}/log`, "-w", "start"]);
+const DB_URL = `postgresql://postgres@localhost:${PG_PORT}/postgres`;
+const psql = (file) => execFileSync("psql", [DB_URL, "-q", "-v", "ON_ERROR_STOP=1", "-f", file], { stdio: ["ignore", "ignore", "inherit"] });
+const sql = (q) => execFileSync("psql", [DB_URL, "-qAt", "-v", "ON_ERROR_STOP=1", "-c", q]).toString().trim();
+psql(join(ROOT, "supabase/tests/auth_stub.sql"));
+for (const f of readdirSync(join(ROOT, "supabase/migrations")).sort()) psql(join(ROOT, "supabase/migrations", f));
+if (process.env.LOCAL_SUPABASE_SEED !== "0") psql(join(ROOT, "supabase/seed.sql"));
+
+// ───────── PostgREST ─────────
+const binDir = join(ROOT, ".local-supabase");
+const pgrst = join(binDir, "postgrest");
+if (!existsSync(pgrst)) {
+  mkdirSync(binDir, { recursive: true });
+  const url = `https://github.com/PostgREST/postgrest/releases/download/${POSTGREST_VERSION}/postgrest-${POSTGREST_VERSION}-linux-static-x64.tar.xz`;
+  console.log("PostgREST 내려받는 중…");
+  execFileSync("bash", ["-c", `curl -sSfL "${url}" | tar xJ -C "${binDir}"`], { stdio: "inherit" });
+}
+const rest = spawn(pgrst, [], {
+  stdio: ["ignore", "ignore", "inherit"],
+  env: {
+    ...process.env,
+    PGRST_DB_URI: `postgresql://authenticator@localhost:${PG_PORT}/postgres`,
+    PGRST_DB_SCHEMAS: "public",
+    PGRST_DB_ANON_ROLE: "anon",
+    PGRST_JWT_SECRET: JWT_SECRET,
+    PGRST_SERVER_PORT: String(REST_PORT),
+    PGRST_DB_POOL: "5",
+    PGRST_LOG_LEVEL: "crit",
+  },
+});
+
+let stopped = false;
+function stop() {
+  if (stopped) return;
+  stopped = true;
+  rest.kill("SIGKILL");
+  // Postgres가 확실히 내려간 뒤에만 데이터 폴더를 지운다(지우고 나면 pg_ctl로 끌 수 없음)
+  try { run(`${pgBin}/pg_ctl`, ["-D", `${dir}/data`, "-m", "immediate", "-w", "stop"]); } catch {}
+  rmSync(dir, { recursive: true, force: true });
+}
+process.on("exit", stop);
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(0));
+
+// ───────── 가짜 Auth (매직링크) ─────────
+const otps = new Map();      // token_hash → email
+const lastLink = new Map();  // email → link
+const refresh = new Map();   // refresh_token → user id
+
+function userById(id) {
+  const row = sql(`select json_build_object('id', id, 'email', email) from auth.users where id = '${id}'`);
+  if (!row) return null;
+  const u = JSON.parse(row);
+  return { ...u, aud: "authenticated", role: "authenticated", app_metadata: { provider: "email" }, user_metadata: {}, created_at: new Date().toISOString() };
+}
+function session(user) {
+  const rt = randomBytes(16).toString("hex");
+  refresh.set(rt, user.id);
+  const exp = now() + 3600;
+  return {
+    access_token: signJwt({ sub: user.id, email: user.email, role: "authenticated", aud: "authenticated", iat: now(), exp }),
+    token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token: rt, user,
+  };
+}
+
+const json = (res, status, body) => {
+  res.writeHead(status, { "content-type": "application/json", ...cors });
+  res.end(body === undefined ? "" : JSON.stringify(body));
+};
+const cors = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, apikey, content-type, prefer, range, x-client-info, accept-profile, content-profile, x-supabase-api-version",
+  "access-control-allow-methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
+  "access-control-expose-headers": "content-range, content-location",
+};
+const readBody = (req) => new Promise((r) => { let s = ""; req.on("data", (c) => (s += c)); req.on("end", () => r(s ? JSON.parse(s) : {})); });
+const authErr = (res, status, msg, code) => json(res, status, { code: status, error_code: code, msg });
+
+async function auth(req, res, path, url) {
+  if (path === "/otp" && req.method === "POST") {
+    const { email } = await readBody(req);
+    if (!email || !/^[^@\s]+@[^@\s]+$/.test(email)) return authErr(res, 400, "Invalid email", "validation_failed");
+    const th = randomBytes(16).toString("hex");
+    otps.set(th, email.toLowerCase());
+    const link = `${SITE_URL}/auth/confirm?token_hash=${th}&type=email`;
+    lastLink.set(email.toLowerCase(), link);
+    console.log(`📧 매직링크 (${email}): ${link}`);
+    return json(res, 200, {});
+  }
+  if (path === "/verify" && req.method === "POST") {
+    const { token_hash } = await readBody(req);
+    const email = otps.get(token_hash);
+    if (!email) return authErr(res, 403, "Email link is invalid or has expired", "otp_expired");
+    otps.delete(token_hash);
+    let id = sql(`select id from auth.users where email = '${email.replace(/'/g, "''")}'`);
+    if (!id) { id = randomUUID(); sql(`insert into auth.users (id, email) values ('${id}', '${email.replace(/'/g, "''")}')`); }
+    return json(res, 200, session(userById(id)));
+  }
+  if (path === "/token" && url.searchParams.get("grant_type") === "refresh_token") {
+    const { refresh_token } = await readBody(req);
+    const id = refresh.get(refresh_token);
+    if (!id) return authErr(res, 400, "Invalid Refresh Token", "refresh_token_not_found");
+    refresh.delete(refresh_token);
+    return json(res, 200, session(userById(id)));
+  }
+  if (path === "/user" && req.method === "GET") {
+    const p = verifyJwt((req.headers.authorization ?? "").replace(/^Bearer /, ""));
+    const user = p?.sub && userById(p.sub);
+    return user ? json(res, 200, user) : authErr(res, 403, "invalid JWT", "bad_jwt");
+  }
+  if (path === "/logout") return json(res, 204);
+  return authErr(res, 404, `local-supabase: ${req.method} ${path} 미지원`, "not_found");
+}
+
+const server = createServer(async (req, res) => {
+  const url = new URL(req.url, "http://x");
+  try {
+    if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
+    if (url.pathname.startsWith("/auth/v1")) return await auth(req, res, url.pathname.slice(8), url);
+    if (url.pathname === "/__mock/last-link") return json(res, 200, { link: lastLink.get((url.searchParams.get("email") ?? "").toLowerCase()) ?? null });
+    if (url.pathname === "/__mock/sql" && req.method === "POST") return json(res, 200, { out: sql((await readBody(req)).query) });
+    if (url.pathname.startsWith("/rest/v1")) {
+      const headers = { ...req.headers, host: `localhost:${REST_PORT}` };
+      if (!headers.authorization && headers.apikey) headers.authorization = `Bearer ${headers.apikey}`;
+      const up = httpRequest({ port: REST_PORT, path: url.pathname.slice(8) + url.search, method: req.method, headers }, (r) => {
+        res.writeHead(r.statusCode, { ...r.headers, ...cors });
+        r.pipe(res);
+      });
+      up.on("error", (e) => json(res, 502, { message: String(e) }));
+      return req.pipe(up);
+    }
+    json(res, 404, { message: "not found" });
+  } catch (e) {
+    json(res, 500, { message: String(e) });
+  }
+});
+
+// PostgREST가 뜰 때까지 기다린다.
+for (let i = 0; ; i++) {
+  try { await fetch(`http://localhost:${REST_PORT}/`); break; } catch {}
+  if (i > 100) throw new Error("PostgREST가 뜨지 않음");
+  await new Promise((r) => setTimeout(r, 100));
+}
+server.listen(API_PORT, "127.0.0.1", () => {
+  console.log(`local-supabase ready
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:${API_PORT}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}`);
+});

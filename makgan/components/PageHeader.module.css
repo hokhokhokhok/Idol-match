@@ -12,8 +12,10 @@
   transition: box-shadow 0.15s;
 }
 .header[data-scrolled="true"] { box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08); }
+.back { display: flex; padding: 6px; margin-left: -6px; color: var(--text); flex-shrink: 0; }
 .title {
   margin: 0;
+  flex: 1;
   font-size: 18px;
   font-weight: 700;
   min-width: 0;
