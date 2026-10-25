@@ -2,11 +2,12 @@ import { notFound } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import EntityForm from "@/components/admin/EntityForm";
 import CastForm from "@/components/admin/CastForm";
+import ZoneForm from "@/components/admin/ZoneForm";
 import DeleteButton from "@/components/admin/DeleteButton";
 import { requireAdmin } from "@/lib/admin";
 import { ADMIN_ENTITIES, isEntityKey, isoToKstLocal } from "@/lib/admin-entities";
-import { adminAddCast, adminDeleteCast, adminSave } from "@/lib/actions/admin";
-import { adminCasts, adminGet, adminOptionSets } from "@/lib/data/admin";
+import { adminAddCast, adminAddZone, adminDeleteCast, adminDeleteZone, adminSave } from "@/lib/actions/admin";
+import { adminCasts, adminGet, adminOptionSets, adminZones } from "@/lib/data/admin";
 import { isUuid } from "@/lib/data/shows";
 import { formatDay } from "@/lib/date";
 import { youTubeWatch } from "@/lib/youtube";
@@ -31,6 +32,7 @@ export default async function AdminEditPage({ params }: { params: Promise<{ enti
     }
   }
   const casts = key === "shows" && row ? await adminCasts(id) : [];
+  const zones = key === "theaters" && row ? await adminZones(id) : [];
 
   return (
     <>
@@ -61,6 +63,23 @@ export default async function AdminEditPage({ params }: { params: Promise<{ enti
               </ul>
             )}
             <CastForm action={adminAddCast.bind(null, id)} actors={options.actors} minDate={String(row.starts_on)} maxDate={String(row.ends_on)} />
+          </section>
+        )}
+        {key === "theaters" && row && (
+          <section className="section" aria-labelledby="zone-admin">
+            <h3 className="section-title" id="zone-admin">층 · 구역</h3>
+            <p className="form-hint">공식 좌석 배치도를 확인한 구역만 입력해 주세요. 구역이 없으면 사용자는 층과 구역 이름을 직접 적어요.</p>
+            {zones.length === 0 ? <p className="muted">등록된 구역이 없어요</p> : (
+              <ul className="admin-list">
+                {zones.map((z) => (
+                  <li key={z.id} className="admin-row">
+                    <span className="admin-row-main"><strong>{z.floor} · {z.name}</strong><span className="muted">정렬 {z.sort_order}</span></span>
+                    <DeleteButton action={adminDeleteZone.bind(null, z.id)} confirmText={`'${z.floor} ${z.name}' 구역을 삭제할까요? 이 구역의 좌석 후기는 구역 없이 남아요.`} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <ZoneForm action={adminAddZone.bind(null, id)} />
           </section>
         )}
       </main>

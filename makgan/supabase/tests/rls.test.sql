@@ -63,6 +63,7 @@ select pg_temp.expect_denied($$insert into public.reviews (user_id, show_id, wat
 select pg_temp.expect_denied($$insert into public.benefits (type, title) values ('event', 'x')$$, '관리자 아님: 혜택 등록 거부');
 select pg_temp.expect_denied($$insert into public.shows (title, starts_on, ends_on) values ('x', current_date, current_date)$$, '관리자 아님: 공연 등록 거부');
 select pg_temp.expect_denied($$insert into public.videos (youtube_id, title, actor_id) values ('AAAAAAAAAAA', 'x', '00000000-0000-4000-8000-000000000301')$$, '관리자 아님: 영상 등록 거부');
+select pg_temp.expect_denied($$insert into public.seat_zones (theater_id, floor, name) values ('00000000-0000-4000-8000-000000000101', '1층', 'x')$$, '관리자 아님: 구역 등록 거부');
 update public.shows set title = '해킹' where id = '00000000-0000-4000-8000-000000000201';
 select pg_temp.expect((select title from public.shows where id = '00000000-0000-4000-8000-000000000201') <> '해킹', '관리자 아님: 공연 수정 무시');
 insert into public.seat_reviews (theater_id, floor, zone_text, view_score, distance_score, sound_score)

@@ -44,3 +44,9 @@ insert into public.benefits (show_id, type, title, source_name, starts_at, ends_
 
 insert into public.glossary (term, meaning, example) values
   ('[샘플] 용어', '[샘플] 용어 사전 화면 확인용 항목입니다. 실제 뜻은 16단계에서 검수 후 등록합니다.', null);
+
+-- [샘플] 구역: 화면 확인용. 실제 극장 배치가 아니다.
+insert into public.seat_zones (theater_id, floor, name, sort_order) values
+  ('00000000-0000-4000-8000-000000000101', '1층', '[샘플] 가운데', 1),
+  ('00000000-0000-4000-8000-000000000101', '1층', '[샘플] 왼쪽', 2),
+  ('00000000-0000-4000-8000-000000000101', '2층', '[샘플] 앞쪽', 1);

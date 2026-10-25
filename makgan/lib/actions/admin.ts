@@ -65,3 +65,31 @@ export async function adminDeleteCast(castId: string): Promise<{ error?: string 
   revalidatePath("/", "layout");
   return {};
 }
+
+/** 극장 구역 추가(층 + 구역 이름 + 정렬 순서). 실제 배치는 관리자가 확인한 것만 입력. */
+export async function adminAddZone(theaterId: string, _: AdminFormState, form: FormData): Promise<AdminFormState> {
+  const admin = await adminClient();
+  if (!admin) return { error: DENIED };
+  const floor = String(form.get("floor") ?? "").trim();
+  const name = String(form.get("name") ?? "").trim();
+  const sort = Number(form.get("sort_order") || 0);
+  if (!isUuid(theaterId)) return { error: "잘못된 요청이에요" };
+  if (!floor || floor.length > 20) return { error: "층을 입력해 주세요(20자까지)", values: echo(form) };
+  if (!name || name.length > 50) return { error: "구역 이름을 입력해 주세요(50자까지)", values: echo(form) };
+  if (!Number.isInteger(sort) || sort < 0 || sort > 999) return { error: "정렬 순서는 0~999", values: echo(form) };
+
+  const { error } = await admin.supabase.from("seat_zones").insert({ theater_id: theaterId, floor, name, sort_order: sort });
+  if (error) return { error: error.code === "23505" ? "같은 층에 같은 이름의 구역이 있어요" : "저장하지 못했어요", values: echo(form) };
+  revalidatePath("/", "layout");
+  return { values: { floor } };
+}
+
+export async function adminDeleteZone(zoneId: string): Promise<{ error?: string }> {
+  const admin = await adminClient();
+  if (!admin) return { error: DENIED };
+  if (!isUuid(zoneId)) return { error: "잘못된 요청이에요" };
+  const { data, error } = await admin.supabase.from("seat_zones").delete().eq("id", zoneId).select("id");
+  if (error || !data?.length) return { error: "삭제하지 못했어요" };
+  revalidatePath("/", "layout");
+  return {};
+}

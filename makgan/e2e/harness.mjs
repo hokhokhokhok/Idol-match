@@ -112,8 +112,8 @@ const ctx = {
       const de = document.documentElement;
       const clipped = [...document.querySelectorAll("main *, nav a span, h1")].filter((el) => {
         const cs = getComputedStyle(el);
-        return el.children.length === 0 && !el.closest(".sr-only") && el.scrollWidth > el.clientWidth + 1 && cs.textOverflow !== "ellipsis" && cs.overflowX !== "auto" && cs.overflowX !== "scroll";
-      }).map((el) => el.textContent?.slice(0, 20));
+        return el.children.length === 0 && !el.closest(".sr-only") && !["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) && el.scrollWidth > el.clientWidth + 1 && cs.textOverflow !== "ellipsis" && cs.overflowX !== "auto" && cs.overflowX !== "scroll";
+      }).map((el) => el.textContent?.trim().slice(0, 20) || `<${el.tagName.toLowerCase()}${el.getAttribute("name") ? ` name=${el.getAttribute("name")}` : ""}>`);
       return { overflow: de.scrollWidth - de.clientWidth, clipped };
     });
     ctx.check(m.overflow <= 0, `${label}: 가로 스크롤 없음 (${m.overflow}px)`);

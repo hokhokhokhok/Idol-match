@@ -61,7 +61,7 @@ export default async function ShowPage({ params, searchParams }: { params: Promi
           <div className="show-hero-body">
             <span className={`status status-${status}`}>{STATUS_LABEL[status]}</span>
             <h2 className="show-title">{show.title}</h2>
-            {show.theater && <p className="show-meta">{show.theater.name}</p>}
+            {show.theater && <p className="show-meta"><Link href={`/theaters/${show.theater.id}`} className="theater-link">{show.theater.name}</Link></p>}
             <p className="show-meta">{formatPeriod(show.starts_on, show.ends_on)}</p>
             <WishButton showId={show.id} title={show.title} wished={wished.has(show.id)} />
             <p className="show-rating" data-testid="rating">
