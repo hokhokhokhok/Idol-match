@@ -35,7 +35,8 @@ const chunks = <T,>(xs: T[], n: number) => Array.from({ length: Math.ceil(xs.len
 function defaultFetchText(key: string) {
   return async (url: string) => {
     let last = "";
-    for (let attempt = 0; attempt < 3; attempt++) {
+    // KOPIS는 요청이 몰리면 간헐적으로 400/5xx를 준다 → 넉넉히 재시도(대기를 점점 늘려서)
+    for (let attempt = 0; attempt < 5; attempt++) {
       try {
         const res = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { accept: "application/xml" } });
         if (res.ok) return await res.text();
@@ -43,7 +44,7 @@ function defaultFetchText(key: string) {
       } catch (e) {
         last = (e as Error).name === "TimeoutError" ? "timeout" : "network";
       }
-      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1) ** 2));
     }
     throw new Error(`KOPIS ${last} (${new URL(url).pathname})`.replaceAll(key, "<key>"));
   };
@@ -67,7 +68,7 @@ export async function syncKopis(db: SupabaseClient, opts: SyncOptions): Promise<
   const now = opts.now ?? new Date();
   const fetchText = opts.fetchText ?? defaultFetchText(opts.key);
   const log = opts.log ?? (() => {});
-  const concurrency = opts.concurrency ?? 6;
+  const concurrency = opts.concurrency ?? 4;
   const staleBefore = now.getTime() - (opts.staleDays ?? 3) * 86400e3;
   const result: SyncResult = { listed: 0, created: 0, updated: 0, detailed: 0, theaters: 0, actors: 0, castsAdded: 0, castsRemoved: 0, pendingDetails: 0, partial: false, errors: [] };
   const fail = (msg: string) => { if (result.errors.length < 20) result.errors.push(msg.replaceAll(opts.key, "<key>")); };

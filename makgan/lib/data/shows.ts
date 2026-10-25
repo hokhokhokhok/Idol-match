@@ -18,7 +18,12 @@ export type ListShowsParams = {
   to?: string;
   sort?: ShowSort;
   cursor?: number;             // 다음 페이지 시작 위치
+  includeShort?: boolean;      // 1~3일 단기 공연도 포함(기본: 숨김, 극장·배우·기간으로 거를 땐 항상 포함)
 };
+
+/** 목록에서 1~3일 단기 공연을 숨기는 중인지(다른 조건으로 거르고 있으면 숨기지 않는다) */
+export const hidesShort = (p: ListShowsParams) => !p.includeShort && !p.theaterId && !p.actorId && !p.from && !p.to;
+export const SHORT_RUN_DAYS = 3;
 
 const SHOW_COLUMNS = "id, title, starts_on, ends_on, poster_url, theater:theaters(id, name)";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -43,6 +48,7 @@ export async function listShows(params: ListShowsParams = {}): Promise<{ items: 
   if (status === "upcoming") q = q.gt("starts_on", today);
   if (status === "ended") q = q.lt("ends_on", today);
   if (theaterId) q = q.eq("theater_id", theaterId);
+  if (hidesShort(params)) q = q.gt("run_days", SHORT_RUN_DAYS);
   if (from) q = q.gte("ends_on", from);
   if (to) q = q.lte("starts_on", to);
 

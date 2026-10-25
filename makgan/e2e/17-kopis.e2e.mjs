@@ -6,14 +6,14 @@ export default async function ({ BASE, SUPA, check, newPage, login, visible, lay
   check((await runCron("wrong", "import-shows")).status === 401, "가져오기 크론: 틀린 비밀값 401");
 
   const r1 = await runCron(undefined, "import-shows");
-  check(r1.status === 200 && r1.body.listed === 106 && r1.body.created === 106 && r1.body.detailed === 106 && r1.body.errors.length === 0, `첫 가져오기: 106편 (${JSON.stringify(r1.body)})`);
+  check(r1.status === 200 && r1.body.listed === 107 && r1.body.created === 107 && r1.body.detailed === 107 && r1.body.errors.length === 0, `첫 가져오기: 107편 (${JSON.stringify(r1.body)})`);
   check(r1.body.theaters === 2 && r1.body.actors === 4 && r1.body.castsAdded === 6, "극장 2·배우 4·출연 6");
   const log = await (await fetch(`${SUPA}/__mock/kopis-log`)).json();
   check(log.some((l) => l.path === "pblprfr" && l.shcate === "AAAA" && l.prfstate === "01" && l.cpage === "2"), "목록 2쪽까지 넘겨 가져옴(100개 초과)");
   check(JSON.stringify(log).includes("e2e-kopis-key") === false, "요청 기록에 키는 남지 않음");
 
-  check((await sql(`select count(*) from public.shows where external_id like 'kopis:%'`)) === "106", "공연 106개 저장");
-  check((await sql(`select count(*) from public.shows where poster_url like 'https://kopis.or.kr/%'`)) === "106", "포스터는 https 주소");
+  check((await sql(`select count(*) from public.shows where external_id like 'kopis:%'`)) === "107", "공연 107개 저장");
+  check((await sql(`select count(*) from public.shows where poster_url like 'https://kopis.or.kr/%'`)) === "107", "포스터는 https 주소");
   check((await sql(`select synopsis from public.shows where external_id = 'kopis:PF900001'`)) === "[테스트] 뮤지컬 알파의 줄거리입니다.", "소개: [공연소개] 머리말 제거");
   check((await sql(`select ticket_name || ' ' || ticket_url from public.shows where external_id = 'kopis:PF900001'`)) === "테스트예매처 https://tickets.example/booking?a=1&b=2", "예매 링크");
   check((await sql(`select seat_count || ' ' || (map_url like 'https://map.kakao.com/link/map/%')::text || ' ' || address from public.theaters where external_id = 'kopis:FC9001'`)) === "1000 true 서울특별시 테스트구 아트로 1", "극장: 좌석 수·지도 링크·주소(좌석 배치는 만들지 않음)");
@@ -29,7 +29,7 @@ export default async function ({ BASE, SUPA, check, newPage, login, visible, lay
     await sql(`select count(*) from public.casts c join public.shows s on s.id = c.show_id where s.external_id like 'kopis:%'`),
     await sql(`select count(*) from public.actors where name in ('배우가','배우나','배우다','배우라')`),
   ];
-  check(JSON.stringify(dup) === '["106","6","4"]', `공연·출연·배우 중복 없음 (${dup})`);
+  check(JSON.stringify(dup) === '["107","6","4"]', `공연·출연·배우 중복 없음 (${dup})`);
 
   // 관리자가 넣은 데이터는 그대로
   await sql(`insert into public.shows (title, starts_on, ends_on) values ('[샘플] 직접 등록 공연', current_date, current_date + 5)`);
@@ -52,6 +52,22 @@ export default async function ({ BASE, SUPA, check, newPage, login, visible, lay
   await page.locator(".show-card-title").first().waitFor();
   const titles = await page.locator(".show-card-title").allInnerTexts();
   check(titles.includes("[테스트] 뮤지컬 알파 (앙코르)") && titles.includes("[테스트] 연극 델타"), `공연 목록(공연 중)에 가져온 공연 (${titles.length}개)`);
+  // 1~3일 단기 공연은 기본 목록에서 숨기고, 같이 보기·극장 필터에서는 보인다
+  const shortTitle = "[테스트] 하루짜리 공연";
+  await page.goto(`${BASE}/shows?status=upcoming`);
+  await page.locator(".show-card-title").first().waitFor();
+  check(!(await page.locator(".show-card-title").allInnerTexts()).includes(shortTitle), "기본 목록: 1~3일 단기 공연 숨김");
+  check(await visible(page.getByText("3일 이하 단기 공연(지방 순회·단발 공연)은 숨겼어요")), "숨김 안내");
+  await page.getByRole("link", { name: "같이 보기" }).click();
+  await page.waitForURL(/short=1/);
+  await page.locator(".show-card-title", { hasText: shortTitle }).first().waitFor({ timeout: 10000 }).catch(() => {});
+  check((await page.locator(".show-card-title").allInnerTexts()).includes(shortTitle), "같이 보기: 단기 공연 표시");
+  check(await visible(page.getByText("단기 공연도 같이 보고 있어요")), "되돌리기 안내");
+  const theaterId = await sql(`select id from public.theaters where external_id = 'kopis:FC9001'`);
+  await page.goto(`${BASE}/shows?theater=${theaterId}&status=upcoming`);
+  await page.locator(".show-card-title").first().waitFor();
+  check((await page.locator(".show-card-title").allInnerTexts()).includes(shortTitle), "극장으로 거르면 단기 공연도 보임");
+  check(await page.getByText("단기 공연(지방 순회·단발 공연)은 숨겼어요").count() === 0, "극장 필터에선 숨김 안내 없음");
   const alphaId = await sql(SHOW("[테스트] 뮤지컬 알파 (앙코르)"));
   await page.goto(`${BASE}/shows/${alphaId}`);
   await page.locator(".show-title").waitFor();
@@ -75,7 +91,7 @@ export default async function ({ BASE, SUPA, check, newPage, login, visible, lay
   await admin.getByRole("button", { name: "KOPIS에서 지금 가져오기" }).click();
   await admin.getByTestId("kopis-result").waitFor({ timeout: 60000 });
   const text = await admin.getByTestId("kopis-result").innerText();
-  check(/목록 106편/.test(text) && /모두 최신이에요/.test(text), `관리자 버튼으로 가져오기 (${text.slice(0, 60)}…)`);
+  check(/목록 107편/.test(text) && /모두 최신이에요/.test(text), `관리자 버튼으로 가져오기 (${text.slice(0, 60)}…)`);
   await layout(admin, "관리자 홈(KOPIS)");
 
   const errors = [...page.errors, ...admin.errors].filter((e) => !/Failed to load resource|ytimg|kopis\.or\.kr/.test(e));

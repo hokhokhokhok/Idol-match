@@ -108,6 +108,7 @@ const kopisShows = [
   { id: "PF900001", name: "[테스트] 뮤지컬 알파", genre: "뮤지컬", state: "공연중", from: fmtDay(-10), to: fmtDay(60), fac: "FC9001", cast: "배우가(주인공), 배우나 등", ticket: true },
   { id: "PF900002", name: "[테스트] 뮤지컬 베타 & 감마", genre: "뮤지컬", state: "공연예정", from: fmtDay(20), to: fmtDay(80), fac: "FC9001", cast: "배우나, 배우다", ticket: false },
   { id: "PF900003", name: "[테스트] 연극 델타", genre: "연극", state: "공연중", from: fmtDay(-3), to: fmtDay(30), fac: "FC9002", cast: "배우다, 배우라", ticket: false },
+  { id: "PF900004", name: "[테스트] 하루짜리 공연", genre: "뮤지컬", state: "공연예정", from: fmtDay(3), to: fmtDay(3), fac: "FC9001", cast: "", ticket: false },
   // 연극·공연예정 103편 → 100개씩 2쪽(페이지 넘김 확인)
   ...Array.from({ length: 103 }, (_, i) => ({ id: `PF9100${String(i + 1).padStart(2, "0")}`, name: `[테스트] 연극 ${i + 1}`, genre: "연극", state: "공연예정", from: fmtDay(5), to: fmtDay(40), fac: "FC9002", cast: "", ticket: false })),
 ];

@@ -12,6 +12,7 @@ export function parseShowParams(q: Query): ListShowsParams {
   const from = one(q.from);
   const to = one(q.to);
   return {
+    includeShort: one(q.short) === "1",
     status: SHOW_STATUSES.includes(status as ShowStatusFilter) ? (status as ShowStatusFilter) : "current",
     sort: SHOW_SORTS.includes(sort as ShowSort) ? (sort as ShowSort) : "ending",
     theaterId: isUuid(theater) ? theater : undefined,

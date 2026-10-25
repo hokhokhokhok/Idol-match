@@ -11,6 +11,6 @@ if (!key || !url || !service) {
 }
 const db = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
 const started = Date.now();
-const r = await syncKopis(db, { key, baseUrl: process.env.KOPIS_BASE_URL || undefined, log: (m) => console.log(`[${Math.round((Date.now() - started) / 1000)}s] ${m}`) });
+const r = await syncKopis(db, { key, baseUrl: process.env.KOPIS_BASE_URL || undefined, concurrency: Number(process.env.KOPIS_CONCURRENCY) || undefined, log: (m) => console.log(`[${Math.round((Date.now() - started) / 1000)}s] ${m}`) });
 console.log(JSON.stringify(r, null, 2));
 process.exit(r.errors.length && !r.created && !r.updated ? 1 : 0);

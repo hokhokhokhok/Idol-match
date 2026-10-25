@@ -2,7 +2,7 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
-import { listShows, listTheaterOptions } from "@/lib/data/shows";
+import { hidesShort, listShows, listTheaterOptions, SHORT_RUN_DAYS } from "@/lib/data/shows";
 import { parseShowParams } from "@/lib/show-params";
 import { myWishlistIds } from "@/lib/data/wishlist";
 import ShowList from "./ShowList";
@@ -32,6 +32,7 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
   if (params.actorId) query.actor = params.actorId;
   if (params.from) query.from = params.from;
   if (params.to) query.to = params.to;
+  if (params.includeShort) query.short = "1";
   const href = (patch: Record<string, string | undefined>) => {
     const q = new URLSearchParams({ ...query });
     for (const [k, v] of Object.entries(patch)) v === undefined ? q.delete(k) : q.set(k, v);
@@ -86,6 +87,11 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
           </BottomSheet>
           <Link href="/theaters" className="btn filter-btn">극장 보기</Link>
         </div>
+        {hidesShort(params) ? (
+          <p className="filter-note">{SHORT_RUN_DAYS}일 이하 단기 공연(지방 순회·단발 공연)은 숨겼어요 <Link href={href({ short: "1" })}>같이 보기</Link></p>
+        ) : params.includeShort && !filtered ? (
+          <p className="filter-note">단기 공연도 같이 보고 있어요 <Link href={href({ short: undefined })}>숨기기</Link></p>
+        ) : null}
         {filtered && (
           <p className="filter-note">
             조건이 적용된 목록이에요 <Link href={href({ theater: undefined, actor: undefined, from: undefined, to: undefined })}>조건 지우기</Link>
