@@ -19,7 +19,7 @@ export type TimeBand = (typeof TIME_BANDS)[number]["id"];
 
 /** 주소에서 동네를 찾는다: "…(화곡동 340-7)" → "화곡". 못 찾으면 null */
 export function areaOf(address: string | null): Area | null {
-  const m = address?.match(/(마곡|화곡|내발산|외발산|가양)동/);
+  const m = address?.match(/(마곡|화곡|내발산|외발산|가양|등촌|방화)동/);
   if (!m) return null;
   return m[1].endsWith("발산") ? "발산" : (m[1] as Area);
 }

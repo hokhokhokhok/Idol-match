@@ -7,7 +7,7 @@ export type Category = (typeof CATEGORIES)[number];
 export const GRADES = ["초저", "초고", "중등"] as const;
 
 /** 동네. 주소의 법정동으로 정한다 (내발산동·외발산동은 발산). */
-export const AREAS = ["마곡", "화곡", "발산", "가양"] as const;
+export const AREAS = ["마곡", "화곡", "발산", "가양", "등촌", "방화"] as const;
 export type Area = (typeof AREAS)[number];
 export type Grade = (typeof GRADES)[number];
 

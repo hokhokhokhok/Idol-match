@@ -51,7 +51,7 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
         <header className="flex items-center justify-between gap-2 px-4 pt-3">
           <div className="min-w-0">
             <h1 className="text-lg font-bold">마곡 뮤지컬 학원 찾기</h1>
-            <p className="text-xs text-sub">마곡·화곡·발산·가양 · 초·중등 노래·춤·연기</p>
+            <p className="text-xs text-sub">강서구 마곡·화곡·발산·가양·등촌·방화 · 초·중등 노래·춤·연기</p>
           </div>
           <div role="group" aria-label="보기 방식" className="flex shrink-0 rounded-full bg-surface p-0.5 text-sm">
             {(["list", "map"] as const).map((v) => (

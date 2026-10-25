@@ -58,6 +58,8 @@ test("주소 → 동네", () => {
   assert.equal(areaOf("서울 강서구 수명로 72 (내발산동 750-6)"), "발산");
   assert.equal(areaOf("서울 강서구 외발산동 1"), "발산");
   assert.equal(areaOf("서울 강서구 마곡동 000-0"), "마곡");
+  assert.equal(areaOf("서울 강서구 강서로54길 102 (등촌동 668-5)"), "등촌");
+  assert.equal(areaOf("서울 강서구 양천로 104 (방화동 281-2)"), "방화");
   assert.equal(areaOf("서울 강서구 염창동 1"), null);
   assert.equal(areaOf(null), null);
 });
