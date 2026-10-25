@@ -359,3 +359,7 @@ a.badge { text-decoration: none; }
 
 .ticket-link { align-self: flex-start; margin-top: 4px; border-color: var(--burgundy); color: var(--burgundy); }
 .source-note { margin: 32px 0 0; font-size: 12px; color: var(--text-sub); }
+.vcard-note { font-size: 12px; font-weight: 700; color: var(--burgundy); }
+.admin-search { margin-bottom: 12px; }
+.admin-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--burgundy-soft); font-size: 13px; }
+.admin-bar a { color: var(--burgundy); font-weight: 600; }

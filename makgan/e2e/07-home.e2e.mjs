@@ -28,6 +28,32 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   check(await visible(section("today-title").getByRole("link", { name: "전체 혜택 보기" })), "빈 화면 버튼: 전체 혜택 보기");
   await sql(`update public.benefits set ends_at = ends_at - interval '2 days' where title = '[샘플] 오늘 마감 로터리'`);
 
+  // 오늘 막공·곧 개막: KOPIS로 가져온 실제 공연에서 채워진다(하루짜리 단기 공연과 먼 개막은 제외)
+  const KST = `(now() at time zone 'Asia/Seoul')::date`;
+  await sql(`insert into public.shows (title, starts_on, ends_on) values
+    ('[샘플] 오늘 막공 공연', ${KST} - 20, ${KST}),
+    ('[샘플] 오늘 하루 공연', ${KST}, ${KST}),
+    ('[샘플] 곧 개막 공연', ${KST} + 5, ${KST} + 60),
+    ('[샘플] 먼 개막 공연', ${KST} + 30, ${KST} + 90)`);
+  await page.reload();
+  const endingCards = await section("today-title").locator(".show-card-title").allInnerTexts();
+  check(endingCards.length === 1 && endingCards[0] === "[샘플] 오늘 막공 공연", `오늘 마감: 오늘 막공 공연만, 하루짜리는 제외 (${endingCards.join(", ")})`);
+  check(await visible(section("today-title").getByText("오늘 막공 · 마지막 공연이에요")), "오늘 막공 표시");
+  check((await section("today-title").locator(".benefit-title").allInnerTexts()).join() === "[샘플] 오늘 마감 로터리", "혜택과 막공이 같이 보임");
+  const soon = await section("soon-title").locator(".vcard-title").allInnerTexts();
+  check(soon.length === 1 && soon[0] === "[샘플] 곧 개막 공연", `곧 개막: 2주 안 개막만 (${soon.join(", ")})`);
+  check(/^D-5 · \d{2}\.\d{2}\(.\) 개막$/.test(await section("soon-title").locator(".vcard-note").innerText()), "개막 D-day 표기");
+  await layout(page, "홈(오늘 막공·곧 개막)");
+  await shot(page, "360-home-filled");
+  await section("soon-title").getByRole("link", { name: "전체 보기" }).click();
+  await page.waitForURL(/status=upcoming&sort=opening/);
+  await page.locator(".show-card-title").first().waitFor();
+  check((await page.locator(".show-card-title").first().innerText()) === "[샘플] 곧 개막 공연", "개막 임박순 정렬(전체 보기)");
+  await page.goto(`${BASE}/`);
+  await sql(`delete from public.shows where title in ('[샘플] 오늘 막공 공연', '[샘플] 오늘 하루 공연', '[샘플] 곧 개막 공연', '[샘플] 먼 개막 공연')`);
+  await page.reload();
+  check(await section("soon-title").count() === 0, "곧 개막할 공연이 없으면 구역을 숨김");
+
   await login(page, "home@example.com", "홈사용자");
   await page.goto(`${BASE}/`);
   check(await visible(section("wish-title").getByText("아직 찜한 공연이 없어요")), "로그인, 찜 없음: 빈 화면");

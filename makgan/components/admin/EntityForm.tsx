@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import type { AdminFormState } from "@/lib/actions/admin";
 import type { Field } from "@/lib/admin-entities";
+import Combobox from "@/components/Combobox";
 
 type Option = { value: string; label: string };
 
@@ -28,6 +29,8 @@ export default function EntityForm({
             <span>{f.label}{f.required && " *"}</span>
             {f.type === "textarea" ? (
               <textarea name={f.name} rows={4} maxLength={f.max} defaultValue={v[f.name] ?? ""} required={f.required} />
+            ) : f.type === "select" && typeof f.options === "string" ? (
+              <Combobox name={f.name} options={options} defaultValue={v[f.name]} required={f.required} placeholder={`${f.label.replace(/\(선택\)/, "").trim()} 이름을 입력해서 찾기${f.required ? "" : " (비워 둘 수 있어요)"}`} />
             ) : f.type === "select" ? (
               <select name={f.name} defaultValue={v[f.name] ?? ""} required={f.required}>
                 <option value="">{f.required ? "골라 주세요" : "없음"}</option>

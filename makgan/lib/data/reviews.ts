@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getUser } from "@/lib/auth";
 import { DataError, isUuid } from "./shows";
+import { fetchAll } from "./paging";
 
 export type Review = {
   id: string;
@@ -56,20 +57,19 @@ export async function getMyReview(id: string): Promise<Review | null> {
   return data as Review | null;
 }
 
-/** 후기 폼의 공연 선택지 */
+/** 후기 폼의 공연 선택지(전체) */
 export async function listShowOptions() {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
-  const { data } = await supabase.from("shows").select("id, title, starts_on, theater_id").order("title").limit(1000);
-  return (data ?? []) as { id: string; title: string; starts_on: string; theater_id: string | null }[];
+  return fetchAll<{ id: string; title: string; starts_on: string; ends_on: string; theater_id: string | null }>((from, to) =>
+    supabase.from("shows").select("id, title, starts_on, ends_on, theater_id").order("title").order("id").range(from, to));
 }
 
 /** 후기 폼 배우 자동완성 */
 export async function listActorOptions() {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
-  const { data } = await supabase.from("actors").select("id, name").order("name").limit(2000);
-  return data ?? [];
+  return fetchAll<{ id: string; name: string }>((from, to) => supabase.from("actors").select("id, name").order("name").order("id").range(from, to));
 }
 
 /** 내 후기의 그날 캐스트(수정 화면) */

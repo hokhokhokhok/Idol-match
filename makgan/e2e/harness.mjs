@@ -115,6 +115,13 @@ const ctx = {
   },
   /** 진행 중인 토글(찜·팔로우) 저장이 모두 끝날 때까지 */
   settled: (page) => page.waitForFunction(() => !document.querySelector("[data-pending]"), null, { timeout: 10000 }),
+  /** 검색 입력칸(Combobox)에서 이름에 text가 들어간 항목을 고른다(datalist 선택은 자동화가 안 되어 값을 직접 채움) */
+  async pick(page, name, text) {
+    const value = await page.locator(`datalist[data-combo-list="${name}"] option`).evaluateAll((os, t) => os.map((o) => o.value).find((v) => v.includes(t)), text);
+    if (!value) throw new Error(`선택지에 '${text}' 없음 (${name})`);
+    await page.locator(`input[data-combo="${name}"]`).fill(value);
+    return value;
+  },
   /** 개수가 n이 될 때까지 잠깐 기다린 뒤 실제 개수(로딩 화면을 거치는 이동 대비) */
   async count(locator, n, timeout = 5000) {
     const end = Date.now() + timeout;

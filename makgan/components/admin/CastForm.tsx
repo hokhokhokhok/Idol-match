@@ -1,10 +1,11 @@
 "use client";
 import { useActionState } from "react";
 import type { AdminFormState } from "@/lib/actions/admin";
+import Combobox, { type Option } from "@/components/Combobox";
 
 export default function CastForm({ action, actors, minDate, maxDate }: {
   action: (s: AdminFormState, f: FormData) => Promise<AdminFormState>;
-  actors: { id: string; name: string }[];
+  actors: Option[];
   minDate: string;
   maxDate: string;
 }) {
@@ -15,10 +16,7 @@ export default function CastForm({ action, actors, minDate, maxDate }: {
       <div className="field-row">
         <label className="field">
           <span>배우</span>
-          <select name="actor_id" required defaultValue={v.actor_id ?? ""}>
-            <option value="">골라 주세요</option>
-            {actors.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
+          <Combobox name="actor_id" options={actors} defaultValue={v.actor_id} required placeholder="배우 이름 검색" />
         </label>
         <label className="field">
           <span>배역</span>

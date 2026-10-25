@@ -13,7 +13,7 @@ import { isUuid } from "@/lib/data/shows";
 import { formatDay } from "@/lib/date";
 import { youTubeWatch } from "@/lib/youtube";
 
-export default async function AdminEditPage({ params }: { params: Promise<{ entity: string; id: string }> }) {
+export default async function AdminEditPage({ params, searchParams }: { params: Promise<{ entity: string; id: string }>; searchParams: Promise<{ show?: string; type?: string }> }) {
   await requireAdmin();
   const { entity: key, id } = await params;
   if (!isEntityKey(key)) notFound();
@@ -32,6 +32,12 @@ export default async function AdminEditPage({ params }: { params: Promise<{ enti
       initial[f.name] = v == null ? "" : f.type === "datetime" ? isoToKstLocal(String(v)) : f.type === "youtube" ? youTubeWatch(String(v)) : String(v);
     }
   }
+  // 새 혜택/영상을 공연 화면에서 넘어와 만들 때: 공연과 종류를 미리 채운다(?show=…&type=lottery)
+  if (isNew && (key === "benefits" || key === "videos")) {
+    const sp = await searchParams;
+    if (isUuid(sp.show) && options.shows.some((o) => o.value === sp.show)) initial.show_id = sp.show!;
+    if (key === "benefits" && ["lottery", "discount", "ticket_open", "event"].includes(sp.type ?? "")) initial.type = sp.type!;
+  }
   const casts = key === "shows" && row ? await adminCasts(id) : [];
   const zones = key === "theaters" && row ? await adminZones(id) : [];
 
@@ -45,7 +51,7 @@ export default async function AdminEditPage({ params }: { params: Promise<{ enti
           action={adminSave.bind(null, key)}
           fields={entity.fields}
           initial={initial}
-          optionSets={{ theaters: options.theaters, shows: options.shows, actors: options.actorOptions }}
+          optionSets={{ theaters: options.theaters, shows: options.shows, actors: options.actors }}
           submitLabel={isNew ? "추가" : "저장"}
         />
 

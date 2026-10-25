@@ -55,3 +55,16 @@ test("티켓오픈 표기", async () => {
   assert.equal(formatOpen("2026-11-05T11:00:00Z", now), "11.05(목) 20:00 오픈");
   assert.equal(formatOpen("2026-11-03T00:00:00Z", now), "오픈됨");
 });
+
+test("며칠 뒤·개막 표기", async () => {
+  const { daysUntil, formatOpening } = await import("./date.ts");
+  assert.equal(daysUntil("2026-11-03", now), 0);
+  assert.equal(daysUntil("2026-11-04", now), 1);
+  assert.equal(daysUntil("2026-11-02", now), -1);
+  assert.equal(daysUntil("2026-12-03", now), 30);
+  assert.equal(daysUntil("2026-11-04", new Date("2026-11-03T14:59:00Z")), 1); // KST 23:59 → 아직 11-03
+  assert.equal(daysUntil("2026-11-04", new Date("2026-11-03T15:00:00Z")), 0); // KST 11-04 00:00
+  assert.equal(formatOpening("2026-11-03", now), "오늘 개막");
+  assert.equal(formatOpening("2026-11-04", now), "내일 개막");
+  assert.equal(formatOpening("2026-11-08", now), "D-5 · 11.08(일) 개막");
+});

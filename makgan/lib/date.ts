@@ -85,3 +85,17 @@ export function formatOpen(startsAt: DateInput, now: DateInput = new Date()) {
   if (days === 1) return `내일 ${time} 오픈`;
   return `${pad(w.getUTCMonth() + 1)}.${pad(w.getUTCDate())}(${WEEKDAYS[w.getUTCDay()]}) ${time} 오픈`;
 }
+
+/** KST 오늘 기준 며칠 뒤인지('YYYY-MM-DD'): 오늘 0, 내일 1, 어제 -1 */
+export function daysUntil(day: string, now: DateInput = new Date()) {
+  const [y, m, d] = day.split("-").map(Number);
+  return Math.round(Date.UTC(y, m - 1, d) / DAY_MS) - kstDayNumber(now);
+}
+
+/** 개막 표기: "오늘 개막" / "내일 개막" / "D-5 · 11.05(목) 개막" */
+export function formatOpening(startsOn: string, now: DateInput = new Date()) {
+  const n = daysUntil(startsOn, now);
+  if (n <= 0) return "오늘 개막";
+  if (n === 1) return "내일 개막";
+  return `D-${n} · ${formatDay(startsOn)} 개막`;
+}

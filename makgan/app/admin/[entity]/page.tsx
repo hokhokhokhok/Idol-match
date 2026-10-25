@@ -6,15 +6,19 @@ import DeleteButton from "@/components/admin/DeleteButton";
 import { requireAdmin } from "@/lib/admin";
 import { ADMIN_ENTITIES, isEntityKey } from "@/lib/admin-entities";
 import { adminDelete } from "@/lib/actions/admin";
-import { adminList } from "@/lib/data/admin";
+import { ADMIN_PAGE, adminList } from "@/lib/data/admin";
 import { formatDeadline, formatPeriod } from "@/lib/date";
 
-export default async function AdminListPage({ params }: { params: Promise<{ entity: string }> }) {
+export default async function AdminListPage({ params, searchParams }: { params: Promise<{ entity: string }>; searchParams: Promise<{ q?: string; limit?: string }> }) {
   await requireAdmin();
   const { entity: key } = await params;
   if (!isEntityKey(key)) notFound();
   const entity = ADMIN_ENTITIES[key];
-  const rows = await adminList(entity);
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim().slice(0, 50);
+  const limit = Math.min(Math.max(Number(sp.limit) || ADMIN_PAGE, ADMIN_PAGE), 2000);
+  const { rows, hasMore } = await adminList(entity, { q, limit });
+  const more = `/admin/${key}?${new URLSearchParams({ ...(q ? { q } : {}), limit: String(limit + ADMIN_PAGE) })}`;
 
   const sub = (r: Record<string, unknown>) => {
     if (key === "shows") return formatPeriod(String(r.starts_on), String(r.ends_on));
@@ -29,8 +33,12 @@ export default async function AdminListPage({ params }: { params: Promise<{ enti
     <>
       <PageHeader title={`${entity.label} 관리`} back="/admin" action={<Link href={`/admin/${key}/new`} className="btn btn-small btn-primary">+ 새로</Link>} />
       <main className="page-body">
+        <form role="search" className="search-form admin-search" action={`/admin/${key}`}>
+          <input type="search" name="q" defaultValue={q} maxLength={50} placeholder={`${entity.label} 이름 검색`} aria-label={`${entity.label} 검색`} />
+          <button className="btn">찾기</button>
+        </form>
         {rows.length === 0 ? (
-          <EmptyState icon="🗂️" message={`등록된 ${entity.label}이(가) 없어요`} action={{ label: "새로 만들기", href: `/admin/${key}/new` }} />
+          q ? <p className="muted">'{q}'에 맞는 {entity.label}이(가) 없어요</p> : <EmptyState icon="🗂️" message={`등록된 ${entity.label}이(가) 없어요`} action={{ label: "새로 만들기", href: `/admin/${key}/new` }} />
         ) : (
           <ul className="admin-list">
             {rows.map((r) => {
@@ -47,6 +55,7 @@ export default async function AdminListPage({ params }: { params: Promise<{ enti
             })}
           </ul>
         )}
+        {hasMore && <Link href={more} className="btn btn-block more-btn" scroll={false}>더 보기</Link>}
       </main>
     </>
   );

@@ -18,6 +18,7 @@ const STATUS_TABS = [
 ] as const;
 const SORTS = [
   { value: "ending", label: "마감 임박순" },
+  { value: "opening", label: "개막 임박순" },
   { value: "newest", label: "최신 개막순" },
   { value: "title", label: "가나다순" },
 ] as const;
