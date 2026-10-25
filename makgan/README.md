@@ -10,19 +10,25 @@
 | 단계 | 내용 | 상태 |
 |---|---|---|
 | 1 | 뼈대: Next.js·Supabase 연결, 스키마·RLS, [샘플] 시드, 5탭, KST 날짜 유틸 | ✅ |
-| 2~9 | 로그인 → 공연 → 배우 → 혜택 → 찜 → 홈 → 후기 → 관리자·검색 | 예정 |
+| 2 | 매직링크 로그인, 첫 로그인 닉네임, 로그인 필요 안내, 로그아웃 | ✅ |
+| 3~9 | 공연 → 배우 → 혜택 → 찜 → 홈 → 후기 → 관리자·검색 | 예정 |
 
 ## 폴더
 ```
 app/                     화면(5탭: / · /shows · /benefits · /actors · /me, 검색 /search)
-components/              TabBar, PageHeader, Placeholder(구현 전 자리)
+app/login, app/onboarding, app/auth/confirm   매직링크 로그인 · 닉네임 · 링크 도착 지점
+components/              TabBar, PageHeader, EmptyState, LoginRequired, Placeholder(구현 전 자리)
+lib/auth.ts              getUser · getProfile · requireProfile · safeNext
+lib/actions/             서버 액션
 lib/date.ts              KST 날짜·마감 표기("오늘 18:00 마감" 등)
-lib/supabase/            브라우저/서버 클라이언트, 환경 변수 확인
+lib/supabase/            브라우저/서버 클라이언트, proxy 세션 갱신, 환경 변수 확인
+proxy.ts                 요청마다 로그인 세션 쿠키 갱신(Next 16의 middleware)
 supabase/migrations/     스키마 + RLS
 supabase/seed.sql        [샘플] 데이터(실제 극장·공연·배우 아님)
 supabase/tests/          로컬 auth 흉내(auth_stub.sql), RLS 테스트
 scripts/test-db.sh       빈 Postgres에 마이그레이션·시드·RLS 테스트 적용
-scripts/e2e.mjs          5탭 이동·360px 레이아웃 검사 + 스크린샷
+scripts/local-supabase.mjs  로컬 Supabase 대역(Postgres + PostgREST + 매직링크 가짜 Auth)
+e2e/                     E2E(harness.mjs가 로컬 Supabase 대역 + next start로 실행) + 스크린샷
 ```
 
 ## 개발
@@ -32,17 +38,33 @@ npm install
 cp .env.example .env.local   # Supabase 값 입력 (없어도 뼈대 화면은 뜸)
 npm run dev                  # http://localhost:3000
 
-npm test                     # 날짜 유틸 단위 테스트
+npm test                     # 단위 테스트
 npm run typecheck
 npm run test:db              # 로컬 Postgres(또는 DATABASE_URL)에 스키마·RLS 테스트
-npm run build && npm run test:e2e
+npm run test:e2e             # 로컬 Supabase 대역으로 빌드 후 브라우저 테스트 (-- auth 처럼 일부만)
 ```
+
+### Supabase 계정 없이 전체 기능 띄우기
+PostgreSQL(16+)이 설치된 Linux/macOS에서:
+```bash
+npm run local:supabase       # 터미널 1: 빈 DB + [샘플] 시드. 출력된 두 줄을 .env.local에 붙여 넣기
+npm run dev                  # 터미널 2
+```
+로그인 메일은 실제로 가지 않고 터미널 1에 `📧 매직링크 …`로 찍힙니다. 끌 때마다 DB는 사라집니다.
 
 ## Supabase 연결
 1. [supabase.com](https://supabase.com)에서 프로젝트 생성
 2. SQL Editor에서 `supabase/migrations/0001_init.sql` 실행 (화면 확인용 데이터가 필요하면 `supabase/seed.sql`도)
 3. Project Settings → API의 URL·anon key를 `.env.local`에 입력
-4. Authentication → Providers에서 Email 사용, Authentication → URL Configuration에 배포 주소 추가(매직링크 로그인은 2단계)
+4. Authentication → Sign In / Providers에서 Email 사용
+5. Authentication → URL Configuration의 Site URL을 배포 주소로(로컬은 `http://localhost:3000`)
+6. Authentication → Emails → **Magic Link** 템플릿의 링크를 아래로 바꾸기
+   (메일 앱 내장 브라우저에서 열어도 로그인되도록 token_hash 방식을 씁니다)
+   ```html
+   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">막간 로그인</a>
+   ```
+   새 사용자의 첫 메일은 **Confirm signup** 템플릿으로 가므로, 그쪽 링크도 같은 주소로 바꿉니다.
+7. 배포 환경 변수에 `NEXT_PUBLIC_SITE_URL`(배포 주소)도 넣기
 
 > `supabase/tests/auth_stub.sql`은 로컬 테스트 전용입니다. 실제 Supabase에는 실행하지 마세요.
 

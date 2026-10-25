@@ -9,18 +9,10 @@ permissions:
   contents: read
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: makgan
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,7 +23,15 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # 러너에 설치된 PostgreSQL 16으로 임시 클러스터를 띄워 스키마·RLS 테스트
       - run: npm run test:db
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      # Supabase 값 없이도 빌드되는지
       - run: npm run build
+      # 로컬 Supabase 대역(Postgres + PostgREST + 가짜 Auth)으로 E2E
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: makgan-screenshots
+          path: makgan/screenshots
