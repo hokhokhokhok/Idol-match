@@ -1,11 +1,24 @@
 id,academy_id,role,name_public,subjects,profile_source_url,disclosure_basis,collected_at
-R001,M019,원장,원장 (이름 미공개),댄스,https://learns.academy/academies/R3FVVWNHGQ,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
-R002,M015,원장,이란진 원장,댄스,https://lady.khan.co.kr/travel/article/202407041059001,언론 기사(레이디경향 2024.07)에 실명·경력 소개 — 기사 원문은 작업 환경에서 열 수 없어 검색 결과의 인용문으로 확인,2026-10-25
+R001,M019,원장,양사랑 원장 (coco),댄스;K-POP;스트릿댄스,https://blog.naver.com/coco_dance/223846987544,학원 공식 블로그에 원장 프로필 공개(2025.04),2026-10-25
+R002,M015,원장,이란진 원장,댄스;방송댄스,https://blog.naver.com/lovelanjin/220642158821,학원 공식 블로그에 원장 본인이 프로필 공개,2026-10-25
 R003,M022,원장,원장진 (이름 미공개),발레,https://learns.academy/academies/27SF3E61H7,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
-R004,M025,원장,원장 (이름 미공개),발레,https://learns.academy/academies/HSQSEB1HSL,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
+R004,M025,원장,최서윤 대표원장,발레,https://blog.naver.com/balletvely/222157047739,"학원 공식 블로그에 대표원장 이름 공개, 경력은 런즈 학원 소개",2026-10-25
 R005,M032,원장,원장 (이름 미공개),발레,https://learns.academy/academies/VBA7MP8CBV,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
-R006,M036,원장,원장 (이름 미공개),성악;뮤지컬 보컬,https://learns.academy/academies/BYJHQLLZTI,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
-R007,M037,원장,원장 (이름 미공개),실용음악,https://learns.academy/academies/WP6AN8IQ5M,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
-R008,M012,원장,원장 (이름 미공개),연기,https://learns.academy/academies/W6B2DGKHME,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
-R009,M009,원장,원장 (이름 미공개),뮤지컬;댄스,https://learns.academy/academies/UNALJIVMZP,학원 소개(런즈 학원 페이지)에 학원이 원장 경력 공개,2026-10-25
-R010,M008,원장,"MUL (대표, 활동명)",댄스,https://www.mulacademy.com/music/instructors,학원 공식 사이트 강사진 페이지에 대표로 표기(활동명만 공개),2026-10-25
+R006,M036,원장,"원장 (이름 미공개, 테너)",성악;뮤지컬 보컬,https://blog.naver.com/snuvocalacademy/221356945426,학원 공식 블로그에 원장 프로필 공개(2018.09),2026-10-25
+R007,M037,원장,김규남 원장,실용음악,https://blog.naver.com/woollimacademy/222457031294,"학원 공식 블로그 원장 인사(2021.08)에 이름 공개, 경력은 런즈 학원 소개",2026-10-25
+R008,M012,원장,안민호 원장,연기;연극영화과 입시,https://blog.naver.com/actingsoul2020/224121547318,학원 공식 블로그에 원장 본인이 이름·학력 공개(2025.12),2026-10-25
+R009,M009,원장,원장 (이름 미공개),뮤지컬;댄스,https://learns.academy/academies/UNALJIVMZP,학원 소개(런즈 학원 페이지)에 학원 이력 공개,2026-10-25
+R010,M008,원장,MUL 원장 (활동명),댄스;걸리쉬;텃팅,https://blog.naver.com/kart_academy/224231877400,"학원 공식 블로그에 원장 프로필 공개(2026.03, 활동명만 공개)",2026-10-25
+R011,M003,원장,남예림 원장,한국무용;발레,https://blog.naver.com/queenny1314/221176517648,학원 공식 블로그에 원장 프로필 공개,2026-10-25
+R012,M013,원장,손영희 대표,연기,https://blog.naver.com/imago-ent/224350260113,학원 공식 블로그에 원장 프로필 공개(2026.07),2026-10-25
+R013,M023,원장,김태경 원장,발레,https://blog.naver.com/balletria07/221477072157,"학원 공식 블로그(2019, 이전 목동 소재 시절 글 — 현재와 같은 전화번호)에 원장 프로필 공개",2026-10-25
+R014,M027,원장,김계용 대표,기타;실용음악,https://blog.naver.com/likemusicfam/221150963488,"학원 공식 블로그에 원장 프로필 공개(2017, 음반 경력은 이후 갱신)",2026-10-25
+R015,M029,원장,도명구 대표 (KTC KOREA),보컬,https://blog.naver.com/ktc_korea/224268473127,학원 공식 블로그에 원장 프로필 공개(2026.04),2026-10-25
+R017,M028,원장,도명구 대표 (KTC KOREA),보컬,https://blog.naver.com/ktcmusicdance/224356559187,같은 KTC KOREA 공식 블로그 운영진 소개(대표 도명구),2026-10-25
+R016,M029,원장,김보경 원장,오디션·입시 디렉팅,https://blog.naver.com/ktc_korea/224268473127,학원 공식 블로그에 원장 프로필 공개(2026.04),2026-10-25
+R018,M035,원장,최창화 원장,기타;실용음악,https://blog.naver.com/gogofunk/20154988202,학원 공식 블로그에 원장 프로필 공개(2012),2026-10-25
+R019,M038,원장,고현주 대표,힙합;K-POP 방송댄스,https://blog.naver.com/sesame0809/224120066142,학원 공식 블로그에 원장 프로필 공개(2025~2026),2026-10-25
+R020,M034,원장,원수영 원장,보컬;성악;피아노,https://blog.naver.com/kaylawon78/221333764119,학원 공식 블로그 글 제목에 원장 이름 공개(2018) — 경력은 미공개,2026-10-25
+R021,M024,원장,원장진 (이름 미공개),발레,https://blog.naver.com/leanon2023/223631551406,학원 공식 블로그에 원장 경력 일부 공개,2026-10-25
+R022,M040,원장,원장 (이름 미공개),발레,https://blog.naver.com/ballet_de_lumiere/223528143087,학원 공식 블로그에 원장 경력 일부 공개,2026-10-25
+R023,M039,강사,엄소연 (소연아이 대표),뮤지컬;뮤지컬 보컬,https://blog.naver.com/kidmusical/221506113213,사차원아카데미가 함께 쓰는 '소연아이' 공식 블로그에 강사 소개 공개(2019) — 사차원아카데미 원장 여부는 미확인,2026-10-25

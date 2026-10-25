@@ -1,18 +1,57 @@
 id,person_id,type,title,organization,year_from,year_to,source_url,source_type,collected_at,verified
-RC001,R001,education,백제예술대학교 실용댄스과 수석 졸업,백제예술대학교,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
-RC002,R001,award,NBC 'World of Dance' 시즌3 BEST 4 진출,NBC,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
-RC003,R001,award,한류 힙합문화대상 서울시장상 특별대상,,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
-RC004,R001,award,전국무용 한국문화예술총연합회 장관상,,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
-RC005,R001,stage,"방송 출연: tvN '유 퀴즈 온 더 블럭', SBS '동상이몽2'·'모닝와이드', 뮤직비디오 등",,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
-RC006,R001,stage,"국내외 공연: 예술의전당·국립극장 '댄타지아', 보스턴 이사벨라 스튜어트 가드너 미술관, 해외 살사 페스티벌 등 / 아이돌 안무 제작",,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
-RC007,R001,teaching,"댄스 대회 심사 (Dancers Park, SHOW ME 등)",,,,https://learns.academy/academies/R3FVVWNHGQ,학원정보사이트,2026-10-25,FALSE
-RC008,R002,academy_operation,투래빗 댄스 스튜디오 운영 (초등~전문반),투래빗댄스스튜디오,,,https://lady.khan.co.kr/travel/article/202407041059001,언론,2026-10-25,FALSE
-RC009,R002,stage,"유튜브 채널 '춤추는 이강사' 운영 (구독자 31만, 2024.07 기사 기준)",YouTube,,,https://lady.khan.co.kr/travel/article/202407041059001,언론,2026-10-25,FALSE
-RC010,R002,teaching,"개인 레슨 1,500명 이상, 연예인 댄스 강사 활동 (2024.07 기사 기준)",,,,https://lady.khan.co.kr/travel/article/202407041059001,언론,2026-10-25,FALSE
-RC011,R003,stage,국립발레단 솔리스트 출신,국립발레단,,,https://learns.academy/academies/27SF3E61H7,학원정보사이트,2026-10-25,FALSE
-RC012,R004,stage,유니버설발레단 정단원 출신,유니버설발레단,,,https://learns.academy/academies/HSQSEB1HSL,학원정보사이트,2026-10-25,FALSE
-RC013,R005,teaching,발레 지도 경력 20년,,,,https://learns.academy/academies/VBA7MP8CBV,학원정보사이트,2026-10-25,FALSE
-RC014,R006,education,서울대학교 출신 (성악),서울대학교,,,https://learns.academy/academies/BYJHQLLZTI,학원정보사이트,2026-10-25,FALSE
-RC015,R007,stage,음악계 활동 20년 이상,,,,https://learns.academy/academies/WP6AN8IQ5M,학원정보사이트,2026-10-25,FALSE
-RC016,R008,academy_operation,액팅쏘울 연기학원 개원·운영 (학원 소개: 마곡 최초 연기학원),액팅쏘울 연기학원,2020,,https://learns.academy/academies/W6B2DGKHME,학원정보사이트,2026-10-25,FALSE
-RC017,R009,academy_operation,웃는아이 더설쌤 키즈 공연·뮤지컬 교육 (학원 소개: 2007년부터),웃는아이 더설쌤 뮤지컬댄스학원,2007,,https://learns.academy/academies/UNALJIVMZP,학원정보사이트,2026-10-25,FALSE
+RC001,R001,education,백제예술대학교 실용댄스과 수석 졸업,백제예술대학교,,,https://blog.naver.com/coco_dance/223846987544,SNS,2026-10-25,FALSE
+RC002,R001,award,NBC 'World of Dance' 시즌3 BEST 4 진출,NBC,2019,2019,https://blog.naver.com/coco_dance/223846987544,SNS,2026-10-25,FALSE
+RC003,R001,award,"한류 힙합문화대상 서울시장상 특별대상, 전국무용 한국문화예술총연합회 장관상 외 다수",,,,https://blog.naver.com/coco_dance/223846987544,SNS,2026-10-25,FALSE
+RC004,R001,stage,"방송: tvN '유 퀴즈 온 더 블럭'(2020), SBS '모닝와이드'·'동상이몽2' 출연",,,,https://blog.naver.com/coco_dance/223846987544,SNS,2026-10-25,FALSE
+RC005,R001,stage,안무 제작: TWICE 'Alcohol-Free' 시안 안무 등,,,,https://blog.naver.com/coco_dance/223846987544,SNS,2026-10-25,FALSE
+RC006,R001,stage,"공연: 예술의전당 국립극장 '댄타지아' 댄스컬, TikTok Stage 등 초청 공연",,,,https://blog.naver.com/coco_dance/223846987544,SNS,2026-10-25,FALSE
+RC007,R002,academy_operation,투래빗댄스 스튜디오(전 춤추는이강사 댄스학원) 설립·운영,투래빗댄스스튜디오,2014,,https://blog.naver.com/lovelanjin/220642158821,SNS,2026-10-25,FALSE
+RC008,R002,academy_operation,김영우댄스아카데미 강서점 원장,김영우댄스아카데미,2015,2017,https://blog.naver.com/lovelanjin/220642158821,SNS,2026-10-25,FALSE
+RC009,R002,teaching,김영우댄스아카데미 강남본점 강사 (12년),김영우댄스아카데미,2003,2014,https://blog.naver.com/lovelanjin/220642158821,SNS,2026-10-25,FALSE
+RC010,R002,teaching,"개인 레슨 1,500명 이상, 기업·기관 팀워크 댄스 프로그램 출강",,2010,2014,https://blog.naver.com/lovelanjin/220642158821,SNS,2026-10-25,FALSE
+RC011,R002,stage,유튜브 채널 '춤추는 이강사' 운영 (실버버튼),YouTube,,,https://blog.naver.com/lovelanjin/220642158821,SNS,2026-10-25,FALSE
+RC012,R003,stage,국립발레단 솔리스트 출신,국립발레단,,,https://learns.academy/academies/27SF3E61H7,학원정보사이트,2026-10-25,FALSE
+RC013,R004,stage,유니버설발레단 정단원 출신,유니버설발레단,,,https://learns.academy/academies/HSQSEB1HSL,학원정보사이트,2026-10-25,FALSE
+RC014,R005,teaching,발레 지도 경력 20년,,,,https://learns.academy/academies/VBA7MP8CBV,학원정보사이트,2026-10-25,FALSE
+RC015,R006,education,서울대학교 음악대학 성악과 졸업,서울대학교,,,https://blog.naver.com/snuvocalacademy/221356945426,SNS,2026-10-25,FALSE
+RC016,R006,education,독일 슈투트가르트 국립음대 오페라성악과 석사·최고연주자 과정,슈투트가르트 국립음대,,,https://blog.naver.com/snuvocalacademy/221356945426,SNS,2026-10-25,FALSE
+RC017,R006,stage,"유럽 오페라 솔리스트·오케스트라 협연, 국내 음악회 솔리스트",,,,https://blog.naver.com/snuvocalacademy/221356945426,SNS,2026-10-25,FALSE
+RC018,R006,teaching,대학·예고 출강,,,,https://blog.naver.com/snuvocalacademy/221356945426,SNS,2026-10-25,FALSE
+RC019,R007,stage,음악계 활동 20년 이상,,,,https://learns.academy/academies/WP6AN8IQ5M,학원정보사이트,2026-10-25,FALSE
+RC020,R008,education,성균관대학교 연기예술학과 연기전공,성균관대학교,,,https://blog.naver.com/actingsoul2020/224121547318,SNS,2026-10-25,FALSE
+RC021,R008,teaching,연극영화과 입시 지도 20년 이상,,,,https://blog.naver.com/actingsoul2020/224121547318,SNS,2026-10-25,FALSE
+RC022,R008,academy_operation,액팅쏘울 연기학원 개원·운영,액팅쏘울 연기학원,2020,,https://learns.academy/academies/W6B2DGKHME,학원정보사이트,2026-10-25,FALSE
+RC023,R009,academy_operation,웃는아이 더설쌤 키즈 공연·뮤지컬 교육 (학원 소개: 2007년부터),웃는아이 더설쌤,2007,,https://learns.academy/academies/UNALJIVMZP,학원정보사이트,2026-10-25,FALSE
+RC024,R010,stage,"(여자)아이들 'UH-OH' 뮤직비디오, MMA·MAMA 시상식 댄서",,,,https://blog.naver.com/kart_academy/224231877400,SNS,2026-10-25,FALSE
+RC025,R010,stage,"이영지 MMA·가요대전 시상식 댄서, 악동뮤지션 'LOVE LEE' 시안 댄서",,,,https://blog.naver.com/kart_academy/224231877400,SNS,2026-10-25,FALSE
+RC026,R011,education,국립국악고등학교 졸업,국립국악고등학교,,,https://blog.naver.com/queenny1314/221176517648,SNS,2026-10-25,FALSE
+RC027,R011,education,성균관대학교 무용학과 졸업,성균관대학교,,,https://blog.naver.com/queenny1314/221176517648,SNS,2026-10-25,FALSE
+RC028,R011,award,예고 콩쿠르 지도자상·안무자상 다수 (서울예고·선화예고·덕원예고 등),,2016,2023,https://blog.naver.com/queenny1314/221176517648,SNS,2026-10-25,FALSE
+RC029,R012,education,서울예술대학교 연기과 수석 졸업,서울예술대학교,,,https://blog.naver.com/imago-ent/224350260113,SNS,2026-10-25,FALSE
+RC030,R012,teaching,김포대학교 연기과 교수,김포대학교,,,https://blog.naver.com/imago-ent/224350260113,SNS,2026-10-25,FALSE
+RC031,R012,stage,"영화·드라마·광고 캐스팅 디렉터, 현직 배우 활동",,,,https://blog.naver.com/imago-ent/224350260113,SNS,2026-10-25,FALSE
+RC032,R012,teaching,연기 교육 20년,,,,https://blog.naver.com/imago-ent/224350260113,SNS,2026-10-25,FALSE
+RC033,R013,stage,유니버설발레단 출신,유니버설발레단,,,https://blog.naver.com/balletria07/221477072157,SNS,2026-10-25,FALSE
+RC034,R013,education,세종대학교 무용학 박사,세종대학교,,,https://blog.naver.com/balletria07/221477072157,SNS,2026-10-25,FALSE
+RC035,R013,teaching,"발레단 무용지도위원, 서울국제발레콩쿠르 운영위원",,,,https://blog.naver.com/balletria07/221477072157,SNS,2026-10-25,FALSE
+RC036,R014,education,서울예술대학교 실용음악과 기타 전공,서울예술대학교,,,https://blog.naver.com/likemusicfam/221150963488,SNS,2026-10-25,FALSE
+RC037,R014,stage,밴드 '울프킨' 앨범 발매,,2016,2023,https://blog.naver.com/likemusicfam/221150963488,SNS,2026-10-25,FALSE
+RC038,R014,stage,밴드 '스윙체어' 앨범 발매,,2008,2012,https://blog.naver.com/likemusicfam/221150963488,SNS,2026-10-25,FALSE
+RC039,R015,education,"명지전문대 실용음악(보컬), 단국대 대중음악 석사",,,,https://blog.naver.com/ktc_korea/224268473127,SNS,2026-10-25,FALSE
+RC040,R015,teaching,"현직 음대 교수(겸임), SBS '신의 목소리' 전담 트레이너",,,,https://blog.naver.com/ktc_korea/224268473127,SNS,2026-10-25,FALSE
+RC041,R017,education,"명지전문대 실용음악(보컬), 단국대 대중음악 석사",,,,https://blog.naver.com/ktc_korea/224268473127,SNS,2026-10-25,FALSE
+RC042,R017,teaching,"현직 음대 교수(겸임), SBS '신의 목소리' 전담 트레이너",,,,https://blog.naver.com/ktc_korea/224268473127,SNS,2026-10-25,FALSE
+RC043,R016,education,아주대학교 전자공학과,아주대학교,,,https://blog.naver.com/ktc_korea/224268473127,SNS,2026-10-25,FALSE
+RC044,R016,musical_performance,"뮤지컬 '심야식당', '홍련' 등 무대 예술 현장 경력 (역할 미공개)",,,,https://blog.naver.com/ktc_korea/224268473127,SNS,2026-10-25,FALSE
+RC045,R018,education,숭실대학교 실용음악과 졸업,숭실대학교,,,https://blog.naver.com/gogofunk/20154988202,SNS,2026-10-25,FALSE
+RC046,R018,stage,"연극 '승부의 종말'(사무엘 베케트 100주년) 음악감독, 극단 툴 '디노&플로라' 작·편곡·기타 세션",,,,https://blog.naver.com/gogofunk/20154988202,SNS,2026-10-25,FALSE
+RC047,R018,academy_operation,올림픽 평생교육원 대표 (전),,,,https://blog.naver.com/gogofunk/20154988202,SNS,2026-10-25,FALSE
+RC048,R019,teaching,댄스 강사 경력 30년,,,,https://blog.naver.com/sesame0809/224403759802,SNS,2026-10-25,FALSE
+RC049,R019,award,HIPHOP INTERNATIONAL KOREA 1위 (2017·2018·2021),HIPHOP INTERNATIONAL,,,https://blog.naver.com/sesame0809/224403759802,SNS,2026-10-25,FALSE
+RC050,R019,award,HIPHOP INTERNATIONAL WORLD CHAMPIONSHIP 세계 4위,HIPHOP INTERNATIONAL,,,https://blog.naver.com/sesame0809/224403759802,SNS,2026-10-25,FALSE
+RC051,R019,award,AGC WORLD CHAMPIONSHIP (OVER40 부문) 세계 1위,,2021,2021,https://blog.naver.com/sesame0809/224403759802,SNS,2026-10-25,FALSE
+RC052,R021,stage,국립발레단 출신,국립발레단,,,https://blog.naver.com/leanon2023/223631551406,SNS,2026-10-25,FALSE
+RC053,R022,teaching,유·초등 발레 지도 10년 이상,,,,https://blog.naver.com/ballet_de_lumiere/223528143087,SNS,2026-10-25,FALSE
+RC054,R023,musical_performance,'Fall in K-musical' 출연 (세종문화회관),,2018,2018,https://blog.naver.com/kidmusical/221506113213,SNS,2026-10-25,FALSE
+RC055,R023,education,"홍익대학교 공연예술대학원 (배우 전공, 2019년 기준 재학)",홍익대학교,,,https://blog.naver.com/kidmusical/221506113213,SNS,2026-10-25,FALSE
+RC056,R023,teaching,"어린이 뮤지컬 극단 '소연아이' 대표, 『어린이 뮤지컬 스쿨』 저자",,,,https://blog.naver.com/kidmusical/221303220073,SNS,2026-10-25,FALSE
