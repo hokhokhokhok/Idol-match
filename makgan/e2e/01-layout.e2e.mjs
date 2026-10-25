@@ -8,9 +8,22 @@ const TABS = [
 ];
 
 export default async function ({ BASE, check, newPage, layout, shot }) {
+  // PWA 설치·iOS 홈 화면 추가에 필요한 아이콘
+  const manifest = await (await fetch(`${BASE}/manifest.webmanifest`)).json();
+  for (const size of ["192x192", "512x512"]) {
+    const icon = manifest.icons.find((i) => i.sizes === size && i.type === "image/png");
+    const res = icon && (await fetch(BASE + icon.src));
+    check(res?.ok && res.headers.get("content-type") === "image/png", `매니페스트 PNG 아이콘 ${size}`);
+  }
+  check(manifest.icons.some((i) => i.purpose === "maskable") && manifest.display === "standalone", "maskable 아이콘·standalone");
+
   for (const width of [360, 390]) {
     const page = await newPage(width);
     await page.goto(BASE + "/");
+    if (width === 360) {
+      const apple = await page.locator('link[rel="apple-touch-icon"]').getAttribute("href");
+      check(apple && (await fetch(BASE + apple)).ok, "iOS 홈 화면 아이콘(apple-touch-icon)");
+    }
     for (const t of TABS) {
       await page.getByRole("navigation", { name: "주요 메뉴" }).getByRole("link", { name: t.label, exact: true }).click();
       await page.waitForURL(BASE + t.path);

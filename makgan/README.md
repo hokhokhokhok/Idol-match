@@ -76,21 +76,23 @@ npm run dev                  # 터미널 2
 ```
 로그인 메일은 실제로 가지 않고 터미널 1에 `📧 매직링크 …`로 찍힙니다. 끌 때마다 DB는 사라집니다.
 
-## Supabase 연결
-1. [supabase.com](https://supabase.com)에서 프로젝트 생성
-2. SQL Editor에서 `supabase/migrations/`의 파일을 번호 순서대로 실행 (화면 확인용 데이터가 필요하면 `supabase/seed.sql`도)
-3. Project Settings → API의 URL·anon key를 `.env.local`에 입력
-4. Authentication → Sign In / Providers에서 Email 사용
-5. Authentication → URL Configuration의 Site URL을 배포 주소로(로컬은 `http://localhost:3000`)
-6. Authentication → Emails → **Magic Link** 템플릿의 링크를 아래로 바꾸기
-   (메일 앱 내장 브라우저에서 열어도 로그인되도록 token_hash 방식을 씁니다)
-   ```html
-   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">막간 로그인</a>
-   ```
-   새 사용자의 첫 메일은 **Confirm signup** 템플릿으로 가므로, 그쪽 링크도 같은 주소로 바꿉니다.
-7. 배포 환경 변수에 `NEXT_PUBLIC_SITE_URL`(배포 주소)도 넣기
+## 배포하기 (체크리스트)
+약 20분. 계정 두 개(Supabase, Vercel)만 있으면 됩니다.
+
+1. **Supabase**: [supabase.com](https://supabase.com)에서 새 프로젝트 → SQL Editor에 `supabase/setup.sql`을 통째로 붙여 넣고 실행
+   (화면 확인용 [샘플] 데이터가 필요하면 `supabase/seed.sql`도 실행 — 실제 서비스 전엔 지우세요)
+2. **로그인 메일**: Authentication → Emails에서 **Magic Link**와 **Confirm signup** 템플릿 본문을 `supabase/templates/magic-link.html`로 바꾸기
+3. **비밀값 만들기**: `cd makgan && npm install && npm run setup:env` → 출력된 줄을 메모
+4. **Vercel**: [vercel.com/new](https://vercel.com/new)에서 이 저장소 가져오기 → **Root Directory를 `makgan`** 으로 → 3번의 환경 변수 입력
+   (Supabase 값은 Project Settings → API의 URL·anon key·service_role key, `NEXT_PUBLIC_SITE_URL`은 배포 주소) → Deploy
+5. **주소 맞추기**: Supabase Authentication → URL Configuration의 Site URL을 Vercel 배포 주소로
+6. **관리자 지정**: 배포 주소에서 한 번 로그인한 뒤, 아래 "관리자 권한 주기"의 SQL 실행
+7. **알림 크론**: Vercel Pro면 자동. Hobby면 GitHub 저장소 Settings → Secrets → Actions에 `MAKGAN_CRON_URL`(`https://배포주소/api/cron/send-alerts`)과 `MAKGAN_CRON_SECRET`(3번의 `CRON_SECRET`) 추가
+8. **용어 사전 검수**: `/admin/glossary`에서 초안 10개를 확인하고 공개로 바꾸기
 
 > `supabase/tests/auth_stub.sql`은 로컬 테스트 전용입니다. 실제 Supabase에는 실행하지 마세요.
+> 마이그레이션을 고치면 `npm run db:bundle`로 `setup.sql`을 다시 만드세요(CI가 검사합니다).
+> 아이콘(`public/icons`)은 `npm run icons`로 `app/icon.svg`에서 다시 만듭니다.
 
 ## 푸시 알림 켜기(15단계)
 1. VAPID 키 만들기: `npx web-push generate-vapid-keys` → `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`(mailto:주소)
