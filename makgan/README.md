@@ -12,7 +12,8 @@
 | 1 | 뼈대: Next.js·Supabase 연결, 스키마·RLS, [샘플] 시드, 5탭, KST 날짜 유틸 | ✅ |
 | 2 | 매직링크 로그인, 첫 로그인 닉네임, 로그인 필요 안내, 로그아웃 | ✅ |
 | 3 | 공연 목록(상태·정렬·극장·배우·기간 필터, 더 보기)·상세(날짜별/시즌 캐스팅, 평균 별점) | ✅ |
-| 4~9 | 배우 → 혜택 → 찜 → 홈 → 후기 → 관리자·검색 | 예정 |
+| 4 | 배우 목록·상세(출연작·배역), 팔로우(비로그인 → 로그인 후 복귀), 팔로잉 탭 | ✅ |
+| 5~9 | 혜택 → 찜 → 홈 → 후기 → 관리자·검색 | 예정 |
 
 ## 폴더
 ```
@@ -20,7 +21,7 @@ app/                     화면(5탭: / · /shows · /benefits · /actors · /me
 app/login, app/onboarding, app/auth/confirm   매직링크 로그인 · 닉네임 · 링크 도착 지점
 components/              TabBar, PageHeader, ShowCard, ActorChip, Poster·Avatar(기본 이미지), EmptyState, ErrorState, Skeleton, LoginRequired
 lib/auth.ts              getUser · getProfile · requireProfile · safeNext
-lib/data/                조회 함수(listShows · getShow · getCast)
+lib/data/                조회 함수(listShows · getShow · getCast · listActors · getActor)
 lib/actions/             서버 액션
 lib/date.ts              KST 날짜·마감 표기("오늘 18:00 마감" 등)
 lib/supabase/            브라우저/서버 클라이언트, proxy 세션 갱신, 환경 변수 확인

@@ -6,7 +6,7 @@ import type { ShowSummary } from "@/lib/types";
 const STATUS_LABEL = { upcoming: "공연 예정", running: "공연 중", ended: "공연 종료" } as const;
 
 /** 가로형 공연 카드(목록). 세로형·♡는 이후 단계. */
-export default function ShowCard({ show }: { show: ShowSummary }) {
+export default function ShowCard({ show, note }: { show: ShowSummary; note?: string }) {
   const status = showStatus(show.starts_on, show.ends_on);
   return (
     <Link href={`/shows/${show.id}`} className="show-card">
@@ -16,6 +16,7 @@ export default function ShowCard({ show }: { show: ShowSummary }) {
         <strong className="show-card-title">{show.title}</strong>
         {show.theater && <span className="show-card-sub">{show.theater.name}</span>}
         <span className="show-card-sub">{formatPeriod(show.starts_on, show.ends_on)}</span>
+        {note && <span className="show-card-note">{note}</span>}
       </div>
     </Link>
   );
