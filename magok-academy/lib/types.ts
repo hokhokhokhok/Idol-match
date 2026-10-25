@@ -62,6 +62,8 @@ export interface Academy {
   /** 월 수강료 상한(원). 단일 금액이면 min과 같게. */
   tuition_monthly_max: number | null;
   schedule_slots: ScheduleSlot[];
+  /** 학원 정보를 확인한 출처 URL 목록 (학원알리미·네이버 플레이스·학원 정보 사이트 등) */
+  source_urls: string[];
 }
 
 export interface Person {

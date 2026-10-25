@@ -5,7 +5,7 @@ import { escapeCell, parseCsvRows, toCsv } from "./csv.ts";
 import { buildDataset, loadDatasetFromDir } from "./dataset.ts";
 import { datasetToCsv } from "./serialize.ts";
 
-const DATA_DIR = path.join(import.meta.dirname, "..", "data");
+const DATA_DIR = path.join(import.meta.dirname, "..", "data", "sample");
 
 test("escapeCell", () => {
   assert.equal(escapeCell("plain"), "plain");
