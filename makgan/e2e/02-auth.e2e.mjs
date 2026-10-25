@@ -31,7 +31,8 @@ export default async function ({ BASE, check, newPage, login, lastLink, layout, 
   await shot(page, "360-me-loggedin");
 
   await page.goto(`${BASE}/login`);
-  check(page.url() === `${BASE}/me` || page.url() === `${BASE}/`, "로그인 상태에서 /login → 돌려보냄");
+  await page.waitForURL(`${BASE}/`);
+  check(true, "로그인 상태에서 /login → 돌려보냄");
   await page.goto(`${BASE}/me`);
   await page.getByRole("button", { name: "로그아웃" }).click();
   await page.waitForURL(`${BASE}/`);

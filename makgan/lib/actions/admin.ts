@@ -26,7 +26,7 @@ export async function adminSave(entityKey: string, _: AdminFormState, form: Form
   if (error) return { error: "저장하지 못했어요. 입력을 확인해 주세요", values: echo(form) };
 
   revalidatePath("/", "layout");
-  redirect(`/admin/${entity.key}?saved=1`);
+  redirect(`/admin/${entity.key}?toast=saved`);
 }
 
 export async function adminDelete(entityKey: string, id: string): Promise<{ error?: string }> {

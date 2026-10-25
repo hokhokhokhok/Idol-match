@@ -95,6 +95,12 @@ const ctx = {
   },
   /** 진행 중인 토글(찜·팔로우) 저장이 모두 끝날 때까지 */
   settled: (page) => page.waitForFunction(() => !document.querySelector("[data-pending]"), null, { timeout: 10000 }),
+  /** 개수가 n이 될 때까지 잠깐 기다린 뒤 실제 개수(로딩 화면을 거치는 이동 대비) */
+  async count(locator, n, timeout = 5000) {
+    const end = Date.now() + timeout;
+    while (Date.now() < end && (await locator.count()) !== n) await new Promise((r) => setTimeout(r, 100));
+    return locator.count();
+  },
   /** 잠깐 기다려서 보이면 true (서버 액션 응답 대기용) */
   visible: (locator, timeout = 5000) => locator.first().waitFor({ timeout }).then(() => true, () => false),
   async lastLink(email) {

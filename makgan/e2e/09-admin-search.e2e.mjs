@@ -48,7 +48,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   check((await admin.locator('input[name="title"]').inputValue()) === "[샘플] 관리자 로터리", "검증 실패해도 입력 유지");
   await admin.locator('input[name="starts_at"]').fill("");
   await admin.getByRole("button", { name: "추가" }).click();
-  await admin.waitForURL(`${BASE}/admin/benefits?saved=1`);
+  await admin.waitForURL(`${BASE}/admin/benefits`);
   check(await visible(admin.getByText("[샘플] 관리자 로터리")), "혜택 추가 → 목록");
   check((await sql(`select to_char(ends_at at time zone 'Asia/Seoul', 'HH24:MI') from public.benefits where title = '[샘플] 관리자 로터리'`)) === "18:00", "입력 시각은 한국 시간으로 저장");
   await shot(admin, "360-admin-benefits");
@@ -61,7 +61,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   check((await admin.locator('input[name="ends_at"]').inputValue()) === `${tomorrow}T18:00`, "수정 화면: 시각을 한국 시간으로 표시");
   await admin.locator('input[name="title"]').fill("[샘플] 관리자 로터리(수정)");
   await admin.getByRole("button", { name: "저장" }).click();
-  await admin.waitForURL(`${BASE}/admin/benefits?saved=1`);
+  await admin.waitForURL(`${BASE}/admin/benefits`);
   check(await visible(admin.getByText("[샘플] 관리자 로터리(수정)")), "혜택 수정");
 
   admin.once("dialog", (d) => d.accept());
@@ -76,7 +76,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await admin.locator('input[name="starts_on"]').fill("2026-01-01");
   await admin.locator('input[name="ends_on"]').fill("2030-12-31");
   await admin.getByRole("button", { name: "추가" }).click();
-  await admin.waitForURL(`${BASE}/admin/shows?saved=1`);
+  await admin.waitForURL(`${BASE}/admin/shows`);
   await admin.getByText("[샘플] 관리자 공연").click();
   await admin.waitForURL(/\/admin\/shows\/[0-9a-f-]{36}$/);
   const showId = admin.url().split("/").pop();

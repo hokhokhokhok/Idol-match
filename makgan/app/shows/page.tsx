@@ -6,6 +6,7 @@ import { listShows, listTheaterOptions } from "@/lib/data/shows";
 import { parseShowParams } from "@/lib/show-params";
 import { myWishlistIds } from "@/lib/data/wishlist";
 import ShowList from "./ShowList";
+import BottomSheet from "@/components/BottomSheet";
 
 export const metadata = { title: "공연 · 막간" };
 
@@ -59,19 +60,31 @@ export default async function ShowsPage({ searchParams }: { searchParams: Promis
             </Link>
           ))}
         </nav>
-        <form className="filter-row" action="/shows">
-          {Object.entries(query).filter(([k]) => k !== "sort" && k !== "theater").map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-          <label className="sr-only" htmlFor="sort">정렬</label>
-          <select id="sort" name="sort" defaultValue={params.sort} className="select">
-            {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-          <label className="sr-only" htmlFor="theater">극장</label>
-          <select id="theater" name="theater" defaultValue={params.theaterId ?? ""} className="select">
-            <option value="">모든 극장</option>
-            {theaters.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-          <button className="btn">적용</button>
-        </form>
+        <div className="filter-row">
+          <BottomSheet
+            title="정렬 · 필터"
+            triggerClassName="btn filter-btn"
+            trigger={<>필터 · {SORTS.find((x) => x.value === params.sort)?.label}{params.theaterId ? ` · ${theaters.find((t) => t.id === params.theaterId)?.name ?? "극장"}` : ""}</>}
+          >
+            <form className="form" action="/shows">
+              {Object.entries(query).filter(([k]) => k !== "sort" && k !== "theater").map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+              <label className="field">
+                <span>정렬</span>
+                <select name="sort" defaultValue={params.sort}>
+                  {SORTS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>극장</span>
+                <select name="theater" defaultValue={params.theaterId ?? ""}>
+                  <option value="">모든 극장</option>
+                  {theaters.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </label>
+              <button className="btn btn-primary btn-block">적용</button>
+            </form>
+          </BottomSheet>
+        </div>
         {filtered && (
           <p className="filter-note">
             조건이 적용된 목록이에요 <Link href={href({ theater: undefined, actor: undefined, from: undefined, to: undefined })}>조건 지우기</Link>

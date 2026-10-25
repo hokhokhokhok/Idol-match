@@ -22,7 +22,7 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
-export default async function MePage({ searchParams }: { searchParams: Promise<{ tab?: string; saved?: string }> }) {
+export default async function MePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const sp = await searchParams;
   const tab: Tab = TABS.some((t) => t.value === sp.tab) ? (sp.tab as Tab) : "records";
   const profile = await getProfile();
@@ -46,7 +46,6 @@ export default async function MePage({ searchParams }: { searchParams: Promise<{
           {profile.is_admin && <Link href="/admin" className="badge">관리자</Link>}
           <form action={signOut}><button className="btn btn-text">로그아웃</button></form>
         </section>
-        {sp.saved === "review" && <p className="notice" role="status">후기를 저장했어요</p>}
 
         <nav className="chips me-tabs" aria-label="내 기록">
           {TABS.map((t) => (

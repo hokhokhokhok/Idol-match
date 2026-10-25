@@ -18,13 +18,14 @@
 | 7 | 홈(getHome): 오늘 마감 3 + 곧 열리는 티켓 3 + 내 찜 공연(가로 스크롤), 빈 화면·비로그인 안내 | ✅ |
 | 8 | 관극 후기 CRUD(공개/비공개, 본인만 수정·삭제), 공연 상세 후기, MY 탭(관극 기록·찜·팔로잉) | ✅ |
 | 9 | 관리자(/admin: 공연·배우·극장·혜택·캐스팅, 서버에서 is_admin 재검증), 전체 검색(최근 검색어 5개) | ✅ |
-| 10~16 | SPEC-2 C번 표 | 예정 |
+| 10 | 공통 컴포넌트: BottomSheet(끌어서 닫기)·Toast(3초)·전역 오류/404, 모든 목록·상세에 Skeleton·EmptyState | ✅ |
+| 11~16 | 영상 → 극장·구역 → 좌석 후기 → 통계 → 푸시 → 용어 사전·링크 채우기 | 예정 |
 
 ## 폴더
 ```
 app/                     화면(5탭: / · /shows · /benefits · /actors · /me, 검색 /search)
 app/login, app/onboarding, app/auth/confirm   매직링크 로그인 · 닉네임 · 링크 도착 지점
-components/              TabBar, PageHeader, ShowCard(가로)·ShowCardVertical(세로), BenefitCard, WishButton·FollowButton, ActorChip, Poster·Avatar(기본 이미지), EmptyState, ErrorState, Skeleton, LoginRequired
+components/              TabBar, PageHeader, ShowCard(가로)·ShowCardVertical(세로), BenefitCard, WishButton·FollowButton, ActorChip, Poster·Avatar(기본 이미지), EmptyState, ErrorState, Skeleton, LoginRequired, BottomSheet, Toast
 lib/auth.ts              getUser · getProfile · requireProfile · safeNext
 lib/admin.ts             requireAdmin(페이지) · adminClient(서버 액션)
 lib/admin-entities.ts    관리자 폼 정의·검증(KST 시각 입력 → ISO)

@@ -27,7 +27,7 @@ export async function createReview(_: ReviewFormState, form: FormData): Promise<
   const { error } = await supabase.from("reviews").insert({ ...parsed.value, user_id: user.id });
   if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요", values: echo(form) };
   revalidate(parsed.value.show_id);
-  redirect("/me?saved=review");
+  redirect("/me?toast=review-saved");
 }
 
 /** 후기 수정: 내 후기만. 남의 후기 id를 넣으면 0행이 바뀌고 거부된다. */
@@ -44,7 +44,7 @@ export async function updateReview(_: ReviewFormState, form: FormData): Promise<
   if (error) return { error: "저장하지 못했어요. 다시 시도해 주세요", values: echo(form) };
   if (!data?.length) return { error: "수정할 수 없는 후기예요", values: echo(form) };
   revalidate(parsed.value.show_id);
-  redirect("/me?saved=review");
+  redirect("/me?toast=review-saved");
 }
 
 /** 후기 삭제: 내 후기만 */
