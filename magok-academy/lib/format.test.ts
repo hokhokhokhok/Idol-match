@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { correctionLink } from "./constants.ts";
 import { describeSummary, summarizeCareers } from "./compare.ts";
-import { formatTuitionRange, formatWon, formatYears, isStale } from "./format.ts";
+import { formatTuitionRange, formatWon, formatYears, isStale, sourceLabel } from "./format.ts";
 import type { CareerItem, PersonWithCareer } from "./types.ts";
 
 test("금액 표기", () => {
@@ -41,4 +41,10 @@ test("경력 요약", () => {
 test("정정 요청 링크에 학원 이름이 채워짐", () => {
   const url = new URL(correctionLink({ id: "A001", name: "(예시)샘플" }));
   assert.equal(url.searchParams.get("title"), "[마곡학원 정정요청] A001 (예시)샘플");
+});
+
+test("출처 이름", () => {
+  assert.equal(sourceLabel("https://academy.prompie.com/academies/detail/x/"), "오늘학교 아카데미");
+  assert.equal(sourceLabel("https://www.kopis.or.kr/"), "KOPIS");
+  assert.equal(sourceLabel("https://blog.example.com/a"), "blog.example.com");
 });
