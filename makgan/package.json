@@ -14,7 +14,8 @@
     "local:supabase": "node scripts/local-supabase.mjs",
     "icons": "node scripts/make-icons.mjs",
     "db:bundle": "node scripts/bundle-sql.mjs",
-    "setup:env": "node scripts/setup-env.mjs"
+    "setup:env": "node scripts/setup-env.mjs",
+    "import:kopis": "node scripts/kopis-import.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

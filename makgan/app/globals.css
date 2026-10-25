@@ -356,3 +356,6 @@ a.badge { text-decoration: none; }
 .glossary-meaning { margin: 0 0 12px; font-size: 16px; line-height: 1.6; }
 .glossary-example { margin: 0 0 8px; padding: 10px 12px; border-radius: 10px; background: var(--bg-sub); }
 .glossary-link { margin-top: 12px; }
+
+.ticket-link { align-self: flex-start; margin-top: 4px; border-color: var(--burgundy); color: var(--burgundy); }
+.source-note { margin: 32px 0 0; font-size: 12px; color: var(--text-sub); }

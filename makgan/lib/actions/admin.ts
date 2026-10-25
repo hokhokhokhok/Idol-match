@@ -5,6 +5,8 @@ import { adminClient } from "@/lib/admin";
 import { ADMIN_ENTITIES, isEntityKey, parseEntityForm } from "@/lib/admin-entities";
 import { isDay, isUuid } from "@/lib/data/shows";
 import { fetchLinkMeta } from "@/lib/link-fetch";
+import { syncKopis, type SyncResult } from "@/lib/kopis-sync";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export type AdminFormState = { error?: string; values?: Record<string, string> };
 const echo = (form: FormData) => Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)]));
@@ -103,4 +105,16 @@ export async function adminFetchLinkMeta(url: string): Promise<{ title?: string;
   const meta = await fetchLinkMeta(url);
   if (!meta || (!meta.title && !meta.siteName)) return { error: "자동으로 채우지 못했어요. 직접 입력해 주세요" };
   return { title: meta.title ?? undefined, sourceName: meta.siteName ?? meta.host, sourceUrl: meta.url, image: meta.image ?? undefined };
+}
+
+/** 관리자 "KOPIS에서 지금 가져오기": 서버 시간 한도 안에서 가져오고, 남으면 다시 누르면 이어서 한다 */
+export async function adminRunKopisSync(): Promise<{ result?: SyncResult; error?: string }> {
+  const admin = await adminClient();
+  if (!admin) return { error: DENIED };
+  const key = process.env.KOPIS_SERVICE_KEY;
+  const service = createServiceClient();
+  if (!key || !service) return { error: "서버에 KOPIS 키(KOPIS_SERVICE_KEY)가 아직 없어요" };
+  const result = await syncKopis(service, { key, baseUrl: process.env.KOPIS_BASE_URL || undefined, timeBudgetMs: 45_000, maxDetails: 150 });
+  revalidatePath("/", "layout");
+  return { result };
 }

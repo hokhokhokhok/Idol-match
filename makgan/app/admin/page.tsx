@@ -2,8 +2,10 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { requireAdmin } from "@/lib/admin";
 import { ADMIN_ENTITIES } from "@/lib/admin-entities";
+import KopisSync from "@/components/admin/KopisSync";
 
 export const metadata = { title: "관리자 · 막간" };
+export const maxDuration = 60;
 
 export default async function AdminPage() {
   await requireAdmin();
@@ -17,6 +19,7 @@ export default async function AdminPage() {
             <li key={e.key}><Link href={`/admin/${e.key}`} className="admin-menu-item">{e.label} 관리 <span aria-hidden="true">›</span></Link></li>
           ))}
         </ul>
+        <KopisSync />
       </main>
     </>
   );

@@ -14,4 +14,6 @@ NEXT_PUBLIC_SITE_URL=
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=${vapid.publicKey}
 VAPID_PRIVATE_KEY=${vapid.privateKey}
 VAPID_SUBJECT=mailto:you@example.com
-CRON_SECRET=${randomBytes(24).toString("base64url")}`);
+CRON_SECRET=${randomBytes(24).toString("base64url")}
+# 공연예술통합전산망(KOPIS) Open API 인증키(공연 정보 가져오기)
+KOPIS_SERVICE_KEY=`);

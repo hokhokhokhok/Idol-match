@@ -12,6 +12,9 @@ export type ShowSummary = {
 
 export type ShowDetail = ShowSummary & {
   synopsis: string | null;
+  external_id: string | null;
+  ticket_url: string | null;
+  ticket_name: string | null;
   avg_rating: number | null;
   review_count: number;
 };
