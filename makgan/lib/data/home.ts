@@ -15,15 +15,18 @@ async function showsEndingToday(limit: number): Promise<ShowSummary[]> {
   return (data ?? []) as unknown as ShowSummary[];
 }
 
-/** 2주 안에 개막하는 공연(개막 임박순). 단기 공연은 뺀다. */
+/**
+ * 2주 안에 개막하는 공연. 소규모·지방 공연이 개막일에 몰려 대형 작품이 밀려나므로,
+ * 오래 공연하는 작품 순으로 고른 뒤 개막일순으로 보여 준다. 단기 공연은 뺀다.
+ */
 async function showsOpeningSoon(limit: number, days = 14): Promise<ShowSummary[]> {
   if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
   const today = new Date();
   const until = kstDateString(new Date(today.getTime() + days * 86400e3));
   const { data } = await supabase.from("shows").select(SHOW_COLUMNS).gt("starts_on", kstDateString(today)).lte("starts_on", until)
-    .gt("run_days", SHORT_RUN_DAYS).order("starts_on").order("id").limit(limit);
-  return (data ?? []) as unknown as ShowSummary[];
+    .gt("run_days", SHORT_RUN_DAYS).order("run_days", { ascending: false }).order("starts_on").order("id").limit(limit);
+  return ((data ?? []) as unknown as ShowSummary[]).sort((a, b) => a.starts_on.localeCompare(b.starts_on) || a.title.localeCompare(b.title, "ko"));
 }
 
 /**

@@ -34,23 +34,32 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
     ('[샘플] 오늘 막공 공연', ${KST} - 20, ${KST}),
     ('[샘플] 오늘 하루 공연', ${KST}, ${KST}),
     ('[샘플] 곧 개막 공연', ${KST} + 5, ${KST} + 60),
-    ('[샘플] 먼 개막 공연', ${KST} + 30, ${KST} + 90)`);
+    ('[샘플] 먼 개막 공연', ${KST} + 30, ${KST} + 90),
+    ('[샘플] 곧 개막 장기 공연', ${KST} + 9, ${KST} + 129),
+    ('[샘플] 곧 개막 단기 공연', ${KST} + 2, ${KST} + 5)`);
   await page.reload();
   const endingCards = await section("today-title").locator(".show-card-title").allInnerTexts();
   check(endingCards.length === 1 && endingCards[0] === "[샘플] 오늘 막공 공연", `오늘 마감: 오늘 막공 공연만, 하루짜리는 제외 (${endingCards.join(", ")})`);
   check(await visible(section("today-title").getByText("오늘 막공 · 마지막 공연이에요")), "오늘 막공 표시");
   check((await section("today-title").locator(".benefit-title").allInnerTexts()).join() === "[샘플] 오늘 마감 로터리", "혜택과 막공이 같이 보임");
   const soon = await section("soon-title").locator(".vcard-title").allInnerTexts();
-  check(soon.length === 1 && soon[0] === "[샘플] 곧 개막 공연", `곧 개막: 2주 안 개막만 (${soon.join(", ")})`);
-  check(/^D-5 · \d{2}\.\d{2}\(.\) 개막$/.test(await section("soon-title").locator(".vcard-note").innerText()), "개막 D-day 표기");
+  check(JSON.stringify(soon) === JSON.stringify(["[샘플] 곧 개막 단기 공연", "[샘플] 곧 개막 공연", "[샘플] 곧 개막 장기 공연"]), `곧 개막: 2주 안 개막만, 개막일순 (${soon.join(", ")})`);
+  check(/^D-5 · \d{2}\.\d{2}\(.\) 개막$/.test(await section("soon-title").locator(".vcard-note", { hasText: "D-5" }).innerText()), "개막 D-day 표기");
+  // 8편을 넘으면 오래 공연하는 작품이 우선(짧은 공연이 밀려남)
+  await sql(`insert into public.shows (title, starts_on, ends_on) select '[샘플] 곧 개막 대작 ' || i, ${KST} + 10, ${KST} + 70 from generate_series(1, 8) i`);
+  await page.reload();
+  const ranked = await section("soon-title").locator(".vcard-title").allInnerTexts();
+  check(ranked.length === 8 && !ranked.includes("[샘플] 곧 개막 단기 공연") && ranked.includes("[샘플] 곧 개막 장기 공연"), `곧 개막: 8편, 긴 공연 우선 (${ranked.length}편)`);
+  await sql(`delete from public.shows where title like '[샘플] 곧 개막 대작 %'`);
+  await page.reload();
   await layout(page, "홈(오늘 막공·곧 개막)");
   await shot(page, "360-home-filled");
   await section("soon-title").getByRole("link", { name: "전체 보기" }).click();
   await page.waitForURL(/status=upcoming&sort=opening/);
   await page.locator(".show-card-title").first().waitFor();
-  check((await page.locator(".show-card-title").first().innerText()) === "[샘플] 곧 개막 공연", "개막 임박순 정렬(전체 보기)");
+  check((await page.locator(".show-card-title").first().innerText()) === "[샘플] 곧 개막 단기 공연", "개막 임박순 정렬(전체 보기)");
   await page.goto(`${BASE}/`);
-  await sql(`delete from public.shows where title in ('[샘플] 오늘 막공 공연', '[샘플] 오늘 하루 공연', '[샘플] 곧 개막 공연', '[샘플] 먼 개막 공연')`);
+  await sql(`delete from public.shows where title in ('[샘플] 오늘 막공 공연', '[샘플] 오늘 하루 공연', '[샘플] 곧 개막 공연', '[샘플] 먼 개막 공연', '[샘플] 곧 개막 장기 공연', '[샘플] 곧 개막 단기 공연')`);
   await page.reload();
   check(await section("soon-title").count() === 0, "곧 개막할 공연이 없으면 구역을 숨김");
 
