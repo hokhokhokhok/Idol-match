@@ -66,7 +66,7 @@ for (const width of [360, 390]) {
   check(!!toggleH && toggleH.height < 40, `${W} 홈: 목록/지도 토글 한 줄`);
   await noOverflow(page, `${W} 홈`);
 
-  await page.getByRole("group", { name: "분야" }).getByRole("button", { name: "댄스" }).click();
+  await page.getByRole("group", { name: "분야" }).getByRole("button", { name: "댄스", exact: true }).click();
   await page.waitForURL(/c=/);
   check(await countIs(cards(page), 2), `${W} 분야=댄스 → 2곳`);
   await page.getByRole("button", { name: /필터/ }).click();
@@ -74,6 +74,12 @@ for (const width of [360, 390]) {
   await page.getByRole("button", { name: /저녁/ }).click();
   check((await countIs(cards(page), 0)) && (await page.getByText("조건에 맞는 학원이 없습니다").isVisible()), `${W} 댄스+토+저녁 → 0곳, 빈 안내`);
   await page.screenshot({ path: `screenshots/${width}-filters.png` });
+  await page.getByRole("button", { name: "필터 초기화" }).first().click();
+  // 동네 필터: 예시 데이터는 전부 마곡동
+  await page.getByRole("group", { name: "동네" }).getByRole("button", { name: "화곡" }).click();
+  check(await countIs(cards(page), 0), `${W} 동네=화곡 → 0곳 (예시는 모두 마곡)`);
+  await page.getByRole("group", { name: "동네" }).getByRole("button", { name: "마곡" }).click();
+  check(await countIs(cards(page), 6), `${W} 동네=화곡+마곡 → 6곳`);
   await page.getByRole("button", { name: "필터 초기화" }).first().click();
   await page.getByRole("button", { name: "20만원 초과" }).click();
   check((await countIs(cards(page), 1)) && (await page.getByText("수강료 미확인 1곳 제외").isVisible()), `${W} 20만원 초과 → 1곳, 미확인 1곳 제외 표시`);
@@ -84,7 +90,7 @@ for (const width of [360, 390]) {
   await page.goto(BASE + "/");
 
   // 발레 분야
-  await page.getByRole("group", { name: "분야" }).getByRole("button", { name: "발레" }).click();
+  await page.getByRole("group", { name: "분야" }).getByRole("button", { name: "발레", exact: true }).click();
   check((await countIs(cards(page), 1)) && (await cards(page).first().innerText()).includes("토슈즈키즈발레"), `${W} 분야=발레 → 1곳`);
   await page.goto(BASE + "/");
 
