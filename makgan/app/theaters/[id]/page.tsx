@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import ErrorState from "@/components/ErrorState";
 import { getTheater } from "@/lib/data/theaters";
+import { listUnzonedReviews } from "@/lib/data/seat-reviews";
+import SeatReviewItem from "@/components/SeatReviewItem";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const t = await getTheater((await params).id).catch(() => null);
@@ -21,6 +23,7 @@ export default async function TheaterPage({ params, searchParams }: { params: Pr
   const sp = await searchParams;
   const floor = theater.floors.includes(sp.floor ?? "") ? sp.floor! : theater.floors[0];
   const zones = theater.zones.filter((z) => z.floor === floor);
+  const unzoned = await listUnzonedReviews(theater.id, floor).catch(() => []);
 
   return (
     <>
@@ -43,14 +46,22 @@ export default async function TheaterPage({ params, searchParams }: { params: Pr
           <ul className="zone-grid">
             {zones.map((z) => (
               <li key={z.id}>
-                <div className="zone-card">
+                <Link href={`/theaters/${theater.id}/zones/${z.id}`} className="zone-card">
                   <strong className="zone-name">{z.name}</strong>
                   <span className="zone-score">{z.avg_view != null ? <><span className="star" aria-hidden="true">★</span>{z.avg_view.toFixed(1)}</> : <span className="muted">평가 없음</span>}</span>
                   <span className="muted zone-count">후기 {z.review_count}</span>
-                </div>
+                </Link>
               </li>
             ))}
           </ul>
+        )}
+        <Link href={`/theaters/${theater.id}/seat-reviews/new?floor=${encodeURIComponent(floor)}`} className="btn btn-primary btn-block seat-write">+ 좌석 후기 쓰기</Link>
+        {unzoned.length > 0 && (
+          <section className="section" aria-labelledby="unzoned-title">
+            <h3 className="section-title" id="unzoned-title">{floor} 좌석 후기 <span className="muted">{unzoned.length}</span></h3>
+            {unzoned.length < 3 && <p className="notice">후기가 적어 참고용이에요</p>}
+            <ul className="review-list">{unzoned.map((r) => <li key={r.id}><SeatReviewItem r={r} /></li>)}</ul>
+          </section>
         )}
       </main>
     </>

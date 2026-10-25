@@ -84,6 +84,26 @@ select pg_temp.expect((select body from public.reviews where id = '11111111-0000
 select pg_temp.expect((select count(*) from public.reviews) = 2, 'bob: 타인 후기 삭제 무시');
 select pg_temp.expect((select count(*) from public.seat_reviews) = 1, 'bob: 타인 좌석 후기 삭제 무시');
 
+-- 도움돼요: 남의 후기엔 가능, 내 후기엔 불가, 수는 트리거로만
+set role authenticated;
+set request.jwt.claims = '{"sub":"bbbbbbbb-0000-4000-8000-000000000002"}';
+insert into public.seat_review_helpful (user_id, seat_review_id) select auth.uid(), id from public.seat_reviews limit 1;
+select pg_temp.expect_denied($$update public.seat_reviews set helpful_count = 999$$, '도움돼요 수 직접 수정 거부');
+reset role;
+select pg_temp.expect((select helpful_count from public.seat_reviews limit 1) = 1, '도움돼요 수는 트리거로 1');
+set role authenticated;
+set request.jwt.claims = '{"sub":"aaaaaaaa-0000-4000-8000-000000000001"}';
+select pg_temp.expect_denied($$insert into public.seat_review_helpful (user_id, seat_review_id) select auth.uid(), id from public.seat_reviews limit 1$$, '내 좌석 후기에 도움돼요 거부');
+select pg_temp.expect_denied($$insert into public.seat_review_helpful (user_id, seat_review_id) select 'bbbbbbbb-0000-4000-8000-000000000002', id from public.seat_reviews limit 1$$, '남의 이름으로 도움돼요 거부');
+update public.seat_reviews set comment = '본인 수정' where user_id = auth.uid();
+reset role;
+select pg_temp.expect((select comment from public.seat_reviews limit 1) = '본인 수정', '좌석 후기 본인 수정 가능(허용 컬럼)');
+set role authenticated;
+set request.jwt.claims = '{"sub":"bbbbbbbb-0000-4000-8000-000000000002"}';
+delete from public.seat_review_helpful where user_id = auth.uid();
+reset role;
+select pg_temp.expect((select helpful_count from public.seat_reviews limit 1) = 0, '도움돼요 취소하면 0');
+
 -- ── 비로그인 집계: 공개 후기만 ──
 set role anon;
 set request.jwt.claims = '{}';
