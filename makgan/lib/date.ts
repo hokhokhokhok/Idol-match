@@ -74,3 +74,14 @@ export function formatDay(day: string) {
   const w = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
   return `${String(m).padStart(2, "0")}.${String(d).padStart(2, "0")}(${WEEKDAYS[w]})`;
 }
+
+/** 티켓오픈 시각: "오늘 20:00 오픈" / "내일 20:00 오픈" / "11.05(목) 20:00 오픈" */
+export function formatOpen(startsAt: DateInput, now: DateInput = new Date()) {
+  const w = kstWall(startsAt);
+  const time = `${pad(w.getUTCHours())}:${pad(w.getUTCMinutes())}`;
+  const days = kstDayNumber(startsAt) - kstDayNumber(now);
+  if (toDate(startsAt).getTime() <= toDate(now).getTime()) return "오픈됨";
+  if (days === 0) return `오늘 ${time} 오픈`;
+  if (days === 1) return `내일 ${time} 오픈`;
+  return `${pad(w.getUTCMonth() + 1)}.${pad(w.getUTCDate())}(${WEEKDAYS[w.getUTCDay()]}) ${time} 오픈`;
+}
