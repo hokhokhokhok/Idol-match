@@ -28,12 +28,14 @@ export default async function ({ BASE, check, newPage, layout, shot, visible, sq
   check((await titles()).length === 2, "공연 중 필터");
 
   await page.goto(`${BASE}/shows`);
-  await page.getByLabel("정렬").selectOption("title");
+  await page.getByRole("button", { name: /^필터/ }).click();
+  await page.getByRole("dialog").getByLabel("정렬").selectOption("title");
   await page.getByRole("button", { name: "적용" }).click();
   await page.waitForURL(/sort=title/);
   t = await titles();
   check(JSON.stringify(t) === JSON.stringify([...t].sort((a, b) => a.localeCompare(b, "ko"))), "가나다순 정렬");
-  await page.getByLabel("극장").selectOption(THEATER2);
+  await page.getByRole("button", { name: /^필터/ }).click();
+  await page.getByRole("dialog").getByLabel("극장").selectOption(THEATER2);
   await page.getByRole("button", { name: "적용" }).click();
   await page.waitForURL(/theater=/);
   t = await titles();

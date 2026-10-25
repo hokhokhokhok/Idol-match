@@ -9,13 +9,12 @@ import { adminDelete } from "@/lib/actions/admin";
 import { adminList } from "@/lib/data/admin";
 import { formatDeadline, formatPeriod } from "@/lib/date";
 
-export default async function AdminListPage({ params, searchParams }: { params: Promise<{ entity: string }>; searchParams: Promise<{ saved?: string }> }) {
+export default async function AdminListPage({ params }: { params: Promise<{ entity: string }> }) {
   await requireAdmin();
   const { entity: key } = await params;
   if (!isEntityKey(key)) notFound();
   const entity = ADMIN_ENTITIES[key];
   const rows = await adminList(entity);
-  const { saved } = await searchParams;
 
   const sub = (r: Record<string, unknown>) => {
     if (key === "shows") return formatPeriod(String(r.starts_on), String(r.ends_on));
@@ -28,7 +27,6 @@ export default async function AdminListPage({ params, searchParams }: { params: 
     <>
       <PageHeader title={`${entity.label} 관리`} back="/admin" action={<Link href={`/admin/${key}/new`} className="btn btn-small btn-primary">+ 새로</Link>} />
       <main className="page-body">
-        {saved && <p className="notice" role="status">저장했어요</p>}
         {rows.length === 0 ? (
           <EmptyState icon="🗂️" message={`등록된 ${entity.label}이(가) 없어요`} action={{ label: "새로 만들기", href: `/admin/${key}/new` }} />
         ) : (

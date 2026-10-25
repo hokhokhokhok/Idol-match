@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "../Toast";
 
 /** 확인 후 삭제(관리자 목록·캐스팅) */
 export default function DeleteButton({ action, label = "삭제", confirmText }: { action: () => Promise<{ error?: string }>; label?: string; confirmText: string }) {
@@ -16,7 +17,7 @@ export default function DeleteButton({ action, label = "삭제", confirmText }: 
           start(async () => {
             const r = await action();
             if (r.error) setError(r.error);
-            else router.refresh();
+            else { toast("삭제했어요"); router.refresh(); }
           });
         }}
       >{label}</button>

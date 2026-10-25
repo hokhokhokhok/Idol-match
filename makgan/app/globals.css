@@ -253,3 +253,17 @@ a.badge { text-decoration: none; }
 .search-list a { display: flex; flex-direction: column; padding: 10px 0; gap: 2px; }
 .search-list .muted { font-size: 13px; }
 .search-list a.search-actor { flex-direction: row; align-items: center; gap: 10px; }
+
+/* 토스트 */
+.toast-wrap { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 12px); width: calc(100% - 32px); max-width: calc(var(--max-w) - 32px); z-index: 40; pointer-events: none; display: flex; justify-content: center; }
+.toast { padding: 10px 16px; border-radius: 999px; background: rgba(31, 29, 30, 0.92); color: #fff; font-size: 14px; animation: toast-in .2s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* 바텀시트 */
+.sheet-backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.4); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: var(--max-w); max-height: 85dvh; overflow: auto; background: var(--bg); border-radius: 16px 16px 0 0; padding: 0 16px calc(16px + env(safe-area-inset-bottom)); outline: none; }
+.sheet-handle-area { display: flex; justify-content: center; padding: 10px 0 6px; cursor: grab; touch-action: none; }
+.sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: #d5d0d2; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sheet-title { margin: 0; font-size: 17px; }
+.filter-btn { min-height: 36px; padding: 0 14px; font-size: 14px; }

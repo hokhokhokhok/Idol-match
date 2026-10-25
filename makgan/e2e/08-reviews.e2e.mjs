@@ -1,7 +1,7 @@
 // 관극 후기 CRUD: 작성(검증·입력 유지)·공개/비공개·수정·삭제, 타인 후기 보호(D 체크리스트)
 const S2 = "00000000-0000-4000-8000-000000000202"; // [샘플] 연극 막공
 
-export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql }) {
+export default async function ({ BASE, check, newPage, login, visible, layout, shot, sql, count }) {
   const a = await newPage();
   await login(a, "reviewer-a@example.com", "후기왕");
 
@@ -29,15 +29,17 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await a.locator('input[name="price"]').fill("66,000");
   await a.getByLabel("공연 페이지에 공개하기").check();
   await a.getByRole("button", { name: "저장" }).click();
-  await a.waitForURL(`${BASE}/me?saved=review`);
-  check(await visible(a.getByText("후기를 저장했어요")), "저장 후 MY로 + 저장 안내");
+  await a.waitForURL(/\/me\?toast=review-saved|\/me$/);
+  check(await visible(a.locator(".toast", { hasText: "후기를 저장했어요" })), "저장 후 MY로 + 저장 토스트");
+  await a.waitForURL(`${BASE}/me`);
+  check(true, "토스트 키는 주소에서 지움");
 
   await a.goto(`${BASE}/me/reviews/new?show=${S2}`);
   await a.getByText("2점").click({ force: true });
   await a.locator('textarea[name="body"]').fill("나만 보는 후기");
   await a.getByRole("button", { name: "저장" }).click();
-  await a.waitForURL(/\/me\?saved=review/);
-  check((await a.locator(".review").count()) === 2, "MY 관극 기록 2개");
+  await a.waitForURL(`${BASE}/me`);
+  check((await count(a.locator(".review"), 2)) === 2, "MY 관극 기록 2개");
   check(await visible(a.locator(".review", { hasText: "나만 보는 후기" }).getByText("나만 보기")), "비공개 후기 표시");
   await layout(a, "MY 관극 기록");
   await shot(a, "360-me-records");
@@ -66,7 +68,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await b.goto(`${BASE}/me/reviews/new?show=${S2}`);
   await b.getByText("3점").click({ force: true });
   await b.getByRole("button", { name: "저장" }).click();
-  await b.waitForURL(/\/me\?saved=review/);
+  await b.waitForURL(`${BASE}/me`);
   await b.getByRole("link", { name: "수정" }).click();
   await b.waitForURL(/\/edit$/);
   await b.locator('input[name="id"]').evaluate((el, id) => (el.value = id), publicId);
@@ -82,13 +84,14 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   check((await a.locator('input[name="price"]').inputValue()) === "66000", "수정 화면에 기존 값");
   await a.getByText("5점").click({ force: true });
   await a.getByRole("button", { name: "수정 저장" }).click();
-  await a.waitForURL(/\/me\?saved=review/);
+  await a.waitForURL(`${BASE}/me`);
   check(await visible(a.locator(".review", { hasText: "공개 후기 본문" }).getByRole("img", { name: "별점 5점" })), "별점 수정 반영");
 
   a.once("dialog", (d) => d.accept());
   await a.locator(".review", { hasText: "나만 보는 후기" }).getByRole("button", { name: "삭제" }).click();
   await a.waitForFunction(() => document.querySelectorAll(".review").length === 1, null, { timeout: 5000 }).catch(() => {});
   check((await a.locator(".review").count()) === 1, "후기 삭제");
+  check(await visible(a.locator(".toast", { hasText: "후기를 삭제했어요" })), "삭제 토스트");
   check((await sql(`select count(*) from public.reviews where id = '${privateId}'`)) === "0", "DB에서도 삭제됨");
 
   // 비로그인

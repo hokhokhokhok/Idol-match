@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteReview } from "@/lib/actions/reviews";
+import { toast } from "./Toast";
 
 export default function DeleteReviewButton({ id }: { id: string }) {
   const [pending, start] = useTransition();
@@ -18,7 +19,7 @@ export default function DeleteReviewButton({ id }: { id: string }) {
           start(async () => {
             const r = await deleteReview(id);
             if (r.error) setError(r.error);
-            else router.refresh();
+            else { toast("후기를 삭제했어요"); router.refresh(); }
           });
         }}
       >
