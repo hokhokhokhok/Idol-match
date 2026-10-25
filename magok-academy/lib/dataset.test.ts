@@ -5,7 +5,7 @@ import { buildDataset, loadDatasetFromDir } from "./dataset.ts";
 import { createCsvRepository } from "./repository.ts";
 import { ACADEMY_COLUMNS, CAREER_COLUMNS, PERSON_COLUMNS } from "./schema.ts";
 
-const DATA_DIR = path.join(import.meta.dirname, "..", "data");
+const DATA_DIR = path.join(import.meta.dirname, "..", "data", "sample");
 const TODAY = new Date("2026-10-24T00:00:00Z");
 
 test("샘플 시드: 학원 6곳, 오류 없음, 모두 (예시)", () => {

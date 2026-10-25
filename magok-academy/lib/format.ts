@@ -39,3 +39,21 @@ export function isStale(lastVerified: string | null, today: Date = new Date()): 
 export function isSample(name: string): boolean {
   return name.startsWith("(예시)");
 }
+
+/** 출처 URL을 사람이 읽는 이름으로: 알려진 사이트는 이름, 나머지는 도메인 */
+export function sourceLabel(url: string): string {
+  let host: string;
+  try {
+    host = new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+  const known: Record<string, string> = {
+    "academy.prompie.com": "오늘학교 아카데미",
+    "hakwonalimi.go.kr": "학원알리미",
+    "map.naver.com": "네이버 플레이스",
+    "kopis.or.kr": "KOPIS",
+    "instagram.com": "인스타그램",
+  };
+  return known[host] ?? host;
+}

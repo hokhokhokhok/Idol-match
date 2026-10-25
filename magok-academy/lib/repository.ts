@@ -34,9 +34,12 @@ export function createCsvRepository(dataset: Dataset): AcademyRepository {
 
 let cached: LoadResult | null = null;
 
-/** 빌드·서버 렌더 시 data/*.csv를 한 번 읽는다. 오류 행은 제외되고 issues에 남는다. */
+/**
+ * 빌드 시 data/*.csv를 한 번 읽는다. 오류 행은 제외되고 issues에 남는다.
+ * DATA_DIR로 다른 폴더를 쓸 수 있다 (e2e는 가상 예시 data/sample).
+ */
 export function loadData(): LoadResult {
-  cached ??= loadDatasetFromDir(path.join(process.cwd(), "data"));
+  cached ??= loadDatasetFromDir(path.resolve(process.cwd(), process.env.DATA_DIR || "data"));
   return cached;
 }
 
