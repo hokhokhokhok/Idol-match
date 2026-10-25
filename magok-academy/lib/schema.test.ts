@@ -20,6 +20,15 @@ test("템플릿 학원 행: 선택 컬럼 없이도 읽힘", () => {
   assert.deepEqual(a.schedule_slots, []);
 });
 
+test("출처 URL 목록(선택 컬럼)", () => {
+  const header = `${ACADEMY_HEADER},source_urls`;
+  const ok = parseAcademies(`${header}\n${ACADEMY_ROW},https://a.example/1;https://b.example/2\n`);
+  assert.deepEqual(ok.records[0].source_urls, ["https://a.example/1", "https://b.example/2"]);
+  const bad = parseAcademies(`${header}\n${ACADEMY_ROW},네이버\n`);
+  assert.equal(bad.records.length, 0);
+  assert.equal(bad.issues[0].field, "source_urls");
+});
+
 test("빈 verification_status는 미확인", () => {
   const row = ACADEMY_ROW.replace(/,미확인$/, ",");
   assert.equal(parseAcademies(`${ACADEMY_HEADER}\n${row}`).records[0].verification_status, "미확인");
