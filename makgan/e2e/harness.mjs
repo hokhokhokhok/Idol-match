@@ -82,6 +82,12 @@ const ctx = {
     page.errors = [];
     page.on("pageerror", (e) => page.errors.push(e.message));
     page.on("console", (m) => m.type() === "error" && page.errors.push(m.text()));
+    // 이동 후 로딩 화면(Skeleton, aria-busy)이 사라질 때까지 기다리게 한다 — 로딩 중 화면을 읽는 일을 막는다
+    const idle = () => page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 15000 }).catch(() => {});
+    for (const name of ["goto", "waitForURL", "reload", "goBack"]) {
+      const orig = page[name].bind(page);
+      page[name] = async (...args) => { const r = await orig(...args); await idle(); return r; };
+    }
     return page;
   },
   /** DB에 직접 SQL(관리자 지정 등 테스트 준비용) */

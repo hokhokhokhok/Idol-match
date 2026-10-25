@@ -7,6 +7,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await page.goto(`${BASE}/shows`);
   await page.getByRole("link", { name: "극장 보기" }).click();
   await page.waitForURL(`${BASE}/theaters`);
+  await count(page.locator(".search-list strong"), 2);
   const names = await page.locator(".search-list strong").allInnerTexts();
   check(names.length === 2, `극장 목록 (${names.join(", ")})`);
 
