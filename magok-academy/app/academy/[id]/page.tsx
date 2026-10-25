@@ -6,7 +6,7 @@ import PersonCard from "@/components/PersonCard";
 import StaleNote from "@/components/StaleNote";
 import StatusBadge from "@/components/StatusBadge";
 import { correctionLink } from "@/lib/constants";
-import { formatTuitionRange, isSample } from "@/lib/format";
+import { formatTuitionRange, isSample, sourceLabel } from "@/lib/format";
 import { getRepository } from "@/lib/repository";
 import { CATEGORY_LABEL, GRADE_LABEL } from "@/lib/types";
 
@@ -136,6 +136,18 @@ export default async function AcademyPage({ params }: { params: Promise<{ id: st
             확인 상태: {a.verification_status}
             {a.last_verified_at ? ` · 마지막 확인 ${a.last_verified_at}` : " · 확인일 없음"}
           </p>
+          {a.source_urls.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {a.source_urls.map((u) => (
+                <li key={u} className="truncate">
+                  학원 정보 출처:{" "}
+                  <a href={u} target="_blank" rel="noopener noreferrer" className="underline">
+                    {sourceLabel(u)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="mt-1 text-sub">경력마다 출처 링크와 수집일을 함께 표시합니다. 확인되지 않은 항목은 &lsquo;미확인&rsquo;으로 둡니다.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <a
