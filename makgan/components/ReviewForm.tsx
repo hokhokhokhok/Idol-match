@@ -1,6 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
 import RatingInput from "./RatingInput";
+import CastPicker from "./CastPicker";
 import type { ReviewFormState } from "@/lib/actions/reviews";
 import { REVIEW_LIMITS } from "@/lib/review-input";
 
@@ -8,13 +9,15 @@ type Values = Partial<Record<"id" | "show_id" | "watched_at" | "rating" | "body"
 
 /** 관극 후기 작성·수정 폼 */
 export default function ReviewForm({
-  action, shows, initial, today, submitLabel,
+  action, shows, initial, today, submitLabel, actors, initialCasts = [],
 }: {
   action: (s: ReviewFormState, f: FormData) => Promise<ReviewFormState>;
   shows: { id: string; title: string; theater_id?: string | null }[];
   initial: Values;
   today: string;
   submitLabel: string;
+  actors: { id: string; name: string }[];
+  initialCasts?: { actor_id: string; name: string; role_name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   // 검증 실패로 돌아오면 입력값 유지(React가 폼을 비우므로 defaultValue로 되살림)
@@ -43,6 +46,11 @@ export default function ReviewForm({
         <span>후기</span>
         <textarea name="body" rows={6} maxLength={REVIEW_LIMITS.body} defaultValue={v.body ?? ""} placeholder="어떤 점이 좋았나요?" />
       </label>
+      <CastPicker
+        showId={showId}
+        actors={actors}
+        initial={(() => { try { return state.values?.casts ? JSON.parse(state.values.casts) : initialCasts; } catch { return initialCasts; } })()}
+      />
       <label className="field">
         <span>그날 캐스트 (메모)</span>
         <input name="cast_note" maxLength={REVIEW_LIMITS.cast_note} defaultValue={v.cast_note ?? ""} placeholder="예: 주인공 OOO, 조연 OOO" />

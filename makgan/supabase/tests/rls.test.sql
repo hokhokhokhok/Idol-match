@@ -58,6 +58,9 @@ insert into public.reviews (id, show_id, watched_at, rating, body, is_public) va
   ('11111111-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000201', current_date, 5, '비공개 후기', false),
   ('11111111-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000201', current_date, 3, '공개 후기', true);
 select pg_temp.expect((select count(*) from public.reviews) = 2, 'alice: 내 후기 2개 조회');
+insert into public.review_casts (review_id, actor_id, role_name) values
+  ('11111111-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000301', '[샘플] 주인공'),
+  ('11111111-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000302', '[샘플] 주인공');
 select pg_temp.expect_denied($$insert into public.reviews (user_id, show_id, watched_at, rating) values
   ('bbbbbbbb-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000201', current_date, 1)$$, '남의 이름으로 후기 작성 거부');
 select pg_temp.expect_denied($$insert into public.benefits (type, title) values ('event', 'x')$$, '관리자 아님: 혜택 등록 거부');
@@ -76,6 +79,9 @@ set request.jwt.claims = '{"sub":"bbbbbbbb-0000-4000-8000-000000000002"}';
 select pg_temp.expect((select count(*) from public.reviews) = 1, 'bob: 타인 비공개 후기 안 보임(공개 1개만)');
 select pg_temp.expect((select count(*) from public.wishlists) = 0, 'bob: 타인 찜 안 보임');
 select pg_temp.expect((select count(*) from public.follows) = 0, 'bob: 타인 팔로우 안 보임');
+select pg_temp.expect((select count(*) from public.review_casts) = 1, 'bob: 공개 후기의 캐스트만 보임(비공개 후기 캐스트 숨김)');
+select pg_temp.expect_denied($$insert into public.review_casts (review_id, actor_id, role_name) values
+  ('11111111-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000303', 'x')$$, '남의 후기에 캐스트 추가 거부');
 update public.reviews set body = '수정됨' where id = '11111111-0000-4000-8000-000000000002';
 delete from public.reviews where user_id = 'aaaaaaaa-0000-4000-8000-000000000001';
 delete from public.seat_reviews;
