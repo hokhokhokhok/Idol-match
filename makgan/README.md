@@ -17,7 +17,8 @@
 | 6 | 찜(toggleWishlist): 목록·상세·출연작 카드 ♡, 비로그인 → 로그인 후 복귀, MY 찜 목록 | ✅ |
 | 7 | 홈(getHome): 오늘 마감 3 + 곧 열리는 티켓 3 + 내 찜 공연(가로 스크롤), 빈 화면·비로그인 안내 | ✅ |
 | 8 | 관극 후기 CRUD(공개/비공개, 본인만 수정·삭제), 공연 상세 후기, MY 탭(관극 기록·찜·팔로잉) | ✅ |
-| 9 | 관리자·검색 | 예정 |
+| 9 | 관리자(/admin: 공연·배우·극장·혜택·캐스팅, 서버에서 is_admin 재검증), 전체 검색(최근 검색어 5개) | ✅ |
+| 10~16 | SPEC-2 C번 표 | 예정 |
 
 ## 폴더
 ```
@@ -25,6 +26,8 @@ app/                     화면(5탭: / · /shows · /benefits · /actors · /me
 app/login, app/onboarding, app/auth/confirm   매직링크 로그인 · 닉네임 · 링크 도착 지점
 components/              TabBar, PageHeader, ShowCard(가로)·ShowCardVertical(세로), BenefitCard, WishButton·FollowButton, ActorChip, Poster·Avatar(기본 이미지), EmptyState, ErrorState, Skeleton, LoginRequired
 lib/auth.ts              getUser · getProfile · requireProfile · safeNext
+lib/admin.ts             requireAdmin(페이지) · adminClient(서버 액션)
+lib/admin-entities.ts    관리자 폼 정의·검증(KST 시각 입력 → ISO)
 lib/data/                조회 함수(listShows · getShow · getCast · listActors · getActor · listBenefits · getHome · 후기)
 lib/actions/             서버 액션
 lib/review-input.ts      후기 입력 검증(서버 액션·단위 테스트 공용)
