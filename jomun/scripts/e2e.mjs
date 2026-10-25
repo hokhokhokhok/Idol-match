@@ -222,7 +222,7 @@ for (const [name, opts] of VIEWS) {
   await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("jomun-v1")); s.packVer = 1; s.items = s.items.filter(i => i.id !== "adminappeal-27"); s.items.find(i => i.id === "bosang-62").box = 4; localStorage.setItem("jomun-v1", JSON.stringify(s)); });
   await page.reload();
   const s2 = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")));
-  check(s2.items.some(i => i.id === "adminappeal-27") && s2.items.find(i => i.id === "bosang-62").box === 4 && s2.packVer === 2, "팩 v1 → v2 업데이트: 새 조문 추가, 기존 학습 상태 유지");
+  check(s2.items.some(i => i.id === "adminappeal-27") && s2.items.find(i => i.id === "bosang-62").box === 4 && s2.packVer === await page.evaluate(() => JOMUN_PACK.version) && s2.items.some(i => i.id === "bosang-rule-45"), "이전 팩(v1) 기기 업데이트: 새 조문 추가, 기존 학습 상태 유지");
   await ctx.close();
 }
 
