@@ -5,9 +5,10 @@ import Avatar from "@/components/Avatar";
 import ShowCard from "@/components/ShowCard";
 import FollowButton from "@/components/FollowButton";
 import ErrorState from "@/components/ErrorState";
-import { getActor } from "@/lib/data/actors";
+import { getActor, getActorRelations } from "@/lib/data/actors";
 import { myWishlistIds } from "@/lib/data/wishlist";
 import { listVideos, type Video } from "@/lib/data/videos";
+import RelationGraph from "@/components/RelationGraph";
 import VideoSection from "@/components/VideoSection";
 import { kstDateString } from "@/lib/date";
 
@@ -32,6 +33,8 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
     );
   }
   if (!actor) notFound();
+  // 관계도는 부가 정보라 실패해도 페이지는 보여 준다
+  const relations = await getActorRelations(actor.id, actor.name).catch(() => null);
 
   const today = kstDateString();
   const current = actor.shows.filter((s) => s.ends_on >= today).sort((a, b) => a.starts_on.localeCompare(b.starts_on));
@@ -64,6 +67,14 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
             <ul className="card-list">
               {past.map((s) => <li key={s.id}><ShowCard show={s} note={s.roles.join(", ")} wished={wished.has(s.id)} /></li>)}
             </ul>
+          </section>
+        )}
+        {relations && (
+          <section className="section" id="relations">
+            <h3 className="section-title">함께한 배우 관계도 <span className="muted">{relations.total}</span></h3>
+            {relations.nodes.length === 0
+              ? <p className="muted">같은 공연에 출연한 다른 배우 정보가 아직 없어요</p>
+              : <RelationGraph key={actor.id} graph={relations} />}
           </section>
         )}
         <VideoSection videos={videos} />
