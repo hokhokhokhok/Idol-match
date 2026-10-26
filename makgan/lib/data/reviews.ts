@@ -10,6 +10,7 @@ export type Review = {
   user_id: string;
   show_id: string;
   watched_at: string;
+  watch_time: string | null;
   rating: number;
   body: string | null;
   cast_note: string | null;
@@ -21,7 +22,7 @@ export type Review = {
 export type ShowReview = Review & { author: string | null; mine: boolean };
 export type MyReview = Review & { show: { id: string; title: string } };
 
-const COLUMNS = "id, user_id, show_id, watched_at, rating, body, cast_note, seat_text, price, is_public, created_at";
+const COLUMNS = "id, user_id, show_id, watched_at, watch_time, rating, body, cast_note, seat_text, price, is_public, created_at";
 
 /** 공연 상세 후기: 공개 후기 + 내 비공개 후기(RLS가 거른다). 최신 관람일순 */
 export async function listShowReviews(showId: string, limit = 20): Promise<ShowReview[]> {

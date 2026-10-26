@@ -8,7 +8,7 @@ import { uniqueLabels } from "@/lib/labels";
 import type { ReviewFormState } from "@/lib/actions/reviews";
 import { REVIEW_LIMITS } from "@/lib/review-input";
 
-type Values = Partial<Record<"id" | "show_id" | "watched_at" | "rating" | "body" | "cast_note" | "seat_text" | "price" | "is_public", string>>;
+type Values = Partial<Record<"id" | "show_id" | "watched_at" | "watch_time" | "rating" | "body" | "cast_note" | "seat_text" | "price" | "is_public", string>>;
 
 /** 관극 후기 작성·수정 폼 */
 export default function ReviewForm({
@@ -27,6 +27,7 @@ export default function ReviewForm({
   const v: Values = { ...initial, ...state.values };
   const key = JSON.stringify(state.values ?? {});
   const [showId, setShowId] = useState(v.show_id ?? "");
+  const [watchedAt, setWatchedAt] = useState(v.watched_at ?? today);
   const [seat, setSeat] = useState(v.seat_text ?? "");
   const showOptions = uniqueLabels(shows.map((s) => ({ value: s.id, label: `${s.title} · ${formatPeriod(s.starts_on, s.ends_on)}` })));
   const canShareSeat = !v.id && seat.trim() !== "" && Boolean(shows.find((s) => s.id === showId)?.theater_id);
@@ -38,10 +39,16 @@ export default function ReviewForm({
         <span>공연</span>
         <Combobox name="show_id" options={showOptions} defaultValue={v.show_id} required placeholder="공연 이름을 입력해서 찾기" onSelect={setShowId} />
       </label>
-      <label className="field">
-        <span>관람일</span>
-        <input type="date" name="watched_at" required max={today} defaultValue={v.watched_at ?? today} />
-      </label>
+      <div className="field-row">
+        <label className="field">
+          <span>관람일</span>
+          <input type="date" name="watched_at" required max={today} defaultValue={v.watched_at ?? today} onChange={(e) => setWatchedAt(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>회차 시간 <small className="muted">(선택)</small></span>
+          <input type="time" name="watch_time" defaultValue={v.watch_time ?? ""} />
+        </label>
+      </div>
       <RatingInput name="rating" defaultValue={v.rating ? Number(v.rating) : undefined} />
       <label className="field">
         <span>후기</span>
@@ -49,6 +56,7 @@ export default function ReviewForm({
       </label>
       <CastPicker
         showId={showId}
+        date={watchedAt}
         actors={actors}
         initial={(() => { try { return state.values?.casts ? JSON.parse(state.values.casts) : initialCasts; } catch { return initialCasts; } })()}
       />
