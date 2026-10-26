@@ -13,7 +13,7 @@ export const CORRECTION_URL =
 /** 학원별 정정 요청 링크. GitHub 이슈면 제목을 미리 채운다. */
 export function correctionLink(academy?: { id: string; name: string }): string {
   if (!academy || !CORRECTION_URL.includes("github.com") || !CORRECTION_URL.endsWith("/issues/new")) return CORRECTION_URL;
-  const title = `[마곡학원 정정요청] ${academy.id} ${academy.name}`;
+  const title = `[학원 정정요청] ${academy.id} ${academy.name}`;
   const body = "정정·삭제를 원하는 항목과 내용을 적어 주세요.\n(학원 관계자라면 확인 가능한 연락처나 공식 채널을 함께 알려 주세요.)";
   return `${CORRECTION_URL}?${new URLSearchParams({ title, body, labels: "magok-academy" })}`;
 }

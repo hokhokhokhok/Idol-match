@@ -18,7 +18,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const a = await getRepository().getAcademy((await params).id);
-  return { title: a ? `${a.name} · 마곡 뮤지컬 학원 찾기` : "학원 없음" };
+  return { title: a ? `${a.name} · 서울 뮤지컬 학원 찾기` : "학원 없음" };
 }
 
 export default async function AcademyPage({ params }: { params: Promise<{ id: string }> }) {

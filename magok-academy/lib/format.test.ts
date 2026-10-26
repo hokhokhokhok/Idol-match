@@ -41,7 +41,7 @@ test("경력 요약", () => {
 
 test("정정 요청 링크에 학원 이름이 채워짐", () => {
   const url = new URL(correctionLink({ id: "A001", name: "(예시)샘플" }));
-  assert.equal(url.searchParams.get("title"), "[마곡학원 정정요청] A001 (예시)샘플");
+  assert.equal(url.searchParams.get("title"), "[학원 정정요청] A001 (예시)샘플");
 });
 
 test("출처 이름", () => {

@@ -3,7 +3,7 @@ import TabBar from "@/components/TabBar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "마곡 뮤지컬 학원 찾기",
+  title: "서울 뮤지컬 학원 찾기",
   description: "서울(강서구 마곡 중심) 초·중등 보컬·댄스·발레·탭댄스·아크로바틱·체조·연기·뮤지컬 학원을 출처와 함께 비교",
 };
 

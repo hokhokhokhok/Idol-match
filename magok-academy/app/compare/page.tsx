@@ -3,7 +3,7 @@ import CompareView from "@/components/CompareView";
 import { getRepository } from "@/lib/repository";
 import type { AcademyDetail } from "@/lib/types";
 
-export const metadata: Metadata = { title: "학원 비교 · 마곡 뮤지컬 학원 찾기" };
+export const metadata: Metadata = { title: "학원 비교 · 서울 뮤지컬 학원 찾기" };
 
 export default async function ComparePage() {
   const repo = getRepository();

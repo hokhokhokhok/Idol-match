@@ -53,7 +53,7 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
       <div className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
         <header className="flex items-center justify-between gap-2 px-4 pt-3">
           <div className="min-w-0">
-            <h1 className="text-lg font-bold">마곡 뮤지컬 학원 찾기</h1>
+            <h1 className="text-lg font-bold">서울 뮤지컬 학원 찾기</h1>
             <p className="text-xs text-sub">서울 · 초·중등 노래·춤·연기·뮤지컬</p>
           </div>
           <div role="group" aria-label="보기 방식" className="flex shrink-0 rounded-full bg-surface p-0.5 text-sm">
