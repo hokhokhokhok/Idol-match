@@ -6,7 +6,14 @@ export type Category = (typeof CATEGORIES)[number];
 
 export const GRADES = ["초저", "초고", "중등"] as const;
 
-/** 동네. 주소의 법정동으로 정한다 (내발산동·외발산동은 발산). */
+/** 서울 25개 구 */
+export const SEOUL_GUS = [
+  "강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구", "노원구", "도봉구", "동대문구", "동작구", "마포구",
+  "서대문구", "서초구", "성동구", "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구", "종로구", "중구", "중랑구",
+] as const;
+export type Gu = (typeof SEOUL_GUS)[number];
+
+/** 강서구 안의 동네. 주소의 법정동으로 정한다 (내발산동·외발산동은 발산). */
 export const AREAS = ["마곡", "화곡", "발산", "가양", "등촌", "방화"] as const;
 export type Area = (typeof AREAS)[number];
 export type Grade = (typeof GRADES)[number];

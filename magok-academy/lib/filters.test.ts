@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { loadDatasetFromDir } from "./dataset.ts";
-import { EMPTY_FILTERS, activeFilterCount, applyFilters, areaOf, filtersFromParams, filtersToParams, type Filters } from "./filters.ts";
+import { EMPTY_FILTERS, activeFilterCount, applyFilters, areaOf, filtersFromParams, filtersToParams, guOf, type Filters } from "./filters.ts";
 
 const { academies } = loadDatasetFromDir(path.join(import.meta.dirname, "..", "data", "sample"), { today: new Date("2026-10-24") }).dataset;
 const ids = (f: Partial<Filters>, fav: string[] = []) => applyFilters(academies, { ...EMPTY_FILTERS, ...f }, fav).academies.map((a) => a.id);
@@ -45,9 +45,9 @@ test("즐겨찾기만", () => {
 });
 
 test("URL 왕복, 잘못된 값은 버림", () => {
-  const f: Filters = { areas: ["화곡", "발산"], categories: ["보컬", "연기"], grades: ["중등"], tuition: "15to20", days: ["화"], times: ["evening"], favoritesOnly: true };
+  const f: Filters = { gus: ["강서구"], areas: ["화곡", "발산"], categories: ["보컬", "연기"], grades: ["중등"], tuition: "15to20", days: ["화"], times: ["evening"], favoritesOnly: true };
   assert.deepEqual(filtersFromParams(filtersToParams(f)), f);
-  assert.equal(activeFilterCount(f), 9);
+  assert.equal(activeFilterCount(f), 10);
   assert.deepEqual(filtersFromParams(new URLSearchParams("c=보컬,피아노&t=cheap&d=X")), { ...EMPTY_FILTERS, categories: ["보컬"] });
   // 필터 외 파라미터(v, sel)는 유지
   assert.equal(filtersToParams(EMPTY_FILTERS, new URLSearchParams("v=map&c=댄스")).toString(), "v=map");
@@ -68,4 +68,18 @@ test("동네 필터: 주소에서 동네를 못 찾으면 제외", () => {
   // 예시 데이터는 전부 마곡동
   assert.equal(ids({ areas: ["마곡"] }).length, 6);
   assert.deepEqual(ids({ areas: ["화곡"] }), []);
+});
+
+test("주소 → 구", () => {
+  assert.equal(guOf("서울 강남구 학동로 163 (논현동 58-1)"), "강남구");
+  assert.equal(guOf("서울 중구 퇴계로 1"), "중구");
+  assert.equal(guOf("경기 김포시 운양동 1"), null);
+  assert.equal(guOf(null), null);
+  // 강서구 밖 주소는 강서구 동네로 분류하지 않음
+  assert.equal(areaOf("서울 양천구 목동동로 12 (신정동 86-13)"), null);
+});
+
+test("구 필터", () => {
+  assert.deepEqual(ids({ gus: ["강서구"] }), ids({}));
+  assert.deepEqual(ids({ gus: ["강남구"] }), []);
 });
