@@ -49,7 +49,7 @@ for (const [name, opts] of VIEWS) {
   await page.goto(URL, { waitUntil: "networkidle" });
   check((await page.textContent("h2")).includes("오늘 조문 0/10"), `${name}: 첫 실행 하루 목표 10개`);
   const PACK_N = await page.evaluate(() => JOMUN_PACK.items.length);
-  check((await page.textContent(".card")).includes(`전체 ${PACK_N + 3}`) && await page.locator("button:text('오늘 조문 시작 (10개)')").count() === 1, `${name}: 기본 조문 팩 ${PACK_N}개 + 샘플 3개, 오늘 10개`);
+  check((await page.textContent(".card")).includes(`전체 ${PACK_N}`) && await page.locator("button:text('오늘 조문 시작 (10개)')").count() === 1, `${name}: 기본 조문 팩 ${PACK_N}개, 오늘 10개`);
   check(!(await page.textContent(".card")).includes("채우지 못합니다") && !await page.isVisible("#warn"), `${name}: 첫 실행엔 부족·추가 안내 없음`);
   await page.screenshot({ path: `${SHOTS}/${name}-home.png` });
   await layout(page, name, "홈");
@@ -61,7 +61,7 @@ for (const [name, opts] of VIEWS) {
 
   // 복습: 첫 카드 정답 입력 → 확인 → 알았다
   await page.click("button:text('오늘 조문 시작 (3개)')");
-  check(await page.locator(".card .flag:text('원문 대조 필요')").count() === 1, `${name}: 복습 카드에 '원문 대조 필요' 표시`);
+  check(await page.locator(".card .flag").count() === 0 && (await page.textContent(".card")).includes("시행 2026-09-08"), `${name}: 원문 조문 카드 — 시행일 표시, '원문 대조 필요' 없음`);
   const blanks = page.locator("input.blank");
   const first = await page.textContent(".card b");
   if (first.includes("제67조 제1항")) { await blanks.nth(0).fill("협의 성립 당시"); await blanks.nth(1).press("Enter"); }
@@ -213,16 +213,19 @@ for (const [name, opts] of VIEWS) {
   const s = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")));
   const pn = await page.evaluate(() => JOMUN_PACK.items.length);
   check(s.schema === 3 && s.cap === 25 && s.items[0].box === 2 && s.items.length === 1 + pn && s.packVer === await page.evaluate(() => JOMUN_PACK.version), "v1 저장 데이터 마이그레이션 (학습 상태 유지 + 기본 조문 팩 추가)");
-  check((await page.textContent("#warn")).includes(`기본 조문 ${pn}개를 추가`), "기존 사용자에게 조문 팩 추가 안내");
+  check((await page.textContent("#warn")).includes(`조문 ${pn}개를 추가`), "기존 사용자에게 조문 팩 추가 안내");
   // 이미 팩을 받은 기기에서 팩 조문을 지워도 다시 생기지 않음
   await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("jomun-v1")); s.items = s.items.filter(i => i.id !== "bosang-61"); localStorage.setItem("jomun-v1", JSON.stringify(s)); });
   await page.reload();
   check(await page.evaluate(() => !JSON.parse(localStorage.getItem("jomun-v1")).items.some(i => i.id === "bosang-61")), "지운 팩 조문은 같은 팩 버전에서 다시 추가되지 않음");
   // 이전 팩 버전(1)을 받은 기기: 팩 버전이 오르면 없는 조문(새 조문)만 추가되고 기존 학습 상태는 유지
-  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("jomun-v1")); s.packVer = 1; s.items = s.items.filter(i => i.id !== "adminappeal-27"); s.items.find(i => i.id === "bosang-62").box = 4; localStorage.setItem("jomun-v1", JSON.stringify(s)); });
+  await page.evaluate(OLD62 => { const s = JSON.parse(localStorage.getItem("jomun-v1")); s.packVer = 1; s.items = s.items.filter(i => i.id !== "adminappeal-27"); const o = s.items.find(i => i.id === "bosang-62"); o.box = 4; o.grade = "A"; o.verified = false; o.text = OLD62; localStorage.setItem("jomun-v1", JSON.stringify(s)); }, "사업시행자는 해당 공익사업을 위한 {{공사에 착수하기 이전}}에 토지소유자와 관계인에게 보상액 {{전액(全額)}}을 지급하여야 한다. 다만, 제38조에 따른 {{천재지변 시의 토지 사용}}과 제39조에 따른 {{시급한 토지 사용}}의 경우 또는 토지소유자 및 관계인의 {{승낙}}이 있는 경우에는 그러하지 아니하다.");
   await page.reload();
   const s2 = await page.evaluate(() => JSON.parse(localStorage.getItem("jomun-v1")));
   check(s2.items.some(i => i.id === "adminappeal-27") && s2.items.find(i => i.id === "bosang-62").box === 4 && s2.packVer === await page.evaluate(() => JOMUN_PACK.version) && s2.items.some(i => i.id === "bosang-rule-45"), "이전 팩(v1) 기기 업데이트: 새 조문 추가, 기존 학습 상태 유지");
+  const n62 = s2.items.find(i => i.id === "bosang-62"), p62 = await page.evaluate(() => JOMUN_PACK.items.find(i => i.id === "bosang-62").text);
+  check(n62.text === p62 && n62.verified === true && n62.grade === "A" && n62.box === 4, "예전에 기억으로 쓴 문구 → 원문으로 교체(등급·학습 기록 유지)");
+  check((await page.textContent("#warn")).includes("국가법령정보센터 원문으로 바꿨습니다"), "원문 교체 안내");
   await ctx.close();
 }
 
