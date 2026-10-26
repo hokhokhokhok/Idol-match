@@ -11,12 +11,13 @@ import {
   TUITION_BANDS,
   activeFilterCount,
   applyFilters,
+  guOf,
   filtersFromParams,
   filtersToParams,
   toggle,
   type Filters,
 } from "@/lib/filters";
-import { AREAS, CATEGORIES, CATEGORY_LABEL, GRADES, GRADE_LABEL, WEEKDAYS, type Academy } from "@/lib/types";
+import { AREAS, CATEGORIES, CATEGORY_LABEL, GRADES, GRADE_LABEL, SEOUL_GUS, WEEKDAYS, type Academy } from "@/lib/types";
 import { useFavorites } from "@/lib/useStoredIds";
 
 export default function HomeView({ academies }: { academies: Academy[] }) {
@@ -42,6 +43,8 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
   };
 
   const { academies: results, unknown } = applyFilters(academies, filters, fav.ids);
+  // 데이터에 있는 구만 칩으로 보여 준다
+  const gusInData = useMemo(() => SEOUL_GUS.filter((g) => academies.some((a) => guOf(a.address) === g)), [academies]);
   const extraCount = activeFilterCount(filters) - filters.categories.length;
   const selected = results.find((a) => a.id === selectedId) ?? null;
 
@@ -51,7 +54,7 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
         <header className="flex items-center justify-between gap-2 px-4 pt-3">
           <div className="min-w-0">
             <h1 className="text-lg font-bold">마곡 뮤지컬 학원 찾기</h1>
-            <p className="text-xs text-sub">강서구 마곡·화곡·발산·가양·등촌·방화 · 초·중등 노래·춤·연기</p>
+            <p className="text-xs text-sub">서울 · 초·중등 노래·춤·연기·뮤지컬</p>
           </div>
           <div role="group" aria-label="보기 방식" className="flex shrink-0 rounded-full bg-surface p-0.5 text-sm">
             {(["list", "map"] as const).map((v) => (
@@ -90,7 +93,14 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
 
         {panelOpen && (
           <div id="filter-panel" className="max-h-[55vh] space-y-3 overflow-y-auto border-t border-line px-4 py-3">
-            <FilterGroup label="동네">
+            <FilterGroup label="구">
+              {gusInData.map((g) => (
+                <Chip key={g} selected={filters.gus.includes(g)} onClick={() => setFilters({ ...filters, gus: toggle(filters.gus, g) })}>
+                  {g}
+                </Chip>
+              ))}
+            </FilterGroup>
+            <FilterGroup label="강서구 동네">
               {AREAS.map((a) => (
                 <Chip key={a} selected={filters.areas.includes(a)} onClick={() => setFilters({ ...filters, areas: toggle(filters.areas, a) })}>
                   {a}

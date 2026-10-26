@@ -76,9 +76,9 @@ for (const width of [360, 390]) {
   await page.screenshot({ path: `screenshots/${width}-filters.png` });
   await page.getByRole("button", { name: "필터 초기화" }).first().click();
   // 동네 필터: 예시 데이터는 전부 마곡동
-  await page.getByRole("group", { name: "동네" }).getByRole("button", { name: "화곡" }).click();
+  await page.getByRole("group", { name: "강서구 동네" }).getByRole("button", { name: "화곡" }).click();
   check(await countIs(cards(page), 0), `${W} 동네=화곡 → 0곳 (예시는 모두 마곡)`);
-  await page.getByRole("group", { name: "동네" }).getByRole("button", { name: "마곡" }).click();
+  await page.getByRole("group", { name: "강서구 동네" }).getByRole("button", { name: "마곡" }).click();
   check(await countIs(cards(page), 6), `${W} 동네=화곡+마곡 → 6곳`);
   await page.getByRole("button", { name: "필터 초기화" }).first().click();
   await page.getByRole("button", { name: "20만원 초과" }).click();
