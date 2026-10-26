@@ -235,10 +235,35 @@ function migrate(s, today) {
  return s;
 }
 
+// 문자열 해시(djb2, UTF-16 코드 단위) — 팩이 예전 문구를 알아보는 데 쓴다
+function hash(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) >>> 0; return h; }
+
+/* 기본 조문 팩 병합. 팩 version이 기기의 packVer보다 높을 때만:
+ - 기기에 없는 id → 추가(새 학습 상태)
+ - 있는 id 중 pack.replaces[id]가 기기 문구의 해시와 같으면(=예전 팩 문구를 사용자가 안 고침)
+   문구ㆍ조문 번호ㆍ제목ㆍverifiedㆍ출처만 새 팩 것으로 바꾸고 등급ㆍ학습 기록은 그대로 둔다
+ - 사용자가 고친 조문, 지운 조문(같은 버전 안에서)은 건드리지 않는다 */
+function mergePack(s, pack, today) {
+ const r = { added: 0, replaced: 0 };
+ if (!pack || (s.packVer | 0) >= pack.version) return r;
+ const byId = new Map(s.items.map(i => [i.id, i])), chs = new Set(s.chains.map(c => c.id)), rep = pack.replaces || {};
+ for (const x of pack.items) {
+  const o = byId.get(x.id);
+  if (!o) { s.items.push({ ...x, tags: [...(x.tags || [])], box: 0, due: today, log: [] }); r.added++; }
+  else if (rep[x.id] != null && rep[x.id] === hash(o.text)) {   // 문구가 같아도 verifiedㆍ출처는 갱신
+   Object.assign(o, { law: x.law, article: x.article, title: x.title, text: x.text, verified: x.verified, source: x.source });
+   r.replaced++;
+  }
+ }
+ for (const c of pack.chains) if (!chs.has(c.id)) s.chains.push({ ...c, ids: [...c.ids] });
+ s.packVer = pack.version;
+ return r;
+}
+
 const backup = (state, now = new Date()) => ({ app: APP, schema: SCHEMA, exported: now.toISOString(), state });
 
 return { GRADES, GMAX, BOX, LOG_MAX, WEIGHTS, SCORE_LABELS, APP, SCHEMA,
  todayKST, addDays, diffDays, isDate, norm, parts, blanks,
  interval, rate, requeue, isNew, dueItems, DAILY, doneToday, todayQueue, record, accuracy, streak, wrongNotes,
- gradeScore, scoreToGrade, capSuggestion, validateImport, migrate, backup };
+ gradeScore, scoreToGrade, capSuggestion, validateImport, migrate, backup, hash, mergePack };
 });
