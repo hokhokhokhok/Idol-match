@@ -5,6 +5,7 @@ import { getUser } from "@/lib/auth";
 import { DataError, isUuid } from "./shows";
 import type { ShowSummary } from "@/lib/types";
 import { fetchAll } from "./paging";
+import { assignTiers, type Activity, type Tier } from "@/lib/popularity";
 import { buildRelations, type CastRow, type Named, type Relations } from "@/lib/relations";
 
 export const ACTOR_PAGE_SIZE = 60;
@@ -104,4 +105,43 @@ export async function getActorRelations(actorId: string, actorName: string): Pro
     for (const s of data ?? []) titles[s.id as string] = s.title as string;
   }
   return { ...graph, titles };
+}
+
+// ── 인기 등급: 점수는 서버 안에서만 쓰고 등급만 내보낸다 ──
+let tierCache: { at: number; tiers: Map<string, Tier> } | null = null;
+
+/** 모든 배우의 등급(10분 캐시). 출연 기록이 없는 배우는 없음 */
+export async function getActorTiers(): Promise<Map<string, Tier>> {
+  if (!isSupabaseConfigured) return new Map();
+  if (tierCache && Date.now() - tierCache.at < 600_000) return tierCache.tiers;
+  const supabase = await createClient();
+  const rows = await fetchAll<Activity>((from, to) => supabase.rpc("actor_activity").order("actor_id").range(from, to) as never);
+  const tiers = assignTiers(rows);
+  tierCache = { at: Date.now(), tiers };
+  return tiers;
+}
+
+export async function getActorTier(id: string): Promise<Tier | null> {
+  return (await getActorTiers().catch(() => new Map<string, Tier>())).get(id) ?? null;
+}
+
+/** 인기 탭: 등급별 배우(가나다순 — 순위·점수는 드러내지 않는다) */
+export async function listActorsByTier(tier: Tier, limit: number) {
+  const tiers = await getActorTiers();
+  const ids = [...tiers].filter(([, t]) => t === tier).map(([id]) => id);
+  const supabase = await createClient();
+  const follows = await myFollowIds();
+  const rows: { id: string; name: string; photo_url: string | null }[] = [];
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data, error } = await supabase.from("actors").select("id, name, photo_url").in("id", ids.slice(i, i + 100));
+    if (error) throw new DataError(error.message);
+    rows.push(...(data ?? []) as typeof rows);
+  }
+  rows.sort((a, b) => a.name.localeCompare(b.name, "ko") || a.id.localeCompare(b.id));
+  const counts = Object.fromEntries(["S", "A", "B", "C", "D"].map((t) => [t, [...tiers.values()].filter((v) => v === t).length]));
+  return {
+    items: rows.slice(0, limit).map((a) => ({ ...a, following: follows.has(a.id) })),
+    hasMore: rows.length > limit,
+    counts: counts as Record<Tier, number>,
+  };
 }

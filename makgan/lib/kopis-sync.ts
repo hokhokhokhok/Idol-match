@@ -13,6 +13,9 @@ export type SyncOptions = {
   baseUrl?: string;
   now?: Date;
   windowDays?: number;      // 오늘부터 며칠 뒤까지 열리는 공연(기본 120)
+  fromDay?: string;         // 지난 공연 채우기: 이 날짜(YYYY-MM-DD)부터
+  toDay?: string;           // …이 날짜까지(둘 다 주면 windowDays·오늘은 쓰지 않음)
+  states?: readonly string[]; // 공연 상태 코드(기본 예정·공연중, 지난 공연은 ["03"] 공연완료)
   maxDetails?: number;      // 한 번에 상세(소개·출연진)를 받을 최대 편수(기본 1500)
   staleDays?: number;       // 상세를 이만큼 지나면 다시 받음(기본 3)
   timeBudgetMs?: number;    // 넘으면 새 묶음을 시작하지 않고 멈춤(다음 실행이 이어서)
@@ -75,11 +78,12 @@ export async function syncKopis(db: SupabaseClient, opts: SyncOptions): Promise<
   const q = (path: string, params: Record<string, string>) => `${base}/${path}?${new URLSearchParams({ service: opts.key, ...params })}`;
 
   // 1) 목록: 뮤지컬·연극 × 공연예정·공연중, 100개씩
-  const from = kstDay(now);
-  const to = kstDay(new Date(now.getTime() + (opts.windowDays ?? 120) * 86400e3));
+  const from = opts.fromDay ?? kstDay(now);
+  const to = opts.toDay ?? kstDay(new Date(now.getTime() + (opts.windowDays ?? 120) * 86400e3));
+  const states = opts.states ?? STATES;
   const list = new Map<string, KopisListItem>();
   for (const genre of GENRES) {
-    for (const state of STATES) {
+    for (const state of states) {
       for (let page = 1; page <= 40; page++) {
         const xml = await fetchText(q("pblprfr", { stdate: compact(from), eddate: compact(to), cpage: String(page), rows: "100", shcate: genre, prfstate: state }));
         const err = kopisError(xml);

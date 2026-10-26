@@ -11,7 +11,7 @@ const form = (o: Record<string, string>) => {
 
 test("정상 입력", () => {
   const r = parseReviewForm(form({ body: "  좋았다 ", price: "99,000원", is_public: "on" }), "2026-11-03");
-  assert.deepEqual(r, { value: { show_id: SHOW, watched_at: "2026-11-01", rating: 4, body: "좋았다", cast_note: null, seat_text: null, price: 99000, is_public: true } });
+  assert.deepEqual(r, { value: { show_id: SHOW, watched_at: "2026-11-01", watch_time: null, rating: 4, body: "좋았다", cast_note: null, seat_text: null, price: 99000, is_public: true } });
 });
 
 test("빈 칸은 null, 체크 안 하면 비공개", () => {
@@ -32,5 +32,11 @@ test("잘못된 값", () => {
   assert.equal(err({ rating: "6" }), "별점을 골라 주세요");
   assert.equal(err({ price: "-1" }), "관람료는 숫자로 입력해 주세요");
   assert.equal(err({ price: "abc" }), "관람료는 숫자로 입력해 주세요");
+  assert.equal(err({ watch_time: "25:00" }), "회차 시간을 다시 입력해 주세요");
   assert.match(err({ body: "가".repeat(2001) })!, /2000자/);
+});
+
+test("회차 시간", () => {
+  const r = parseReviewForm(form({ watch_time: "14:30" }), "2026-11-03");
+  assert.ok("value" in r && r.value.watch_time === "14:30");
 });

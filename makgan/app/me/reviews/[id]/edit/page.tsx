@@ -26,7 +26,7 @@ export default async function EditReviewPage({ params }: { params: Promise<{ id:
           actors={actors}
           initialCasts={casts}
           initial={{
-            id: review.id, show_id: review.show_id, watched_at: review.watched_at, rating: String(review.rating),
+            id: review.id, show_id: review.show_id, watched_at: review.watched_at, watch_time: review.watch_time ?? "", rating: String(review.rating),
             body: review.body ?? "", cast_note: review.cast_note ?? "", seat_text: review.seat_text ?? "",
             price: review.price == null ? "" : String(review.price), is_public: String(review.is_public),
           }}

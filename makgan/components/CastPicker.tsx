@@ -6,7 +6,7 @@ import type { CastPick } from "@/lib/review-casts";
 type Pick = Required<CastPick>;
 
 /** "그날 캐스트": 공연 캐스팅에서 고르거나, 다른 배우를 배역과 함께 추가(배우 자동완성, SPEC-2 B-5) */
-export default function CastPicker({ showId, initial, actors }: { showId: string; initial: Pick[]; actors: { id: string; name: string }[] }) {
+export default function CastPicker({ showId, date, initial, actors }: { showId: string; date?: string; initial: Pick[]; actors: { id: string; name: string }[] }) {
   const [picked, setPicked] = useState<Pick[]>(initial);
   const [options, setOptions] = useState<Pick[]>([]);
   const [role, setRole] = useState("");
@@ -17,9 +17,9 @@ export default function CastPicker({ showId, initial, actors }: { showId: string
   useEffect(() => {
     let alive = true;
     if (!showId) { setOptions([]); return; }
-    getCastOptions(showId).then((o) => alive && setOptions(o)).catch(() => alive && setOptions([]));
+    getCastOptions(showId, date).then((o) => alive && setOptions(o)).catch(() => alive && setOptions([]));
     return () => { alive = false; };
-  }, [showId]);
+  }, [showId, date]);
 
   const key = (p: CastPick) => `${p.actor_id}:${p.role_name}`;
   const has = (p: CastPick) => picked.some((x) => key(x) === key(p));
@@ -35,7 +35,7 @@ export default function CastPicker({ showId, initial, actors }: { showId: string
 
   return (
     <fieldset className="cast-picker">
-      <legend>그날 캐스트 <small className="muted">(통계의 배우 TOP3에 쓰여요)</small></legend>
+      <legend>그날 캐스트 <small className="muted">(관람일에 맞는 캐스팅을 먼저 보여 줘요 · 통계의 배우 TOP3에 쓰여요)</small></legend>
       <input type="hidden" name="casts" value={JSON.stringify(picked)} />
       {options.length > 0 && (
         <div className="cast-options" aria-label="공연 캐스팅에서 고르기">

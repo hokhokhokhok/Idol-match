@@ -4,7 +4,7 @@ import DeleteReviewButton from "./DeleteReviewButton";
 import { formatDay } from "@/lib/date";
 
 type Props = {
-  review: { id: string; watched_at: string; rating: number; body: string | null; cast_note: string | null; seat_text: string | null; is_public: boolean };
+  review: { id: string; watched_at: string; watch_time?: string | null; rating: number; body: string | null; cast_note: string | null; seat_text: string | null; is_public: boolean };
   heading?: { text: string; href: string };   // MY: 공연 제목
   author?: string | null;                      // 공연 상세: 작성자
   mine?: boolean;
@@ -17,7 +17,7 @@ export default function ReviewItem({ review: r, heading, author, mine }: Props) 
         {heading && <Link href={heading.href} className="review-show">{heading.text}</Link>}
         <RatingStars value={r.rating} />
         <span className="muted review-meta">
-          {formatDay(r.watched_at)} 관람{author !== undefined && ` · ${author ?? "알 수 없음"}`}
+          {formatDay(r.watched_at)}{r.watch_time ? ` ${r.watch_time}` : ""} 관람{author !== undefined && ` · ${author ?? "알 수 없음"}`}
         </span>
         {!r.is_public && <span className="badge badge-muted">나만 보기</span>}
       </div>

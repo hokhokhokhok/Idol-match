@@ -20,12 +20,16 @@ async function saveCasts(supabase: Awaited<ReturnType<typeof CreateClient>>, rev
 }
 
 /** 후기 폼: 공연의 등록된 캐스팅(배역·배우) — 그날 캐스트 추천 */
-export async function getCastOptions(showId: string) {
+export async function getCastOptions(showId: string, date?: string) {
   if (!isUuid(showId)) return [];
   const supabase = await createClient();
-  const { data } = await supabase.from("casts").select("actor_id, role_name, actor:actors(name)").eq("show_id", showId).order("role_name");
+  const { data } = await supabase.from("casts").select("actor_id, role_name, perf_date, actor:actors(name)").eq("show_id", showId).order("role_name");
   const seen = new Set<string>();
-  return ((data ?? []) as unknown as { actor_id: string; role_name: string; actor: { name: string } }[])
+  type Row = { actor_id: string; role_name: string; perf_date: string | null; actor: { name: string } };
+  // 특정 날짜 캐스팅이 있으면 관람일에 맞는 것(전체 회차 공통 포함)만, 그날 것을 앞에 둔다
+  return (((data ?? []) as unknown as Row[])
+    .filter((c) => !c.perf_date || !date || c.perf_date === date)
+    .sort((a, b) => Number(Boolean(b.perf_date)) - Number(Boolean(a.perf_date))))
     .filter((c) => !seen.has(`${c.actor_id}:${c.role_name}`) && seen.add(`${c.actor_id}:${c.role_name}`))
     .map((c) => ({ actor_id: c.actor_id, role_name: c.role_name, name: c.actor.name }));
 }

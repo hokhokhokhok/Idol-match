@@ -388,3 +388,21 @@ a.badge { text-decoration: none; }
 .rel-panel { margin-top: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
 .rel-shows { margin: 8px 0 12px; padding-left: 18px; font-size: 14px; }
 .rel-go { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 10px; text-decoration: none; }
+
+/* 배우 인기 등급: 색으로만 구분(S 무지개·A 골드·B 실버·C 브론즈) */
+.tier-ring { display: inline-flex; padding: 3px; border-radius: 50%; line-height: 0; background: var(--tier-bg); }
+.tier-S { --tier-bg: conic-gradient(#ff3b30, #ff9500, #ffd60a, #34c759, #0a84ff, #bf5af2, #ff3b30); }
+.tier-A { --tier-bg: linear-gradient(135deg, #f7d774, #c9951a 55%, #f7d774); }
+.tier-B { --tier-bg: linear-gradient(135deg, #e8ecef, #9aa3ab 55%, #e8ecef); }
+.tier-C { --tier-bg: linear-gradient(135deg, #e0a878, #a2622c 55%, #e0a878); }
+.tier-ring .avatar { border: 2px solid var(--bg); }
+.tier-chips .chip[aria-current="true"] { color: #fff; border-color: transparent; background: var(--tier-bg, var(--burgundy)); text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.tier-chip-S { --tier-bg: conic-gradient(from 90deg, #ff3b30, #ff9500, #ffd60a, #34c759, #0a84ff, #bf5af2, #ff3b30); }
+.tier-chip-A { --tier-bg: linear-gradient(135deg, #e5b93c, #b8860b); }
+.tier-chip-B { --tier-bg: linear-gradient(135deg, #b8c0c7, #7d878f); }
+.tier-chip-C { --tier-bg: linear-gradient(135deg, #cd8a4e, #94561f); }
+.tier-chip-D { --tier-bg: var(--text-sub); }
+.tier-legend { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 12px; font-size: 12px; color: var(--text-sub); }
+.tier-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -2px; margin-right: 4px; background: var(--tier-bg, var(--line)); }
+.film-year { margin-top: 12px; }
+.film-year-title { margin: 0 0 6px; font-size: 14px; color: var(--burgundy); }

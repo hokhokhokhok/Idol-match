@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import Avatar from "@/components/Avatar";
+import TierRing from "@/components/TierRing";
 import ShowCard from "@/components/ShowCard";
 import FollowButton from "@/components/FollowButton";
 import ErrorState from "@/components/ErrorState";
-import { getActor, getActorRelations } from "@/lib/data/actors";
+import { getActor, getActorRelations, getActorTier } from "@/lib/data/actors";
 import { myWishlistIds } from "@/lib/data/wishlist";
 import { listVideos, type Video } from "@/lib/data/videos";
 import RelationGraph from "@/components/RelationGraph";
@@ -34,18 +35,21 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
   }
   if (!actor) notFound();
   // 관계도는 부가 정보라 실패해도 페이지는 보여 준다
+  const tier = await getActorTier(actor.id);
   const relations = await getActorRelations(actor.id, actor.name).catch(() => null);
 
   const today = kstDateString();
   const current = actor.shows.filter((s) => s.ends_on >= today).sort((a, b) => a.starts_on.localeCompare(b.starts_on));
   const past = actor.shows.filter((s) => s.ends_on < today);
+  // 필모그래피: 지난 공연을 연도별로 쌓아 보여 준다(최근 연도 먼저)
+  const years = [...new Set(past.map((s) => s.ends_on.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
 
   return (
     <>
       <PageHeader title={actor.name} back="/actors" />
       <main className="page-body">
         <section className="actor-hero">
-          <Avatar src={actor.photo_url} alt={actor.name} size={88} />
+          <TierRing tier={tier}><Avatar src={actor.photo_url} alt={actor.name} size={88} /></TierRing>
           <div className="actor-hero-body">
             <h2 className="show-title">{actor.name}</h2>
             <FollowButton actorId={actor.id} name={actor.name} following={actor.following} />
@@ -63,10 +67,15 @@ export default async function ActorPage({ params }: { params: Promise<{ id: stri
         </section>
         {past.length > 0 && (
           <section className="section">
-            <h3 className="section-title">지난 공연 <span className="muted">{past.length}</span></h3>
-            <ul className="card-list">
-              {past.map((s) => <li key={s.id}><ShowCard show={s} note={s.roles.join(", ")} wished={wished.has(s.id)} /></li>)}
-            </ul>
+            <h3 className="section-title">필모그래피 <span className="muted">지난 공연 {past.length}편</span></h3>
+            {years.map((y) => (
+              <div key={y} className="film-year">
+                <h4 className="film-year-title">{y}년 <span className="muted">{past.filter((s) => s.ends_on.startsWith(y)).length}</span></h4>
+                <ul className="card-list">
+                  {past.filter((s) => s.ends_on.startsWith(y)).map((s) => <li key={s.id}><ShowCard show={s} note={s.roles.join(", ")} wished={wished.has(s.id)} /></li>)}
+                </ul>
+              </div>
+            ))}
           </section>
         )}
         {relations && (
