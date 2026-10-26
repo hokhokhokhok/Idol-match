@@ -363,3 +363,28 @@ a.badge { text-decoration: none; }
 .admin-search { margin-bottom: 12px; }
 .admin-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--burgundy-soft); font-size: 13px; }
 .admin-bar a { color: var(--burgundy); font-weight: 600; }
+
+/* 배우 관계도 */
+.rel-stage { position: relative; background: var(--bg-sub); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.rel-svg { display: block; width: 100%; height: auto; aspect-ratio: 1; touch-action: none; cursor: grab; user-select: none; }
+.rel-svg:active { cursor: grabbing; }
+.rel-svg:focus-visible { outline: 2px solid var(--burgundy); outline-offset: -2px; }
+.rel-ring { fill: none; stroke: var(--line); stroke-dasharray: 3 5; }
+.rel-edge { stroke: var(--burgundy); stroke-opacity: .28; stroke-linecap: round; }
+.rel-edge-weak { stroke: var(--text-sub); stroke-opacity: .18; }
+.rel-edge-on { stroke-opacity: .8; }
+.rel-node { cursor: pointer; }
+.rel-node circle { fill: var(--bg); stroke: var(--burgundy); stroke-width: 2; }
+.rel-node-on circle, .rel-node:focus-visible circle { fill: var(--burgundy-soft); stroke-width: 4; }
+.rel-node:focus { outline: none; }
+.rel-count { font-size: 18px; font-weight: 700; fill: var(--burgundy); pointer-events: none; }
+.rel-name { fill: var(--text); pointer-events: none; paint-order: stroke; stroke: var(--bg-sub); stroke-width: 4px; }
+.rel-center circle { fill: var(--burgundy); }
+.rel-center text { fill: #fff; font-weight: 700; pointer-events: none; }
+.rel-tools { position: absolute; right: 8px; bottom: 8px; display: flex; flex-direction: column; gap: 6px; }
+.rel-btn { width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 18px; cursor: pointer; }
+.rel-btn:disabled { opacity: .4; cursor: default; }
+.rel-hint { margin: 8px 0 0; font-size: 12px; color: var(--text-sub); }
+.rel-panel { margin-top: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.rel-shows { margin: 8px 0 12px; padding-left: 18px; font-size: 14px; }
+.rel-go { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 10px; text-decoration: none; }
