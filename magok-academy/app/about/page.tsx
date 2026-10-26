@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CORRECTION_URL, REVERIFY_MONTHS, correctionLink } from "@/lib/constants";
 
-export const metadata: Metadata = { title: "데이터 안내 · 마곡 뮤지컬 학원 찾기" };
+export const metadata: Metadata = { title: "데이터 안내 · 서울 뮤지컬 학원 찾기" };
 
 export default function AboutPage() {
   return (
