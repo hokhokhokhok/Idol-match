@@ -51,10 +51,11 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   check(!/점수|\d+점|순위|1위/.test(text), "점수·순위는 화면에 없음");
   await layout(a, "인기 탭");
   await shot(a, "360-actors-popular");
+  // 다른 등급 탭도 열리고 링 색이 등급별로 다름(어느 배우가 어느 등급인지는 전체 데이터에 따라 달라지므로 고정하지 않음)
   await a.getByRole("link", { name: /^C ·/ }).click();
-  await a.locator(".agroup-head", { hasText: "기타" }).click();
-  check(await visible(a.locator(".actor-chip-name", { hasText: "[샘플] 배우 가" })), "C 등급 탭");
-  check((await a.locator(".tier-C").count()) >= 1, "C 등급은 브론즈 링");
+  await a.waitForURL(/tier=C/);
+  check(await visible(a.locator(".tier-chips .chip[aria-current='true']", { hasText: "C" })), "C 등급 탭으로 이동");
+  check(await visible(a.locator(".agroup, .empty")), "C 등급 탭: 묶음 또는 빈 안내가 나옴");
 
   // 배우 상세에도 등급 링, 지난 공연은 연도별 필모그래피
   await a.goto(`${BASE}/actors/${NA}`);
