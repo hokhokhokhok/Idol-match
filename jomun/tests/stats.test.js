@@ -136,18 +136,46 @@ test("가져오기: 본문(text)이 빈 조문은 건너뛰고 채운 것만", (
   assert.match(C.validateImport([{ ...good, text: " " }]).errors[0], /모든 조문\(1개\)의 본문/);
 });
 
-test("기본 조문 팩: 형식 검증 통과, 모두 원문 대조 필요, 빈칸 있음, 샘플과 id 안 겹침, 연결 쟁점 id 모두 존재", () => {
+test("기본 조문 팩: 원문(시행일 있음), 형식 검증 통과, 모두 빈칸 있음, 연결 쟁점 id 모두 존재", () => {
   const pack = require("../data/pack.js");
-  const seed = ["bosang-67-1", "bosang-67-2", "bosang-70-1"];
-  assert.ok(Number.isInteger(pack.version) && pack.version >= 1);
-  const r = C.validateImport({ items: pack.items, chains: pack.chains }, seed);
+  assert.ok(Number.isInteger(pack.version) && pack.version >= 4);
+  const r = C.validateImport({ items: pack.items, chains: pack.chains });
   assert.equal(r.ok, true, r.errors.join("\n"));
-  assert.ok(pack.items.length >= 100);
-  assert.ok(pack.items.every(i => i.verified === false && C.blanks(i.text).length > 0));
-  assert.ok(!pack.items.some(i => seed.includes(i.id)));
-  const all = new Set([...seed, ...pack.items.map(i => i.id)]);
+  assert.ok(pack.items.length >= 200);
+  assert.ok(pack.items.every(i => i.verified === true && C.isDate(i.source.asOf) && C.blanks(i.text).length > 0));
+  const all = new Set(pack.items.map(i => i.id));
+  for (const id of ["bosang-67-1", "bosang-67-2", "bosang-70-1"]) assert.ok(all.has(id), id);
   assert.ok(pack.chains.every(c => c.ids.every(id => all.has(id))), "연결 쟁점이 없는 조문을 가리킴");
   assert.ok(!r.warnings.some(w => w.includes("아직 없는 조문")));
-  for (const law of ["토지보상법", "부동산공시법", "감정평가법", "행정기본법", "행정소송법", "행정절차법"])
+  for (const law of ["토지보상법", "토지보상법 시행령", "토지보상법 시행규칙", "부동산공시법", "감정평가법", "감정평가에 관한 규칙", "행정기본법", "행정소송법", "행정절차법", "행정심판법", "헌법"])
     assert.ok(pack.items.some(i => i.law === law), law);
+  // 예전(기억으로 쓴) 문구를 알아볼 해시가 모든 조문에 있다
+  assert.ok(pack.items.every(i => Number.isInteger(pack.replaces[i.id])));
+});
+
+test("팩 병합: 없는 조문 추가, 안 고친 예전 문구만 원문으로 교체(학습 기록ㆍ등급 유지), 고친 조문ㆍ같은 버전은 그대로", () => {
+  const oldText = "사업시행자는 해당 공익사업을 위한 {{공사에 착수하기 이전}}에 토지소유자와 관계인에게 보상액 {{전액(全額)}}을 지급하여야 한다.";
+  const pack = { version: 5, chains: [{ id: "ch", title: "t", ids: ["a", "b"] }], replaces: { a: C.hash(oldText), b: C.hash("예전 b") },
+    items: [{ id: "a", law: "토지보상법", article: "제62조", title: "사전보상", grade: "B", text: "새 {{원문}}", verified: true, source: { asOf: "2026-09-08" } },
+      { id: "b", law: "L", article: "제1조", grade: "B", text: "새 {{b}}", verified: true },
+      { id: "c", law: "L", article: "제2조", grade: "C", text: "새 {{c}}", verified: true }] };
+  const s = { packVer: 4, chains: [], items: [
+    { id: "a", law: "토지보상법", article: "제62조", title: "x", grade: "A", text: oldText, verified: false, box: 4, due: "2026-11-01", log: [{ d: T, r: 2 }] },
+    { id: "b", law: "L", article: "제1조", grade: "B", text: "내가 고친 {{b}}", verified: true, box: 1, due: T, log: [] }] };
+  const r = C.mergePack(s, pack, T);
+  assert.deepEqual(r, { added: 1, replaced: 1 });
+  const a = s.items.find(i => i.id === "a");
+  assert.equal(a.text, "새 {{원문}}");
+  assert.equal(a.verified, true);
+  assert.equal(a.source.asOf, "2026-09-08");
+  assert.equal(a.grade, "A");                 // 사용자가 바꾼 등급 유지
+  assert.equal(a.box, 4);
+  assert.equal(a.log.length, 1);
+  assert.equal(s.items.find(i => i.id === "b").text, "내가 고친 {{b}}"); // 사용자가 고친 문구는 그대로
+  assert.equal(s.items.find(i => i.id === "c").box, 0);
+  assert.equal(s.chains.length, 1);
+  assert.equal(s.packVer, 5);
+  assert.deepEqual(C.mergePack(s, pack, T), { added: 0, replaced: 0 }); // 같은 버전은 다시 하지 않음
+  assert.equal(C.hash("가나다"), C.hash("가나다"));
+  assert.notEqual(C.hash("가나다"), C.hash("가나라"));
 });
