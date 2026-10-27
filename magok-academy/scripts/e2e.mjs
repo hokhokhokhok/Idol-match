@@ -54,11 +54,34 @@ for (const width of [360, 390]) {
   page.on("console", (m) => m.type() === "error" && !/tile\.openstreetmap|ERR_TUNNEL|Failed to load resource/.test(m.text() + (m.location()?.url ?? "")) && errors.push(m.text()));
   const W = `${width}px`;
 
-  // 홈·필터
+  // 시작 화면: 목록 대신 검색·분야·학년·지역 고르기
   await page.goto(BASE + "/");
+  await page.getByRole("heading", { name: /학원 찾기/ }).first().waitFor();
+  check((await cards(page).count()) === 0, `${W} 시작 화면: 목록을 바로 늘어놓지 않음`);
+  check(await page.getByText("가상의 예시 데이터").first().isVisible(), `${W} 시작 화면: 예시 데이터 안내`);
+  check(await page.getByRole("button", { name: "학원 6곳 모두 보기" }).isVisible(), `${W} 시작 화면: 전체 개수 버튼`);
+  await page.screenshot({ path: `screenshots/${width}-landing.png` });
+  await noOverflow(page, `${W} 시작 화면`);
+  await page.getByRole("group", { name: "분야 고르기" }).getByRole("button", { name: /^댄스/ }).click();
+  const cta = page.getByRole("button", { name: "조건에 맞는 학원 2곳 보기" });
+  check(await cta.isVisible(), `${W} 시작 화면: 댄스 고르면 2곳 미리보기`);
+  await cta.click();
+  await page.waitForURL(/c=/);
+  check(await countIs(cards(page), 2), `${W} 시작 화면 → 결과: 댄스 2곳`);
+  check(await page.getByRole("list", { name: "고른 조건" }).getByRole("button", { name: "댄스 조건 빼기" }).isVisible(), `${W} 결과: 고른 조건 칩`);
+  await page.getByRole("button", { name: "댄스 조건 빼기" }).click();
+  check(await countIs(cards(page), 6), `${W} 결과: 조건 칩 빼면 6곳 (결과 화면 유지)`);
+  await page.getByRole("button", { name: "처음 화면으로" }).click();
+  await page.getByRole("button", { name: "학원 6곳 모두 보기" }).waitFor();
+  await page.getByRole("searchbox", { name: "학원 이름이나 동네 검색" }).fill("하모니");
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/q=/);
+  check((await countIs(cards(page), 1)) && (await cards(page).first().innerText()).includes("하모니보컬"), `${W} 검색 '하모니' → 1곳`);
+
+  // 결과 화면·필터
+  await page.goto(BASE + "/?all=1");
   await cards(page).first().waitFor();
-  check(await countIs(cards(page), 6), `${W} 홈: 학원 6곳`);
-  check(await page.getByText("가상의 예시 데이터").first().isVisible(), `${W} 홈: 예시 데이터 안내`);
+  check(await countIs(cards(page), 6), `${W} 결과: 학원 6곳`);
   await page.screenshot({ path: `screenshots/${width}-home.png` });
   const filterBtn = await page.getByRole("button", { name: /필터/ }).boundingBox();
   check(!!filterBtn && filterBtn.x + filterBtn.width <= width, `${W} 홈: 필터 버튼이 화면 안에 보임`);
@@ -87,12 +110,12 @@ for (const width of [360, 390]) {
   await page.reload();
   await cards(page).first().waitFor();
   check(await countIs(cards(page), 1), `${W} 새로고침 후 필터 유지`);
-  await page.goto(BASE + "/");
+  await page.goto(BASE + "/?all=1");
 
   // 발레 분야
   await page.getByRole("group", { name: "분야" }).getByRole("button", { name: "발레", exact: true }).click();
   check((await countIs(cards(page), 1)) && (await cards(page).first().innerText()).includes("토슈즈키즈발레"), `${W} 분야=발레 → 1곳`);
-  await page.goto(BASE + "/");
+  await page.goto(BASE + "/?all=1");
 
   // 지도 (Leaflet + OSM. 테스트 환경에서 타일이 막혀도 마커는 그려진다)
   await page.getByRole("group", { name: "보기 방식" }).getByRole("button", { name: "지도" }).click();
@@ -106,7 +129,7 @@ for (const width of [360, 390]) {
   await noOverflow(page, `${W} 지도`);
 
   // 즐겨찾기 (새로고침 후 유지)
-  await page.goto(BASE + "/");
+  await page.goto(BASE + "/?all=1");
   await cards(page).first().waitFor();
   await page.getByRole("button", { name: "(예시)하모니보컬교습소 즐겨찾기", exact: true }).click();
   await page.goto(BASE + "/?fav=1");
@@ -114,7 +137,7 @@ for (const width of [360, 390]) {
   check(await countIs(cards(page), 1), `${W} 즐겨찾기만 → 1곳 (새로고침 후 유지)`);
 
   // 비교 (최대 3)
-  await page.goto(BASE + "/");
+  await page.goto(BASE + "/?all=1");
   await cards(page).first().waitFor();
   for (const n of ["(예시)샘플뮤지컬학원", "(예시)하모니보컬교습소", "(예시)스텝업키즈댄스학원", "(예시)무대연기아틀리에"]) {
     await page.getByRole("button", { name: `${n} 비교에 담기` }).click();

@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import AcademyCard from "@/components/AcademyCard";
 import AcademyMap from "@/components/AcademyMap";
 import Chip from "@/components/Chip";
+import HomeLanding from "@/components/HomeLanding";
+import SearchBox from "@/components/SearchBox";
 import {
   EMPTY_FILTERS,
   TIME_BANDS,
@@ -34,7 +36,12 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
     const q = next.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   };
-  const setFilters = (f: Filters) => replace(filtersToParams(f, new URLSearchParams(params.toString())));
+  // 결과 화면 안에서 조건을 모두 풀어도 시작 화면으로 튕기지 않게 all=1을 붙인다
+  const setFilters = (f: Filters) => {
+    const p = filtersToParams(f, new URLSearchParams(params.toString()));
+    p.set("all", "1");
+    replace(p);
+  };
   const setParam = (k: string, v: string | null) => {
     const p = new URLSearchParams(params.toString());
     if (v) p.set(k, v);
@@ -48,33 +55,58 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
   const extraCount = activeFilterCount(filters) - filters.categories.length;
   const selected = results.find((a) => a.id === selectedId) ?? null;
 
+  // 결과 위에 보여 줄 고른 조건 (누르면 하나씩 뺀다)
+  const conditions = [
+    ...(filters.q ? [{ label: `‘${filters.q}’`, remove: () => setFilters({ ...filters, q: "" }) }] : []),
+    ...filters.categories.map((c) => ({ label: CATEGORY_LABEL[c], remove: () => setFilters({ ...filters, categories: toggle(filters.categories, c) }) })),
+    ...filters.grades.map((g) => ({ label: GRADE_LABEL[g], remove: () => setFilters({ ...filters, grades: toggle(filters.grades, g) }) })),
+    ...filters.gus.map((g) => ({ label: g, remove: () => setFilters({ ...filters, gus: toggle(filters.gus, g) }) })),
+    ...filters.areas.map((a) => ({ label: `${a}동`, remove: () => setFilters({ ...filters, areas: toggle(filters.areas, a) }) })),
+    ...(filters.tuition ? [{ label: TUITION_BANDS.find((b) => b.id === filters.tuition)!.label, remove: () => setFilters({ ...filters, tuition: null }) }] : []),
+    ...filters.days.map((d) => ({ label: `${d}요일`, remove: () => setFilters({ ...filters, days: toggle(filters.days, d) }) })),
+    ...filters.times.map((t) => ({ label: TIME_BANDS.find((b) => b.id === t)!.label, remove: () => setFilters({ ...filters, times: toggle(filters.times, t) }) })),
+    ...(filters.favoritesOnly ? [{ label: "♥ 즐겨찾기", remove: () => setFilters({ ...filters, favoritesOnly: false }) }] : []),
+  ];
+
+  // 조건을 하나도 고르지 않았으면 목록 대신 시작 화면 (all=1: 조건 없이 전체 결과)
+  const showResults = activeFilterCount(filters) > 0 || !!filters.q || params.has("all") || params.has("v") || params.has("sel");
+  if (!showResults) {
+    return (
+      <HomeLanding
+        academies={academies}
+        favoriteIds={fav.ids}
+        onApply={(f, v) => {
+          const p = filtersToParams(f);
+          p.set("all", "1");
+          if (v) p.set("v", v);
+          router.push(`${pathname}?${p.toString()}`, { scroll: true });
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <div className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
-        <header className="flex items-center justify-between gap-2 px-4 pt-3">
-          <div className="min-w-0">
-            <h1 className="text-lg font-bold">서울 뮤지컬 학원 찾기</h1>
-            <p className="text-xs text-sub">서울 · 초·중등 노래·춤·연기·뮤지컬</p>
-          </div>
-          <div role="group" aria-label="보기 방식" className="flex shrink-0 rounded-full bg-surface p-0.5 text-sm">
-            {(["list", "map"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                aria-pressed={view === v}
-                onClick={() => setParam("v", v === "map" ? "map" : null)}
-                className={`rounded-full px-3 py-1 whitespace-nowrap ${view === v ? "bg-white font-semibold text-brand shadow-sm" : "text-sub"}`}
-              >
-                {v === "list" ? "목록" : "지도"}
-              </button>
-            ))}
+        <h1 className="sr-only">학원 찾기 결과</h1>
+        <header className="flex items-center gap-1 pt-2.5 pr-4 pl-1.5">
+          <button
+            type="button"
+            aria-label="처음 화면으로"
+            onClick={() => router.push(pathname, { scroll: true })}
+            className="grid size-9 shrink-0 place-items-center rounded-full text-2xl leading-none text-ink active:bg-surface"
+          >
+            ‹
+          </button>
+          <div className="min-w-0 flex-1">
+            <SearchBox key={filters.q} initial={filters.q} onSubmit={(q) => setFilters({ ...filters, q })} variant="compact" />
           </div>
         </header>
 
         <div className="flex items-center gap-1.5 py-2.5 pr-4">
           {/* 분야 칩은 가로로 넘기고, 필터 버튼은 항상 보이게 오른쪽에 고정 */}
           <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pl-4 [scrollbar-width:none]" role="group" aria-label="분야">
-            {CATEGORIES.map((c) => (
+            {[...filters.categories, ...CATEGORIES.filter((c) => !filters.categories.includes(c) && academies.some((a) => a.categories.includes(c)))].map((c) => (
               <Chip key={c} selected={filters.categories.includes(c)} onClick={() => setFilters({ ...filters, categories: toggle(filters.categories, c) })}>
                 {CATEGORY_LABEL[c]}
               </Chip>
@@ -158,11 +190,43 @@ export default function HomeView({ academies }: { academies: Academy[] }) {
             지금은 공개 자료로 찾은 학원을 <strong>확인하는 중</strong>입니다. 수강료·시간·대상 학년은 학원에 직접 확인해 주세요.
           </p>
         )}
-        <p className="mb-2 text-sm" aria-live="polite">
-          <strong>{results.length}곳</strong>
-          {unknown.tuition > 0 && <span className="text-sub"> · 수강료 미확인 {unknown.tuition}곳 제외</span>}
-          {unknown.schedule > 0 && <span className="text-sub"> · 시간 미확인 {unknown.schedule}곳 제외</span>}
-        </p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="min-w-0 text-sm" aria-live="polite">
+            <strong>{results.length}곳</strong>
+            {unknown.tuition > 0 && <span className="text-sub"> · 수강료 미확인 {unknown.tuition}곳 제외</span>}
+            {unknown.schedule > 0 && <span className="text-sub"> · 시간 미확인 {unknown.schedule}곳 제외</span>}
+          </p>
+          <div role="group" aria-label="보기 방식" className="flex shrink-0 rounded-full bg-surface p-0.5 text-sm">
+            {(["list", "map"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={view === v}
+                onClick={() => setParam("v", v === "map" ? "map" : null)}
+                className={`rounded-full px-3 py-1 whitespace-nowrap ${view === v ? "bg-white font-semibold text-brand shadow-sm" : "text-sub"}`}
+              >
+                {v === "list" ? "목록" : "지도"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {conditions.length > 0 && (
+          <ul aria-label="고른 조건" className="mb-3 flex flex-wrap gap-1.5">
+            {conditions.map((c) => (
+              <li key={c.label}>
+                <button
+                  type="button"
+                  aria-label={`${c.label} 조건 빼기`}
+                  onClick={c.remove}
+                  className="rounded-full bg-brand-soft py-1 pr-2 pl-3 text-sm text-brand active:bg-line"
+                >
+                  {c.label} <span aria-hidden>✕</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {view === "map" ? (
           <div className="space-y-3">
