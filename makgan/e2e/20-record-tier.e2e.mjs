@@ -44,6 +44,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
 
   // 인기 탭: 등급은 색으로만
   await a.goto(`${BASE}/actors?tab=popular`);
+  await a.locator(".agroup-head", { hasText: "기타" }).click();
   check(await visible(a.locator(".actor-chip-name", { hasText: "[샘플] 배우 나" })), "인기 탭 S등급에 출연작 많은 배우");
   check((await a.locator(".tier-S").count()) >= 1, "S 등급은 무지개 링");
   const text = await a.locator("main").innerText();
@@ -51,6 +52,7 @@ export default async function ({ BASE, check, newPage, login, visible, layout, s
   await layout(a, "인기 탭");
   await shot(a, "360-actors-popular");
   await a.getByRole("link", { name: /^C ·/ }).click();
+  await a.locator(".agroup-head", { hasText: "기타" }).click();
   check(await visible(a.locator(".actor-chip-name", { hasText: "[샘플] 배우 가" })), "C 등급 탭");
   check((await a.locator(".tier-C").count()) >= 1, "C 등급은 브론즈 링");
 
