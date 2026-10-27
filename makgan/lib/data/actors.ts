@@ -5,6 +5,7 @@ import { getUser } from "@/lib/auth";
 import { DataError, isUuid } from "./shows";
 import type { ShowSummary } from "@/lib/types";
 import { fetchAll } from "./paging";
+import { INITIALS, initialOf, type Initial } from "@/lib/initials";
 import { assignTiers, type Activity, type Tier } from "@/lib/popularity";
 import { buildRelations, type CastRow, type Named, type Relations } from "@/lib/relations";
 
@@ -125,23 +126,51 @@ export async function getActorTier(id: string): Promise<Tier | null> {
   return (await getActorTiers().catch(() => new Map<string, Tier>())).get(id) ?? null;
 }
 
-/** 인기 탭: 등급별 배우(가나다순 — 순위·점수는 드러내지 않는다) */
-export async function listActorsByTier(tier: Tier, limit: number) {
+// ── 이름 묶음(ㄱㄴㄷ…) ──
+export const GROUP_PAGE_SIZE = 48;
+export type ActorGroup = { initial: Initial; count: number };
+export type GroupPage = { items: ActorSummary[]; hasMore: boolean };
+
+/** 묶음별 인원. 전체 배우 기준 또는 등급 기준 */
+export async function getActorGroups(tier?: Tier): Promise<ActorGroup[]> {
+  if (!isSupabaseConfigured) return [];
+  if (tier) {
+    const rows = await tierRows(tier);
+    return INITIALS.map((initial) => ({ initial, count: rows.filter((r) => initialOf(r.name) === initial).length })).filter((g) => g.count > 0);
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("actor_initial_counts");
+  if (error) throw new DataError(error.message);
+  const byInitial = new Map(((data ?? []) as { initial: string; n: number }[]).map((r) => [r.initial, r.n]));
+  return INITIALS.map((initial) => ({ initial, count: byInitial.get(initial) ?? 0 })).filter((g) => g.count > 0);
+}
+
+async function tierRows(tier: Tier) {
   const tiers = await getActorTiers();
   const ids = [...tiers].filter(([, t]) => t === tier).map(([id]) => id);
   const supabase = await createClient();
-  const follows = await myFollowIds();
   const rows: { id: string; name: string; photo_url: string | null }[] = [];
   for (let i = 0; i < ids.length; i += 100) {
     const { data, error } = await supabase.from("actors").select("id, name, photo_url").in("id", ids.slice(i, i + 100));
     if (error) throw new DataError(error.message);
     rows.push(...(data ?? []) as typeof rows);
   }
-  rows.sort((a, b) => a.name.localeCompare(b.name, "ko") || a.id.localeCompare(b.id));
-  const counts = Object.fromEntries(["S", "A", "B", "C", "D"].map((t) => [t, [...tiers.values()].filter((v) => v === t).length]));
-  return {
-    items: rows.slice(0, limit).map((a) => ({ ...a, following: follows.has(a.id) })),
-    hasMore: rows.length > limit,
-    counts: counts as Record<Tier, number>,
-  };
+  return rows;
+}
+
+/** 한 묶음의 배우(가나다순) 한 쪽. tier를 주면 그 등급만 */
+export async function listActorGroup(initial: Initial, offset: number, tier?: Tier, limit = GROUP_PAGE_SIZE): Promise<GroupPage> {
+  if (!isSupabaseConfigured) return { items: [], hasMore: false };
+  const follows = await myFollowIds();
+  if (tier) {
+    const rows = (await tierRows(tier)).filter((r) => initialOf(r.name) === initial)
+      .sort((a, b) => a.name.localeCompare(b.name, "ko") || a.id.localeCompare(b.id));
+    return { items: rows.slice(offset, offset + limit).map((a) => ({ ...a, following: follows.has(a.id) })), hasMore: rows.length > offset + limit };
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("actors").select("id, name, photo_url").eq("initial", initial)
+    .order("name").order("id").range(offset, offset + limit);
+  if (error) throw new DataError(error.message);
+  const rows = data ?? [];
+  return { items: rows.slice(0, limit).map((a) => ({ ...a, following: follows.has(a.id) })), hasMore: rows.length > limit };
 }

@@ -5,8 +5,12 @@ export default async function ({ BASE, check, newPage, layout, shot, visible, la
   const page = await newPage();
 
   await page.goto(`${BASE}/actors`);
+  await page.locator(".agroup-head", { hasText: "기타" }).waitFor();
+  check((await page.locator(".agroup").count()) === 1, "배우 목록은 첫소리 묶음으로(샘플 이름은 기타)");
+  await page.locator(".agroup-head", { hasText: "기타" }).click();
+  await page.locator(".actor-chip-name").first().waitFor();
   const names = await page.locator(".actor-chip-name").allInnerTexts();
-  check(names.length === 3 && names[0] === "[샘플] 배우 가", `배우 목록 가나다순 (${names.join(", ")})`);
+  check(names.length === 3 && names[0] === "[샘플] 배우 가", `묶음을 열면 가나다순 (${names.join(", ")})`);
   check(await page.locator(".avatar-fallback").count() === 3, "사진 없는 배우는 기본 이미지");
   await layout(page, "배우 목록");
   await shot(page, "360-actors");
@@ -15,6 +19,7 @@ export default async function ({ BASE, check, newPage, layout, shot, visible, la
   check(await visible(page.getByText("로그인하면 기록을 저장할 수 있어요")), "비로그인 팔로잉 탭: 로그인 안내");
 
   await page.goto(`${BASE}/actors`);
+  await page.locator(".agroup-head", { hasText: "기타" }).click();
   await page.getByText("[샘플] 배우 나").click();
   await page.waitForURL(`${BASE}/actors/${NA}`);
   await page.locator(".actor-hero").waitFor();
@@ -46,6 +51,8 @@ export default async function ({ BASE, check, newPage, layout, shot, visible, la
   check((await btn.innerText()) === "팔로잉", "팔로우 저장(새로고침 후 유지)");
 
   await page.goto(`${BASE}/actors`);
+  await page.locator(".agroup-head", { hasText: "기타" }).click();
+  await page.locator(".actor-chip", { hasText: "[샘플] 배우 나" }).waitFor();
   check(await page.locator(".actor-chip", { hasText: "[샘플] 배우 나" }).locator(".following-dot").count() === 1, "목록에 팔로우 표시");
   await page.getByRole("link", { name: "팔로잉" }).click();
   await page.waitForURL(/tab=following/);

@@ -406,3 +406,16 @@ a.badge { text-decoration: none; }
 .tier-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -2px; margin-right: 4px; background: var(--tier-bg, var(--line)); }
 .film-year { margin-top: 12px; }
 .film-year-title { margin: 0 0 6px; font-size: 14px; color: var(--burgundy); }
+
+/* 배우 이름 묶음(ㄱㄴㄷ…) */
+.ainit-bar { position: sticky; top: var(--header-h); z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 -16px 12px; padding: 8px 16px; background: var(--bg-sub); border-bottom: 1px solid var(--line); }
+.ainit { min-width: 34px; height: 34px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.ainit[aria-pressed="true"] { background: var(--burgundy); border-color: var(--burgundy); color: #fff; }
+.agroup { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; scroll-margin-top: calc(var(--header-h) + 56px); }
+.agroup-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 0 14px; list-style: none; cursor: pointer; }
+.agroup-head::-webkit-details-marker { display: none; }
+.agroup-head::after { content: "▾"; margin-left: 4px; color: var(--text-sub); transition: transform .15s; }
+.agroup[open] > .agroup-head::after { transform: rotate(180deg); }
+.agroup-head .muted { margin-left: auto; font-size: 13px; }
+.agroup-name { font-size: 18px; font-weight: 700; color: var(--burgundy); }
+.agroup-body { padding: 4px 12px 14px; }

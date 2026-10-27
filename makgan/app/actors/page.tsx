@@ -4,7 +4,8 @@ import ActorChip from "@/components/ActorChip";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import LoginRequired from "@/components/LoginRequired";
-import { ACTOR_PAGE_SIZE, listActors, listActorsByTier } from "@/lib/data/actors";
+import ActorGroups from "@/components/ActorGroups";
+import { ACTOR_PAGE_SIZE, getActorGroups, listActors } from "@/lib/data/actors";
 import { TIERS, TIER_NAMES, isTier, type Tier } from "@/lib/popularity";
 import { getUser } from "@/lib/auth";
 
@@ -12,19 +13,20 @@ export const metadata = { title: "배우 · 막간" };
 
 export default async function ActorsPage({ searchParams }: { searchParams: Promise<{ tab?: string; limit?: string; tier?: string }> }) {
   const { tab, limit: rawLimit, tier: rawTier } = await searchParams;
-  if (tab === "popular") return <PopularTab tier={isTier(rawTier) ? rawTier : "S"} limit={Math.min(Math.max(Number(rawLimit) || ACTOR_PAGE_SIZE, ACTOR_PAGE_SIZE), 600)} />;
+  if (tab === "popular") return <PopularTab tier={isTier(rawTier) ? rawTier : "S"} />;
   const followingOnly = tab === "following";
   const limit = Math.min(Math.max(Number(rawLimit) || ACTOR_PAGE_SIZE, ACTOR_PAGE_SIZE), 600);
   const user = await getUser();
   const base = followingOnly ? "/actors?tab=following" : "/actors";
 
   let result: Awaited<ReturnType<typeof listActors>> | null = null;
-  if (!followingOnly || user) {
-    try {
-      result = await listActors({ limit, followingOnly });
-    } catch {
-      result = null;
+  let groups: Awaited<ReturnType<typeof getActorGroups>> | null = null;
+  if (followingOnly) {
+    if (user) {
+      try { result = await listActors({ limit, followingOnly }); } catch { result = null; }
     }
+  } else {
+    try { groups = await getActorGroups(); } catch { groups = null; }
   }
 
   return (
@@ -38,12 +40,14 @@ export default async function ActorsPage({ searchParams }: { searchParams: Promi
         </nav>
         {followingOnly && !user ? (
           <LoginRequired next="/actors?tab=following" />
+        ) : !followingOnly ? (
+          groups === null ? <ErrorState retryHref={base} />
+            : groups.length === 0 ? <EmptyState icon="🌟" message="등록된 배우가 없어요" />
+            : <ActorGroups groups={groups} />
         ) : result === null ? (
           <ErrorState retryHref={base} />
         ) : result.items.length === 0 ? (
-          followingOnly
-            ? <EmptyState icon="🌟" message="아직 팔로우한 배우가 없어요" action={{ label: "배우 둘러보기", href: "/actors" }} />
-            : <EmptyState icon="🌟" message="등록된 배우가 없어요" />
+          <EmptyState icon="🌟" message="아직 팔로우한 배우가 없어요" action={{ label: "배우 둘러보기", href: "/actors" }} />
         ) : (
           <>
             <ul className="actor-grid">
@@ -61,13 +65,13 @@ export default async function ActorsPage({ searchParams }: { searchParams: Promi
   );
 }
 
-/** 인기 탭: 등급은 색으로만 구분하고 점수·순위는 보여 주지 않는다 */
-async function PopularTab({ tier, limit }: { tier: Tier; limit: number }) {
-  let result: Awaited<ReturnType<typeof listActorsByTier>> | null = null;
+/** 인기 탭: 등급은 색으로만 구분하고 점수·순위는 보여 주지 않는다. 등급 안에서는 이름 첫소리별로 묶는다. */
+async function PopularTab({ tier }: { tier: Tier }) {
+  let groups: Awaited<ReturnType<typeof getActorGroups>> | null = null;
   try {
-    result = await listActorsByTier(tier, limit);
+    groups = await getActorGroups(tier);
   } catch {
-    result = null;
+    groups = null;
   }
   const base = `/actors?tab=popular&tier=${tier}`;
   return (
@@ -87,17 +91,10 @@ async function PopularTab({ tier, limit }: { tier: Tier; limit: number }) {
           ))}
         </nav>
         <p className="tier-legend">작품 수·최근 활동·팔로워·후기·언급량을 종합해 색으로만 나눠요. 같은 등급 안에서는 가나다순이에요.</p>
-        {result === null ? <ErrorState retryHref={base} /> : result.items.length === 0 ? (
+        {groups === null ? <ErrorState retryHref={base} /> : groups.length === 0 ? (
           <EmptyState icon="🌟" message="이 등급에 해당하는 배우가 아직 없어요" />
         ) : (
-          <>
-            <ul className="actor-grid">
-              {result.items.map((a) => (
-                <li key={a.id}><ActorChip id={a.id} name={a.name} photoUrl={a.photo_url} following={a.following} tier={tier} /></li>
-              ))}
-            </ul>
-            {result.hasMore && <Link href={`${base}&limit=${limit + ACTOR_PAGE_SIZE}`} scroll={false} className="btn btn-block more-btn">더 보기</Link>}
-          </>
+          <ActorGroups key={tier} groups={groups} tier={tier} />
         )}
       </main>
     </>
