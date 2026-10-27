@@ -32,6 +32,8 @@ export function areaOf(address: string | null): Area | null {
 }
 
 export interface Filters {
+  /** 학원 이름·주소 검색어 */
+  q: string;
   gus: Gu[];
   areas: Area[];
   categories: Category[];
@@ -42,8 +44,17 @@ export interface Filters {
   favoritesOnly: boolean;
 }
 
-export const EMPTY_FILTERS: Filters = { gus: [], areas: [], categories: [], grades: [], tuition: null, days: [], times: [], favoritesOnly: false };
+export const EMPTY_FILTERS: Filters = { q: "", gus: [], areas: [], categories: [], grades: [], tuition: null, days: [], times: [], favoritesOnly: false };
 
+/** 띄어쓰기·대소문자를 무시하고 비교 */
+const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+
+export function matchesQuery(a: Pick<Academy, "name" | "address">, q: string): boolean {
+  const n = norm(q);
+  return !n || norm(a.name).includes(n) || norm(a.address ?? "").includes(n);
+}
+
+/** 검색어를 뺀 조건 수 (필터 버튼 배지용) */
 export function activeFilterCount(f: Filters): number {
   return f.gus.length + f.areas.length + f.categories.length + f.grades.length + (f.tuition ? 1 : 0) + f.days.length + f.times.length + (f.favoritesOnly ? 1 : 0);
 }
@@ -69,6 +80,7 @@ export function applyFilters(academies: Academy[], f: Filters, favorites: readon
 
   const result = academies.filter((a) => {
     if (f.favoritesOnly && !favorites.includes(a.id)) return false;
+    if (!matchesQuery(a, f.q)) return false;
     if (f.gus.length) {
       const gu = guOf(a.address);
       if (!gu || !f.gus.includes(gu)) return false;
@@ -106,6 +118,7 @@ const pick = <T extends string>(raw: string | null, allowed: readonly T[]): T[] 
 export function filtersFromParams(params: URLSearchParams): Filters {
   const tuition = params.get("t");
   return {
+    q: (params.get("q") ?? "").trim().slice(0, 40),
     gus: pick(params.get("gu"), SEOUL_GUS),
     areas: pick(params.get("a"), AREAS),
     categories: pick(params.get("c"), CATEGORIES),
@@ -120,6 +133,7 @@ export function filtersFromParams(params: URLSearchParams): Filters {
 export function filtersToParams(f: Filters, base = new URLSearchParams()): URLSearchParams {
   const p = new URLSearchParams(base);
   const set = (k: string, v: string) => (v ? p.set(k, v) : p.delete(k));
+  set("q", f.q.trim());
   set("gu", f.gus.join(","));
   set("a", f.areas.join(","));
   set("c", f.categories.join(","));

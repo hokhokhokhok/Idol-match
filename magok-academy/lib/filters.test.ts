@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { loadDatasetFromDir } from "./dataset.ts";
-import { EMPTY_FILTERS, activeFilterCount, applyFilters, areaOf, filtersFromParams, filtersToParams, guOf, type Filters } from "./filters.ts";
+import { EMPTY_FILTERS, activeFilterCount, applyFilters, areaOf, filtersFromParams, filtersToParams, guOf, matchesQuery, type Filters } from "./filters.ts";
 
 const { academies } = loadDatasetFromDir(path.join(import.meta.dirname, "..", "data", "sample"), { today: new Date("2026-10-24") }).dataset;
 const ids = (f: Partial<Filters>, fav: string[] = []) => applyFilters(academies, { ...EMPTY_FILTERS, ...f }, fav).academies.map((a) => a.id);
@@ -45,7 +45,7 @@ test("즐겨찾기만", () => {
 });
 
 test("URL 왕복, 잘못된 값은 버림", () => {
-  const f: Filters = { gus: ["강서구"], areas: ["화곡", "발산"], categories: ["보컬", "연기"], grades: ["중등"], tuition: "15to20", days: ["화"], times: ["evening"], favoritesOnly: true };
+  const f: Filters = { q: "", gus: ["강서구"], areas: ["화곡", "발산"], categories: ["보컬", "연기"], grades: ["중등"], tuition: "15to20", days: ["화"], times: ["evening"], favoritesOnly: true };
   assert.deepEqual(filtersFromParams(filtersToParams(f)), f);
   assert.equal(activeFilterCount(f), 10);
   assert.deepEqual(filtersFromParams(new URLSearchParams("c=보컬,피아노&t=cheap&d=X")), { ...EMPTY_FILTERS, categories: ["보컬"] });
@@ -82,4 +82,15 @@ test("주소 → 구", () => {
 test("구 필터", () => {
   assert.deepEqual(ids({ gus: ["강서구"] }), ids({}));
   assert.deepEqual(ids({ gus: ["강남구"] }), []);
+});
+
+test("검색어: 이름·주소, 띄어쓰기 무시", () => {
+  assert.ok(matchesQuery({ name: "뮤지컬해봄 뮤지컬댄스 교습소", address: null }, "해봄뮤지컬"));
+  assert.ok(matchesQuery({ name: "A학원", address: "서울 강남구 학동로 1" }, "강남구"));
+  assert.ok(!matchesQuery({ name: "A학원", address: "서울 강남구 학동로 1" }, "송파"));
+  assert.ok(matchesQuery({ name: "A학원", address: null }, "  "));
+  const p = filtersToParams({ ...EMPTY_FILTERS, q: " 해봄 " });
+  assert.equal(p.get("q"), "해봄");
+  assert.equal(filtersFromParams(p).q, "해봄");
+  assert.equal(activeFilterCount({ ...EMPTY_FILTERS, q: "해봄" }), 0);
 });
