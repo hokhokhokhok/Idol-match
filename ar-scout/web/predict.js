@@ -247,6 +247,16 @@ var H12_RESIDUES = ['Thr877', 'Met895', 'Ile899'];
 
 /* --------------------------------------------------------- library state */
 
+/* experimental class labels used by the reference library */
+var CLASS_LABELS = {
+  agonist: '작용제',
+  antagonist: '길항제',
+  partial: '부분 작용제',
+  weak: '약한 상호작용',
+  'non-binder': '비결합',
+  unknown: '판단 불가'
+};
+
 var library = null;
 
 function compileEntry(entry) {
@@ -400,16 +410,16 @@ function mapContacts(desc, motifs) {
   var verdict, verdictKey;
   if (motifs.steroidKeto3 && !h12) {
     verdictKey = 'agonist';
-    verdict = 'agonist potential';
+    verdict = '작용제 가능성';
   } else if (h12) {
     verdictKey = 'antagonist';
-    verdict = 'antagonist potential';
+    verdict = '길항제 가능성';
   } else if (aringMet && dringMet) {
     verdictKey = 'binder';
-    verdict = 'binding plausible, function undetermined';
+    verdict = '결합 가능 · 기능 미정';
   } else {
     verdictKey = 'weak';
-    verdict = 'low binding likelihood';
+    verdict = '결합 가능성 낮음';
   }
 
   var residues = POCKET_RESIDUES.map(function (r) {
@@ -467,6 +477,27 @@ function predict(smiles, options) {
   var rules = ruleScore(desc, motifs, occupancy);
   var nearest = top.length ? top[0].sim : 0;
 
+  /* Functional class by read-across. The pocket rules below infer agonism
+   * from structure alone; this instead carries over what the neighbours were
+   * measured to do, which is the only evidence of function this tool has. */
+  var classWeights = {}, classTotal = 0;
+  for (var c = 0; c < top.length; c++) {
+    var cls = top[c].c || 'unknown';
+    var cw = Math.pow(top[c].sim, 3);
+    classWeights[cls] = (classWeights[cls] || 0) + cw;
+    classTotal += cw;
+  }
+  var bestClass = null, bestWeight = 0;
+  for (var key in classWeights) {
+    if (!Object.prototype.hasOwnProperty.call(classWeights, key)) continue;
+    if (classWeights[key] > bestWeight) { bestWeight = classWeights[key]; bestClass = key; }
+  }
+  var functionCall = {
+    label: (nearest >= 0.35 && bestClass) ? bestClass : 'unknown',
+    support: classTotal > 1e-12 ? bestWeight / classTotal : 0,
+    weights: classWeights
+  };
+
   var wRead = nearest >= 0.55 ? 0.78 : (nearest >= 0.35 ? 0.50 : 0.20);
   var pKi = wRead * readAcross + (1 - wRead) * rules.score;
 
@@ -495,6 +526,7 @@ function predict(smiles, options) {
     reasons: rules.reasons,
     weightReadAcross: wRead,
     neighbours: top,
+    functionCall: functionCall,
     pocket: pocket
   };
 }
@@ -548,6 +580,7 @@ module.exports = {
   setLibrary: setLibrary,
   resetLibrary: resetLibrary,
   REFERENCE_DEFAULT: REFERENCE_DEFAULT,
+  CLASS_LABELS: CLASS_LABELS,
   INGREDIENTS: INGREDIENTS,
   POCKET_RESIDUES: POCKET_RESIDUES,
   POCKET_VOLUME: POCKET_VOLUME

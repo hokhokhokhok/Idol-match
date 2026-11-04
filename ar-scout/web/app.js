@@ -232,9 +232,15 @@ function renderSingle(result, title, subtitle) {
            '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>' +
            '<div style="font-size:11px;letter-spacing:.07em;color:var(--ink-dim);' +
            'text-transform:uppercase;margin-top:4px">predicted pKi</div></div>');
+  var fc = result.functionCall;
+  var fcLabel = PR.CLASS_LABELS[fc.label] || fc.label;
+  var fcClass = (fc.label === 'antagonist' || fc.label === 'unknown') ? 'warnink' : '';
   out.push('<div class="meta">' +
            '<div>Ki &asymp; <b>' + fx(result.kiNM, result.kiNM < 10 ? 2 : 0) + ' nM</b></div>' +
-           '<div>판정: <b>' + esc(p.verdict) + '</b></div>' +
+           '<div>기능 추정: <b class="' + fcClass + '">' + esc(fcLabel) + '</b> ' +
+           '<span style="color:var(--ink-dim)">(레퍼런스 기반, 근거 ' +
+           fx(fc.support, 2) + ')</span></div>' +
+           '<div>구조 판정: <b>' + esc(p.verdict) + '</b></div>' +
            '<div>최근접 유사도 <b>' + fx(result.nearestSim, 2) + '</b> ' +
            '<span class="tag ' + esc(result.domain) + '">' + esc(domainWord) + '</span></div>' +
            '</div>');
@@ -407,6 +413,8 @@ function runBatch(text) {
       batchRows.push({
         name: items[i].name, smiles: smi, pKi: r.pKi, ci: r.ci,
         domain: r.domain, verdict: r.pocket.verdict,
+        fnLabel: PR.CLASS_LABELS[r.functionCall.label] || r.functionCall.label,
+        fnKey: r.functionCall.label, fnSupport: r.functionCall.support,
         mw: r.desc.mw, clogp: r.desc.clogp, occupancy: r.occupancy
       });
     } catch (err) {
@@ -422,7 +430,7 @@ function runBatch(text) {
            (truncated ? ' 최대 ' + MAX_BATCH + '건까지만 처리했습니다.' : '') + '</p>');
   out.push('<table><thead><tr><th class="num">#</th><th>물질</th>' +
            '<th class="num">pKi</th><th class="barcell">분포</th>' +
-           '<th class="num">MW</th><th class="num">logP</th><th>판정</th>' +
+           '<th class="num">MW</th><th>기능 추정</th><th>구조 판정</th>' +
            '</tr></thead><tbody>');
   for (var k = 0; k < batchRows.length; k++) {
     var row = batchRows[k];
@@ -434,7 +442,8 @@ function runBatch(text) {
              '<td class="barcell"><div class="bar' + (row.pKi < 6 ? ' lo' : '') +
              '" style="width:' + fx(frac * 100, 1) + '%"></div></td>' +
              '<td class="num">' + fx(row.mw, 1) + '</td>' +
-             '<td class="num">' + fx(row.clogp, 2) + '</td>' +
+             '<td' + (row.fnKey === 'antagonist' ? ' class="warnink"' : '') + '>' +
+             esc(row.fnLabel) + '</td>' +
              '<td>' + esc(row.verdict) + '</td></tr>');
   }
   out.push('</tbody></table>');
@@ -462,11 +471,13 @@ function runBatch(text) {
 }
 
 function batchTsv() {
-  var head = ['name', 'smiles', 'pKi', 'ci', 'domain', 'verdict', 'mw', 'clogp', 'occupancy'];
+  var head = ['name', 'smiles', 'pKi', 'ci', 'domain', 'function', 'fn_support',
+              'structural_verdict', 'mw', 'clogp', 'occupancy'];
   var lines = [head.join('\t')];
   for (var i = 0; i < batchRows.length; i++) {
     var r = batchRows[i];
-    lines.push([r.name, r.smiles, fx(r.pKi, 2), fx(r.ci, 1), r.domain, r.verdict,
+    lines.push([r.name, r.smiles, fx(r.pKi, 2), fx(r.ci, 1), r.domain,
+                r.fnKey, fx(r.fnSupport, 2), r.verdict,
                 fx(r.mw, 2), fx(r.clogp, 2), fx(r.occupancy, 0)].join('\t'));
   }
   return lines.join('\n');
@@ -589,7 +600,22 @@ function renderModelCard() {
                (worst[i].error >= 0 ? '+' : '') + fx(worst[i].error, 2) + '</td></tr>');
     }
     out.push('</tbody></table>');
+    out.push('<p><b>이 표의 「예측」은 해당 물질을 레퍼런스에서 제외하고 낸 값입니다.</b> ' +
+             '단건 조회에 같은 이름을 넣으면 자기 자신이 레퍼런스에 있으므로 유사도 1.00으로 ' +
+             '매칭되어 더 낙관적인 값이 나옵니다 — 예를 들어 피나스테리드는 조회하면 5.47, ' +
+             '제외하고 예측하면 8.11입니다. <b>레퍼런스에 없는 신규 원료에서 기대할 수 있는 ' +
+             '실제 성능은 제외한 쪽(8.11)입니다.</b> 라이브러리에 있는 물질의 조회 결과는 ' +
+             '예측이 아니라 사실상 조회이므로, 성능의 근거로 삼지 마세요.</p>');
   }
+
+  out.push('<h5>기능 추정(작용제/길항제)을 읽는 법</h5>');
+  out.push('<p>「기능 추정」은 최근접 레퍼런스 5종의 <b>실험적으로 측정된 분류</b>를 ' +
+           '유사도³로 가중해 옮겨온 값입니다. 괄호 안 「근거」는 그 가중치가 한 분류에 ' +
+           '얼마나 몰렸는지를 나타내며, 1.00에 가까울수록 이웃들의 의견이 일치한다는 뜻입니다. ' +
+           '최근접 유사도가 0.35 미만이면 옮겨올 근거가 없다고 보고 「판단 불가」로 표시합니다.</p>');
+  out.push('<p>「구조 판정」은 이와 별개로 구조 모티프와 포켓 접촉 규칙만으로 유추한 것입니다. ' +
+           '둘이 어긋나면 <b>기능 추정 쪽을 믿으세요</b> — 실측 분류에 근거하기 때문입니다. ' +
+           '단, 둘 다 전사활성 측정이 아니라는 점은 같습니다.</p>');
 
   out.push('<h5>실패 모드 — 이 도구가 틀리는 방식</h5>');
   out.push('<ul>');
