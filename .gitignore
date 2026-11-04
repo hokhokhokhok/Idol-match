@@ -11,3 +11,6 @@ ar-scout/local/dock/
 ar-scout/local/chembl_ar_raw.json
 ar-scout/local/ar_reference.json
 ar-scout/local/ar_model.pkl
+ar-scout/local/qsar/
+ar-scout/local/*.log
+ar-scout/local/shortlist.csv
