@@ -157,6 +157,23 @@ def main() -> int:
           "위양성 의심" in ar_dock.interpret(analysis, -5.1))
     check("strong affinity not flagged", "위양성 의심" not in strong)
 
+    # Met895 lines the pocket in the agonist form, so on its own it must not
+    # read as helix-12 displacement; Ile899 must.
+    wall = {"anchors": {"A-ring": ["GLN711"], "D-ring": ["ASN705"],
+                        "helix-12": ["MET895", "LEU880"]}}
+    check("Met895/Leu880 alone is not displacement",
+          "AF-2" not in ar_dock.interpret(wall, -9.0))
+    tip = {"anchors": {"A-ring": ["GLN711"], "D-ring": ["ASN705"],
+                       "helix-12": ["MET895", "ILE899"]}}
+    check("Ile899 is displacement", "AF-2" in ar_dock.interpret(tip, -9.0))
+
+    # a clashing pose must be called out, not dressed up with anchors
+    clash = ar_dock.interpret(analysis, 9.2)
+    check("positive affinity reported as a failure to place",
+          "배치 실패" in clash, clash[:46])
+    check("clashing pose does not claim a binding mode",
+          "전형적 AR 리간드 결합 양상" not in clash)
+
     empty = {"anchors": {"A-ring": [], "D-ring": [], "helix-12": []}}
     check("no anchors -> hydrophobic only",
           "소수성 접촉만" in ar_dock.interpret(empty, -9.0))

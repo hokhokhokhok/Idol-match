@@ -1,0 +1,38 @@
+  fetched 1000 / 14838
+  fetched 2000 / 14838
+  fetched 3000 / 14838
+  fetched 4000 / 14838
+  fetched 5000 / 14838
+  fetched 6000 / 14838
+  fetched 7000 / 14838
+  fetched 8000 / 14838
+  fetched 9000 / 14838
+  fetched 10000 / 14838
+  fetched 11000 / 14838
+  fetched 12000 / 14838
+  fetched 13000 / 14838
+  fetched 14000 / 14838
+  fetched 14838 / 14838
+cached 14838 raw activities to /home/user/Idol-match/ar-scout/local/qsar/chembl_ar_raw.json
+
+14838 raw activity records for CHEMBL1871
+
+cleaning
+  dropped   7855  type
+  dropped   1167  censored relation
+  dropped    347  no usable value
+  dropped     17  validity comment
+  dropped      2  no structure
+  kept      5450 measurements on 2955 distinct structures
+  1330 structures have replicates; median spread 0.52 log, 90th percentile 1.87 log
+  stratified 2955 -> 2500 across 14 bins of 0.5 log
+wrote /home/user/Idol-match/ar-scout/local/qsar/ar_reference.json (2500 entries)
+  paste this into the web app's 레퍼런스 라이브러리 tab, or upload it
+
+model matrix: 2500 molecules x 2060 features
+cross-validating (random 5-fold)...
+  MAE  0.514 log
+  RMSE 0.677 log
+  R2   0.646
+  OOB R2 0.666
+wrote /home/user/Idol-match/ar-scout/local/qsar/ar_model.pkl

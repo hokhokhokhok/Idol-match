@@ -56,6 +56,20 @@ ANCHORS = {
     "helix-12": {"MET895", "ILE899", "LEU880"},
 }
 
+# Contacting helix-12 is not by itself evidence of AF-2 disruption. In the
+# agonist conformation (2AM9) Met895 lines the pocket wall, so almost any
+# ligand that binds at all touches it - measured over a 22-ligand panel it
+# was hit by 19, including niacinamide and panthenol. Leu880 was hit by 12,
+# agonists among them. Ile899 sits further out along helix-12 and was
+# reached only by ligands that extend toward the AF-2 surface: 5 of 22, and
+# all 5 were antagonists. Only that subset is treated as a displacement
+# signal; the full set above is still reported as contacts.
+H12_DISPLACEMENT = {"ILE899"}
+
+# At or above this score the pose is a clash, not a weak pose: the ligand
+# could not be placed in the pocket at all, and its contacts mean nothing.
+UNPLACEABLE = 0.0
+
 
 # ------------------------------------------------------------ PDB handling
 
@@ -276,9 +290,15 @@ def analyse_contacts(receptor_atoms: list, pose_atoms: list) -> dict:
 
 
 def interpret(analysis: dict, affinity: float) -> str:
+    # A clashing pose still produces a contact list, so say so first and do
+    # not dress it up with an anchor narrative it cannot support.
+    if affinity is not None and affinity >= UNPLACEABLE:
+        return ("포켓에 배치 실패 (입체 충돌) — 이 수용체 형태에 들어가지 않음; "
+                "접촉 잔기는 의미 없음. 길항 형태(2OZ7 등)에서 재시도 권장")
+
     a = bool(analysis["anchors"]["A-ring"])
     d = bool(analysis["anchors"]["D-ring"])
-    h12 = bool(analysis["anchors"]["helix-12"])
+    h12 = bool(set(analysis["anchors"]["helix-12"]) & H12_DISPLACEMENT)
 
     if a and d:
         note = "전형적 AR 리간드 결합 양상"
@@ -288,7 +308,7 @@ def interpret(analysis: dict, affinity: float) -> str:
         note = "소수성 접촉만 — 특이적 결합 근거 약함"
 
     if h12:
-        note += "; AF-2 교란 가능, 길항 성향 시사"
+        note += "; helix-12 말단(Ile899) 접촉 — AF-2 교란 가능, 길항 성향 시사"
     if affinity is not None and affinity >= -6.0:
         note += "; 결합 약함, 위양성 의심"
     return note
