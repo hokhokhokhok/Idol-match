@@ -107,6 +107,31 @@ def parse_pdb_atoms(text: str):
             continue
 
 
+def engineered_mutations(text: str) -> list:
+    """Engineered mutations declared in the entry's SEQADV records.
+
+    The anchor check below only sees residues this script names. A pocket
+    mutation outside that list still changes what the docking means - 1Z95
+    is W741L, and that widened pocket is the whole reason bicalutamide fits
+    it - so report whatever the depositor declared.
+    """
+    out = []
+    for line in text.splitlines():
+        if not line.startswith("SEQADV"):
+            continue
+        if "ENGINEERED MUTATION" not in line.upper():
+            continue
+        try:
+            new_res = line[12:15].strip()
+            number = line[18:22].strip()
+            old_res = line[39:42].strip()
+        except IndexError:
+            continue
+        if new_res and number:
+            out.append("%s%s%s" % (old_res or "?", number, new_res))
+    return out
+
+
 def check_anchor_residues(protein: list) -> list:
     """Warn when the structure does not carry the anchor residues by name.
 
@@ -175,6 +200,11 @@ def prepare(pdb_id: str, workdir: pathlib.Path) -> dict:
     (workdir / "box.json").write_text(json.dumps(box, indent=1), encoding="utf-8")
     print("receptor.pdb: %d atoms" % len(protein))
 
+    mutations = engineered_mutations(text)
+    if mutations:
+        print("  NOTE: engineered mutation(s) in this entry: %s"
+              % ", ".join(mutations))
+        print("        results describe the mutant pocket, not wild-type AR")
     for problem in check_anchor_residues(protein):
         print("  WARNING: %s" % problem)
     print("box centre (%.2f, %.2f, %.2f)  size (%.1f, %.1f, %.1f)"

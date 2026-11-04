@@ -205,6 +205,19 @@ def main() -> int:
           any("ASN705" in w and "absent" in w for w in warn2),
           "; ".join(warn2))
 
+    # --- SEQADV mutation reporting -----------------------------------------
+    seqadv = (
+        "SEQADV 2OZ7 ALA A  877  UNP  P10275    THR   877 ENGINEERED MUTATION\n"
+        "SEQADV 1Z95 LEU A  741  UNP  P10275    TRP   740 ENGINEERED MUTATION\n"
+        "SEQADV 9XXX GLY A  100  UNP  P10275    SER   100 CONFLICT\n"
+        "ATOM      1  CA  GLY A 100      0.000   0.000   0.000  1.00 20.00           C\n"
+    )
+    muts = ar_dock.engineered_mutations(seqadv)
+    check("SEQADV mutations parsed", muts == ["THR877ALA", "TRP741LEU"], str(muts))
+    check("non-mutation SEQADV rows ignored", "SER100GLY" not in muts)
+    check("structure with no SEQADV reports nothing",
+          ar_dock.engineered_mutations("ATOM      1  CA  GLY A 100\n") == [])
+
     # --- SDF reader --------------------------------------------------------
     sdf = work / "pose.sdf"
     sdf.write_text(
