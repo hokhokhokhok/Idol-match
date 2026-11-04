@@ -43,14 +43,26 @@ node test/smoke.js              # 번들 렌더링 (build.py 먼저 실행)
 cd local
 pip install -r requirements.txt
 
-# smina는 파이썬 패키지가 아니라 별도 실행파일입니다
+# smina는 파이썬 패키지가 아니라 별도 실행파일입니다 (PyPI에 없음)
 conda install -c conda-forge smina
-# 또는 https://sourceforge.net/projects/smina/ 에서 정적 빌드 내려받기
+
+# conda가 없는 환경이라면 micromamba를 conda 패키지로 직접 받아 부트스트랩:
+#   curl -sSLO https://conda.anaconda.org/conda-forge/linux-64/micromamba-2.10.0-0.tar.bz2
+#   tar -xjf micromamba-2.10.0-0.tar.bz2 bin/micromamba
+#   MAMBA_ROOT_PREFIX=$PWD/mm ./bin/micromamba create -y -p ./env -c conda-forge smina
+#   ./env/bin/smina --version
+# ar_dock.py에 --smina ./env/bin/smina 로 경로를 넘기면 됩니다.
 
 python3 test_ar_dock.py         # PDB 파싱·박스·접촉 분석 (네트워크/RDKit/smina 불필요)
 python3 test_pipeline.py        # 정제 규칙·모델 학습 (네트워크 불필요, RDKit·sklearn 필요)
 python3 test_crosscheck.py      # 웹 엔진 전체를 RDKit과 대조 (node + RDKit 필요)
+python3 test_dock_integration.py --smina <경로>   # 재도킹 통합 테스트 (smina + ProDy 필요)
 ```
+
+`test_dock_integration.py`는 ProDy에 동봉된 실제 결정 구조(1PWC, 페니실린 결합
+효소)로 **재도킹(redocking)** 을 돌립니다. 결정 구조의 리간드를 꺼내 3D를 새로
+만들고 자기 자리에 다시 도킹해, 원래 위치를 되찾는지 봅니다. 네트워크가 필요
+없어 도킹 설정이 멀쩡한지 언제든 확인할 수 있습니다.
 
 ---
 
@@ -208,6 +220,7 @@ helix-12(Met895/Ile899/Leu880)에 접촉이 잡히면 AF-2 교란 가능, 즉 �
 | leave-one-out RMSE | 1.156 log |
 | RDKit 대조 | 라이브러리 125종 전부 분자식·MW·중원자·고리수·방향족고리수 일치 |
 | 표기 불변성 | RDKit 생성 케쿨레 변형 104종 + 수기 19쌍, 전부 동일 결과 |
+| 재도킹 (1PWC) | RMSD 2.07 Å, 중심 변위 2.21 Å, 결정 접촉 잔기 69% 회수, 촉매 Ser62 수소결합 재현 |
 | 번들 크기 | 112 KB (의존성 0) |
 | `test_ar_dock.py` | 26종 통과 (PDB 파싱, 박스, 접촉/수소결합 컷오프, 해석 분기) |
 | `test_pipeline.py` | 38종 통과 (정제 규칙, 중앙값 통합, 계층 샘플링, 모델 학습) |
@@ -251,5 +264,6 @@ ar-scout/
     test_ar_dock.py        PDB 파싱·박스·접촉 분석 점검
     test_pipeline.py       정제 규칙·모델 학습 점검
     test_crosscheck.py     웹 엔진 ↔ RDKit 교차검증
+    test_dock_integration.py  재도킹 통합 테스트
     requirements.txt
 ```
