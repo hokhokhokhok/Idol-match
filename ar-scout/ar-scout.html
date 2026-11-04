@@ -1,0 +1,3122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AR Scout</title>
+<style>
+/* Fonts are named but never fetched: the bundle has to stay a single
+   self-contained file, so these resolve against locally installed IBM Plex
+   and fall back to the platform stack otherwise. */
+:root {
+  --serif: 'IBM Plex Serif', 'Noto Serif KR', Georgia, 'Times New Roman', serif;
+  --sans: 'IBM Plex Sans', 'IBM Plex Sans KR', 'Pretendard', -apple-system,
+          BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  --mono: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --bg: #F4F1EA;
+  --panel: #FCFBF8;
+  --panel-2: #F0EDE4;
+  --ink: #1A1D1E;
+  --ink-mid: #4A5255;
+  --ink-dim: #767F82;
+  --rule: #D9D3C6;
+  --rule-soft: #E7E2D7;
+  --accent: #1C6B78;
+  --accent-ink: #11454E;
+  --accent-wash: #E2EDEE;
+  --warn: #A8541D;
+  --warn-wash: #F6E8DC;
+  --grey-node: #B6B0A3;
+  --shadow: 0 1px 2px rgba(26, 29, 30, .06), 0 8px 24px rgba(26, 29, 30, .05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181A;
+    --panel: #1C2124;
+    --panel-2: #232A2D;
+    --ink: #ECEAE4;
+    --ink-mid: #B4BCBF;
+    --ink-dim: #8A9497;
+    --rule: #333C40;
+    --rule-soft: #2A3235;
+    --accent: #5FB3BF;
+    --accent-ink: #9FD4DC;
+    --accent-wash: #1B3338;
+    --warn: #D98A52;
+    --warn-wash: #3A281B;
+    --grey-node: #5A6366;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14181A;
+  --panel: #1C2124;
+  --panel-2: #232A2D;
+  --ink: #ECEAE4;
+  --ink-mid: #B4BCBF;
+  --ink-dim: #8A9497;
+  --rule: #333C40;
+  --rule-soft: #2A3235;
+  --accent: #5FB3BF;
+  --accent-ink: #9FD4DC;
+  --accent-wash: #1B3338;
+  --warn: #D98A52;
+  --warn-wash: #3A281B;
+  --grey-node: #5A6366;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 72px; }
+
+/* ---- masthead ---- */
+header.top {
+  border-bottom: 1px solid var(--rule);
+  padding: 26px 0 18px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+header.top h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 27px;
+  letter-spacing: -.01em;
+  margin: 0;
+  flex: 1 1 auto;
+}
+header.top h1 span {
+  display: block;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+.themebtn {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  background: transparent;
+  color: var(--ink-dim);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 5px 13px;
+  cursor: pointer;
+}
+.themebtn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---- tabs ---- */
+nav.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--rule); margin-bottom: 24px; }
+nav.tabs button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-dim);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 9px 15px;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+nav.tabs button:hover { color: var(--ink); }
+nav.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule-soft);
+  border-radius: 3px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.panel > h2, .panel > h3 {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.hint { color: var(--ink-dim); font-size: 13px; margin: 0 0 14px; }
+
+label.fld { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-mid);
+            letter-spacing: .03em; margin-bottom: 6px; }
+input[type=text], textarea, select {
+  width: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 9px 11px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+textarea { min-height: 130px; resize: vertical; line-height: 1.5; }
+input[type=text]:focus, textarea:focus {
+  outline: 2px solid var(--accent-wash);
+  border-color: var(--accent);
+}
+.row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.row > div { flex: 1 1 220px; min-width: 0; }
+
+button.go, button.alt, label.filebtn {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 10px 18px;
+  cursor: pointer;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  white-space: nowrap;
+}
+:root[data-theme="dark"] button.go, :root[data-theme="dark"] label.filebtn { color: #0F1416; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) button.go,
+  :root:not([data-theme="light"]) label.filebtn { color: #0F1416; }
+}
+button.alt { background: transparent; color: var(--accent); }
+button.go:hover, button.alt:hover, label.filebtn:hover { filter: brightness(1.08); }
+label.filebtn { display: inline-block; }
+label.filebtn input { display: none; }
+.btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+.err {
+  background: var(--warn-wash);
+  border-left: 3px solid var(--warn);
+  color: var(--warn);
+  padding: 10px 13px;
+  font-size: 13.5px;
+  border-radius: 2px;
+  margin-top: 14px;
+}
+
+/* ---- headline result ---- */
+.headline { display: flex; gap: 22px; align-items: baseline; flex-wrap: wrap;
+            border-bottom: 1px solid var(--rule-soft); padding-bottom: 16px; margin-bottom: 16px; }
+.headline .pk { font-family: var(--mono); font-size: 42px; font-weight: 600;
+                line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.headline .pk small { font-size: 17px; font-weight: 400; color: var(--ink-dim); margin-left: 4px; }
+.headline .meta { flex: 1 1 200px; font-size: 13px; color: var(--ink-mid); }
+.headline .meta b { color: var(--ink); }
+.subject { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0 0 2px; }
+.subject-smi { font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim);
+               word-break: break-all; margin: 0 0 16px; }
+
+.tag { display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: .05em;
+       text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid;
+       vertical-align: 2px; }
+.tag.in { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
+.tag.edge { color: var(--warn); border-color: var(--warn); background: var(--warn-wash); }
+.tag.out { color: var(--warn); border-color: var(--warn); background: transparent; }
+
+/* ---- tiles ---- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 1px;
+         background: var(--rule-soft); border: 1px solid var(--rule-soft); border-radius: 2px; }
+.tile { background: var(--panel); padding: 10px 11px; }
+.tile dt { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+           color: var(--ink-dim); margin: 0 0 3px; }
+.tile dd { font-family: var(--mono); font-size: 15px; margin: 0;
+           font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* ---- tables ---- */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--rule-soft); }
+th { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+     color: var(--ink-dim); font-weight: 600; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+tbody tr.clickable { cursor: pointer; }
+tbody tr.clickable:hover { background: var(--panel-2); }
+tr.clash td { color: var(--warn); }
+
+h4.sect { font-family: var(--sans); font-size: 11px; letter-spacing: .08em;
+          text-transform: uppercase; color: var(--ink-dim); font-weight: 600;
+          margin: 24px 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--rule-soft); }
+ul.why { margin: 0; padding-left: 0; list-style: none; font-size: 13.5px; }
+ul.why li { padding: 5px 0 5px 0; display: flex; gap: 10px; align-items: baseline; }
+ul.why li span.d { font-family: var(--mono); font-size: 12px; min-width: 46px;
+                   text-align: right; font-variant-numeric: tabular-nums; }
+ul.why li span.d.pos { color: var(--accent); }
+ul.why li span.d.neg { color: var(--warn); }
+.figwrap { background: var(--panel-2); border: 1px solid var(--rule-soft); border-radius: 2px;
+           padding: 8px; }
+.figwrap svg { display: block; width: 100%; height: auto; }
+
+/* ---- batch bars ---- */
+.bar { height: 6px; background: var(--accent); border-radius: 2px; min-width: 2px; }
+.bar.lo { background: var(--grey-node); }
+td.barcell { width: 34%; }
+
+details.card { border: 1px solid var(--rule-soft); border-radius: 3px; background: var(--panel);
+               padding: 0 18px; margin-bottom: 20px; box-shadow: var(--shadow); }
+details.card > summary { cursor: pointer; padding: 15px 0; font-family: var(--serif);
+                         font-size: 15.5px; font-weight: 600; }
+details.card > summary::marker { color: var(--accent); }
+details.card .inner { padding-bottom: 18px; font-size: 13.5px; color: var(--ink-mid); }
+details.card .inner h5 { font-family: var(--sans); font-size: 11px; letter-spacing: .08em;
+                         text-transform: uppercase; color: var(--ink-dim); margin: 18px 0 6px; }
+details.card .inner p { margin: 0 0 8px; }
+details.card .inner ul { margin: 0 0 8px; padding-left: 20px; }
+details.card .inner li { margin-bottom: 4px; }
+footer.foot { border-top: 1px solid var(--rule); margin-top: 28px; padding-top: 14px;
+              font-size: 12px; color: var(--ink-dim); }
+.hidden { display: none !important; }
+@media (max-width: 560px) {
+  .headline .pk { font-size: 34px; }
+  .panel { padding: 15px; }
+  header.top h1 { font-size: 23px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><span>Androgen receptor &middot; binding scout</span>AR 결합 예측 도구</h1>
+    <button class="themebtn" id="themebtn" type="button">theme</button>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button type="button" data-tab="single" aria-selected="true">단건 조회</button>
+    <button type="button" data-tab="batch" aria-selected="false">배치 스크리닝</button>
+    <button type="button" data-tab="library" aria-selected="false">레퍼런스 라이브러리</button>
+  </nav>
+
+  <!-- ------------------------------------------------ single -->
+  <section id="tab-single">
+    <div class="panel">
+      <h2>단건 조회</h2>
+      <p class="hint">물질명(한글 또는 영문) 또는 SMILES를 입력하세요.</p>
+      <div class="row">
+        <div>
+          <label class="fld" for="q">물질명 또는 SMILES</label>
+          <input type="text" id="q" list="names" placeholder="예: 디하이드로테스토스테론, minoxidil, CC(=O)Oc1ccccc1C(=O)O" autocomplete="off">
+          <datalist id="names"></datalist>
+        </div>
+        <div style="flex:0 0 auto">
+          <button class="go" id="run" type="button">예측</button>
+        </div>
+      </div>
+      <div id="single-err"></div>
+    </div>
+    <div id="single-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ batch -->
+  <section id="tab-batch" class="hidden">
+    <div class="panel">
+      <h2>배치 스크리닝</h2>
+      <p class="hint">한 줄에 <code>이름,SMILES</code> 형식으로 입력하거나 CSV를 업로드하세요. 최대 400건.</p>
+      <label class="fld" for="batchin">입력</label>
+      <textarea id="batchin" spellcheck="false" placeholder="Testosterone,CC12CCC3C(CCC4=CC(=O)CCC34C)C1CCC2O&#10;Niacinamide,NC(=O)c1ccncc1"></textarea>
+      <div class="btnbar">
+        <button class="go" id="batchrun" type="button">스크리닝 실행</button>
+        <label class="filebtn">CSV 업로드<input type="file" id="batchfile" accept=".csv,.txt,text/csv,text/plain"></label>
+        <button class="alt" id="batchsample" type="button">예시 채우기</button>
+        <button class="alt" id="batchcopy" type="button">TSV 복사</button>
+      </div>
+      <div id="batch-err"></div>
+    </div>
+    <div id="batch-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ library -->
+  <section id="tab-library" class="hidden">
+    <div class="panel">
+      <h2>레퍼런스 라이브러리</h2>
+      <p class="hint">read-across의 기준이 되는 실측 pKi 목록입니다. JSON 배열
+        <code>[{"n":이름,"s":SMILES,"p":pKi,"c":유형,"note":비고}]</code> 로 교체할 수 있습니다.</p>
+      <label class="fld" for="libin">교체용 JSON</label>
+      <textarea id="libin" spellcheck="false" placeholder='[{"n":"DHT","s":"CC12CCC3C(CCC4C3CCC4O)C1(C)CCC(=O)C2","p":9.3,"c":"agonist"}]'></textarea>
+      <div class="btnbar">
+        <button class="go" id="libapply" type="button">교체 적용</button>
+        <label class="filebtn">JSON 업로드<input type="file" id="libfile" accept=".json,application/json,text/plain"></label>
+        <button class="alt" id="libreset" type="button">기본값 복원</button>
+        <button class="alt" id="libexport" type="button">현재 라이브러리 JSON 보기</button>
+      </div>
+      <div id="lib-err"></div>
+    </div>
+    <div id="lib-out"></div>
+  </section>
+
+  <details class="card" id="modelcard">
+    <summary>모델 카드 — 성능과 실패 모드</summary>
+    <div class="inner" id="modelcard-body"></div>
+  </details>
+
+  <footer class="foot">
+    세포실험 전 우선순위 선별용 도구입니다. 규제 제출이나 안전성 판정의 근거로 사용할 수 없습니다.
+    모든 계산은 이 파일 안에서 수행되며 구조는 외부로 전송되지 않습니다.
+  </footer>
+</div>
+
+<script>
+/* ---- armodel.js ---- */
+/* armodel.js — SMILES parser, descriptors, Morgan fingerprint, structural motifs.
+ * No dependencies. Shared by the browser bundle and the Node test suite.
+ */
+'use strict';
+
+/* ---------------------------------------------------------------- constants */
+
+var ATOMIC_WEIGHT = {
+  H: 1.008, B: 10.81, C: 12.011, N: 14.007, O: 15.999, F: 18.998,
+  Na: 22.990, Mg: 24.305, Si: 28.085, P: 30.974, S: 32.06, Cl: 35.45,
+  K: 39.098, Ca: 40.078, Fe: 55.845, Zn: 65.38, Se: 78.971, Br: 79.904,
+  I: 126.904
+};
+
+var DEFAULT_VALENCE = {
+  B: 3, C: 4, N: 3, O: 2, P: 3, S: 2, F: 1, Cl: 1, Br: 1, I: 1,
+  Se: 2, Si: 4
+};
+
+/* Two-character tokens must be tested before single-character ones. */
+var ORGANIC_TWO = ['Cl', 'Br'];
+var ORGANIC_ONE = ['B', 'C', 'N', 'O', 'P', 'S', 'F', 'I'];
+var AROMATIC_TWO = ['se', 'as'];
+var AROMATIC_ONE = ['c', 'n', 'o', 's', 'p'];
+
+var BOND_CHARS = {
+  '-': { order: 1, arom: false },
+  '=': { order: 2, arom: false },
+  '#': { order: 3, arom: false },
+  '$': { order: 4, arom: false },
+  ':': { order: 1, arom: true },
+  '/': { order: 1, arom: false },
+  '\\': { order: 1, arom: false }
+};
+
+/* ------------------------------------------------------------------ parser */
+
+function makeAtom(el, arom) {
+  return {
+    el: el,
+    arom: !!arom,
+    charge: 0,
+    isotope: 0,
+    chirality: null,
+    nH: 0,
+    explicitH: false,
+    bracket: false,
+    nbr: [],
+    bidx: [],
+    inRing: false,
+    ringSizes: []
+  };
+}
+
+/* Parses the bracket body of an atom, e.g. "nH", "N+", "O-", "C@@H", "13C". */
+function parseBracketAtom(body) {
+  var i = 0, iso = '';
+  while (i < body.length && body[i] >= '0' && body[i] <= '9') { iso += body[i]; i++; }
+
+  var el = null, arom = false;
+  var two = body.substr(i, 2);
+  if (AROMATIC_TWO.indexOf(two) >= 0) { el = two[0].toUpperCase() + two[1]; arom = true; i += 2; }
+  else if (/^[A-Z][a-z]$/.test(two) && ATOMIC_WEIGHT[two] !== undefined) { el = two; i += 2; }
+  else if (/^[A-Z]$/.test(body[i])) { el = body[i]; i += 1; }
+  else if (/^[a-z]$/.test(body[i])) { el = body[i].toUpperCase(); arom = true; i += 1; }
+  else if (body[i] === '*') { el = 'C'; i += 1; }
+  else throw new Error('bad bracket atom: [' + body + ']');
+
+  var atom = makeAtom(el, arom);
+  atom.bracket = true;
+  if (iso) atom.isotope = parseInt(iso, 10); /* parsed, deliberately unused */
+
+  while (i < body.length) {
+    var c = body[i];
+    if (c === '@') {                       /* chirality: parsed, unused */
+      atom.chirality = body[i + 1] === '@' ? '@@' : '@';
+      i += atom.chirality.length;
+    } else if (c === 'H') {
+      i++;
+      var cnt = '';
+      while (i < body.length && body[i] >= '0' && body[i] <= '9') { cnt += body[i]; i++; }
+      atom.nH = cnt ? parseInt(cnt, 10) : 1;
+      atom.explicitH = true;
+    } else if (c === '+' || c === '-') {
+      i++;
+      var sign = c === '+' ? 1 : -1;
+      var mag = '';
+      while (i < body.length && body[i] >= '0' && body[i] <= '9') { mag += body[i]; i++; }
+      if (mag) atom.charge += sign * parseInt(mag, 10);
+      else {
+        var run = 1;
+        while (i < body.length && body[i] === c) { run++; i++; }
+        atom.charge += sign * run;
+      }
+    } else if (c === ':') {                /* atom map: parsed, unused */
+      i++;
+      while (i < body.length && body[i] >= '0' && body[i] <= '9') i++;
+    } else {
+      throw new Error('bad bracket atom: [' + body + ']');
+    }
+  }
+  return atom;
+}
+
+function parseSmiles(smiles) {
+  if (typeof smiles !== 'string') throw new Error('SMILES must be a string');
+  var smi = smiles.trim();
+  if (!smi.length) throw new Error('empty SMILES');
+
+  var atoms = [], bonds = [], bondSeen = {};
+  var ringOpen = {};          /* ring-closure number -> {atom, order, arom} */
+  var stack = [];
+  var prev = -1;
+  var pending = null;         /* bond spec waiting for the next atom */
+  var i = 0;
+
+  function addBond(a, b, spec) {
+    if (a < 0 || b < 0 || a === b) return;
+    var key = a < b ? a + '_' + b : b + '_' + a;
+    if (bondSeen[key] !== undefined) return;   /* never double-bond a pair */
+    var order, arom;
+    if (spec) { order = spec.order; arom = spec.arom; }
+    else if (atoms[a].arom && atoms[b].arom) { order = 1; arom = true; }
+    else { order = 1; arom = false; }
+    var idx = bonds.length;
+    bondSeen[key] = idx;
+    bonds.push({ a: a, b: b, order: order, arom: arom, inRing: false });
+    atoms[a].nbr.push(b); atoms[a].bidx.push(idx);
+    atoms[b].nbr.push(a); atoms[b].bidx.push(idx);
+  }
+
+  function pushAtom(atom) {
+    atoms.push(atom);
+    var idx = atoms.length - 1;
+    if (prev >= 0) addBond(prev, idx, pending);
+    pending = null;
+    prev = idx;
+  }
+
+  while (i < smi.length) {
+    var ch = smi[i];
+
+    if (ch === ' ' || ch === '\t') { i++; continue; }
+
+    if (ch === '[') {
+      var close = smi.indexOf(']', i);
+      if (close < 0) throw new Error('unclosed [ in SMILES');
+      pushAtom(parseBracketAtom(smi.substring(i + 1, close)));
+      i = close + 1;
+      continue;
+    }
+
+    if (ch === '(') { stack.push(prev); i++; continue; }
+    if (ch === ')') {
+      if (!stack.length) throw new Error('unbalanced ) in SMILES');
+      prev = stack.pop(); i++; continue;
+    }
+    if (ch === '.') { prev = -1; pending = null; i++; continue; }
+
+    if (BOND_CHARS[ch]) {
+      pending = BOND_CHARS[ch];
+      i++;
+      continue;
+    }
+
+    if (ch === '%' || (ch >= '0' && ch <= '9')) {
+      var num;
+      if (ch === '%') {
+        num = smi.substr(i + 1, 2);
+        if (!/^\d\d$/.test(num)) throw new Error('bad %nn ring closure');
+        i += 3;
+      } else { num = ch; i += 1; }
+      if (prev < 0) throw new Error('ring closure before any atom');
+      if (ringOpen[num] !== undefined) {
+        var open = ringOpen[num];
+        delete ringOpen[num];
+        addBond(open.atom, prev, open.spec || pending);
+      } else {
+        ringOpen[num] = { atom: prev, spec: pending };
+      }
+      pending = null;
+      continue;
+    }
+
+    var t2 = smi.substr(i, 2);
+    if (ORGANIC_TWO.indexOf(t2) >= 0) { pushAtom(makeAtom(t2, false)); i += 2; continue; }
+    if (AROMATIC_TWO.indexOf(t2) >= 0) {
+      pushAtom(makeAtom(t2[0].toUpperCase() + t2[1], true)); i += 2; continue;
+    }
+    if (ORGANIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch, false)); i += 1; continue; }
+    if (AROMATIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch.toUpperCase(), true)); i += 1; continue; }
+    if (ch === '*') { pushAtom(makeAtom('C', false)); i += 1; continue; }
+
+    throw new Error('unexpected character "' + ch + '" at ' + i + ' in SMILES');
+  }
+
+  if (stack.length) throw new Error('unbalanced ( in SMILES');
+  for (var k in ringOpen) {
+    if (Object.prototype.hasOwnProperty.call(ringOpen, k)) {
+      throw new Error('unclosed ring bond ' + k + ' in SMILES');
+    }
+  }
+  if (!atoms.length) throw new Error('no atoms parsed from SMILES');
+
+  var mol = { smiles: smi, atoms: atoms, bonds: bonds, rings: [] };
+  perceiveRings(mol);
+  addImplicitHydrogens(mol);
+  return mol;
+}
+
+/* ------------------------------------------------------------- ring finding */
+
+function components(mol) {
+  var n = mol.atoms.length, seen = new Array(n).fill(false), count = 0;
+  for (var s = 0; s < n; s++) {
+    if (seen[s]) continue;
+    count++;
+    var q = [s]; seen[s] = true;
+    while (q.length) {
+      var v = q.pop(), nb = mol.atoms[v].nbr;
+      for (var j = 0; j < nb.length; j++) if (!seen[nb[j]]) { seen[nb[j]] = true; q.push(nb[j]); }
+    }
+  }
+  return count;
+}
+
+/* Shortest path between a and b that does not use bond `skip`. */
+function shortestPathExcluding(mol, a, b, skip) {
+  var n = mol.atoms.length;
+  var prevA = new Array(n).fill(-1);
+  var seen = new Array(n).fill(false);
+  var q = [a]; seen[a] = true;
+  while (q.length) {
+    var v = q.shift();
+    if (v === b) break;
+    var at = mol.atoms[v];
+    for (var j = 0; j < at.nbr.length; j++) {
+      if (at.bidx[j] === skip) continue;
+      var w = at.nbr[j];
+      if (seen[w]) continue;
+      seen[w] = true; prevA[w] = v; q.push(w);
+    }
+  }
+  if (!seen[b]) return null;
+  var path = [b], cur = b;
+  while (cur !== a) { cur = prevA[cur]; if (cur < 0) return null; path.push(cur); }
+  return path;
+}
+
+/* Ring count from the cyclomatic number; rings themselves from per-bond
+ * shortest cycles, smallest first. Not a true SSSR but stable and cheap. */
+function perceiveRings(mol) {
+  var n = mol.atoms.length, m = mol.bonds.length;
+  var nRings = m - n + components(mol);
+  mol.ringCount = Math.max(0, nRings);
+  mol.rings = [];
+  if (nRings <= 0) return;
+
+  var cands = [];
+  for (var bi = 0; bi < m; bi++) {
+    var bd = mol.bonds[bi];
+    var p = shortestPathExcluding(mol, bd.a, bd.b, bi);
+    if (p && p.length >= 3) cands.push(p);
+  }
+  cands.sort(function (x, y) { return x.length - y.length; });
+
+  var seenKeys = {}, out = [];
+  for (var c = 0; c < cands.length && out.length < nRings; c++) {
+    var key = cands[c].slice().sort(function (x, y) { return x - y; }).join(',');
+    if (seenKeys[key]) continue;
+    seenKeys[key] = true;
+    out.push(cands[c]);
+  }
+  mol.rings = out;
+
+  for (var r = 0; r < out.length; r++) {
+    var ring = out[r];
+    for (var t = 0; t < ring.length; t++) {
+      var at = mol.atoms[ring[t]];
+      at.inRing = true;
+      at.ringSizes.push(ring.length);
+      var u = ring[t], v = ring[(t + 1) % ring.length];
+      var bk = bondBetween(mol, u, v);
+      if (bk >= 0) mol.bonds[bk].inRing = true;
+    }
+  }
+}
+
+function bondBetween(mol, u, v) {
+  var at = mol.atoms[u];
+  for (var j = 0; j < at.nbr.length; j++) if (at.nbr[j] === v) return at.bidx[j];
+  return -1;
+}
+
+/* --------------------------------------------------------------- hydrogens */
+
+function bondOrderSum(mol, idx) {
+  var at = mol.atoms[idx], s = 0;
+  for (var j = 0; j < at.bidx.length; j++) {
+    var o = mol.bonds[at.bidx[j]].order;
+    s += (o === 4 ? 4 : o);
+  }
+  return s;
+}
+
+function targetValence(el, charge, orderSum) {
+  var base = DEFAULT_VALENCE[el];
+  if (base === undefined) return null;
+  if (el === 'S') { if (orderSum > 2) return orderSum > 4 ? 6 : 4; return 2; }
+  if (el === 'P') { if (orderSum > 3) return 5; return 3; }
+  if (el === 'N') {
+    if (charge > 0) return 4;
+    if (charge < 0) return 2;
+    return 3;
+  }
+  if (el === 'O') {
+    if (charge < 0) return 1;
+    if (charge > 0) return 3;
+    return 2;
+  }
+  if (el === 'C' && charge !== 0) return 3;
+  return base;
+}
+
+function addImplicitHydrogens(mol) {
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var at = mol.atoms[i];
+    if (at.explicitH) continue;             /* bracket H count wins outright */
+    var sum = bondOrderSum(mol, i);
+    var val = targetValence(at.el, at.charge, sum);
+    if (val === null) { at.nH = 0; continue; }
+
+    /* An aromatic atom carries one formal double bond inside the ring.
+     * Pyrrole-type N (aromatic N already using three sigma bonds) does not. */
+    if (at.arom) {
+      var pyrroleLike = (at.el === 'N' || at.el === 'P') && at.nbr.length >= 3;
+      if (!pyrroleLike) sum += 1;
+    }
+    at.nH = Math.max(0, val - sum);
+  }
+}
+
+/* -------------------------------------------------------------- properties */
+
+function isUnsaturatedCarbon(mol, idx) {
+  var at = mol.atoms[idx];
+  if (at.arom) return true;
+  for (var j = 0; j < at.bidx.length; j++) {
+    var o = mol.bonds[at.bidx[j]].order;
+    if (o === 2 || o === 3 || o === 4 || mol.bonds[at.bidx[j]].arom) return true;
+  }
+  return false;
+}
+
+function hasHeteroNeighbour(mol, idx) {
+  var at = mol.atoms[idx];
+  for (var j = 0; j < at.nbr.length; j++) {
+    var e = mol.atoms[at.nbr[j]].el;
+    if (e !== 'C' && e !== 'H') return true;
+  }
+  return false;
+}
+
+function neighbourEls(mol, idx) {
+  var at = mol.atoms[idx], out = [];
+  for (var j = 0; j < at.nbr.length; j++) out.push(mol.atoms[at.nbr[j]].el);
+  return out;
+}
+
+function doubleBondedTo(mol, idx, el) {
+  var at = mol.atoms[idx];
+  for (var j = 0; j < at.bidx.length; j++) {
+    var bd = mol.bonds[at.bidx[j]];
+    if (bd.order === 2 && mol.atoms[at.nbr[j]].el === el) return at.nbr[j];
+  }
+  return -1;
+}
+
+function countDoubleBondedTo(mol, idx, el) {
+  var at = mol.atoms[idx], c = 0;
+  for (var j = 0; j < at.bidx.length; j++) {
+    var bd = mol.bonds[at.bidx[j]];
+    if (bd.order === 2 && mol.atoms[at.nbr[j]].el === el) c++;
+  }
+  return c;
+}
+
+function isNitroNitrogen(mol, idx) {
+  var at = mol.atoms[idx];
+  if (at.el !== 'N') return false;
+  var oxy = 0, dbl = 0;
+  for (var j = 0; j < at.nbr.length; j++) {
+    if (mol.atoms[at.nbr[j]].el === 'O') {
+      oxy++;
+      if (mol.bonds[at.bidx[j]].order === 2) dbl++;
+    }
+  }
+  return oxy >= 2 && (dbl >= 1 || at.charge > 0);
+}
+
+function isNitroOxygen(mol, idx) {
+  var at = mol.atoms[idx];
+  if (at.el !== 'O') return false;
+  for (var j = 0; j < at.nbr.length; j++) {
+    if (isNitroNitrogen(mol, at.nbr[j])) return true;
+  }
+  return false;
+}
+
+function molecularFormula(mol) {
+  var counts = {}, hTotal = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var el = mol.atoms[i].el;
+    counts[el] = (counts[el] || 0) + 1;
+    hTotal += mol.atoms[i].nH;
+  }
+  if (hTotal) counts.H = (counts.H || 0) + hTotal;
+
+  var out = '';
+  function emit(el) {
+    if (!counts[el]) return;
+    out += el + (counts[el] > 1 ? counts[el] : '');
+    delete counts[el];
+  }
+  emit('C'); emit('H');
+  Object.keys(counts).sort().forEach(emit);
+  return out;
+}
+
+function molecularWeight(mol) {
+  var w = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var at = mol.atoms[i];
+    var aw = ATOMIC_WEIGHT[at.el];
+    if (aw === undefined) throw new Error('no atomic weight for ' + at.el);
+    w += aw + at.nH * ATOMIC_WEIGHT.H;
+  }
+  return w;
+}
+
+/* ---- TPSA (Ertl 2000 polar-surface contributions, N and O only) --------- */
+
+function tpsa(mol) {
+  var total = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var at = mol.atoms[i];
+    if (at.el !== 'N' && at.el !== 'O') continue;
+    var nH = at.nH, deg = at.nbr.length, sum = bondOrderSum(mol, i);
+    var c = 0;
+
+    if (at.el === 'N') {
+      if (at.arom) {
+        if (nH > 0) c = at.charge > 0 ? 14.14 : 15.79;
+        else if (deg >= 3) c = at.charge > 0 ? 4.10 : 4.41;
+        else c = 12.89;
+      } else if (at.charge > 0) {
+        if (sum - nH >= 4) c = 0.00;
+        else if (nH === 0) c = 3.01;
+        else if (nH === 1) c = 4.44;
+        else c = 16.61;
+      } else if (isNitroNitrogen(mol, i)) {
+        c = 11.68;
+      } else if (sum - nH >= 3 && deg === 1) {
+        c = 23.79;                                     /* nitrile */
+      } else if (nH === 0) {
+        c = deg >= 3 ? 3.24 : 12.36;
+      } else if (nH === 1) {
+        c = deg >= 2 ? 12.03 : 23.85;
+      } else {
+        c = 26.02;
+      }
+    } else {
+      if (at.arom) c = 13.14;
+      else if (at.charge < 0) c = 23.06;
+      else if (nH > 0) c = 20.23;
+      else if (countDoubleBondedTo(mol, i, 'C') > 0 || sum >= 2 && deg === 1) c = 17.07;
+      else c = 9.23;
+    }
+    total += c;
+  }
+  return total;
+}
+
+/* ---- Crippen-style clogP ------------------------------------------------ */
+
+var LOGP = {
+  C_SAT: 0.1441,        /* saturated carbon, carbon neighbours only          */
+  C_SAT_HETERO: 0.0,    /* saturated carbon next to a heteroatom             */
+  C_UNSAT: 0.2713,      /* aromatic or multiply-bonded carbon                */
+  H_ON_C: 0.0615,
+  H_ON_HETERO: -0.2200,
+  N_AMIDE: -0.5500,
+  N_AROM: -0.3187,
+  N_NITRILE: -0.3239,
+  N_NITRO: -0.3000,
+  N_AMINE1: -1.0190,
+  N_AMINE2: -0.7096,
+  N_AMINE3: -0.4458,
+  O_NITRO: -0.2000,
+  O_HYDROXYL: -0.2893,
+  O_ETHER: -0.0684,
+  O_AROM: 0.1129,
+  O_CARBONYL: -0.1526,
+  O_ANION: -0.9000,
+  F: 0.4202,
+  F_POLY: 0.1500,       /* fluorine on a poly-fluorinated carbon            */
+  Cl: 0.6895,
+  Br: 0.8456,
+  I: 0.8857,
+  S_THIO: 0.6482,
+  S_OXIDISED: -0.0024,
+  P: 0.0000,
+  B: 0.6000,
+  Se: 0.6500,
+  Si: 0.1000,
+  OTHER: 0.0000
+};
+
+function fluorineCountOn(mol, idx) {
+  var els = neighbourEls(mol, idx), c = 0;
+  for (var j = 0; j < els.length; j++) if (els[j] === 'F') c++;
+  return c;
+}
+
+function isAmideNitrogen(mol, idx) {
+  var at = mol.atoms[idx];
+  if (at.el !== 'N') return false;
+  for (var j = 0; j < at.nbr.length; j++) {
+    var nb = at.nbr[j];
+    if (mol.atoms[nb].el !== 'C') continue;
+    if (doubleBondedTo(mol, nb, 'O') >= 0 || doubleBondedTo(mol, nb, 'S') >= 0) return true;
+  }
+  return false;
+}
+
+function clogp(mol) {
+  var total = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var at = mol.atoms[i], el = at.el, c;
+
+    if (el === 'C') {
+      if (isUnsaturatedCarbon(mol, i)) c = LOGP.C_UNSAT;
+      else c = hasHeteroNeighbour(mol, i) ? LOGP.C_SAT_HETERO : LOGP.C_SAT;
+    } else if (el === 'N') {
+      if (isNitroNitrogen(mol, i)) c = LOGP.N_NITRO;
+      else if (at.arom) c = LOGP.N_AROM;
+      else if (bondOrderSum(mol, i) - at.nH >= 3 && at.nbr.length === 1) c = LOGP.N_NITRILE;
+      else if (isAmideNitrogen(mol, i)) c = LOGP.N_AMIDE;
+      else if (at.nH >= 2) c = LOGP.N_AMINE1;
+      else if (at.nH === 1) c = LOGP.N_AMINE2;
+      else c = LOGP.N_AMINE3;
+    } else if (el === 'O') {
+      if (isNitroOxygen(mol, i)) c = LOGP.O_NITRO;
+      else if (at.charge < 0) c = LOGP.O_ANION;
+      else if (at.arom) c = LOGP.O_AROM;
+      else if (at.nH > 0) c = LOGP.O_HYDROXYL;
+      else if (countDoubleBondedTo(mol, i, 'C') > 0 || countDoubleBondedTo(mol, i, 'N') > 0 ||
+               countDoubleBondedTo(mol, i, 'S') > 0) c = LOGP.O_CARBONYL;
+      else c = LOGP.O_ETHER;
+    } else if (el === 'F') {
+      var host = at.nbr.length ? at.nbr[0] : -1;
+      c = (host >= 0 && fluorineCountOn(mol, host) >= 2) ? LOGP.F_POLY : LOGP.F;
+    } else if (el === 'S') {
+      c = countDoubleBondedTo(mol, i, 'O') > 0 ? LOGP.S_OXIDISED : LOGP.S_THIO;
+    } else if (LOGP[el] !== undefined) {
+      c = LOGP[el];
+    } else {
+      c = LOGP.OTHER;
+    }
+
+    total += c;
+    if (at.nH) {
+      total += at.nH * (el === 'C' ? LOGP.H_ON_C : LOGP.H_ON_HETERO);
+    }
+  }
+  return total;
+}
+
+/* ---- the rest of the descriptor block ---------------------------------- */
+
+function hbd(mol) {
+  var n = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var at = mol.atoms[i];
+    if ((at.el === 'N' || at.el === 'O') && at.nH > 0) n += at.nH;
+  }
+  return n;
+}
+
+function hba(mol) {
+  var n = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var el = mol.atoms[i].el;
+    if (el === 'N' || el === 'O') n++;
+  }
+  return n;
+}
+
+function rotatableBonds(mol) {
+  var n = 0;
+  for (var bi = 0; bi < mol.bonds.length; bi++) {
+    var bd = mol.bonds[bi];
+    if (bd.inRing || bd.arom || bd.order !== 1) continue;
+    var a = mol.atoms[bd.a], b = mol.atoms[bd.b];
+    if (a.nbr.length < 2 || b.nbr.length < 2) continue;
+    /* amide C-N is not freely rotatable */
+    var amide = (isAmideNitrogen(mol, bd.a) && b.el === 'C' && doubleBondedTo(mol, bd.b, 'O') >= 0) ||
+                (isAmideNitrogen(mol, bd.b) && a.el === 'C' && doubleBondedTo(mol, bd.a, 'O') >= 0);
+    if (amide) continue;
+    n++;
+  }
+  return n;
+}
+
+function aromaticRingCount(mol) {
+  var n = 0;
+  for (var r = 0; r < mol.rings.length; r++) {
+    var all = true;
+    for (var t = 0; t < mol.rings[r].length; t++) {
+      if (!mol.atoms[mol.rings[r][t]].arom) { all = false; break; }
+    }
+    if (all) n++;
+  }
+  return n;
+}
+
+function halogenCount(mol) {
+  var n = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var el = mol.atoms[i].el;
+    if (el === 'F' || el === 'Cl' || el === 'Br' || el === 'I') n++;
+  }
+  return n;
+}
+
+function fsp3(mol) {
+  var c = 0, sp3 = 0;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    if (mol.atoms[i].el !== 'C') continue;
+    c++;
+    if (!isUnsaturatedCarbon(mol, i)) sp3++;
+  }
+  return c ? sp3 / c : 0;
+}
+
+function longestPath(mol) {
+  var n = mol.atoms.length, best = 0;
+  for (var s = 0; s < n; s++) {
+    var dist = new Array(n).fill(-1);
+    dist[s] = 0;
+    var q = [s];
+    while (q.length) {
+      var v = q.shift(), nb = mol.atoms[v].nbr;
+      for (var j = 0; j < nb.length; j++) {
+        if (dist[nb[j]] < 0) { dist[nb[j]] = dist[v] + 1; q.push(nb[j]); }
+      }
+    }
+    for (var k = 0; k < n; k++) if (dist[k] > best) best = dist[k];
+  }
+  return best;
+}
+
+function computeDescriptors(mol) {
+  return {
+    mw: molecularWeight(mol),
+    formula: molecularFormula(mol),
+    clogp: clogp(mol),
+    tpsa: tpsa(mol),
+    hbd: hbd(mol),
+    hba: hba(mol),
+    rotb: rotatableBonds(mol),
+    rings: mol.rings.length,
+    aromRings: aromaticRingCount(mol),
+    heavy: mol.atoms.length,
+    halogens: halogenCount(mol),
+    fsp3: fsp3(mol),
+    longestPath: longestPath(mol)
+  };
+}
+
+/* --------------------------------------------------- Morgan fingerprint */
+
+var FP_BITS = 2048;
+
+function fnv1a(str) {
+  var h = 0x811c9dc5;
+  for (var i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h >>> 0;
+}
+
+function initialInvariants(mol) {
+  var inv = new Array(mol.atoms.length);
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var at = mol.atoms[i];
+    inv[i] = fnv1a([
+      at.el, at.nbr.length, at.nH, at.charge,
+      at.arom ? 1 : 0, at.inRing ? 1 : 0
+    ].join('|'));
+  }
+  return inv;
+}
+
+function morganFingerprint(mol, radius, nBits) {
+  radius = radius === undefined ? 2 : radius;
+  nBits = nBits || FP_BITS;
+  var bits = new Uint8Array(nBits);
+  var inv = initialInvariants(mol);
+
+  for (var i = 0; i < inv.length; i++) bits[inv[i] % nBits] = 1;
+
+  for (var r = 1; r <= radius; r++) {
+    var next = new Array(inv.length);
+    for (var a = 0; a < inv.length; a++) {
+      var at = mol.atoms[a], parts = [];
+      for (var j = 0; j < at.nbr.length; j++) {
+        var order = mol.bonds[at.bidx[j]].arom ? 15 : mol.bonds[at.bidx[j]].order;
+        parts.push((order * 1000003 + inv[at.nbr[j]]) >>> 0);
+      }
+      parts.sort(function (x, y) { return x - y; });
+      next[a] = fnv1a(r + ':' + inv[a] + ':' + parts.join(','));
+      bits[next[a] % nBits] = 1;
+    }
+    inv = next;
+  }
+  return bits;
+}
+
+function tanimoto(fa, fb) {
+  var both = 0, either = 0;
+  for (var i = 0; i < fa.length; i++) {
+    if (fa[i] && fb[i]) both++;
+    if (fa[i] || fb[i]) either++;
+  }
+  return either ? both / either : 0;
+}
+
+/* ------------------------------------------------------ structural motifs */
+
+/* Groups of rings that share at least two atoms (i.e. are fused). */
+function fusedRingSystems(mol) {
+  var rings = mol.rings, n = rings.length;
+  var parent = new Array(n);
+  for (var i = 0; i < n; i++) parent[i] = i;
+  function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+  function union(x, y) { var rx = find(x), ry = find(y); if (rx !== ry) parent[rx] = ry; }
+
+  for (var a = 0; a < n; a++) {
+    for (var b = a + 1; b < n; b++) {
+      var shared = 0, setA = {};
+      for (var t = 0; t < rings[a].length; t++) setA[rings[a][t]] = true;
+      for (var u = 0; u < rings[b].length; u++) if (setA[rings[b][u]]) shared++;
+      if (shared >= 2) union(a, b);
+    }
+  }
+  var groups = {};
+  for (var r = 0; r < n; r++) {
+    var g = find(r);
+    (groups[g] = groups[g] || []).push(r);
+  }
+  return Object.keys(groups).map(function (k) { return groups[k]; });
+}
+
+function steroidCore(mol) {
+  var systems = fusedRingSystems(mol);
+  for (var s = 0; s < systems.length; s++) {
+    var idxs = systems[s];
+    if (idxs.length < 4) continue;
+    var sizes = idxs.map(function (i) { return mol.rings[i].length; }).sort();
+    /* look for a 5/6/6/6 combination inside the fused system */
+    var six = 0, five = 0;
+    for (var k = 0; k < sizes.length; k++) {
+      if (sizes[k] === 6) six++;
+      else if (sizes[k] === 5) five++;
+    }
+    if (six >= 3 && five >= 1) {
+      var atomSet = {};
+      for (var j = 0; j < idxs.length; j++) {
+        for (var t = 0; t < mol.rings[idxs[j]].length; t++) atomSet[mol.rings[idxs[j]][t]] = true;
+      }
+      return { rings: idxs, atoms: Object.keys(atomSet).map(Number) };
+    }
+  }
+  return null;
+}
+
+function detectMotifs(mol) {
+  var m = {
+    steroid: false, steroidKeto3: false, steroidPolarTail: false,
+    enone: false, ketone: false, hydroxyl: false, phenol: false,
+    carboxyl: false, nitrile: false, arylNitrile: false,
+    cf3: false, arylCF3: false, nitro: false, amide: false,
+    sulfonyl: false, tertAlcohol: false, hydantoin: false,
+    thiohydantoin: false, longestPath: longestPath(mol),
+    nonsteroidalAA: false
+  };
+
+  var core = steroidCore(mol);
+  m.steroid = !!core;
+  var coreSet = {};
+  if (core) for (var i = 0; i < core.atoms.length; i++) coreSet[core.atoms[i]] = true;
+
+  for (var a = 0; a < mol.atoms.length; a++) {
+    var at = mol.atoms[a], els = neighbourEls(mol, a);
+
+    if (at.el === 'O' && at.nH > 0) {
+      var host = at.nbr.length ? at.nbr[0] : -1;
+      if (host >= 0) {
+        var h = mol.atoms[host];
+        var isCarboxyl = h.el === 'C' && doubleBondedTo(mol, host, 'O') >= 0;
+        if (isCarboxyl) m.carboxyl = true;
+        else if (h.arom) m.phenol = true;
+        else {
+          m.hydroxyl = true;
+          var cNbr = 0;
+          for (var j = 0; j < h.nbr.length; j++) if (mol.atoms[h.nbr[j]].el === 'C') cNbr++;
+          if (h.el === 'C' && cNbr >= 3) m.tertAlcohol = true;
+        }
+      }
+    }
+
+    if (at.el === 'C') {
+      var oDouble = doubleBondedTo(mol, a, 'O');
+      if (oDouble >= 0) {
+        var cCount = 0, nCount = 0;
+        for (var k = 0; k < at.nbr.length; k++) {
+          if (at.nbr[k] === oDouble) continue;
+          if (mol.atoms[at.nbr[k]].el === 'C') cCount++;
+          if (mol.atoms[at.nbr[k]].el === 'N') nCount++;
+        }
+        if (nCount > 0) m.amide = true;
+        else if (cCount >= 2) {
+          m.ketone = true;
+          /* enone: the carbonyl carbon sits next to a C=C */
+          for (var p = 0; p < at.nbr.length; p++) {
+            var nb = at.nbr[p];
+            if (nb === oDouble) continue;
+            if (mol.atoms[nb].el === 'C' && doubleBondedTo(mol, nb, 'C') >= 0) m.enone = true;
+          }
+          if (core && coreSet[a]) m.steroidKeto3 = true;
+        }
+      }
+      if (doubleBondedTo(mol, a, 'S') >= 0) {
+        for (var q = 0; q < at.nbr.length; q++) {
+          if (mol.atoms[at.nbr[q]].el === 'N') m.thiohydantoin = true;
+        }
+      }
+      if (fluorineCountOn(mol, a) >= 3) {
+        m.cf3 = true;
+        for (var z = 0; z < at.nbr.length; z++) if (mol.atoms[at.nbr[z]].arom) m.arylCF3 = true;
+      }
+      var nTriple = -1;
+      for (var w = 0; w < at.bidx.length; w++) {
+        if (mol.bonds[at.bidx[w]].order === 3 && mol.atoms[at.nbr[w]].el === 'N') nTriple = at.nbr[w];
+      }
+      if (nTriple >= 0) {
+        m.nitrile = true;
+        for (var y = 0; y < at.nbr.length; y++) if (mol.atoms[at.nbr[y]].arom) m.arylNitrile = true;
+      }
+    }
+
+    if (isNitroNitrogen(mol, a)) m.nitro = true;
+    if (at.el === 'S' && countDoubleBondedTo(mol, a, 'O') >= 2) m.sulfonyl = true;
+    void els;
+  }
+
+  /* hydantoin / thiohydantoin: 5-ring with two N and two exocyclic C=O|C=S */
+  for (var r = 0; r < mol.rings.length; r++) {
+    var ring = mol.rings[r];
+    if (ring.length !== 5) continue;
+    var nN = 0, carbonyls = 0, thio = 0;
+    for (var t2 = 0; t2 < ring.length; t2++) {
+      var ai = ring[t2], aa = mol.atoms[ai];
+      if (aa.el === 'N') nN++;
+      if (aa.el === 'C') {
+        if (doubleBondedTo(mol, ai, 'O') >= 0) carbonyls++;
+        if (doubleBondedTo(mol, ai, 'S') >= 0) thio++;
+      }
+    }
+    if (nN >= 2 && carbonyls + thio >= 2) {
+      m.hydantoin = true;
+      if (thio >= 1) m.thiohydantoin = true;
+    }
+  }
+
+  if (core) {
+    m.steroidPolarTail = m.hydroxyl || m.carboxyl || m.nitrile || m.amide;
+  }
+  m.nonsteroidalAA = (m.arylNitrile || m.nitro) && m.arylCF3;
+  return m;
+}
+
+/* -------------------------------------------------- McGowan volume (Å^3) */
+
+var MCGOWAN = {
+  H: 8.71, B: 18.32, C: 16.35, N: 14.39, O: 12.43, F: 10.48,
+  Si: 26.83, P: 24.87, S: 22.91, Cl: 20.95, Br: 26.21, I: 34.53,
+  Se: 24.50
+};
+
+function mcGowanVolume(mol) {
+  var sum = 0, bondCount = mol.bonds.length;
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var at = mol.atoms[i];
+    sum += (MCGOWAN[at.el] !== undefined ? MCGOWAN[at.el] : 16.35);
+    sum += at.nH * MCGOWAN.H;
+    bondCount += at.nH;                  /* X-H bonds count too */
+  }
+  var vx = sum - 6.56 * bondCount;       /* cm^3/mol / 100 */
+  return (vx / 0.6022) * 0.73;           /* -> Å^3 per molecule */
+}
+
+var AR = {
+  parseSmiles: parseSmiles,
+  computeDescriptors: computeDescriptors,
+  molecularFormula: molecularFormula,
+  molecularWeight: molecularWeight,
+  clogp: clogp,
+  tpsa: tpsa,
+  morganFingerprint: morganFingerprint,
+  tanimoto: tanimoto,
+  detectMotifs: detectMotifs,
+  mcGowanVolume: mcGowanVolume,
+  bondBetween: bondBetween,
+  fusedRingSystems: fusedRingSystems,
+  LOGP: LOGP,
+  FP_BITS: FP_BITS
+};
+
+/* ---- layout.js ---- */
+/* layout.js — 2D coordinates by distance-geometry relaxation.
+ *
+ * Two things keep this stable and both are easy to get wrong:
+ *   1. Fused rings generate several constraints for the same atom pair. They
+ *      must be merged into one weighted average, otherwise they fight each
+ *      other and the coordinates diverge (1e+117 on DHT / spironolactone).
+ *   2. Per-atom displacement is clamped, so one bad constraint cannot throw
+ *      an atom across the plane.
+ */
+'use strict';
+
+var BOND_LEN = 1.0;
+var MAX_STEP = 0.15;
+var REPULSE_CUT = 2.0;
+var CLOSE_PAIR = 0.72;
+var SEEDS = [0x9e3779b9, 0x85ebca6b, 0xc2b2ae35, 0x27d4eb2f,
+             0x165667b1, 0xd3a2646c, 0xfd7046c5, 0xb55a4f09];
+
+function mulberry32(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), 1 | t);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function pairKey(i, j) { return i < j ? i + '_' + j : j + '_' + i; }
+
+/* ------------------------------------------------------------ constraints */
+
+function idealAngle(mol, c) {
+  var at = mol.atoms[c], deg = at.nbr.length;
+  if (deg <= 2) {
+    var linear = false;
+    for (var j = 0; j < at.bidx.length; j++) {
+      if (mol.bonds[at.bidx[j]].order === 3) linear = true;
+    }
+    var dbl = 0;
+    for (var k = 0; k < at.bidx.length; k++) {
+      if (mol.bonds[at.bidx[k]].order === 2) dbl++;
+    }
+    if (linear || dbl >= 2) return Math.PI;            /* sp  */
+    return 2 * Math.PI / 3;                            /* sp2 */
+  }
+  if (deg === 3) return 2 * Math.PI / 3;
+  return 109.5 * Math.PI / 180;
+}
+
+function sameRing(mol, a, b, c) {
+  for (var r = 0; r < mol.rings.length; r++) {
+    var ring = mol.rings[r], ha = false, hb = false, hc = false;
+    for (var t = 0; t < ring.length; t++) {
+      if (ring[t] === a) ha = true;
+      else if (ring[t] === b) hb = true;
+      else if (ring[t] === c) hc = true;
+    }
+    if (ha && hb && hc) return true;
+  }
+  return false;
+}
+
+/* True when p and q reach the centre through rings that meet only at the
+ * centre (a spiro junction). Two rings there already claim ~108-120 deg each;
+ * adding 109.5 deg cross terms over-determines the 360 deg around the atom and
+ * the solver resolves it by folding one ring onto the other. Leave those pairs
+ * to the soft repulsion instead. */
+function spiroPair(mol, centre, p, q) {
+  var rings = mol.rings;
+  for (var a = 0; a < rings.length; a++) {
+    if (rings[a].indexOf(centre) < 0 || rings[a].indexOf(p) < 0) continue;
+    for (var b = 0; b < rings.length; b++) {
+      if (a === b) continue;
+      if (rings[b].indexOf(centre) < 0 || rings[b].indexOf(q) < 0) continue;
+      var shared = 0;
+      for (var t = 0; t < rings[a].length; t++) {
+        if (rings[b].indexOf(rings[a][t]) >= 0) shared++;
+      }
+      if (shared === 1) return true;
+    }
+  }
+  return false;
+}
+
+function buildConstraints(mol) {
+  var merged = {};
+
+  function add(i, j, d, w) {
+    if (i === j) return;
+    var key = pairKey(i, j);
+    var e = merged[key];
+    if (e) { e.sum += d * w; e.w += w; }
+    else merged[key] = { i: Math.min(i, j), j: Math.max(i, j), sum: d * w, w: w };
+  }
+
+  for (var b = 0; b < mol.bonds.length; b++) {
+    add(mol.bonds[b].a, mol.bonds[b].b, BOND_LEN, 1.0);
+  }
+
+  /* every ring becomes a regular polygon: all internal chords constrained */
+  for (var r = 0; r < mol.rings.length; r++) {
+    var ring = mol.rings[r], n = ring.length;
+    var s = Math.sin(Math.PI / n);
+    for (var a = 0; a < n; a++) {
+      for (var c = a + 1; c < n; c++) {
+        var sep = Math.min(c - a, n - (c - a));
+        var d = Math.sin(sep * Math.PI / n) / s;
+        add(ring[a], ring[c], d, sep === 1 ? 1.0 : 0.9);
+      }
+    }
+  }
+
+  /* 1-3 distances outside rings, from the ideal bond angle */
+  for (var ci = 0; ci < mol.atoms.length; ci++) {
+    var nb = mol.atoms[ci].nbr;
+    if (nb.length < 2) continue;
+    var theta = idealAngle(mol, ci);
+    var dist13 = Math.sqrt(Math.max(0, 2 - 2 * Math.cos(theta))) * BOND_LEN;
+    for (var p = 0; p < nb.length; p++) {
+      for (var q = p + 1; q < nb.length; q++) {
+        if (sameRing(mol, nb[p], nb[q], ci)) continue;
+        if (spiroPair(mol, ci, nb[p], nb[q])) continue;
+        add(nb[p], nb[q], dist13, 0.7);
+      }
+    }
+  }
+
+  var out = [];
+  for (var key in merged) {
+    if (!Object.prototype.hasOwnProperty.call(merged, key)) continue;
+    var e = merged[key];
+    out.push({ i: e.i, j: e.j, d: e.sum / e.w, w: Math.min(1.0, e.w) });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------- initial embedding */
+
+/* Rings that touch at all (fused OR spiro) are laid out together. */
+function ringSystems(mol) {
+  var rings = mol.rings, n = rings.length, parent = [];
+  for (var i = 0; i < n; i++) parent[i] = i;
+  function find(v) { while (parent[v] !== v) { parent[v] = parent[parent[v]]; v = parent[v]; } return v; }
+  for (var a = 0; a < n; a++) {
+    for (var b = a + 1; b < n; b++) {
+      var shared = 0;
+      for (var t = 0; t < rings[a].length; t++) {
+        if (rings[b].indexOf(rings[a][t]) >= 0) shared++;
+      }
+      if (shared >= 1) {
+        var ra = find(a), rb = find(b);
+        if (ra !== rb) parent[ra] = rb;
+      }
+    }
+  }
+  var groups = {};
+  for (var r = 0; r < n; r++) {
+    var g = find(r);
+    (groups[g] = groups[g] || []).push(r);
+  }
+  return Object.keys(groups).map(function (k) { return groups[k]; });
+}
+
+function circumradius(k) { return 0.5 / Math.sin(Math.PI / k); }
+
+function placePolygon(ring, cx, cy, rot, x, y, placed) {
+  var k = ring.length, R = circumradius(k);
+  for (var t = 0; t < k; t++) {
+    var a = rot + 2 * Math.PI * t / k;
+    x[ring[t]] = cx + R * Math.cos(a);
+    y[ring[t]] = cy + R * Math.sin(a);
+    placed[ring[t]] = true;
+  }
+}
+
+function placedCentroid(x, y, placed) {
+  var gx = 0, gy = 0, n = 0;
+  for (var i = 0; i < placed.length; i++) {
+    if (placed[i]) { gx += x[i]; gy += y[i]; n++; }
+  }
+  return n ? { x: gx / n, y: gy / n } : { x: 0, y: 0 };
+}
+
+/* Attach a ring to two of its atoms that are already placed and adjacent,
+ * putting the new ring's centre on the far side from everything placed. */
+function placeRingOnSharedEdge(ring, x, y, placed) {
+  var k = ring.length, iu = -1;
+  for (var t = 0; t < k; t++) {
+    if (placed[ring[t]] && placed[ring[(t + 1) % k]]) { iu = t; break; }
+  }
+  if (iu < 0) return false;
+  var u = ring[iu], v = ring[(iu + 1) % k];
+  var dx = x[v] - x[u], dy = y[v] - y[u];
+  var L = Math.sqrt(dx * dx + dy * dy);
+  if (!(L > 1e-6)) return false;
+
+  var R = circumradius(k);
+  var mx = (x[u] + x[v]) / 2, my = (y[u] + y[v]) / 2;
+  var h = Math.sqrt(Math.max(0, R * R - L * L / 4));
+  var nx = -dy / L, ny = dx / L;
+  var g = placedCentroid(x, y, placed);
+  var c1x = mx + nx * h, c1y = my + ny * h;
+  var c2x = mx - nx * h, c2y = my - ny * h;
+  var far1 = (c1x - g.x) * (c1x - g.x) + (c1y - g.y) * (c1y - g.y);
+  var far2 = (c2x - g.x) * (c2x - g.x) + (c2y - g.y) * (c2y - g.y);
+  var cx = far1 >= far2 ? c1x : c2x;
+  var cy = far1 >= far2 ? c1y : c2y;
+
+  var au = Math.atan2(y[u] - cy, x[u] - cx);
+  var av = Math.atan2(y[v] - cy, x[v] - cx);
+  var diff = av - au;
+  while (diff > Math.PI) diff -= 2 * Math.PI;
+  while (diff < -Math.PI) diff += 2 * Math.PI;
+  var dir = diff >= 0 ? 1 : -1;
+  var step = 2 * Math.PI / k;
+
+  for (var s = 0; s < k; s++) {
+    var idx = ring[(iu + s) % k];
+    if (placed[idx]) continue;
+    var ang = au + dir * step * s;
+    x[idx] = cx + R * Math.cos(ang);
+    y[idx] = cy + R * Math.sin(ang);
+    placed[idx] = true;
+  }
+  return true;
+}
+
+/* Spiro: only one atom is shared, so push the new ring straight out along the
+ * direction away from that atom's existing bonds. */
+function placeRingAtSpiro(mol, ring, anchor, x, y, placed) {
+  var k = ring.length, R = circumradius(k);
+  var at = mol.atoms[anchor], ax = 0, ay = 0;
+  for (var j = 0; j < at.nbr.length; j++) {
+    var w = at.nbr[j];
+    if (placed[w]) { ax += x[w] - x[anchor]; ay += y[w] - y[anchor]; }
+  }
+  var len = Math.sqrt(ax * ax + ay * ay);
+  var ux = len > 1e-6 ? -ax / len : 1;
+  var uy = len > 1e-6 ? -ay / len : 0;
+  var cx = x[anchor] + ux * R, cy = y[anchor] + uy * R;
+  var a0 = Math.atan2(y[anchor] - cy, x[anchor] - cx);
+  var ia = ring.indexOf(anchor), step = 2 * Math.PI / k;
+  for (var t = 0; t < k; t++) {
+    var idx = ring[(ia + t) % k];
+    if (placed[idx]) continue;
+    var ang = a0 + step * t;
+    x[idx] = cx + R * Math.cos(ang);
+    y[idx] = cy + R * Math.sin(ang);
+    placed[idx] = true;
+  }
+  return true;
+}
+
+/* Pick the bond direction that keeps the new atom furthest from everything
+ * already on the page. */
+function bestAngle(mol, from, x, y, placed, rnd) {
+  var samples = 24, best = 0, bestGap = -Infinity;
+  var jitter = rnd() * 2 * Math.PI / samples;
+  for (var s = 0; s < samples; s++) {
+    var ang = jitter + 2 * Math.PI * s / samples;
+    var px = x[from] + Math.cos(ang) * BOND_LEN;
+    var py = y[from] + Math.sin(ang) * BOND_LEN;
+    var gap = Infinity;
+    for (var i = 0; i < placed.length; i++) {
+      if (!placed[i] || i === from) continue;
+      var dx = x[i] - px, dy = y[i] - py;
+      var d = dx * dx + dy * dy;
+      if (d < gap) gap = d;
+    }
+    if (gap > bestGap) { bestGap = gap; best = ang; }
+  }
+  return best;
+}
+
+function placeChains(mol, x, y, placed, rnd) {
+  var n = mol.atoms.length, queue = [];
+  for (var i = 0; i < n; i++) if (placed[i]) queue.push(i);
+
+  var guard = 0;
+  while (guard++ < n * 8) {
+    if (!queue.length) {
+      var seed = -1;
+      for (var k = 0; k < n; k++) if (!placed[k]) { seed = k; break; }
+      if (seed < 0) break;
+      var g = placedCentroid(x, y, placed);
+      x[seed] = g.x + 7 + rnd(); y[seed] = g.y + rnd();
+      placed[seed] = true;
+      queue.push(seed);
+      continue;
+    }
+    var cur = queue.shift(), at = mol.atoms[cur];
+    for (var j = 0; j < at.nbr.length; j++) {
+      var w = at.nbr[j];
+      if (placed[w]) continue;
+      var ang = bestAngle(mol, cur, x, y, placed, rnd);
+      x[w] = x[cur] + Math.cos(ang) * BOND_LEN;
+      y[w] = y[cur] + Math.sin(ang) * BOND_LEN;
+      placed[w] = true;
+      queue.push(w);
+    }
+  }
+}
+
+/* Ring-aware initial embedding: fused systems first as joined polygons, then
+ * the acyclic decoration. A topologically sound start matters more than the
+ * relaxation itself — from a tangled start the solver cannot unknot a
+ * polycyclic core, which is where stray bond crossings come from. */
+function seedCoords(mol, rnd) {
+  var n = mol.atoms.length;
+  var x = new Float64Array(n), y = new Float64Array(n);
+  var placed = new Array(n).fill(false);
+  var systems = ringSystems(mol);
+  var offsetX = 0;
+
+  for (var s = 0; s < systems.length; s++) {
+    var idxs = systems[s].slice();
+    idxs.sort(function (a, b) { return mol.rings[b].length - mol.rings[a].length; });
+    if (idxs.length > 1 && rnd() < 0.5) {
+      /* vary which ring anchors the system between restarts */
+      var swap = 1 + Math.floor(rnd() * (idxs.length - 1));
+      var tmp = idxs[0]; idxs[0] = idxs[swap]; idxs[swap] = tmp;
+    }
+    placePolygon(mol.rings[idxs[0]], offsetX, 0, rnd() * 2 * Math.PI, x, y, placed);
+
+    var pending = idxs.slice(1), guard = 0;
+    while (pending.length && guard++ < 400) {
+      var done = -1;
+      for (var p = 0; p < pending.length; p++) {
+        var ring = mol.rings[pending[p]], cnt = 0;
+        for (var t = 0; t < ring.length; t++) if (placed[ring[t]]) cnt++;
+        if (cnt >= 2 && placeRingOnSharedEdge(ring, x, y, placed)) { done = p; break; }
+      }
+      if (done < 0) {
+        for (var q = 0; q < pending.length; q++) {
+          var ring2 = mol.rings[pending[q]], anchor = -1;
+          for (var u = 0; u < ring2.length; u++) {
+            if (placed[ring2[u]]) { anchor = ring2[u]; break; }
+          }
+          if (anchor >= 0) {
+            placeRingAtSpiro(mol, ring2, anchor, x, y, placed);
+            done = q; break;
+          }
+        }
+      }
+      if (done < 0) {
+        placePolygon(mol.rings[pending[0]], offsetX + 6, 0, rnd() * 2 * Math.PI, x, y, placed);
+        done = 0;
+      }
+      pending.splice(done, 1);
+    }
+    offsetX += 8;
+  }
+
+  placeChains(mol, x, y, placed, rnd);
+  return { x: x, y: y };
+}
+
+/* -------------------------------------------------------------- relaxation */
+
+function relax(mol, cons, pos, iterations) {
+  var n = mol.atoms.length, x = pos.x, y = pos.y;
+  var fx = new Float64Array(n), fy = new Float64Array(n);
+  var cnt = new Float64Array(n);
+
+  var constrained = {};
+  for (var c = 0; c < cons.length; c++) constrained[pairKey(cons[c].i, cons[c].j)] = true;
+
+  for (var it = 0; it < iterations; it++) {
+    fx.fill(0); fy.fill(0); cnt.fill(0);
+
+    for (var k = 0; k < cons.length; k++) {
+      var con = cons[k], i = con.i, j = con.j;
+      var dx = x[j] - x[i], dy = y[j] - y[i];
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (!(dist > 1e-9)) { dx = 1e-3; dy = 0; dist = 1e-3; }
+      var pull = (dist - con.d) / dist * 0.5 * con.w;
+      fx[i] += dx * pull; fy[i] += dy * pull;
+      fx[j] -= dx * pull; fy[j] -= dy * pull;
+      cnt[i] += con.w; cnt[j] += con.w;
+    }
+
+    /* soft repulsion only for close, unconstrained pairs */
+    for (var a = 0; a < n; a++) {
+      for (var b = a + 1; b < n; b++) {
+        if (constrained[pairKey(a, b)]) continue;
+        var rx = x[b] - x[a], ry = y[b] - y[a];
+        var rd = Math.sqrt(rx * rx + ry * ry);
+        if (rd >= REPULSE_CUT) continue;
+        if (!(rd > 1e-9)) { rx = 1e-3; ry = 0; rd = 1e-3; }
+        var push = (rd - REPULSE_CUT) / rd * 0.15;
+        fx[a] += rx * push; fy[a] += ry * push;
+        fx[b] -= rx * push; fy[b] -= ry * push;
+        cnt[a] += 0.3; cnt[b] += 0.3;
+      }
+    }
+
+    for (var m = 0; m < n; m++) {
+      var div = cnt[m] > 1 ? cnt[m] : 1;
+      var sx = fx[m] / div, sy = fy[m] / div;
+      var mag = Math.sqrt(sx * sx + sy * sy);
+      if (mag > MAX_STEP) { sx = sx / mag * MAX_STEP; sy = sy / mag * MAX_STEP; }
+      if (!isFinite(sx) || !isFinite(sy)) { sx = 0; sy = 0; }
+      x[m] += sx; y[m] += sy;
+    }
+  }
+  return pos;
+}
+
+/* ------------------------------------------------------------- scoring */
+
+function segmentsCross(ax, ay, bx, by, cx, cy, dx, dy) {
+  function cross(ox, oy, px, py, qx, qy) {
+    return (px - ox) * (qy - oy) - (py - oy) * (qx - ox);
+  }
+  var d1 = cross(ax, ay, bx, by, cx, cy);
+  var d2 = cross(ax, ay, bx, by, dx, dy);
+  var d3 = cross(cx, cy, dx, dy, ax, ay);
+  var d4 = cross(cx, cy, dx, dy, bx, by);
+  return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+}
+
+function countCrossings(mol, pos) {
+  var bonds = mol.bonds, x = pos.x, y = pos.y, n = 0;
+  for (var i = 0; i < bonds.length; i++) {
+    for (var j = i + 1; j < bonds.length; j++) {
+      var p = bonds[i], q = bonds[j];
+      if (p.a === q.a || p.a === q.b || p.b === q.a || p.b === q.b) continue;
+      if (segmentsCross(x[p.a], y[p.a], x[p.b], y[p.b],
+                        x[q.a], y[q.a], x[q.b], y[q.b])) n++;
+    }
+  }
+  return n;
+}
+
+function countClosePairs(mol, pos) {
+  var n = mol.atoms.length, x = pos.x, y = pos.y, c = 0;
+  for (var a = 0; a < n; a++) {
+    for (var b = a + 1; b < n; b++) {
+      var dx = x[b] - x[a], dy = y[b] - y[a];
+      if (Math.sqrt(dx * dx + dy * dy) < CLOSE_PAIR) c++;
+    }
+  }
+  return c;
+}
+
+function scoreLayout(mol, pos) {
+  return countCrossings(mol, pos) * 10 + countClosePairs(mol, pos) * 3;
+}
+
+/* ------------------------------------------------------- principal axis */
+
+function orientToPrincipalAxis(pos) {
+  var x = pos.x, y = pos.y, n = x.length;
+  if (n < 2) return pos;
+  var mx = 0, my = 0;
+  for (var i = 0; i < n; i++) { mx += x[i]; my += y[i]; }
+  mx /= n; my /= n;
+  var sxx = 0, syy = 0, sxy = 0;
+  for (var j = 0; j < n; j++) {
+    var dx = x[j] - mx, dy = y[j] - my;
+    sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+  }
+  var theta = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  var ct = Math.cos(-theta), st = Math.sin(-theta);
+  for (var k = 0; k < n; k++) {
+    var px = x[k] - mx, py = y[k] - my;
+    x[k] = px * ct - py * st;
+    y[k] = px * st + py * ct;
+  }
+  return pos;
+}
+
+/* ------------------------------------------------------------------ entry */
+
+function computeLayout(mol, options) {
+  options = options || {};
+  var iterations = options.iterations || 420;
+  var cons = buildConstraints(mol);
+  var best = null, bestScore = Infinity;
+
+  for (var s = 0; s < SEEDS.length; s++) {
+    var rnd = mulberry32(SEEDS[s]);
+    var pos = seedCoords(mol, rnd);
+    relax(mol, cons, pos, iterations);
+
+    var bad = false;
+    for (var i = 0; i < pos.x.length; i++) {
+      if (!isFinite(pos.x[i]) || !isFinite(pos.y[i]) ||
+          Math.abs(pos.x[i]) > 1e6 || Math.abs(pos.y[i]) > 1e6) { bad = true; break; }
+    }
+    if (bad) continue;
+
+    var score = scoreLayout(mol, pos);
+    if (score < bestScore) { bestScore = score; best = pos; }
+    if (bestScore === 0) break;
+  }
+
+  if (!best) {
+    /* last resort: a plain circle, which is ugly but always finite */
+    var n = mol.atoms.length;
+    best = { x: new Float64Array(n), y: new Float64Array(n) };
+    var radius = Math.max(1, n / (2 * Math.PI));
+    for (var k = 0; k < n; k++) {
+      best.x[k] = Math.cos(2 * Math.PI * k / n) * radius;
+      best.y[k] = Math.sin(2 * Math.PI * k / n) * radius;
+    }
+    bestScore = scoreLayout(mol, best);
+  }
+
+  orientToPrincipalAxis(best);
+  return {
+    x: Array.prototype.slice.call(best.x),
+    y: Array.prototype.slice.call(best.y),
+    score: bestScore,
+    crossings: countCrossings(mol, best)
+  };
+}
+
+var LY = {
+  computeLayout: computeLayout,
+  buildConstraints: buildConstraints,
+  countCrossings: countCrossings,
+  countClosePairs: countClosePairs,
+  scoreLayout: scoreLayout,
+  BOND_LEN: BOND_LEN
+};
+
+/* ---- predict.js ---- */
+/* predict.js — read-across + pharmacophore rules + AR LBD contact mapping.
+ *
+ * The reference pKi values are competitive-binding literature values. They
+ * carry +-0.5 to 1 log of inter-laboratory spread, which bounds how good any
+ * model fitted to them can be.
+ */
+'use strict';
+
+
+var POCKET_VOLUME = 400;          /* AR LBD cavity, Angstrom^3 */
+
+/* ------------------------------------------------- reference library (28) */
+
+var REFERENCE_DEFAULT = [
+  { n: 'Metribolone (R1881)', p: 9.50, c: 'agonist',
+    s: 'CC12C(C)(O)CCC2C3C(C=C1)=C5CCC(=O)C=C5CC3',
+    note: '17a-methyl + 4,9,11-triene; C19H24O2' },
+  { n: 'Trenbolone', p: 9.40, c: 'agonist',
+    s: 'CC12C(O)CCC2C3C(C=C1)=C5CCC(=O)C=C5CC3',
+    note: 'estra-4,9,11-trien-3-one' },
+  { n: 'Dihydrotestosterone', p: 9.30, c: 'agonist',
+    s: 'CC12CCC3C(CCC4C3CCC4O)C1(C)CCC(=O)C2',
+    note: 'endogenous reference agonist' },
+  { n: 'Nandrolone', p: 9.15, c: 'agonist',
+    s: 'CC12CCC3C(CCC4=CC(=O)CCC34)C1CCC2O',
+    note: '19-nortestosterone' },
+  { n: 'Testosterone', p: 9.00, c: 'agonist',
+    s: 'CC12CCC3C(CCC4=CC(=O)CCC34C)C1CCC2O',
+    note: 'endogenous agonist' },
+  { n: 'RU-59063', p: 9.00, c: 'antagonist',
+    s: 'CC1(C)N(CCCCO)C(=O)N(c2ccc(C#N)c(c2)C(F)(F)F)C1=O',
+    note: 'high-affinity non-steroidal ligand' },
+  { n: 'Methyltestosterone', p: 8.90, c: 'agonist',
+    s: 'CC12CCC3C(CCC4=CC(=O)CCC34C)C1CCC2(C)O',
+    note: '17a-methyl testosterone' },
+  { n: 'Medroxyprogesterone acetate', p: 8.50, c: 'partial',
+    s: 'CC(=O)OC1(C(C)=O)CCC2C1(C)CCC1C2CC(C)C2=CC(=O)CCC12C',
+    note: 'progestin with AR cross-reactivity' },
+  { n: 'Darolutamide', p: 7.96, c: 'antagonist',
+    s: 'CC(Cn1ccc(n1)c1ccc(C#N)c(Cl)c1)NC(=O)c1cc(C(C)O)[nH]n1',
+    note: 'second-generation antagonist' },
+  { n: 'Cyproterone acetate', p: 7.85, c: 'antagonist',
+    s: 'CC(=O)OC1(C(C)=O)CCC2C1(C)CCC3C2C=C(Cl)C4=CC(=O)C5CC5C34C',
+    note: 'steroidal antiandrogen' },
+  { n: 'Apalutamide', p: 7.80, c: 'antagonist',
+    s: 'CNC(=O)c1ccc(cc1F)N1C(=S)N(c2cnc(C#N)c(c2)C(F)(F)F)C(=O)C12CCC2',
+    note: 'thiohydantoin antagonist' },
+  { n: 'Enzalutamide', p: 7.60, c: 'antagonist',
+    s: 'CC1(C)C(=O)N(c2ccc(C(=O)NC)c(F)c2)C(=S)N1c1ccc(C#N)c(c1)C(F)(F)F',
+    note: 'thiohydantoin antagonist' },
+  { n: 'Progesterone', p: 7.60, c: 'partial',
+    s: 'CC(=O)C1CCC2C1(C)CCC1C2CCC2=CC(=O)CCC12C',
+    note: 'weak partial agonist at AR' },
+  { n: 'Hydroxyflutamide', p: 7.57, c: 'antagonist',
+    s: 'CC(C)(O)C(=O)Nc1ccc([N+](=O)[O-])c(c1)C(F)(F)F',
+    note: 'active metabolite of flutamide' },
+  { n: 'Clascoterone', p: 7.50, c: 'antagonist',
+    s: 'CCC(=O)OC1(C(=O)CO)CCC2C1(C)CCC1C2CCC2=CC(=O)CCC12C',
+    note: 'topical androgen receptor inhibitor' },
+  { n: 'Spironolactone', p: 7.20, c: 'antagonist',
+    s: 'CC(=O)SC1CC2=CC(=O)CCC2(C)C2CCC3(C)C(CCC34CCC(=O)O4)C12',
+    note: 'steroidal antagonist, spirolactone' },
+  { n: 'Bicalutamide', p: 6.93, c: 'antagonist',
+    s: 'CC(O)(CS(=O)(=O)c1ccc(F)cc1)C(=O)Nc1ccc(C#N)c(c1)C(F)(F)F',
+    note: 'first-generation antagonist' },
+  { n: 'Nilutamide', p: 6.60, c: 'antagonist',
+    s: 'CC1(C)NC(=O)N(c2ccc([N+](=O)[O-])c(c2)C(F)(F)F)C1=O',
+    note: 'hydantoin antagonist' },
+  { n: 'Vinclozolin', p: 5.70, c: 'antagonist',
+    s: 'C=CC1(C)OC(=O)N(c2cc(Cl)cc(Cl)c2)C1=O',
+    note: 'dicarboximide fungicide, anti-androgenic' },
+  { n: "p,p'-DDE", p: 5.50, c: 'antagonist',
+    s: 'ClC(Cl)=C(c1ccc(Cl)cc1)c1ccc(Cl)cc1',
+    note: 'persistent DDT metabolite' },
+  { n: 'Estradiol', p: 5.50, c: 'weak',
+    s: 'CC12CCC3c4ccc(O)cc4CCC3C1CCC2O',
+    note: 'aromatic A-ring; weak at AR' },
+  { n: 'Genistein', p: 5.30, c: 'weak',
+    s: 'Oc1ccc(cc1)C1=COc2cc(O)cc(O)c2C1=O',
+    note: 'isoflavone phyto-oestrogen' },
+  { n: 'Flutamide', p: 5.20, c: 'weak',
+    s: 'CC(C)C(=O)Nc1ccc([N+](=O)[O-])c(c1)C(F)(F)F',
+    note: 'prodrug; activity resides in the metabolite' },
+  { n: 'Butylparaben', p: 4.80, c: 'weak',
+    s: 'CCCCOC(=O)c1ccc(O)cc1',
+    note: 'preservative, weak AR interaction' },
+  { n: 'Finasteride', p: 4.50, c: 'non-binder',
+    s: 'CC(C)(C)NC(=O)C1CCC2C3CCC4NC(=O)C=CC4(C)C3CCC12C',
+    note: '5a-reductase inhibitor, not an AR ligand' },
+  { n: 'Niacinamide', p: 4.00, c: 'non-binder',
+    s: 'NC(=O)c1ccncc1', note: 'cosmetic actives baseline' },
+  { n: 'Caffeine', p: 4.00, c: 'non-binder',
+    s: 'CN1C=NC2=C1C(=O)N(C)C(=O)N2C', note: 'cosmetic actives baseline' },
+  { n: 'Panthenol', p: 4.00, c: 'non-binder',
+    s: 'CC(C)(CO)C(O)C(=O)NCCCO', note: 'cosmetic actives baseline' }
+];
+
+/* ------------------------------------------- ingredient name dictionary */
+
+var INGREDIENTS = [
+  ['메트리볼론', 'Metribolone', 'CC12C(C)(O)CCC2C3C(C=C1)=C5CCC(=O)C=C5CC3'],
+  ['트렌볼론', 'Trenbolone', 'CC12C(O)CCC2C3C(C=C1)=C5CCC(=O)C=C5CC3'],
+  ['디하이드로테스토스테론', 'Dihydrotestosterone', 'CC12CCC3C(CCC4C3CCC4O)C1(C)CCC(=O)C2'],
+  ['난드롤론', 'Nandrolone', 'CC12CCC3C(CCC4=CC(=O)CCC34)C1CCC2O'],
+  ['테스토스테론', 'Testosterone', 'CC12CCC3C(CCC4=CC(=O)CCC34C)C1CCC2O'],
+  ['메틸테스토스테론', 'Methyltestosterone', 'CC12CCC3C(CCC4=CC(=O)CCC34C)C1CCC2(C)O'],
+  ['메드록시프로게스테론아세테이트', 'Medroxyprogesterone acetate',
+   'CC(=O)OC1(C(C)=O)CCC2C1(C)CCC1C2CC(C)C2=CC(=O)CCC12C'],
+  ['다롤루타미드', 'Darolutamide',
+   'CC(Cn1ccc(n1)c1ccc(C#N)c(Cl)c1)NC(=O)c1cc(C(C)O)[nH]n1'],
+  ['사이프로테론아세테이트', 'Cyproterone acetate',
+   'CC(=O)OC1(C(C)=O)CCC2C1(C)CCC3C2C=C(Cl)C4=CC(=O)C5CC5C34C'],
+  ['아팔루타미드', 'Apalutamide',
+   'CNC(=O)c1ccc(cc1F)N1C(=S)N(c2cnc(C#N)c(c2)C(F)(F)F)C(=O)C12CCC2'],
+  ['엔잘루타미드', 'Enzalutamide',
+   'CC1(C)C(=O)N(c2ccc(C(=O)NC)c(F)c2)C(=S)N1c1ccc(C#N)c(c1)C(F)(F)F'],
+  ['프로게스테론', 'Progesterone', 'CC(=O)C1CCC2C1(C)CCC1C2CCC2=CC(=O)CCC12C'],
+  ['하이드록시플루타마이드', 'Hydroxyflutamide',
+   'CC(C)(O)C(=O)Nc1ccc([N+](=O)[O-])c(c1)C(F)(F)F'],
+  ['클라스코테론', 'Clascoterone',
+   'CCC(=O)OC1(C(=O)CO)CCC2C1(C)CCC1C2CCC2=CC(=O)CCC12C'],
+  ['스피로노락톤', 'Spironolactone',
+   'CC(=O)SC1CC2=CC(=O)CCC2(C)C2CCC3(C)C(CCC34CCC(=O)O4)C12'],
+  ['비칼루타미드', 'Bicalutamide',
+   'CC(O)(CS(=O)(=O)c1ccc(F)cc1)C(=O)Nc1ccc(C#N)c(c1)C(F)(F)F'],
+  ['닐루타미드', 'Nilutamide',
+   'CC1(C)NC(=O)N(c2ccc([N+](=O)[O-])c(c2)C(F)(F)F)C1=O'],
+  ['빈클로졸린', 'Vinclozolin', 'C=CC1(C)OC(=O)N(c2cc(Cl)cc(Cl)c2)C1=O'],
+  ['디디이', "p,p'-DDE", 'ClC(Cl)=C(c1ccc(Cl)cc1)c1ccc(Cl)cc1'],
+  ['디디티', "p,p'-DDT", 'ClC(Cl)(Cl)C(c1ccc(Cl)cc1)c1ccc(Cl)cc1'],
+  ['에스트라디올', 'Estradiol', 'CC12CCC3c4ccc(O)cc4CCC3C1CCC2O'],
+  ['에스트론', 'Estrone', 'CC12CCC3c4ccc(O)cc4CCC3C1CCC2=O'],
+  ['에티닐에스트라디올', 'Ethinylestradiol', 'CC12CCC3c4ccc(O)cc4CCC3C1CCC2(O)C#C'],
+  ['제니스테인', 'Genistein', 'Oc1ccc(cc1)C1=COc2cc(O)cc(O)c2C1=O'],
+  ['다이드제인', 'Daidzein', 'Oc1ccc(cc1)C1=COc2cc(O)ccc2C1=O'],
+  ['에쿠올', 'Equol', 'Oc1ccc(cc1)C1COc2cc(O)ccc2C1'],
+  ['플루타마이드', 'Flutamide', 'CC(C)C(=O)Nc1ccc([N+](=O)[O-])c(c1)C(F)(F)F'],
+  ['피나스테리드', 'Finasteride',
+   'CC(C)(C)NC(=O)C1CCC2C3CCC4NC(=O)C=CC4(C)C3CCC12C'],
+  ['두타스테리드', 'Dutasteride',
+   'FC(F)(F)c1ccc(NC(=O)C2CCC3C4CCC5NC(=O)C=CC5(C)C4CCC23C)c(c1)C(F)(F)F'],
+  ['디에이치이에이', 'DHEA', 'O=C1CCC2C1(C)CCC1C2CC=C2CC(O)CCC12C'],
+  ['안드로스텐디온', 'Androstenedione', 'O=C1CCC2C1(C)CCC1C2CCC2=CC(=O)CCC12C'],
+  ['하이드로코르티손', 'Hydrocortisone',
+   'OCC(=O)C1(O)CCC2C1(C)CC(O)C1C2CCC2=CC(=O)CCC12C'],
+  ['미녹시딜', 'Minoxidil', 'Nc1cc(N)[n+]([O-])c(n1)N1CCCCC1'],
+  ['케토코나졸', 'Ketoconazole',
+   'CC(=O)N1CCN(CC1)c1ccc(OCC2COC(Cn3ccnc3)(O2)c2ccc(Cl)cc2Cl)cc1'],
+  ['베타시토스테롤', 'beta-Sitosterol',
+   'CCC(CCC(C)C1CCC2C1(C)CCC1C2CC=C2CC(O)CCC12C)C(C)C'],
+  ['레스베라트롤', 'Resveratrol', 'Oc1ccc(cc1)C=Cc1cc(O)cc(O)c1'],
+  ['메틸파라벤', 'Methylparaben', 'COC(=O)c1ccc(O)cc1'],
+  ['에틸파라벤', 'Ethylparaben', 'CCOC(=O)c1ccc(O)cc1'],
+  ['프로필파라벤', 'Propylparaben', 'CCCOC(=O)c1ccc(O)cc1'],
+  ['부틸파라벤', 'Butylparaben', 'CCCCOC(=O)c1ccc(O)cc1'],
+  ['징크피리치온', 'Zinc pyrithione',
+   '[Zn+2].[O-][n+]1ccccc1[S-].[O-][n+]1ccccc1[S-]'],
+  ['피록톤올아민', 'Piroctone olamine',
+   'CC(C)(C)CC(C)CC1=CC(C)=CC(=O)N1O'],
+  ['살리실산', 'Salicylic acid', 'OC(=O)c1ccccc1O'],
+  ['나이아신아마이드', 'Niacinamide', 'NC(=O)c1ccncc1'],
+  ['아데노신', 'Adenosine', 'Nc1ncnc2c1ncn2C1OC(CO)C(O)C1O'],
+  ['판테놀', 'Panthenol', 'CC(C)(CO)C(O)C(=O)NCCCO'],
+  ['글리세린', 'Glycerin', 'OCC(O)CO'],
+  ['부틸렌글라이콜', 'Butylene glycol', 'CCC(O)CO'],
+  ['프로판다이올', 'Propanediol', 'OCCCO'],
+  ['토코페롤', 'alpha-Tocopherol',
+   'CC1=C(C)C2=C(CCC(C)(CCCC(C)CCCC(C)CCCC(C)C)O2)C(C)=C1O'],
+  ['레티놀', 'Retinol', 'CC1=C(C=CC(C)=CC=CC(C)=CCO)C(C)(C)CCC1'],
+  ['트레티노인', 'Tretinoin', 'CC1=C(C=CC(C)=CC=CC(C)=CC(=O)O)C(C)(C)CCC1'],
+  ['아스코르브산', 'Ascorbic acid', 'OCC(O)C1OC(=O)C(O)=C1O'],
+  ['카페인', 'Caffeine', 'CN1C=NC2=C1C(=O)N(C)C(=O)N2C'],
+  ['비오틴', 'Biotin', 'OC(=O)CCCCC1SCC2NC(=O)NC12'],
+  ['멘톨', 'Menthol', 'CC(C)C1CCC(C)CC1O'],
+  ['캠퍼', 'Camphor', 'CC1(C)C2CCC1(C)C(=O)C2'],
+  ['리모넨', 'Limonene', 'CC(=C)C1CCC(C)=CC1'],
+  ['리날룰', 'Linalool', 'CC(C)=CCCC(C)(O)C=C'],
+  ['제라니올', 'Geraniol', 'CC(C)=CCCC(C)=CCO'],
+  ['유제놀', 'Eugenol', 'COc1ccc(CC=C)cc1O'],
+  ['티몰', 'Thymol', 'CC(C)c1ccc(C)cc1O'],
+  ['트리클로산', 'Triclosan', 'Oc1cc(Cl)ccc1Oc1ccc(Cl)cc1Cl'],
+  ['벤조페논-3', 'Benzophenone-3', 'COc1ccc(C(=O)c2ccccc2)c(O)c1'],
+  ['아보벤존', 'Avobenzone', 'COc1ccc(cc1)C(=O)CC(=O)c1ccc(cc1)C(C)(C)C'],
+  ['옥토크릴렌', 'Octocrylene',
+   'CCCCC(CC)COC(=O)C(=C(c1ccccc1)c1ccccc1)C#N'],
+  ['호모살레이트', 'Homosalate', 'CC1CC(C)(C)CC(C1)OC(=O)c1ccccc1O'],
+  ['비사보롤', 'alpha-Bisabolol', 'CC(C)=CCCC(C)(O)C1CCC(C)=CC1'],
+  ['알란토인', 'Allantoin', 'NC(=O)NC1NC(=O)NC1=O'],
+  ['우레아', 'Urea', 'NC(=O)N'],
+  ['알부틴', 'Arbutin', 'OCC1OC(Oc2ccc(O)cc2)C(O)C(O)C1O'],
+  ['코직산', 'Kojic acid', 'OCC1=CC(=O)C(O)=CO1'],
+  ['하이드로퀴논', 'Hydroquinone', 'Oc1ccc(O)cc1'],
+  ['트라넥사민산', 'Tranexamic acid', 'NCC1CCC(CC1)C(=O)O'],
+  ['프로시미돈', 'Procymidone', 'CC12CC1(C)C(=O)N(c1cc(Cl)cc(Cl)c1)C2=O'],
+  ['리누론', 'Linuron', 'CON(C)C(=O)Nc1ccc(Cl)c(Cl)c1'],
+  ['비스페놀에이', 'Bisphenol A', 'CC(C)(c1ccc(O)cc1)c1ccc(O)cc1'],
+  ['노닐페놀', 'Nonylphenol', 'CCCCCCCCCc1ccc(O)cc1'],
+  ['다이부틸프탈레이트', 'Dibutyl phthalate',
+   'CCCCOC(=O)c1ccccc1C(=O)OCCCC'],
+  ['다이에틸헥실프탈레이트', 'DEHP',
+   'CCCCC(CC)COC(=O)c1ccccc1C(=O)OCC(CC)CCCC'],
+  ['메틸이소티아졸리논', 'Methylisothiazolinone', 'CN1SC=CC1=O'],
+  ['페녹시에탄올', 'Phenoxyethanol', 'OCCOc1ccccc1'],
+  ['벤질알코올', 'Benzyl alcohol', 'OCc1ccccc1'],
+  ['소르빈산', 'Sorbic acid', 'CC=CC=CC(=O)O'],
+  ['벤조산', 'Benzoic acid', 'OC(=O)c1ccccc1'],
+  ['시트르산', 'Citric acid', 'OC(=O)CC(O)(CC(=O)O)C(=O)O'],
+  ['젖산', 'Lactic acid', 'CC(O)C(=O)O'],
+  ['글라이콜산', 'Glycolic acid', 'OCC(=O)O'],
+  ['아젤라산', 'Azelaic acid', 'OC(=O)CCCCCCCC(=O)O'],
+  ['스쿠알렌', 'Squalene',
+   'CC(C)=CCCC(C)=CCCC(C)=CCCC=C(C)CCC=C(C)CCC=C(C)C'],
+  ['올레산', 'Oleic acid', 'CCCCCCCCC=CCCCCCCCC(=O)O'],
+  ['리놀레산', 'Linoleic acid', 'CCCCCC=CCC=CCCCCCCCC(=O)O'],
+  ['팔미트산', 'Palmitic acid', 'CCCCCCCCCCCCCCCC(=O)O'],
+  ['카페산', 'Caffeic acid', 'OC(=O)C=Cc1ccc(O)c(O)c1'],
+  ['페룰산', 'Ferulic acid', 'COc1cc(C=CC(=O)O)ccc1O'],
+  ['쿼세틴', 'Quercetin', 'Oc1cc(O)c2c(c1)oc(-c1ccc(O)c(O)c1)c(O)c2=O'],
+  ['커큐민', 'Curcumin',
+   'COc1cc(C=CC(=O)CC(=O)C=Cc2ccc(O)c(OC)c2)ccc1O']
+];
+
+/* ---------------------------------------------------------- pocket layout */
+
+var POCKET_RESIDUES = [
+  { id: 'Leu704', role: 'hydrophobic' },
+  { id: 'Asn705', role: 'D-ring anchor' },
+  { id: 'Leu707', role: 'hydrophobic' },
+  { id: 'Gln711', role: 'A-ring anchor' },
+  { id: 'Met742', role: 'hydrophobic' },
+  { id: 'Met745', role: 'hydrophobic' },
+  { id: 'Arg752', role: 'A-ring anchor' },
+  { id: 'Phe764', role: 'hydrophobic' },
+  { id: 'Met787', role: 'hydrophobic' },
+  { id: 'Leu873', role: 'hydrophobic' },
+  { id: 'Thr877', role: 'D-ring / helix-12' },
+  { id: 'Met895', role: 'helix-12 / AF-2' },
+  { id: 'Ile899', role: 'helix-12 / AF-2' }
+];
+
+var ARING_ANCHORS = ['Gln711', 'Arg752'];
+var DRING_ANCHORS = ['Asn705', 'Thr877'];
+var HYDROPHOBIC_CORE = ['Leu704', 'Leu707', 'Met742', 'Met745'];
+var HYDROPHOBIC_EXT = ['Met787', 'Phe764', 'Leu873'];
+var H12_RESIDUES = ['Thr877', 'Met895', 'Ile899'];
+
+/* --------------------------------------------------------- library state */
+
+var library = null;
+
+function compileEntry(entry) {
+  var mol = AR.parseSmiles(entry.s);
+  return {
+    n: entry.n,
+    s: entry.s,
+    p: entry.p,
+    c: entry.c || '',
+    note: entry.note || '',
+    mol: mol,
+    fp: AR.morganFingerprint(mol, 2),
+    desc: AR.computeDescriptors(mol)
+  };
+}
+
+function ensureLibrary() {
+  if (!library) {
+    library = [];
+    for (var i = 0; i < REFERENCE_DEFAULT.length; i++) {
+      library.push(compileEntry(REFERENCE_DEFAULT[i]));
+    }
+  }
+  return library;
+}
+
+function getLibrary() { return ensureLibrary(); }
+
+function libraryAsJson() {
+  return ensureLibrary().map(function (e) {
+    return { n: e.n, s: e.s, p: e.p, c: e.c, note: e.note };
+  });
+}
+
+/* Replace the library, skipping entries that fail to parse. */
+function setLibrary(entries) {
+  if (!Array.isArray(entries)) throw new Error('library must be a JSON array');
+  var next = [], skipped = [];
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    try {
+      if (!e || typeof e.s !== 'string') throw new Error('missing "s" (SMILES)');
+      var p = Number(e.p);
+      if (!isFinite(p)) throw new Error('missing numeric "p" (pKi)');
+      next.push(compileEntry({
+        n: String(e.n || e.s), s: e.s, p: p,
+        c: e.c || '', note: e.note || ''
+      }));
+    } catch (err) {
+      skipped.push({ entry: e && (e.n || e.s) ? String(e.n || e.s) : '#' + i,
+                     reason: err.message });
+    }
+  }
+  if (!next.length) throw new Error('no valid entries in the supplied library');
+  library = next;
+  return { applied: next.length, skipped: skipped };
+}
+
+function resetLibrary() { library = null; return ensureLibrary().length; }
+
+/* -------------------------------------------------------------- rule score */
+
+function ruleScore(desc, motifs, occupancy) {
+  var score = 4.0;
+  var reasons = [];
+
+  function bump(delta, why) {
+    score += delta;
+    reasons.push({ delta: delta, why: why });
+  }
+
+  if (motifs.steroidKeto3) bump(3.4, '3-keto steroid core: both pocket anchors available');
+  else if (motifs.steroid) bump(2.4, 'steroid-like fused ring core');
+
+  if (motifs.steroid && motifs.steroidPolarTail) {
+    bump(0.6, 'steroid with a terminal polar group (D-ring hydrogen bonding)');
+  }
+
+  var arylEWG = motifs.arylNitrile || motifs.nitro || motifs.arylCF3;
+  var amideLike = motifs.amide || motifs.hydantoin || motifs.thiohydantoin;
+  if (motifs.nonsteroidalAA) {
+    bump(2.9, 'non-steroidal antiandrogen pharmacophore (aryl nitrile/nitro + aryl CF3)');
+  } else if (arylEWG && amideLike) {
+    bump(2.0, 'aryl electron-withdrawing group with an amide/hydantoin linker');
+  }
+
+  if (desc.mw >= 230 && desc.mw <= 480) bump(0.4, 'MW inside the 230-480 window');
+  else bump(-0.8, 'MW outside the 230-480 window');
+
+  if (desc.clogp >= 2 && desc.clogp <= 5.5) bump(0.4, 'logP inside the 2-5.5 window');
+  if (desc.clogp < 1) bump(-1.0, 'logP below 1: too polar for the hydrophobic cavity');
+
+  if (desc.tpsa > 140) bump(-1.0, 'TPSA above 140');
+  if (desc.hbd > 4) bump(-0.8, 'more than 4 hydrogen-bond donors');
+  if (desc.rotb > 9) bump(-0.6, 'more than 9 rotatable bonds');
+  if (desc.rings === 0) bump(-1.2, 'no ring system');
+
+  if (occupancy > 125) bump(-2.6, 'volume exceeds the cavity by more than 25%');
+  else if (occupancy > 105) bump(-1.5, 'volume slightly exceeds the cavity');
+  else if (occupancy < 45) bump(-1.1, 'fills less than 45% of the cavity');
+
+  var clamped = Math.max(3.6, Math.min(9.8, score));
+  return { score: clamped, raw: score, reasons: reasons };
+}
+
+/* ------------------------------------------------------- contact mapping */
+
+function mapContacts(desc, motifs) {
+  var contact = {}, clash = {}, notes = [];
+
+  var aringTrigger = motifs.steroidKeto3 || motifs.enone ||
+                     motifs.arylNitrile || motifs.nitro || motifs.carboxyl;
+  if (aringTrigger) {
+    ARING_ANCHORS.forEach(function (r) { contact[r] = true; });
+    notes.push('A-ring anchors (Gln711 / Arg752) reachable by the 3-keto enone, ' +
+               'aryl nitrile/nitro or carboxyl group');
+  }
+
+  var dringTrigger = motifs.hydroxyl || motifs.phenol || motifs.amide ||
+                     motifs.tertAlcohol || motifs.hydantoin;
+  if (dringTrigger) {
+    DRING_ANCHORS.forEach(function (r) { contact[r] = true; });
+    notes.push('D-ring anchors (Asn705 / Thr877) reachable by a hydroxyl, ' +
+               'phenol, amide, tertiary alcohol or hydantoin');
+  }
+
+  if (desc.clogp > 1.5) {
+    HYDROPHOBIC_CORE.forEach(function (r) { contact[r] = true; });
+    notes.push('lipophilic enough to pack against the Leu/Met hydrophobic wall');
+  }
+  if (desc.clogp > 2.5 || desc.rings >= 3) {
+    HYDROPHOBIC_EXT.forEach(function (r) { contact[r] = true; });
+    notes.push('extended hydrophobic contact (Met787 / Phe764 / Leu873)');
+  }
+
+  var h12 = false;
+  if (motifs.nonsteroidalAA || motifs.thiohydantoin) {
+    h12 = true;
+    notes.push('helix-12 clash: a bulky non-steroidal scaffold displaces H12');
+  } else if (motifs.steroid && (desc.mw > 390 || motifs.sulfonyl || motifs.carboxyl)) {
+    h12 = true;
+    notes.push('helix-12 clash: steric conflict from a bulky substituent');
+  }
+  if (h12) {
+    H12_RESIDUES.forEach(function (r) { contact[r] = true; clash[r] = true; });
+  }
+
+  var aringMet = ARING_ANCHORS.every(function (r) { return contact[r]; });
+  var dringMet = DRING_ANCHORS.every(function (r) { return contact[r]; });
+
+  var verdict, verdictKey;
+  if (motifs.steroidKeto3 && !h12) {
+    verdictKey = 'agonist';
+    verdict = 'agonist potential';
+  } else if (h12) {
+    verdictKey = 'antagonist';
+    verdict = 'antagonist potential';
+  } else if (aringMet && dringMet) {
+    verdictKey = 'binder';
+    verdict = 'binding plausible, function undetermined';
+  } else {
+    verdictKey = 'weak';
+    verdict = 'low binding likelihood';
+  }
+
+  var residues = POCKET_RESIDUES.map(function (r) {
+    return {
+      id: r.id, role: r.role,
+      contact: !!contact[r.id], clash: !!clash[r.id]
+    };
+  });
+
+  return {
+    residues: residues,
+    contactCount: residues.filter(function (r) { return r.contact; }).length,
+    h12Clash: h12,
+    aringAnchored: aringMet,
+    dringAnchored: dringMet,
+    verdict: verdict,
+    verdictKey: verdictKey,
+    notes: notes
+  };
+}
+
+/* ------------------------------------------------------------- prediction */
+
+function predict(smiles, options) {
+  options = options || {};
+  var lib = ensureLibrary();
+  var exclude = options.exclude || null;
+
+  var mol = AR.parseSmiles(smiles);
+  var desc = AR.computeDescriptors(mol);
+  var motifs = AR.detectMotifs(mol);
+  var fp = AR.morganFingerprint(mol, 2);
+
+  var volume = AR.mcGowanVolume(mol);
+  var occupancy = volume / POCKET_VOLUME * 100;
+
+  var neighbours = [];
+  for (var i = 0; i < lib.length; i++) {
+    if (exclude && lib[i].n === exclude) continue;
+    neighbours.push({
+      n: lib[i].n, p: lib[i].p, c: lib[i].c, s: lib[i].s,
+      sim: AR.tanimoto(fp, lib[i].fp)
+    });
+  }
+  neighbours.sort(function (a, b) { return b.sim - a.sim; });
+  var top = neighbours.slice(0, 5);
+
+  var wsum = 0, psum = 0;
+  for (var k = 0; k < top.length; k++) {
+    var w = Math.pow(top[k].sim, 3);
+    wsum += w; psum += w * top[k].p;
+  }
+  var readAcross = wsum > 1e-12 ? psum / wsum : 4.0;
+
+  var rules = ruleScore(desc, motifs, occupancy);
+  var nearest = top.length ? top[0].sim : 0;
+
+  var wRead = nearest >= 0.55 ? 0.78 : (nearest >= 0.35 ? 0.50 : 0.20);
+  var pKi = wRead * readAcross + (1 - wRead) * rules.score;
+
+  var domain, ci;
+  if (nearest >= 0.55) { domain = 'in'; ci = 0.7; }
+  else if (nearest >= 0.35) { domain = 'edge'; ci = 1.1; }
+  else { domain = 'out'; ci = 1.6; }
+
+  var pocket = mapContacts(desc, motifs);
+
+  return {
+    smiles: smiles,
+    mol: mol,
+    desc: desc,
+    motifs: motifs,
+    volume: volume,
+    occupancy: occupancy,
+    pKi: pKi,
+    kiNM: Math.pow(10, 9 - pKi),
+    ci: ci,
+    domain: domain,
+    nearestSim: nearest,
+    readAcross: readAcross,
+    ruleScore: rules.score,
+    ruleRawScore: rules.raw,
+    reasons: rules.reasons,
+    weightReadAcross: wRead,
+    neighbours: top,
+    pocket: pocket
+  };
+}
+
+function lookupName(query) {
+  if (!query) return null;
+  var q = String(query).trim().toLowerCase().replace(/\s+/g, '');
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var ko = INGREDIENTS[i][0].toLowerCase().replace(/\s+/g, '');
+    var en = INGREDIENTS[i][1].toLowerCase().replace(/\s+/g, '');
+    if (ko === q || en === q) {
+      return { ko: INGREDIENTS[i][0], en: INGREDIENTS[i][1], s: INGREDIENTS[i][2] };
+    }
+  }
+  for (var j = 0; j < INGREDIENTS.length; j++) {
+    var ko2 = INGREDIENTS[j][0].toLowerCase().replace(/\s+/g, '');
+    var en2 = INGREDIENTS[j][1].toLowerCase().replace(/\s+/g, '');
+    if (ko2.indexOf(q) >= 0 || en2.indexOf(q) >= 0) {
+      return { ko: INGREDIENTS[j][0], en: INGREDIENTS[j][1], s: INGREDIENTS[j][2] };
+    }
+  }
+  return null;
+}
+
+/* Leave-one-out cross validation over the active library. */
+function crossValidate() {
+  var lib = ensureLibrary();
+  var rows = [], sumAbs = 0, sumSq = 0;
+  for (var i = 0; i < lib.length; i++) {
+    var r = predict(lib[i].s, { exclude: lib[i].n });
+    var err = r.pKi - lib[i].p;
+    sumAbs += Math.abs(err);
+    sumSq += err * err;
+    rows.push({ n: lib[i].n, observed: lib[i].p, predicted: r.pKi, error: err,
+                domain: r.domain, nearest: r.nearestSim });
+  }
+  return {
+    rows: rows,
+    n: rows.length,
+    mae: sumAbs / rows.length,
+    rmse: Math.sqrt(sumSq / rows.length)
+  };
+}
+
+var PR = {
+  predict: predict,
+  lookupName: lookupName,
+  crossValidate: crossValidate,
+  getLibrary: getLibrary,
+  libraryAsJson: libraryAsJson,
+  setLibrary: setLibrary,
+  resetLibrary: resetLibrary,
+  REFERENCE_DEFAULT: REFERENCE_DEFAULT,
+  INGREDIENTS: INGREDIENTS,
+  POCKET_RESIDUES: POCKET_RESIDUES,
+  POCKET_VOLUME: POCKET_VOLUME
+};
+
+</script>
+<script>
+/* ---- app.js ---- */
+/* app.js — UI rendering for the three tabs. Talks to the engine through the
+ * AR / LY / PR namespaces, which build.py produces from the module exports. */
+'use strict';
+
+
+var MAX_BATCH = 400;
+
+function $(id) { return document.getElementById(id); }
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function fx(v, n) {
+  var num = Number(v);
+  if (!isFinite(num)) return '—';
+  return num.toFixed(n === undefined ? 2 : n);
+}
+
+/* ------------------------------------------------------------- structure */
+
+var ELEMENT_INK = {
+  O: '#B3261E', N: '#1C4FA8', S: '#8A6D1F', F: '#2E7D32', Cl: '#2E7D32',
+  Br: '#8A4B1F', I: '#6A1B9A', P: '#B35C00', Se: '#8A6D1F', Zn: '#555E61'
+};
+
+function atomLabel(atom) {
+  if (atom.el === 'C' && !atom.charge) return null;
+  var text = atom.el;
+  if (atom.nH === 1) text += 'H';
+  else if (atom.nH > 1) text += 'H' + atom.nH;
+  if (atom.charge > 0) text += atom.charge > 1 ? '+' + atom.charge : '+';
+  if (atom.charge < 0) text += atom.charge < -1 ? String(atom.charge) : '−';
+  return text;
+}
+
+function svgStructure(mol) {
+  var pos = LY.computeLayout(mol);
+  var unit = 34, pad = 26;
+  var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  var i;
+  for (i = 0; i < pos.x.length; i++) {
+    if (pos.x[i] < minX) minX = pos.x[i];
+    if (pos.x[i] > maxX) maxX = pos.x[i];
+    if (pos.y[i] < minY) minY = pos.y[i];
+    if (pos.y[i] > maxY) maxY = pos.y[i];
+  }
+  if (!isFinite(minX)) { minX = maxX = minY = maxY = 0; }
+
+  var w = Math.max(160, (maxX - minX) * unit + pad * 2);
+  var h = Math.max(110, (maxY - minY) * unit + pad * 2);
+  var px = [], py = [];
+  for (i = 0; i < pos.x.length; i++) {
+    px.push((pos.x[i] - minX) * unit + pad);
+    py.push(h - ((pos.y[i] - minY) * unit + pad));
+  }
+
+  var labels = mol.atoms.map(atomLabel);
+  var parts = [];
+
+  /* aromatic ring circles */
+  for (var r = 0; r < mol.rings.length; r++) {
+    var ring = mol.rings[r], allArom = true;
+    for (var t = 0; t < ring.length; t++) {
+      if (!mol.atoms[ring[t]].arom) { allArom = false; break; }
+    }
+    if (!allArom) continue;
+    var cx = 0, cy = 0;
+    for (t = 0; t < ring.length; t++) { cx += px[ring[t]]; cy += py[ring[t]]; }
+    cx /= ring.length; cy /= ring.length;
+    var rad = Infinity;
+    for (t = 0; t < ring.length; t++) {
+      var d = Math.sqrt(Math.pow(px[ring[t]] - cx, 2) + Math.pow(py[ring[t]] - cy, 2));
+      if (d < rad) rad = d;
+    }
+    parts.push('<circle cx="' + fx(cx, 1) + '" cy="' + fx(cy, 1) + '" r="' +
+               fx(rad * 0.60, 1) + '" fill="none" stroke="currentColor" ' +
+               'stroke-width="1.1" opacity=".45"/>');
+  }
+
+  /* ring centroids, used to offset double bonds inwards */
+  function ringCentroidFor(bondIdx) {
+    var bd = mol.bonds[bondIdx];
+    for (var k = 0; k < mol.rings.length; k++) {
+      var ring2 = mol.rings[k];
+      var ia = ring2.indexOf(bd.a), ib = ring2.indexOf(bd.b);
+      if (ia < 0 || ib < 0) continue;
+      var diff = Math.abs(ia - ib);
+      if (diff !== 1 && diff !== ring2.length - 1) continue;
+      var gx = 0, gy = 0;
+      for (var q = 0; q < ring2.length; q++) { gx += px[ring2[q]]; gy += py[ring2[q]]; }
+      return { x: gx / ring2.length, y: gy / ring2.length };
+    }
+    return null;
+  }
+
+  for (var b = 0; b < mol.bonds.length; b++) {
+    var bond = mol.bonds[b];
+    var x1 = px[bond.a], y1 = py[bond.a], x2 = px[bond.b], y2 = py[bond.b];
+    var dx = x2 - x1, dy = y2 - y1;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var ux = dx / len, uy = dy / len;
+    /* pull the line back from atoms that carry a label */
+    var t1 = labels[bond.a] ? 10 : 0, t2 = labels[bond.b] ? 10 : 0;
+    var ax = x1 + ux * t1, ay = y1 + uy * t1;
+    var bx = x2 - ux * t2, by = y2 - uy * t2;
+    var nx = -uy, ny = ux;
+
+    function line(ox, oy, extraShrink) {
+      var s = extraShrink || 0;
+      return '<line x1="' + fx(ax + nx * ox + ux * s, 1) + '" y1="' + fx(ay + ny * oy + uy * s, 1) +
+             '" x2="' + fx(bx + nx * ox - ux * s, 1) + '" y2="' + fx(by + ny * oy - uy * s, 1) +
+             '" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
+    }
+
+    if (bond.order === 2 && !bond.arom) {
+      var centre = ringCentroidFor(b);
+      if (centre) {
+        var mx = (ax + bx) / 2, my = (ay + by) / 2;
+        var towards = ((centre.x - mx) * nx + (centre.y - my) * ny) >= 0 ? 1 : -1;
+        parts.push(line(0, 0));
+        parts.push(line(3.6 * towards, 3.6 * towards, 3.2));
+      } else {
+        parts.push(line(2, 2));
+        parts.push(line(-2, -2));
+      }
+    } else if (bond.order === 3) {
+      parts.push(line(0, 0));
+      parts.push(line(3, 3));
+      parts.push(line(-3, -3));
+    } else {
+      parts.push(line(0, 0));
+    }
+  }
+
+  for (i = 0; i < mol.atoms.length; i++) {
+    if (!labels[i]) continue;
+    var ink = ELEMENT_INK[mol.atoms[i].el] || 'currentColor';
+    parts.push('<circle cx="' + fx(px[i], 1) + '" cy="' + fx(py[i], 1) +
+               '" r="9.5" fill="var(--panel-2)"/>');
+    parts.push('<text x="' + fx(px[i], 1) + '" y="' + fx(py[i] + 4.2, 1) +
+               '" text-anchor="middle" font-family="var(--sans)" font-size="12.5" ' +
+               'font-weight="600" fill="' + ink + '">' + esc(labels[i]) + '</text>');
+  }
+
+  return '<svg viewBox="0 0 ' + fx(w, 1) + ' ' + fx(h, 1) + '" role="img" ' +
+         'aria-label="2D 구조식" style="color:var(--ink-mid)">' + parts.join('') + '</svg>';
+}
+
+/* ---------------------------------------------------------- pocket map */
+
+var RESIDUE_XY = {
+  Gln711: [72, 118], Arg752: [72, 206],
+  Asn705: [488, 116], Thr877: [488, 200],
+  Leu704: [148, 292], Leu707: [238, 302], Met742: [330, 302], Met745: [420, 292],
+  Phe764: [150, 38], Met787: [252, 26], Leu873: [352, 26],
+  Met895: [448, 40], Ile899: [534, 82]
+};
+
+function svgPocket(pocket, occupancy) {
+  var parts = [];
+  var cx = 280, cy = 164, rx = 118, ry = 68;
+
+  parts.push('<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry +
+             '" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.2" ' +
+             'stroke-dasharray="3 3" opacity=".9"/>');
+
+  var occLabel = isFinite(occupancy) ? fx(occupancy, 0) + '%' : '—';
+  parts.push('<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" ' +
+             'font-family="var(--mono)" font-size="27" font-weight="600" ' +
+             'fill="var(--accent)">' + esc(occLabel) + '</text>');
+  parts.push('<text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" ' +
+             'font-family="var(--sans)" font-size="10.5" letter-spacing="1.2" ' +
+             'fill="var(--ink-dim)">POCKET OCCUPANCY</text>');
+
+  for (var i = 0; i < pocket.residues.length; i++) {
+    var res = pocket.residues[i];
+    var xy = RESIDUE_XY[res.id];
+    if (!xy) continue;
+    var colour = res.clash ? 'var(--warn)' : (res.contact ? 'var(--accent)' : 'var(--grey-node)');
+
+    if (res.contact) {
+      /* tick from the node toward the cavity wall */
+      var vx = cx - xy[0], vy = cy - xy[1];
+      var vl = Math.sqrt(vx * vx + vy * vy) || 1;
+      parts.push('<line x1="' + fx(xy[0] + vx / vl * 9, 1) + '" y1="' + fx(xy[1] + vy / vl * 9, 1) +
+                 '" x2="' + fx(xy[0] + vx / vl * (vl * 0.42), 1) + '" y2="' +
+                 fx(xy[1] + vy / vl * (vl * 0.42), 1) +
+                 '" stroke="' + colour + '" stroke-width="1.3" opacity=".65"' +
+                 (res.clash ? ' stroke-dasharray="2 2"' : '') + '/>');
+    }
+    parts.push('<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="6.5" fill="' + colour +
+               '" opacity="' + (res.contact ? '1' : '.5') + '"/>');
+    /* Nodes on the flanks get their label pushed outward and anchored away
+     * from the cavity; top and bottom rows stay centred. */
+    var anchor, tx, ty;
+    if (xy[1] < 60) { anchor = 'middle'; tx = xy[0]; ty = xy[1] - 12; }
+    else if (xy[1] > 270) { anchor = 'middle'; tx = xy[0]; ty = xy[1] + 20; }
+    else if (xy[0] < 180) { anchor = 'end'; tx = xy[0] - 11; ty = xy[1] + 4; }
+    else if (xy[0] > 430) { anchor = 'start'; tx = xy[0] + 11; ty = xy[1] + 4; }
+    else { anchor = 'middle'; tx = xy[0]; ty = xy[1] + 20; }
+    parts.push('<text x="' + fx(tx, 1) + '" y="' + fx(ty, 1) + '" text-anchor="' + anchor +
+               '" font-family="var(--mono)" font-size="11" fill="' + colour + '" ' +
+               'opacity="' + (res.contact ? '1' : '.6') + '">' + esc(res.id) + '</text>');
+  }
+
+  return '<svg viewBox="0 0 600 330" role="img" aria-label="AR LBD 포켓 접촉도">' +
+         parts.join('') + '</svg>';
+}
+
+/* ------------------------------------------------------ single result */
+
+function tile(label, value) {
+  return '<div class="tile"><dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd></div>';
+}
+
+function renderSingle(result, title, subtitle) {
+  var d = result.desc, p = result.pocket;
+  var out = [];
+
+  out.push('<div class="panel">');
+  out.push('<p class="subject">' + esc(title) + '</p>');
+  out.push('<p class="subject-smi">' + esc(subtitle || result.smiles) + '</p>');
+
+  var domainWord = { 'in': '적용영역 내', edge: '적용영역 경계', out: '적용영역 밖' }[result.domain];
+  out.push('<div class="headline">');
+  out.push('<div><div class="pk">' + fx(result.pKi, 2) +
+           '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>' +
+           '<div style="font-size:11px;letter-spacing:.07em;color:var(--ink-dim);' +
+           'text-transform:uppercase;margin-top:4px">predicted pKi</div></div>');
+  out.push('<div class="meta">' +
+           '<div>Ki &asymp; <b>' + fx(result.kiNM, result.kiNM < 10 ? 2 : 0) + ' nM</b></div>' +
+           '<div>판정: <b>' + esc(p.verdict) + '</b></div>' +
+           '<div>최근접 유사도 <b>' + fx(result.nearestSim, 2) + '</b> ' +
+           '<span class="tag ' + esc(result.domain) + '">' + esc(domainWord) + '</span></div>' +
+           '</div>');
+  out.push('</div>');
+
+  out.push('<h4 class="sect">포켓 접촉도</h4>');
+  out.push('<div class="figwrap">' + svgPocket(p, result.occupancy) + '</div>');
+  out.push('<p class="hint" style="margin:8px 0 0">청록 = 접촉 가능, 주황 = helix-12 충돌, 회색 = 미접촉. ' +
+           '부피 ' + fx(result.volume, 0) + ' &Aring;&sup3; / 공동 ' + PR.POCKET_VOLUME + ' &Aring;&sup3;.</p>');
+
+  out.push('<h4 class="sect">접촉 잔기</h4>');
+  out.push('<table><thead><tr><th>잔기</th><th>역할</th><th>상태</th></tr></thead><tbody>');
+  for (var i = 0; i < p.residues.length; i++) {
+    var r = p.residues[i];
+    var state = r.clash ? 'H12 충돌' : (r.contact ? '접촉 가능' : '미접촉');
+    out.push('<tr' + (r.clash ? ' class="clash"' : '') + '><td>' + esc(r.id) + '</td><td>' +
+             esc(r.role) + '</td><td>' + esc(state) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+
+  out.push('<h4 class="sect">2D 구조식</h4>');
+  out.push('<div class="figwrap">' + svgStructure(result.mol) + '</div>');
+
+  out.push('<h4 class="sect">기술자</h4>');
+  out.push('<dl class="tiles">');
+  out.push(tile('분자식', d.formula));
+  out.push(tile('MW', fx(d.mw, 2)));
+  out.push(tile('clogP', fx(d.clogp, 2)));
+  out.push(tile('TPSA', fx(d.tpsa, 1)));
+  out.push(tile('HBD', d.hbd));
+  out.push(tile('HBA', d.hba));
+  out.push(tile('회전결합', d.rotb));
+  out.push(tile('고리', d.rings));
+  out.push(tile('방향족고리', d.aromRings));
+  out.push(tile('중원자', d.heavy));
+  out.push(tile('할로겐', d.halogens));
+  out.push(tile('Fsp3', fx(d.fsp3, 2)));
+  out.push(tile('부피 (Å³)', fx(result.volume, 0)));
+  out.push(tile('점유율', fx(result.occupancy, 0) + '%'));
+  out.push('</dl>');
+
+  out.push('<h4 class="sect">판정 근거</h4>');
+  out.push('<ul class="why">');
+  out.push('<li><span class="d">' + fx(result.ruleScore, 2) + '</span>' +
+           '<span>구조규칙 점수 (read-across 가중치 ' + fx(result.weightReadAcross, 2) + ')</span></li>');
+  out.push('<li><span class="d">' + fx(result.readAcross, 2) + '</span>' +
+           '<span>레퍼런스 read-across 값</span></li>');
+  for (var k = 0; k < result.reasons.length; k++) {
+    var rs = result.reasons[k];
+    var cls = rs.delta >= 0 ? 'pos' : 'neg';
+    out.push('<li><span class="d ' + cls + '">' + (rs.delta >= 0 ? '+' : '') +
+             fx(rs.delta, 1) + '</span><span>' + esc(rs.why) + '</span></li>');
+  }
+  for (var m = 0; m < p.notes.length; m++) {
+    out.push('<li><span class="d">&middot;</span><span>' + esc(p.notes[m]) + '</span></li>');
+  }
+  out.push('</ul>');
+
+  out.push('<h4 class="sect">최근접 레퍼런스</h4>');
+  out.push('<table><thead><tr><th>물질</th><th>유형</th><th class="num">실측 pKi</th>' +
+           '<th class="num">유사도</th></tr></thead><tbody>');
+  for (var j = 0; j < result.neighbours.length; j++) {
+    var nb = result.neighbours[j];
+    out.push('<tr><td>' + esc(nb.n) + '</td><td>' + esc(nb.c) + '</td><td class="num">' +
+             fx(nb.p, 2) + '</td><td class="num">' + fx(nb.sim, 3) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  out.push('</div>');
+  return out.join('');
+}
+
+/* ------------------------------------------------------------- tabs */
+
+var TABS = ['single', 'batch', 'library'];
+
+function selectTab(name) {
+  for (var i = 0; i < TABS.length; i++) {
+    var sec = $('tab-' + TABS[i]);
+    if (sec) {
+      if (TABS[i] === name) sec.className = sec.className.replace(/\s*hidden/g, '');
+      else if (sec.className.indexOf('hidden') < 0) sec.className += ' hidden';
+    }
+  }
+  var nav = $('tabs');
+  if (!nav || !nav.querySelectorAll) return;
+  var btns = nav.querySelectorAll('button');
+  for (var j = 0; j < btns.length; j++) {
+    var isSel = btns[j].getAttribute('data-tab') === name;
+    btns[j].setAttribute('aria-selected', isSel ? 'true' : 'false');
+  }
+}
+
+/* ------------------------------------------------------- single tab */
+
+function showError(hostId, message) {
+  var host = $(hostId);
+  if (host) host.innerHTML = message ? '<div class="err">' + esc(message) + '</div>' : '';
+}
+
+function runSingle(rawQuery) {
+  var input = $('q');
+  var query = rawQuery !== undefined ? rawQuery : (input ? input.value : '');
+  query = String(query || '').trim();
+  showError('single-err', '');
+  var host = $('single-out');
+  if (!host) return;
+  if (!query) { host.innerHTML = ''; showError('single-err', '물질명 또는 SMILES를 입력하세요.'); return; }
+
+  var hit = PR.lookupName(query);
+  var smiles = hit ? hit.s : query;
+  var title = hit ? hit.ko + ' / ' + hit.en : query;
+
+  var result;
+  try {
+    result = PR.predict(smiles);
+  } catch (err) {
+    host.innerHTML = '';
+    showError('single-err', '해석 실패: ' + err.message +
+              (hit ? '' : ' — 사전에 없는 이름이면 SMILES로 입력해 주세요.'));
+    return;
+  }
+  host.innerHTML = renderSingle(result, title, smiles);
+}
+
+/* -------------------------------------------------------- batch tab */
+
+var batchRows = [];
+
+function parseBatchText(text) {
+  var lines = String(text || '').split(/\r?\n/);
+  var out = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    if (i === 0 && /^(name|이름)\s*,/i.test(line)) continue;      /* header row */
+    var comma = line.lastIndexOf(',');
+    var name, smiles;
+    if (comma < 0) { name = line; smiles = line; }
+    else {
+      name = line.substring(0, comma).trim().replace(/^"|"$/g, '');
+      smiles = line.substring(comma + 1).trim().replace(/^"|"$/g, '');
+    }
+    if (!smiles) continue;
+    out.push({ name: name || smiles, smiles: smiles });
+  }
+  return out;
+}
+
+function runBatch(text) {
+  showError('batch-err', '');
+  var host = $('batch-out');
+  if (!host) return;
+  var items = parseBatchText(text);
+  if (!items.length) {
+    host.innerHTML = '';
+    showError('batch-err', '입력이 비어 있습니다. `이름,SMILES` 형식으로 한 줄씩 넣어주세요.');
+    return;
+  }
+  var truncated = false;
+  if (items.length > MAX_BATCH) { items = items.slice(0, MAX_BATCH); truncated = true; }
+
+  batchRows = [];
+  var failures = [];
+  for (var i = 0; i < items.length; i++) {
+    var hit = PR.lookupName(items[i].smiles);
+    var smi = items[i].smiles;
+    if (hit && !/[=#\[\]()0-9]/.test(smi)) smi = hit.s;
+    try {
+      var r = PR.predict(smi);
+      batchRows.push({
+        name: items[i].name, smiles: smi, pKi: r.pKi, ci: r.ci,
+        domain: r.domain, verdict: r.pocket.verdict,
+        mw: r.desc.mw, clogp: r.desc.clogp, occupancy: r.occupancy
+      });
+    } catch (err) {
+      failures.push(items[i].name + ' (' + err.message + ')');
+    }
+  }
+  batchRows.sort(function (a, b) { return b.pKi - a.pKi; });
+
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>결과 ' + batchRows.length + '건</h3>');
+  out.push('<p class="hint">pKi 내림차순. 행을 클릭하면 단건 조회로 이동합니다.' +
+           (truncated ? ' 최대 ' + MAX_BATCH + '건까지만 처리했습니다.' : '') + '</p>');
+  out.push('<table><thead><tr><th class="num">#</th><th>물질</th>' +
+           '<th class="num">pKi</th><th class="barcell">분포</th>' +
+           '<th class="num">MW</th><th class="num">logP</th><th>판정</th>' +
+           '</tr></thead><tbody>');
+  for (var k = 0; k < batchRows.length; k++) {
+    var row = batchRows[k];
+    var frac = Math.max(0, Math.min(1, (row.pKi - 3.5) / 6.5));
+    out.push('<tr class="clickable" data-smiles="' + esc(row.smiles) + '">' +
+             '<td class="num">' + (k + 1) + '</td>' +
+             '<td>' + esc(row.name) + '</td>' +
+             '<td class="num">' + fx(row.pKi, 2) + '</td>' +
+             '<td class="barcell"><div class="bar' + (row.pKi < 6 ? ' lo' : '') +
+             '" style="width:' + fx(frac * 100, 1) + '%"></div></td>' +
+             '<td class="num">' + fx(row.mw, 1) + '</td>' +
+             '<td class="num">' + fx(row.clogp, 2) + '</td>' +
+             '<td>' + esc(row.verdict) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  if (failures.length) {
+    out.push('<p class="hint" style="margin-top:12px">해석 실패 ' + failures.length +
+             '건: ' + esc(failures.slice(0, 8).join('; ')) + '</p>');
+  }
+  out.push('</div>');
+  host.innerHTML = out.join('');
+
+  if (host.querySelectorAll) {
+    var trs = host.querySelectorAll('tr.clickable');
+    for (var t = 0; t < trs.length; t++) {
+      (function (tr) {
+        tr.addEventListener('click', function () {
+          var smi = tr.getAttribute('data-smiles');
+          var qbox = $('q');
+          if (qbox) qbox.value = smi;
+          selectTab('single');
+          runSingle(smi);
+        });
+      })(trs[t]);
+    }
+  }
+}
+
+function batchTsv() {
+  var head = ['name', 'smiles', 'pKi', 'ci', 'domain', 'verdict', 'mw', 'clogp', 'occupancy'];
+  var lines = [head.join('\t')];
+  for (var i = 0; i < batchRows.length; i++) {
+    var r = batchRows[i];
+    lines.push([r.name, r.smiles, fx(r.pKi, 2), fx(r.ci, 1), r.domain, r.verdict,
+                fx(r.mw, 2), fx(r.clogp, 2), fx(r.occupancy, 0)].join('\t'));
+  }
+  return lines.join('\n');
+}
+
+function copyTsv() {
+  if (!batchRows.length) { showError('batch-err', '복사할 결과가 없습니다.'); return; }
+  var text = batchTsv();
+  var done = function () { showError('batch-err', ''); };
+  var fallback = function () {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      if (ta.select) ta.select();
+      if (document.execCommand) document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (err) {
+      showError('batch-err', '클립보드 복사에 실패했습니다. 결과 표를 직접 선택해 복사해 주세요.');
+    }
+  };
+  try {
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      var p = navigator.clipboard.writeText(text);
+      if (p && p.then) p.then(done, fallback); else done();
+    } else fallback();
+  } catch (err) { fallback(); }
+}
+
+var SAMPLE_BATCH = [
+  'Dihydrotestosterone,CC12CCC3C(CCC4C3CCC4O)C1(C)CCC(=O)C2',
+  'Testosterone,CC12CCC3C(CCC4=CC(=O)CCC34C)C1CCC2O',
+  'Enzalutamide,CC1(C)C(=O)N(c2ccc(C(=O)NC)c(F)c2)C(=S)N1c1ccc(C#N)c(c1)C(F)(F)F',
+  'Bicalutamide,CC(O)(CS(=O)(=O)c1ccc(F)cc1)C(=O)Nc1ccc(C#N)c(c1)C(F)(F)F',
+  'Genistein,Oc1ccc(cc1)C1=COc2cc(O)cc(O)c2C1=O',
+  'Butylparaben,CCCCOC(=O)c1ccc(O)cc1',
+  'beta-Sitosterol,CCC(CCC(C)C1CCC2C1(C)CCC1C2CC=C2CC(O)CCC12C)C(C)C',
+  'Ketoconazole,CC(=O)N1CCN(CC1)c1ccc(OCC2COC(Cn3ccnc3)(O2)c2ccc(Cl)cc2Cl)cc1',
+  'Niacinamide,NC(=O)c1ccncc1',
+  'Glycerin,OCC(O)CO'
+].join('\n');
+
+/* ------------------------------------------------------ library tab */
+
+function renderLibrary() {
+  var host = $('lib-out');
+  if (!host) return;
+  var lib = PR.getLibrary();
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>현재 라이브러리 ' + lib.length + '종</h3>');
+  out.push('<table><thead><tr><th>물질</th><th class="num">pKi</th><th>유형</th>' +
+           '<th class="num">MW</th><th>비고</th></tr></thead><tbody>');
+  for (var i = 0; i < lib.length; i++) {
+    out.push('<tr><td>' + esc(lib[i].n) + '</td><td class="num">' + fx(lib[i].p, 2) +
+             '</td><td>' + esc(lib[i].c) + '</td><td class="num">' +
+             fx(lib[i].desc.mw, 1) + '</td><td style="color:var(--ink-dim)">' +
+             esc(lib[i].note) + '</td></tr>');
+  }
+  out.push('</tbody></table></div>');
+  host.innerHTML = out.join('');
+}
+
+function applyLibrary(text) {
+  showError('lib-err', '');
+  var parsed;
+  try { parsed = JSON.parse(text); }
+  catch (err) { showError('lib-err', 'JSON 파싱 실패: ' + err.message); return; }
+  var res;
+  try { res = PR.setLibrary(parsed); }
+  catch (err) { showError('lib-err', '적용 실패: ' + err.message); return; }
+  renderLibrary();
+  var msg = res.applied + '종 적용';
+  if (res.skipped.length) {
+    msg += ', ' + res.skipped.length + '종 건너뜀 (' +
+           res.skipped.slice(0, 6).map(function (s) { return s.entry; }).join(', ') + ')';
+  }
+  showError('lib-err', msg);
+}
+
+/* ------------------------------------------------------- model card */
+
+var modelCardDone = false;
+
+function renderModelCard() {
+  if (modelCardDone) return;
+  var host = $('modelcard-body');
+  if (!host) return;
+  modelCardDone = true;
+
+  var cv;
+  try { cv = PR.crossValidate(); } catch (err) { cv = null; }
+  var out = [];
+
+  out.push('<h5>용도</h5>');
+  out.push('<p>화장품·생활화학 원료의 안드로겐 수용체 결합 가능성을 1차 선별합니다. ' +
+           '세포실험 대상의 우선순위를 정하는 데까지가 이 도구의 역할입니다.</p>');
+
+  out.push('<h5>방법</h5>');
+  out.push('<p>Morgan 지문(radius 2, 2048 bit) Tanimoto 유사도 기반 read-across와 ' +
+           '파마코포어 규칙 점수를 최근접 유사도에 따라 가중 결합합니다. ' +
+           '포켓 점유율은 McGowan 특성부피를 AR LBD 공동 ' + PR.POCKET_VOLUME +
+           ' Å³ 와 비교해 산출합니다.</p>');
+
+  if (cv) {
+    out.push('<h5>성능 (leave-one-out, n = ' + cv.n + ')</h5>');
+    out.push('<p>MAE <b>' + fx(cv.mae, 2) + '</b> log, RMSE <b>' + fx(cv.rmse, 2) +
+             '</b> log. 레퍼런스 자체가 실험실 간 ±0.5~1 log의 분산을 가지므로 ' +
+             '이보다 낮은 오차는 기대할 수 없습니다.</p>');
+    var worst = cv.rows.slice().sort(function (a, b) {
+      return Math.abs(b.error) - Math.abs(a.error);
+    }).slice(0, 4);
+    out.push('<table><thead><tr><th>물질</th><th class="num">실측</th>' +
+             '<th class="num">예측</th><th class="num">오차</th></tr></thead><tbody>');
+    for (var i = 0; i < worst.length; i++) {
+      out.push('<tr><td>' + esc(worst[i].n) + '</td><td class="num">' +
+               fx(worst[i].observed, 2) + '</td><td class="num">' +
+               fx(worst[i].predicted, 2) + '</td><td class="num">' +
+               (worst[i].error >= 0 ? '+' : '') + fx(worst[i].error, 2) + '</td></tr>');
+    }
+    out.push('</tbody></table>');
+  }
+
+  out.push('<h5>실패 모드 — 이 도구가 틀리는 방식</h5>');
+  out.push('<ul>');
+  out.push('<li><b>대사 활성화를 모릅니다.</b> flutamide는 전구체이고 활성은 ' +
+           'hydroxyflutamide에 있습니다. 2D 구조가 거의 같아 flutamide의 결합력이 ' +
+           '크게 과대평가됩니다.</li>');
+  out.push('<li><b>4-aza 스테로이드를 오분류합니다.</b> finasteride는 5α-환원효소 ' +
+           '억제제이지 AR 리간드가 아니지만, 2D 유사도로는 DHT와 구분되지 않아 ' +
+           '3 log 이상 과대평가됩니다.</li>');
+  out.push('<li><b>입체화학을 무시합니다.</b> 키랄리티와 동위원소 표기는 파싱만 하고 ' +
+           '계산에 반영하지 않으므로 거울상 이성질체는 동일하게 평가됩니다. ' +
+           'estradiol처럼 스테로이드 코어를 가져도 A-ring이 방향족이면 AR에는 약한데, ' +
+           '이 차이도 충분히 반영되지 않습니다.</li>');
+  out.push('<li><b>작용/길항 판정은 규칙 기반 추정입니다.</b> helix-12 충돌 여부를 ' +
+           '구조 모티프로 유추한 것이며, 실제 전사활성 측정이 아닙니다.</li>');
+  out.push('<li><b>레퍼런스가 적습니다.</b> 28종뿐이라 유사 레퍼런스가 없는 골격 ' +
+           '(예: RU-59063)은 과소평가됩니다. 적용영역 태그가 <code>out</code>이면 ' +
+           '수치보다 태그를 먼저 보세요.</li>');
+  out.push('<li><b>금속 함유·고분자·혼합물은 범위 밖입니다.</b> 징크피리치온처럼 ' +
+           '금속 배위 화합물은 기술자 자체가 신뢰할 수 없습니다.</li>');
+  out.push('</ul>');
+
+  out.push('<h5>다음 단계</h5>');
+  out.push('<p>위 실패 모드는 2D 기술자로는 해결되지 않습니다. ' +
+           '<code>local/train_qsar.py</code>로 ChEMBL 데이터를 받아 레퍼런스를 넓히고, ' +
+           '<code>local/ar_dock.py</code>로 결정 구조에 도킹해 교차 확인하세요.</p>');
+
+  host.innerHTML = out.join('');
+}
+
+/* --------------------------------------------------------------- init */
+
+function readFile(input, handler) {
+  if (!input || !input.files || !input.files.length) return;
+  var reader = new FileReader();
+  reader.onload = function () { handler(String(reader.result || '')); };
+  reader.readAsText(input.files[0]);
+}
+
+function on(id, event, handler) {
+  var el = $(id);
+  if (el && el.addEventListener) el.addEventListener(event, handler);
+}
+
+function init() {
+  /* name suggestions */
+  var dl = $('names');
+  if (dl) {
+    var opts = [];
+    for (var i = 0; i < PR.INGREDIENTS.length; i++) {
+      opts.push('<option value="' + esc(PR.INGREDIENTS[i][0]) + '"></option>');
+      opts.push('<option value="' + esc(PR.INGREDIENTS[i][1]) + '"></option>');
+    }
+    dl.innerHTML = opts.join('');
+  }
+
+  var nav = $('tabs');
+  if (nav && nav.addEventListener) {
+    nav.addEventListener('click', function (ev) {
+      var target = ev.target;
+      if (!target || !target.getAttribute) return;
+      var name = target.getAttribute('data-tab');
+      if (!name) return;
+      selectTab(name);
+      if (name === 'library') renderLibrary();
+    });
+  }
+
+  on('run', 'click', function () { runSingle(); });
+  on('q', 'keydown', function (ev) { if (ev.key === 'Enter') runSingle(); });
+
+  on('batchrun', 'click', function () {
+    var ta = $('batchin');
+    runBatch(ta ? ta.value : '');
+  });
+  on('batchsample', 'click', function () {
+    var ta = $('batchin');
+    if (ta) ta.value = SAMPLE_BATCH;
+    runBatch(SAMPLE_BATCH);
+  });
+  on('batchcopy', 'click', copyTsv);
+  on('batchfile', 'change', function (ev) {
+    readFile(ev.target, function (text) {
+      var ta = $('batchin');
+      if (ta) ta.value = text;
+      runBatch(text);
+    });
+  });
+
+  on('libapply', 'click', function () {
+    var ta = $('libin');
+    applyLibrary(ta ? ta.value : '');
+  });
+  on('libfile', 'change', function (ev) {
+    readFile(ev.target, function (text) {
+      var ta = $('libin');
+      if (ta) ta.value = text;
+      applyLibrary(text);
+    });
+  });
+  on('libreset', 'click', function () {
+    PR.resetLibrary();
+    renderLibrary();
+    showError('lib-err', '기본 레퍼런스 ' + PR.getLibrary().length + '종으로 복원했습니다.');
+  });
+  on('libexport', 'click', function () {
+    var ta = $('libin');
+    if (ta) ta.value = JSON.stringify(PR.libraryAsJson(), null, 1);
+    showError('lib-err', '현재 라이브러리를 위 입력란에 JSON으로 넣었습니다.');
+  });
+
+  on('themebtn', 'click', function () {
+    var root = document.documentElement;
+    var cur = root.getAttribute('data-theme');
+    root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  });
+
+  var card = $('modelcard');
+  if (card && card.addEventListener) {
+    card.addEventListener('toggle', renderModelCard);
+    card.addEventListener('click', renderModelCard);
+  }
+
+  renderLibrary();
+  runSingle('디하이드로테스토스테론');
+}
+
+if (typeof document !== 'undefined' && document.getElementById) {
+  if (document.readyState === 'loading' && document.addEventListener) {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+}
+
+var APP = {
+  init: init, runSingle: runSingle, runBatch: runBatch, renderLibrary: renderLibrary,
+  applyLibrary: applyLibrary, renderModelCard: renderModelCard, selectTab: selectTab,
+  svgStructure: svgStructure, svgPocket: svgPocket, batchTsv: batchTsv,
+  parseBatchText: parseBatchText, SAMPLE_BATCH: SAMPLE_BATCH
+};
+
+</script>
+</body>
+</html>
