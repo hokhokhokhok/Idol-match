@@ -64,6 +64,11 @@ ANCHORS = {
 # reached only by ligands that extend toward the AF-2 surface: 5 of 22, and
 # all 5 were antagonists. Only that subset is treated as a displacement
 # signal; the full set above is still reported as contacts.
+#
+# This was calibrated on 2AM9 and does NOT transfer: re-run on 2OZ7 (the
+# T877A mutant) the same rule flagged metribolone and methyltestosterone,
+# both agonists. Treat the antagonism call as meaningful only in the
+# wild-type agonist structure, and as a hint to check the pose elsewhere.
 H12_DISPLACEMENT = {"ILE899"}
 
 # At or above this score the pose is a clash, not a weak pose: the ligand
@@ -100,6 +105,31 @@ def parse_pdb_atoms(text: str):
             }
         except (ValueError, IndexError):
             continue
+
+
+def check_anchor_residues(protein: list) -> list:
+    """Warn when the structure does not carry the anchor residues by name.
+
+    Most AR LBD entries that come with a non-steroidal ligand are point
+    mutants - 2OZ7 is T877A, 1Z95 is W741L - and the anchor sets here match
+    on residue name plus number. A mutated anchor simply never matches, so
+    the run quietly loses a hydrogen bond it should have reported.
+    """
+    seen = {}
+    for a in protein:
+        seen.setdefault(a["resseq"], a["resname"].upper())
+    problems = []
+    for label, members in ANCHORS.items():
+        for res in sorted(members):
+            name, number = res[:3], res[3:]
+            actual = seen.get(number)
+            if actual is None:
+                problems.append("%s (%s): residue %s absent from the structure"
+                                % (res, label, number))
+            elif actual != name:
+                problems.append("%s (%s): structure has %s%s - mutated, so this "
+                                "anchor can never match" % (res, label, actual, number))
+    return problems
 
 
 def prepare(pdb_id: str, workdir: pathlib.Path) -> dict:
@@ -144,6 +174,9 @@ def prepare(pdb_id: str, workdir: pathlib.Path) -> dict:
     box = box_from_atoms(ligand)
     (workdir / "box.json").write_text(json.dumps(box, indent=1), encoding="utf-8")
     print("receptor.pdb: %d atoms" % len(protein))
+
+    for problem in check_anchor_residues(protein):
+        print("  WARNING: %s" % problem)
     print("box centre (%.2f, %.2f, %.2f)  size (%.1f, %.1f, %.1f)"
           % (box["center_x"], box["center_y"], box["center_z"],
              box["size_x"], box["size_y"], box["size_z"]))
@@ -449,8 +482,10 @@ def main() -> int:
         writer.writerows(rows)
     print("\nwrote %s" % out_csv)
     print("poses in %s, contact detail in %s" % (paths["poses"], paths["contacts"]))
-    print("\nDocking scores rank; they are not affinity predictions. Against "
-          "measured pKi expect r^2 of roughly 0.3-0.5.")
+    print("\nDocking scores are not affinity predictions, and on this project's "
+          "\n22-ligand panel they did not rank reliably either: r^2 against "
+          "measured\npKi was 0.03 in 2AM9 and 0.29 in 2OZ7. Read the placement "
+          "and the\ncontacts, not the ordering. See README ' 실행 결과'.")
     return 0
 
 

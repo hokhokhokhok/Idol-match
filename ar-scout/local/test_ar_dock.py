@@ -181,6 +181,30 @@ def main() -> int:
     check("one anchor -> unstable orientation",
           "배향 불안정 가능" in ar_dock.interpret(one, -9.0))
 
+    # --- anchor residue verification ---------------------------------------
+    prot = [a for a in ar_dock.parse_pdb_atoms(receptor)]
+    check("wild-type anchors raise no warning",
+          ar_dock.check_anchor_residues(prot) == [],
+          "all 7 anchor residues present with the expected names")
+
+    # the same pocket with Thr877 mutated to Ala, as in 2OZ7
+    mutated = []
+    for a in prot:
+        if a["resseq"] == "877":
+            a = dict(a, resname="ALA")
+        mutated.append(a)
+    warn = ar_dock.check_anchor_residues(mutated)
+    check("mutated anchor is reported", len(warn) == 1 and "THR877" in warn[0],
+          warn[0] if warn else "no warning raised")
+    check("warning says the anchor cannot match",
+          warn and "ALA877" in warn[0] and "never match" in warn[0])
+
+    missing = [a for a in prot if a["resseq"] != "705"]
+    warn2 = ar_dock.check_anchor_residues(missing)
+    check("absent anchor is reported",
+          any("ASN705" in w and "absent" in w for w in warn2),
+          "; ".join(warn2))
+
     # --- SDF reader --------------------------------------------------------
     sdf = work / "pose.sdf"
     sdf.write_text(

@@ -14,3 +14,4 @@ ar-scout/local/ar_model.pkl
 ar-scout/local/qsar/
 ar-scout/local/*.log
 ar-scout/local/shortlist.csv
+ar-scout/local/dock2/
