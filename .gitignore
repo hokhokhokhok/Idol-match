@@ -4,3 +4,10 @@ screenshots/
 android/
 ios/
 *.zip
+
+# ar-scout local pipeline artefacts
+ar-scout/local/__pycache__/
+ar-scout/local/dock/
+ar-scout/local/chembl_ar_raw.json
+ar-scout/local/ar_reference.json
+ar-scout/local/ar_model.pkl
