@@ -23,9 +23,11 @@ function fx(v, n) {
 
 /* ------------------------------------------------------------- structure */
 
+/* Heteroatom inks are CSS variables so they stay legible in both themes. */
 var ELEMENT_INK = {
-  O: '#B3261E', N: '#1C4FA8', S: '#8A6D1F', F: '#2E7D32', Cl: '#2E7D32',
-  Br: '#8A4B1F', I: '#6A1B9A', P: '#B35C00', Se: '#8A6D1F', Zn: '#555E61'
+  O: 'var(--el-o)', N: 'var(--el-n)', S: 'var(--el-s)', F: 'var(--el-f)',
+  Cl: 'var(--el-f)', Br: 'var(--el-br)', I: 'var(--el-i)', P: 'var(--el-p)',
+  Se: 'var(--el-s)', Zn: 'var(--el-m)'
 };
 
 function atomLabel(atom) {
@@ -141,14 +143,14 @@ function svgStructure(mol) {
     if (!labels[i]) continue;
     var ink = ELEMENT_INK[mol.atoms[i].el] || 'currentColor';
     parts.push('<circle cx="' + fx(px[i], 1) + '" cy="' + fx(py[i], 1) +
-               '" r="9.5" fill="var(--panel-2)"/>');
+               '" r="10" fill="var(--card-sub)"/>');
     parts.push('<text x="' + fx(px[i], 1) + '" y="' + fx(py[i] + 4.2, 1) +
                '" text-anchor="middle" font-family="var(--sans)" font-size="12.5" ' +
-               'font-weight="600" fill="' + ink + '">' + esc(labels[i]) + '</text>');
+               'font-weight="700" fill="' + ink + '">' + esc(labels[i]) + '</text>');
   }
 
   return '<svg viewBox="0 0 ' + fx(w, 1) + ' ' + fx(h, 1) + '" role="img" ' +
-         'aria-label="2D 구조식" style="color:var(--ink-mid)">' + parts.join('') + '</svg>';
+         'aria-label="2D 구조식" style="color:var(--ink-2)">' + parts.join('') + '</svg>';
 }
 
 /* ---------------------------------------------------------- pocket map */
@@ -166,22 +168,22 @@ function svgPocket(pocket, occupancy) {
   var cx = 280, cy = 164, rx = 118, ry = 68;
 
   parts.push('<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry +
-             '" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.2" ' +
+             '" fill="var(--blue-wash)" stroke="var(--blue)" stroke-width="1.2" ' +
              'stroke-dasharray="3 3" opacity=".9"/>');
 
   var occLabel = isFinite(occupancy) ? fx(occupancy, 0) + '%' : '—';
   parts.push('<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" ' +
-             'font-family="var(--mono)" font-size="27" font-weight="600" ' +
-             'fill="var(--accent)">' + esc(occLabel) + '</text>');
-  parts.push('<text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" ' +
-             'font-family="var(--sans)" font-size="10.5" letter-spacing="1.2" ' +
-             'fill="var(--ink-dim)">POCKET OCCUPANCY</text>');
+             'font-family="var(--sans)" font-size="30" font-weight="700" ' +
+             'letter-spacing="-1" fill="var(--blue)">' + esc(occLabel) + '</text>');
+  parts.push('<text x="' + cx + '" y="' + (cy + 18) + '" text-anchor="middle" ' +
+             'font-family="var(--sans)" font-size="12" font-weight="500" ' +
+             'fill="var(--ink-3)">포켓 점유율</text>');
 
   for (var i = 0; i < pocket.residues.length; i++) {
     var res = pocket.residues[i];
     var xy = RESIDUE_XY[res.id];
     if (!xy) continue;
-    var colour = res.clash ? 'var(--warn)' : (res.contact ? 'var(--accent)' : 'var(--grey-node)');
+    var colour = res.clash ? 'var(--red)' : (res.contact ? 'var(--blue)' : 'var(--grey-node)');
 
     if (res.contact) {
       /* tick from the node toward the cavity wall */
@@ -204,7 +206,8 @@ function svgPocket(pocket, occupancy) {
     else if (xy[0] > 430) { anchor = 'start'; tx = xy[0] + 11; ty = xy[1] + 4; }
     else { anchor = 'middle'; tx = xy[0]; ty = xy[1] + 20; }
     parts.push('<text x="' + fx(tx, 1) + '" y="' + fx(ty, 1) + '" text-anchor="' + anchor +
-               '" font-family="var(--mono)" font-size="11" fill="' + colour + '" ' +
+               '" font-family="var(--sans)" font-size="11.5" font-weight="600" ' +
+               'fill="' + colour + '" ' +
                'opacity="' + (res.contact ? '1' : '.6') + '">' + esc(res.id) + '</text>');
   }
 
@@ -227,29 +230,29 @@ function renderSingle(result, title, subtitle) {
   out.push('<p class="subject-smi">' + esc(subtitle || result.smiles) + '</p>');
 
   var domainWord = { 'in': '적용영역 내', edge: '적용영역 경계', out: '적용영역 밖' }[result.domain];
-  out.push('<div class="headline">');
-  out.push('<div><div class="pk">' + fx(result.pKi, 2) +
-           '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>' +
-           '<div style="font-size:11px;letter-spacing:.07em;color:var(--ink-dim);' +
-           'text-transform:uppercase;margin-top:4px">predicted pKi</div></div>');
   var fc = result.functionCall;
   var fcLabel = PR.CLASS_LABELS[fc.label] || fc.label;
-  var fcClass = (fc.label === 'antagonist' || fc.label === 'unknown') ? 'warnink' : '';
-  out.push('<div class="meta">' +
-           '<div>Ki &asymp; <b>' + fx(result.kiNM, result.kiNM < 10 ? 2 : 0) + ' nM</b></div>' +
-           '<div>기능 추정: <b class="' + fcClass + '">' + esc(fcLabel) + '</b> ' +
-           '<span style="color:var(--ink-dim)">(레퍼런스 기반, 근거 ' +
-           fx(fc.support, 2) + ')</span></div>' +
-           '<div>구조 판정: <b>' + esc(p.verdict) + '</b></div>' +
-           '<div>최근접 유사도 <b>' + fx(result.nearestSim, 2) + '</b> ' +
-           '<span class="tag ' + esc(result.domain) + '">' + esc(domainWord) + '</span></div>' +
-           '</div>');
-  out.push('</div>');
+  var fcClass = (fc.label === 'antagonist' || fc.label === 'unknown') ? ' warnink' : '';
+
+  out.push('<div class="headline">');
+  out.push('<div class="pk num">' + fx(result.pKi, 2) +
+           '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>');
+  out.push('<div class="pklabel">예측 pKi · 오차범위</div>');
+  out.push('<div class="kv">');
+  out.push('<div><span class="k">Ki 환산</span><span class="v num">' +
+           fx(result.kiNM, result.kiNM < 10 ? 2 : 0) + ' nM</span></div>');
+  out.push('<div><span class="k">기능 추정</span><span class="v' + fcClass + '">' +
+           esc(fcLabel) + '<span class="sub">근거 ' + fx(fc.support, 2) + '</span></span></div>');
+  out.push('<div><span class="k">구조 판정</span><span class="v">' + esc(p.verdict) + '</span></div>');
+  out.push('<div><span class="k">적용영역</span><span class="v">' +
+           '<span class="tag ' + esc(result.domain) + '">' + esc(domainWord) + '</span>' +
+           '<span class="sub">유사도 ' + fx(result.nearestSim, 2) + '</span></span></div>');
+  out.push('</div></div>');
 
   out.push('<h4 class="sect">포켓 접촉도</h4>');
   out.push('<div class="figwrap">' + svgPocket(p, result.occupancy) + '</div>');
-  out.push('<p class="hint" style="margin:8px 0 0">청록 = 접촉 가능, 주황 = helix-12 충돌, 회색 = 미접촉. ' +
-           '부피 ' + fx(result.volume, 0) + ' &Aring;&sup3; / 공동 ' + PR.POCKET_VOLUME + ' &Aring;&sup3;.</p>');
+  out.push('<p class="hint" style="margin:10px 0 0">파랑 = 접촉 가능 · 빨강 = helix-12 충돌 · 회색 = 미접촉<br>' +
+           '분자 부피 ' + fx(result.volume, 0) + ' &Aring;&sup3; / 공동 ' + PR.POCKET_VOLUME + ' &Aring;&sup3;</p>');
 
   out.push('<h4 class="sect">접촉 잔기</h4>');
   out.push('<table><thead><tr><th>잔기</th><th>역할</th><th>상태</th></tr></thead><tbody>');
@@ -428,9 +431,10 @@ function runBatch(text) {
   out.push('<h3>결과 ' + batchRows.length + '건</h3>');
   out.push('<p class="hint">pKi 내림차순. 행을 클릭하면 단건 조회로 이동합니다.' +
            (truncated ? ' 최대 ' + MAX_BATCH + '건까지만 처리했습니다.' : '') + '</p>');
-  out.push('<table><thead><tr><th class="num">#</th><th>물질</th>' +
+  out.push('<div class="tscroll"><table><thead><tr><th class="num">#</th><th>물질</th>' +
            '<th class="num">pKi</th><th class="barcell">분포</th>' +
-           '<th class="num">MW</th><th>기능 추정</th><th>구조 판정</th>' +
+           '<th class="num col-sec">MW</th><th>기능 추정</th>' +
+           '<th class="col-sec">구조 판정</th>' +
            '</tr></thead><tbody>');
   for (var k = 0; k < batchRows.length; k++) {
     var row = batchRows[k];
@@ -441,12 +445,12 @@ function runBatch(text) {
              '<td class="num">' + fx(row.pKi, 2) + '</td>' +
              '<td class="barcell"><div class="bar' + (row.pKi < 6 ? ' lo' : '') +
              '" style="width:' + fx(frac * 100, 1) + '%"></div></td>' +
-             '<td class="num">' + fx(row.mw, 1) + '</td>' +
+             '<td class="num col-sec">' + fx(row.mw, 1) + '</td>' +
              '<td' + (row.fnKey === 'antagonist' ? ' class="warnink"' : '') + '>' +
              esc(row.fnLabel) + '</td>' +
-             '<td>' + esc(row.verdict) + '</td></tr>');
+             '<td class="col-sec">' + esc(row.verdict) + '</td></tr>');
   }
-  out.push('</tbody></table>');
+  out.push('</tbody></table></div>');
   if (failures.length) {
     out.push('<p class="hint" style="margin-top:12px">해석 실패 ' + failures.length +
              '건: ' + esc(failures.slice(0, 8).join('; ')) + '</p>');
@@ -535,7 +539,7 @@ function renderLibrary() {
   for (var i = 0; i < lib.length; i++) {
     out.push('<tr><td>' + esc(lib[i].n) + '</td><td class="num">' + fx(lib[i].p, 2) +
              '</td><td>' + esc(lib[i].c) + '</td><td class="num">' +
-             fx(lib[i].desc.mw, 1) + '</td><td style="color:var(--ink-dim)">' +
+             fx(lib[i].desc.mw, 1) + '</td><td style="color:var(--ink-3)">' +
              esc(lib[i].note) + '</td></tr>');
   }
   out.push('</tbody></table></div>');

@@ -15,6 +15,7 @@ Run with no arguments to write <repo>/ar-scout/ar-scout.html.
 """
 
 import argparse
+import base64
 import pathlib
 import re
 import subprocess
@@ -26,6 +27,11 @@ HERE = pathlib.Path(__file__).resolve().parent
 # source file -> namespace the other modules reference it by
 ENGINE = [("armodel.js", "AR"), ("layout.js", "LY"), ("predict.js", "PR")]
 APP = ("app.js", "APP")
+
+# Pretendard is vendored and inlined as base64 rather than fetched: the
+# bundle has to stay a single file with no outbound requests, and naming the
+# font in a fallback stack is not enough when it is not installed locally.
+FONT = ("assets/PretendardVariable.woff2", "/*__FONT__*/")
 
 REQUIRE_LINE = re.compile(
     r"^[ \t]*(?:var|const|let)[ \t]+\w+[ \t]*=[ \t]*require\([^)]*\)[ \t]*;?[ \t]*\r?\n?",
@@ -60,6 +66,15 @@ def build(out_path: pathlib.Path) -> int:
         if token not in shell:
             raise SystemExit("shell.html is missing the %s placeholder" % token)
 
+    font_path = HERE / FONT[0]
+    if FONT[1] in shell:
+        if not font_path.exists():
+            raise SystemExit("missing vendored font: %s" % font_path)
+        font_b64 = base64.b64encode(font_path.read_bytes()).decode("ascii")
+        shell = shell.replace(FONT[1], font_b64)
+    else:
+        font_b64 = ""
+
     engine_src = "\n".join(prepare(HERE / name, ns) for name, ns in ENGINE)
     app_src = prepare(HERE / APP[0], APP[1])
 
@@ -87,9 +102,9 @@ def build(out_path: pathlib.Path) -> int:
     size = out_path.stat().st_size
     print("wrote %s" % out_path)
     print("  %d bytes (%.1f KB), node --check passed" % (size, size / 1024.0))
-    print("  engine %.1f KB, app %.1f KB, shell %.1f KB"
+    print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB"
           % (len(engine_src) / 1024.0, len(app_src) / 1024.0,
-             len(shell) / 1024.0))
+             (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0))
     return 0
 
 

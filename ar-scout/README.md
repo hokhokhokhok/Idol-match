@@ -24,6 +24,12 @@
 사내에 링크로 공유하면 됩니다. 의존성 0, 외부 요청 0이므로 **입력한 원료 구조는
 외부로 나가지 않습니다.**
 
+글꼴 Pretendard는 CDN에서 받아오지 않고 **base64로 파일 안에 들어 있습니다**
+(가변 폰트 1종, 2.6 MB). 폰트 이름만 적어두고 로컬 설치를 기대하면 설치돼 있지
+않은 PC에서 디자인이 무너지고, CDN을 쓰면 단일 파일·외부요청 0 조건이 깨지기
+때문입니다. 그래서 번들이 2.8 MB입니다 — 사내 공유나 로컬 실행에는 문제없는
+크기이고, 엔진·UI 코드는 여전히 100 KB 남짓입니다.
+
 ```bash
 # 웹앱 다시 빌드 (소스를 고쳤을 때만)
 cd web && python3 build.py          # -> ../ar-scout.html
@@ -394,7 +400,7 @@ AR LBD 구조 중 비스테로이드 리간드를 가진 것은 대부분 점변
 | 수용체 편향 | 1Z95에서 비칼루타마이드 1위(−10.2), 같은 분자가 2AM9에선 −6.7 |
 | 앵커 잔기 검증 | 2AM9 경고 0건; 2OZ7 THR877→ALA877, 1Z95 TRP741LEU 자동 감지 |
 | ChEMBL (2,500종) | 무작위 R² 0.646 → 스캐폴드 R² 0.496; 복제 편차 중앙값 0.52 log |
-| 번들 크기 | 112 KB (의존성 0) |
+| 번들 크기 | 2.8 MB (의존성 0, 이 중 2.6 MB가 내장 Pretendard) |
 | `test_ar_dock.py` | 26종 통과 (PDB 파싱, 박스, 접촉/수소결합 컷오프, 해석 분기) |
 | `test_pipeline.py` | 38종 통과 (정제 규칙, 중앙값 통합, 계층 샘플링, 모델 학습) |
 | RDKit SDF 왕복 | DHT 51원자 → 중원자 21개(C19 O2) 정확히 파싱 |
@@ -429,7 +435,8 @@ ar-scout/
     predict.js             read-across + 파마코포어 규칙 + 레퍼런스 28종
     app.js                 UI 렌더링
     shell.html             HTML/CSS 템플릿
-    build.py               단일 HTML 번들러
+    assets/                내장 Pretendard Variable + OFL 라이선스
+    build.py               단일 HTML 번들러 (폰트를 base64로 주입)
     test/                  5종 테스트
   local/
     train_qsar.py          ChEMBL → 레퍼런스 JSON + RandomForest

@@ -172,7 +172,7 @@ if (!APP || !PR) {
 
 /* init() already ran on load: single + library are populated */
 check('single (DHT, on load)', elements['single-out'].innerHTML,
-      ['predicted pKi', 'Gln711', 'Thr877', '2D 구조식', '<svg', '분자식']);
+      ['예측 pKi', 'Gln711', 'Thr877', '2D 구조식', '<svg', '분자식']);
 check('library table', elements['lib-out'].innerHTML, ['Metribolone', 'Finasteride']);
 
 /* a non-steroidal antagonist exercises the clash branch */
@@ -182,13 +182,13 @@ check('single (enzalutamide)', elements['single-out'].innerHTML,
 
 /* a name from the dictionary, and a raw SMILES */
 APP.runSingle('미녹시딜');
-check('single (minoxidil)', elements['single-out'].innerHTML, ['predicted pKi']);
+check('single (minoxidil)', elements['single-out'].innerHTML, ['예측 pKi']);
 APP.runSingle('OCC(O)CO');
-check('single (raw SMILES)', elements['single-out'].innerHTML, ['predicted pKi']);
+check('single (raw SMILES)', elements['single-out'].innerHTML, ['예측 pKi']);
 
 /* zinc pyrithione: fragments plus a metal, the awkward case */
 APP.runSingle('징크피리치온');
-check('single (zinc pyrithione)', elements['single-out'].innerHTML, ['predicted pKi']);
+check('single (zinc pyrithione)', elements['single-out'].innerHTML, ['예측 pKi']);
 
 /* batch */
 APP.runBatch(APP.SAMPLE_BATCH);
@@ -201,7 +201,7 @@ if (rows.length) {
   rows[0].dispatch('click');
   /* top row of the sample batch is DHT, so the single tab must now show it */
   check('row click -> single', elements['single-out'].innerHTML,
-        ['predicted pKi', 'C19H30O2']);
+        ['예측 pKi', 'C19H30O2']);
 } else { fail++; console.log('  FAIL  batch produced no clickable rows'); }
 
 /* TSV copy with no navigator.clipboard must fall back to a textarea */
@@ -227,7 +227,7 @@ else { fail++; console.log('  FAIL  library replace gave ' + PR.getLibrary().len
 
 /* prediction must still work against the shrunken library */
 APP.runSingle('Bicalutamide');
-check('single on small library', elements['single-out'].innerHTML, ['predicted pKi']);
+check('single on small library', elements['single-out'].innerHTML, ['예측 pKi']);
 
 elements['libreset'].dispatch('click');
 if (PR.getLibrary().length === PR.REFERENCE_DEFAULT.length) {
