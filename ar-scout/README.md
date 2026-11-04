@@ -46,7 +46,8 @@ pip install -r requirements.txt
 conda install -c conda-forge smina
 # 또는 https://sourceforge.net/projects/smina/ 에서 정적 빌드 내려받기
 
-python3 test_ar_dock.py         # 네트워크·RDKit·smina 없이 도는 자체 점검
+python3 test_ar_dock.py         # PDB 파싱·박스·접촉 분석 (네트워크/RDKit/smina 불필요)
+python3 test_pipeline.py        # 정제 규칙·모델 학습 (네트워크 불필요, RDKit·sklearn 필요)
 ```
 
 ---
@@ -111,8 +112,19 @@ python3 train_qsar.py --scaffold-split # 스캐폴드 분할로 재평가
 나오면 **좋은 모델이 아니라 데이터 누수 신호**입니다. 같은 시리즈 유사체가
 train/test 양쪽에 나뉘어 들어가 모델이 친화도 예측이 아니라 시리즈 인식으로
 점수를 받은 것입니다. `--scaffold-split`으로 Murcko 스캐폴드 기반 `GroupKFold`
-재평가를 돌리면 처음 보는 골격에 대한 실제 성능이 나옵니다. 보통 MAE가
-0.3–0.5 log 정도 나빠지는데, **그쪽이 진짜 숫자입니다.**
+재평가를 돌리면 처음 보는 골격에 대한 실제 성능이 나옵니다.
+
+`test_pipeline.py`가 이 현상을 합성 데이터셋(108종, 6개 스캐폴드)으로 재현합니다:
+
+| 분할 방식 | MAE | RMSE | R² |
+|---|---|---|---|
+| 무작위 5-fold | 0.224 | 0.273 | **0.637** |
+| 스캐폴드 GroupKFold | 0.450 | 0.544 | **−0.442** |
+
+같은 데이터, 같은 모델인데 R²가 0.64에서 음수로 떨어집니다. 무작위 분할의
+0.637은 모델이 친화도를 예측해서 받은 점수가 아니라 **이미 본 적 있는 스캐폴드를
+알아봐서 받은 점수**였다는 뜻입니다. 음수 R²는 "평균값으로 찍느니만 못하다"는
+의미이고, 처음 보는 골격에 대해서는 그게 실제 성능입니다. **그쪽이 진짜 숫자입니다.**
 
 ---
 
@@ -190,7 +202,10 @@ helix-12(Met895/Ile899/Leu880)에 접촉이 잡히면 AF-2 교란 가능, 즉 �
 | 2D 레이아웃 | 7종 전부 결합 교차 0개, 결합길이 표준편차 0.00–0.09 |
 | leave-one-out MAE | 0.851 log |
 | leave-one-out RMSE | 1.157 log |
-| 번들 크기 | 110 KB (의존성 0) |
+| 번들 크기 | 112 KB (의존성 0) |
+| `test_ar_dock.py` | 26종 통과 (PDB 파싱, 박스, 접촉/수소결합 컷오프, 해석 분기) |
+| `test_pipeline.py` | 38종 통과 (정제 규칙, 중앙값 통합, 계층 샘플링, 모델 학습) |
+| RDKit SDF 왕복 | DHT 51원자 → 중원자 21개(C19 O2) 정확히 파싱 |
 
 레퍼런스 자체가 실험실 간 ±0.5–1 log의 분산을 가지므로 이보다 낮은 오차는
 기대할 수 없습니다.
@@ -227,6 +242,7 @@ ar-scout/
   local/
     train_qsar.py          ChEMBL → 레퍼런스 JSON + RandomForest
     ar_dock.py             smina 도킹 + 접촉 잔기 분석
-    test_ar_dock.py        네트워크 없이 도는 자체 점검
+    test_ar_dock.py        PDB 파싱·박스·접촉 분석 점검
+    test_pipeline.py       정제 규칙·모델 학습 점검
     requirements.txt
 ```
