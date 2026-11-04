@@ -848,6 +848,36 @@ function morganFingerprint(mol, radius, nBits) {
   return bits;
 }
 
+/* The bit vector packed 32 to a word. Tanimoto over 2048 bytes is the inner
+ * loop of every batch run; against a few thousand references that is tens of
+ * millions of iterations, so it runs on words and a popcount instead. */
+function packFingerprint(bits) {
+  var out = new Uint32Array((bits.length + 31) >> 5);
+  for (var i = 0; i < bits.length; i++) {
+    if (bits[i]) out[i >> 5] |= (1 << (i & 31));
+  }
+  return out;
+}
+
+function popcount(x) {
+  x = x - ((x >> 1) & 0x55555555);
+  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+  x = (x + (x >> 4)) & 0x0f0f0f0f;
+  return (x * 0x01010101) >> 24;
+}
+
+function tanimotoPacked(a, b) {
+  var both = 0, countA = 0, countB = 0;
+  for (var i = 0; i < a.length; i++) {
+    var x = a[i], y = b[i];
+    both += popcount(x & y);
+    countA += popcount(x);
+    countB += popcount(y);
+  }
+  var either = countA + countB - both;
+  return either ? both / either : 0;
+}
+
 function tanimoto(fa, fb) {
   var both = 0, either = 0;
   for (var i = 0; i < fa.length; i++) {
@@ -1041,6 +1071,8 @@ module.exports = {
   tpsa: tpsa,
   morganFingerprint: morganFingerprint,
   tanimoto: tanimoto,
+  packFingerprint: packFingerprint,
+  tanimotoPacked: tanimotoPacked,
   detectMotifs: detectMotifs,
   mcGowanVolume: mcGowanVolume,
   bondBetween: bondBetween,

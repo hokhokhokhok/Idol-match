@@ -4,6 +4,7 @@
 
 var AR = require('./armodel.js');
 var LY = require('./layout.js');
+var LY3 = require('./layout3d.js');
 var PR = require('./predict.js');
 
 var MAX_BATCH = 400;
@@ -153,6 +154,153 @@ function svgStructure(mol) {
          'aria-label="2D 구조식" style="color:var(--ink-2)">' + parts.join('') + '</svg>';
 }
 
+/* ------------------------------------------------------- 3D structure */
+
+var CARBON_INK = 'var(--ink-2)';
+
+var view3d = { mol: null, pos: null, rx: -0.22, ry: 0.38, dragging: false,
+               lastX: 0, lastY: 0 };
+
+function rotatePoint(x, y, z, rx, ry) {
+  var cy = Math.cos(ry), sy = Math.sin(ry);
+  var x1 = x * cy + z * sy;
+  var z1 = -x * sy + z * cy;
+  var cx = Math.cos(rx), sx = Math.sin(rx);
+  var y1 = y * cx - z1 * sx;
+  var z2 = y * sx + z1 * cx;
+  return [x1, y1, z2];
+}
+
+function svg3D(mol, pos, rx, ry) {
+  var W = 600, H = 380, pad = 34, i;
+  var n = mol.atoms.length;
+  var rot = [];
+  for (i = 0; i < n; i++) rot.push(rotatePoint(pos.x[i], pos.y[i], pos.z[i], rx, ry));
+
+  var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  var minZ = Infinity, maxZ = -Infinity;
+  for (i = 0; i < n; i++) {
+    if (rot[i][0] < minX) minX = rot[i][0];
+    if (rot[i][0] > maxX) maxX = rot[i][0];
+    if (rot[i][1] < minY) minY = rot[i][1];
+    if (rot[i][1] > maxY) maxY = rot[i][1];
+    if (rot[i][2] < minZ) minZ = rot[i][2];
+    if (rot[i][2] > maxZ) maxZ = rot[i][2];
+  }
+  var spanX = Math.max(0.001, maxX - minX), spanY = Math.max(0.001, maxY - minY);
+  var scale = Math.min((W - pad * 2) / spanX, (H - pad * 2) / spanY);
+  var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  var depth = Math.max(0.001, maxZ - minZ);
+
+  var px = [], py = [], pf = [];
+  for (i = 0; i < n; i++) {
+    /* nearer atoms a little larger: enough to read depth, not so much that
+     * the molecule looks like it is falling over */
+    var t = (rot[i][2] - minZ) / depth;
+    var f = 0.78 + 0.44 * t;
+    px.push(W / 2 + (rot[i][0] - cx) * scale);
+    py.push(H / 2 - (rot[i][1] - cy) * scale);
+    pf.push(f);
+  }
+
+  /* Each bond is drawn as two halves and each half is depth-sorted on its
+   * own midpoint, not the whole bond's. Sorting a bond by its centre lets a
+   * bond whose far end is behind an atom still paint over that atom. */
+  var items = [];
+  for (var b = 0; b < mol.bonds.length; b++) {
+    var bd = mol.bonds[b];
+    var zm = (rot[bd.a][2] + rot[bd.b][2]) / 2;
+    items.push({ z: (rot[bd.a][2] + zm) / 2, kind: 'half', i: b, near: bd.a, far: bd.b });
+    items.push({ z: (rot[bd.b][2] + zm) / 2, kind: 'half', i: b, near: bd.b, far: bd.a });
+  }
+  for (i = 0; i < n; i++) items.push({ z: rot[i][2], kind: 'atom', i: i });
+  items.sort(function (p, q) { return p.z - q.z; });
+
+  var parts = [];
+  for (var k = 0; k < items.length; k++) {
+    var it = items[k];
+    if (it.kind === 'half') {
+      var a = it.near, c = it.far;
+      var wgt = 5.6 * pf[a];
+      var mid = [(px[a] + px[c]) / 2, (py[a] + py[c]) / 2];
+      parts.push('<line x1="' + fx(px[a], 1) + '" y1="' + fx(py[a], 1) +
+                 '" x2="' + fx(mid[0], 1) + '" y2="' + fx(mid[1], 1) +
+                 '" stroke="' + (ELEMENT_INK[mol.atoms[a].el] || CARBON_INK) +
+                 '" stroke-width="' + fx(wgt, 1) + '" stroke-linecap="round"/>');
+    } else {
+      var at = mol.atoms[it.i];
+      var rad = (LY3.COVALENT[at.el] !== undefined ? LY3.COVALENT[at.el] : 0.9);
+      var r = rad * 15.5 * pf[it.i];
+      parts.push('<circle cx="' + fx(px[it.i], 1) + '" cy="' + fx(py[it.i], 1) +
+                 '" r="' + fx(r, 1) + '" fill="' +
+                 (ELEMENT_INK[at.el] || CARBON_INK) + '" stroke="var(--card-sub)" ' +
+                 'stroke-width="1.5"/>');
+      if (at.el !== 'C') {
+        parts.push('<text x="' + fx(px[it.i], 1) + '" y="' + fx(py[it.i] + r * 0.40, 1) +
+                   '" text-anchor="middle" font-family="var(--sans)" font-size="' +
+                   fx(r * 1.15, 1) + '" font-weight="700" fill="var(--card)" ' +
+                   'letter-spacing="-0.5">' + esc(at.el) + '</text>');
+      }
+    }
+  }
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" ' +
+         'aria-label="3D 구조 (회전 가능)" style="touch-action:none;cursor:grab">' +
+         parts.join('') + '</svg>';
+}
+
+function paint3D() {
+  var host = $('struct3d');
+  if (!host || !view3d.pos) return;
+  host.innerHTML = svg3D(view3d.mol, view3d.pos, view3d.rx, view3d.ry);
+}
+
+function mount3D(mol) {
+  var host = $('struct3d');
+  if (!host) return;
+  host.innerHTML = '<p class="hint" style="margin:0;padding:26px 0;text-align:center">' +
+                   '3D 좌표 계산 중…</p>';
+  var build = function () {
+    try {
+      view3d.mol = mol;
+      view3d.pos = LY3.computeLayout3D(mol);
+      view3d.rx = -0.22; view3d.ry = 0.38;
+      paint3D();
+    } catch (err) {
+      host.innerHTML = '<p class="hint" style="margin:0">3D 좌표를 만들지 못했습니다: ' +
+                       esc(err.message) + '</p>';
+    }
+  };
+  if (typeof setTimeout === 'function') setTimeout(build, 16); else build();
+
+  if (!host._rotBound && host.addEventListener) {
+    host._rotBound = true;
+    var start = function (ev) {
+      view3d.dragging = true;
+      var pt = ev.touches ? ev.touches[0] : ev;
+      view3d.lastX = pt.clientX; view3d.lastY = pt.clientY;
+    };
+    var move = function (ev) {
+      if (!view3d.dragging) return;
+      var pt = ev.touches ? ev.touches[0] : ev;
+      view3d.ry += (pt.clientX - view3d.lastX) * 0.012;
+      view3d.rx += (pt.clientY - view3d.lastY) * 0.012;
+      view3d.rx = Math.max(-1.5, Math.min(1.5, view3d.rx));
+      view3d.lastX = pt.clientX; view3d.lastY = pt.clientY;
+      if (ev.preventDefault) ev.preventDefault();
+      paint3D();
+    };
+    var end = function () { view3d.dragging = false; };
+    host.addEventListener('mousedown', start);
+    host.addEventListener('mousemove', move);
+    host.addEventListener('mouseup', end);
+    host.addEventListener('mouseleave', end);
+    host.addEventListener('touchstart', start);
+    host.addEventListener('touchmove', move);
+    host.addEventListener('touchend', end);
+  }
+}
+
 /* ---------------------------------------------------------- pocket map */
 
 var RESIDUE_XY = {
@@ -267,6 +415,13 @@ function renderSingle(result, title, subtitle) {
   out.push('<h4 class="sect">2D 구조식</h4>');
   out.push('<div class="figwrap">' + svgStructure(result.mol) + '</div>');
 
+  out.push('<h4 class="sect">3D 구조</h4>');
+  out.push('<div class="figwrap viewer3d" id="struct3d"></div>');
+  out.push('<p class="hint" style="margin:10px 0 0">드래그해서 돌려보세요. ' +
+           '거리기하로 만든 <b>개략적인 형태</b>이며 입체화학(키랄리티)은 ' +
+           '반영하지 않습니다 — 거울상 이성질체가 같게 나옵니다. ' +
+           '정확한 3D가 필요하면 <code>local/ar_dock.py</code>를 쓰세요.</p>');
+
   out.push('<h4 class="sect">기술자</h4>');
   out.push('<dl class="tiles">');
   out.push(tile('분자식', d.formula));
@@ -366,6 +521,7 @@ function runSingle(rawQuery) {
     return;
   }
   host.innerHTML = renderSingle(result, title, smiles);
+  mount3D(result.mol);
 }
 
 /* -------------------------------------------------------- batch tab */
@@ -527,23 +683,96 @@ var SAMPLE_BATCH = [
 
 /* ------------------------------------------------------ library tab */
 
+var activePreset = 'curated';
+
+function extendedLibrary() {
+  return (typeof EXTLIB !== 'undefined' && EXTLIB && EXTLIB.length) ? EXTLIB : null;
+}
+
+/* Swapping to the expanded set re-parses a few thousand structures, which
+ * takes a few hundred milliseconds. Paint the busy state first, then work. */
+function applyPreset(which) {
+  showError('lib-err', '');
+  if (which === 'extended') {
+    var ext = extendedLibrary();
+    if (!ext) { showError('lib-err', '이 빌드에는 확장 라이브러리가 들어 있지 않습니다.'); return; }
+    var host = $('lib-out');
+    if (host) host.innerHTML = '<div class="panel"><h3>확장 라이브러리 준비 중…</h3>' +
+      '<p class="hint" style="margin:0">' + ext.length + '종을 해석하고 있습니다.</p></div>';
+    var run = function () {
+      try {
+        var res = PR.setLibrary(ext);
+        activePreset = 'extended';
+        renderLibrary();
+        showError('lib-err', res.applied + '종을 적용했습니다.');
+      } catch (err) {
+        showError('lib-err', '적용 실패: ' + err.message);
+        renderLibrary();
+      }
+    };
+    if (typeof setTimeout === 'function') setTimeout(run, 16); else run();
+    return;
+  }
+  PR.resetLibrary();
+  activePreset = 'curated';
+  renderLibrary();
+  showError('lib-err', '엄선 ' + PR.getLibrary().length + '종으로 복원했습니다.');
+}
+
+function presetCards() {
+  var ext = extendedLibrary();
+  var rows = [
+    ['curated', '엄선 28종', '문헌 경쟁결합 실측값. 스테로이드·비스테로이드·화장품 원료가 고르게 들어 있습니다.'],
+    ['extended', '확장 ' + (ext ? ext.length : 0) + '종',
+     'ChEMBL AR 데이터를 병합한 것. 비스테로이드 의약화학 계열이 두터워집니다.']
+  ];
+  var out = ['<div class="presets">'];
+  for (var i = 0; i < rows.length; i++) {
+    var on = activePreset === rows[i][0];
+    var dead = rows[i][0] === 'extended' && !ext;
+    out.push('<button type="button" class="preset' + (on ? ' on' : '') + '"' +
+             (dead ? ' disabled' : '') + ' data-preset="' + rows[i][0] + '">' +
+             '<span class="pt">' + esc(rows[i][1]) + (on ? ' ·  사용 중' : '') + '</span>' +
+             '<span class="pd">' + esc(rows[i][2]) + '</span></button>');
+  }
+  out.push('</div>');
+  return out.join('');
+}
+
 function renderLibrary() {
   var host = $('lib-out');
   if (!host) return;
   var lib = PR.getLibrary();
   var out = [];
   out.push('<div class="panel">');
-  out.push('<h3>현재 라이브러리 ' + lib.length + '종</h3>');
-  out.push('<table><thead><tr><th>물질</th><th class="num">pKi</th><th>유형</th>' +
-           '<th class="num">MW</th><th>비고</th></tr></thead><tbody>');
-  for (var i = 0; i < lib.length; i++) {
+  out.push(presetCards());
+  out.push('<h3 style="margin-top:20px">현재 라이브러리 ' + lib.length + '종</h3>');
+  var shown = Math.min(lib.length, 300);
+  if (shown < lib.length) {
+    out.push('<p class="hint">상위 ' + shown + '종만 표시합니다 (pKi 순).</p>');
+  }
+  out.push('<div class="tscroll"><table><thead><tr><th>물질</th><th class="num">pKi</th>' +
+           '<th>유형</th><th class="num col-sec">MW</th><th class="col-sec">비고</th>' +
+           '</tr></thead><tbody>');
+  for (var i = 0; i < shown; i++) {
     out.push('<tr><td>' + esc(lib[i].n) + '</td><td class="num">' + fx(lib[i].p, 2) +
-             '</td><td>' + esc(lib[i].c) + '</td><td class="num">' +
-             fx(lib[i].desc.mw, 1) + '</td><td style="color:var(--ink-3)">' +
+             '</td><td>' + esc(lib[i].c) + '</td><td class="num col-sec">' +
+             fx(lib[i].desc.mw, 1) + '</td><td class="col-sec" style="color:var(--ink-3)">' +
              esc(lib[i].note) + '</td></tr>');
   }
-  out.push('</tbody></table></div>');
+  out.push('</tbody></table></div></div>');
   host.innerHTML = out.join('');
+
+  if (host.querySelectorAll) {
+    var btns = host.querySelectorAll('button.preset');
+    for (var b = 0; b < btns.length; b++) {
+      (function (btn) {
+        btn.addEventListener('click', function () {
+          applyPreset(btn.getAttribute('data-preset'));
+        });
+      })(btns[b]);
+    }
+  }
 }
 
 function applyLibrary(text) {
@@ -621,6 +850,17 @@ function renderModelCard() {
            '둘이 어긋나면 <b>기능 추정 쪽을 믿으세요</b> — 실측 분류에 근거하기 때문입니다. ' +
            '단, 둘 다 전사활성 측정이 아니라는 점은 같습니다.</p>');
 
+  out.push('<h5>3D 구조를 어디까지 믿을 수 있나</h5>');
+  out.push('<p>거리기하 완화로 만든 <b>형태 스케치</b>입니다. 힘장(force field)도, ' +
+           '비틀림각 탐색도 없습니다. 결합길이는 공유결합 반지름 합에서 평균 0.03~0.08 Å, ' +
+           '결합각은 혼성 이상값에서 평균 4~14°, 방향족 고리는 0.01 Å 이내로 평평하며, ' +
+           '원자끼리 겹치지 않습니다(최근접 비결합 2.6 Å 이상).</p>');
+  out.push('<p><b>입체화학은 반영하지 않습니다.</b> 파서가 키랄리티 표기를 읽고 버리므로 ' +
+           '거울상 이성질체가 같게 나오고, 스테로이드의 고리 융합 방향도 임의로 정해집니다. ' +
+           '따라서 이 3D는 “대략 이런 덩어리구나”를 보는 용도이지 포즈가 아닙니다. ' +
+           '결합 양상이 중요한 판단에는 <code>local/ar_dock.py</code>의 ' +
+           'RDKit ETKDGv3 + MMFF 좌표와 smina 도킹 포즈를 쓰세요.</p>');
+
   out.push('<h5>실패 모드 — 이 도구가 틀리는 방식</h5>');
   out.push('<ul>');
   out.push('<li><b>대사 활성화를 모릅니다.</b> flutamide는 전구체이고 활성은 ' +
@@ -638,6 +878,9 @@ function renderModelCard() {
   out.push('<li><b>레퍼런스가 적습니다.</b> 28종뿐이라 유사 레퍼런스가 없는 골격 ' +
            '(예: RU-59063)은 과소평가됩니다. 적용영역 태그가 <code>out</code>이면 ' +
            '수치보다 태그를 먼저 보세요.</li>');
+  out.push('<li><b>레퍼런스를 바꾸면 답도 바뀝니다.</b> 확장 라이브러리는 ' +
+           'ChEMBL AR 데이터라 비스테로이드 의약화학 계열에 치우쳐 있습니다. ' +
+           '기본 28종을 덮어쓰지 않고 합쳐서 쓰는 이유입니다.</li>');
   out.push('<li><b>금속 함유·고분자·혼합물은 범위 밖입니다.</b> 징크피리치온처럼 ' +
            '금속 배위 화합물은 기술자 자체가 신뢰할 수 없습니다.</li>');
   out.push('</ul>');
@@ -720,11 +963,7 @@ function init() {
       applyLibrary(text);
     });
   });
-  on('libreset', 'click', function () {
-    PR.resetLibrary();
-    renderLibrary();
-    showError('lib-err', '기본 레퍼런스 ' + PR.getLibrary().length + '종으로 복원했습니다.');
-  });
+  on('libreset', 'click', function () { applyPreset('curated'); });
   on('libexport', 'click', function () {
     var ta = $('libin');
     if (ta) ta.value = JSON.stringify(PR.libraryAsJson(), null, 1);
@@ -758,6 +997,7 @@ if (typeof document !== 'undefined' && document.getElementById) {
 module.exports = {
   init: init, runSingle: runSingle, runBatch: runBatch, renderLibrary: renderLibrary,
   applyLibrary: applyLibrary, renderModelCard: renderModelCard, selectTab: selectTab,
-  svgStructure: svgStructure, svgPocket: svgPocket, batchTsv: batchTsv,
+  svgStructure: svgStructure, svgPocket: svgPocket, svg3D: svg3D,
+  mount3D: mount3D, batchTsv: batchTsv,
   parseBatchText: parseBatchText, SAMPLE_BATCH: SAMPLE_BATCH
 };

@@ -25,13 +25,19 @@ import tempfile
 HERE = pathlib.Path(__file__).resolve().parent
 
 # source file -> namespace the other modules reference it by
-ENGINE = [("armodel.js", "AR"), ("layout.js", "LY"), ("predict.js", "PR")]
+ENGINE = [("armodel.js", "AR"), ("layout.js", "LY"), ("layout3d.js", "LY3"),
+          ("predict.js", "PR")]
 APP = ("app.js", "APP")
 
 # Pretendard is vendored and inlined as base64 rather than fetched: the
 # bundle has to stay a single file with no outbound requests, and naming the
 # font in a fallback stack is not enough when it is not installed locally.
 FONT = ("assets/PretendardVariable.woff2", "/*__FONT__*/")
+
+# The expanded reference library ships inside the bundle so the extra few
+# thousand points are one click away rather than a file the user has to
+# carry around. Built by local/merge_library.py.
+EXTLIB = "assets/ar_reference_merged.json"
 
 REQUIRE_LINE = re.compile(
     r"^[ \t]*(?:var|const|let)[ \t]+\w+[ \t]*=[ \t]*require\([^)]*\)[ \t]*;?[ \t]*\r?\n?",
@@ -78,6 +84,14 @@ def build(out_path: pathlib.Path) -> int:
     engine_src = "\n".join(prepare(HERE / name, ns) for name, ns in ENGINE)
     app_src = prepare(HERE / APP[0], APP[1])
 
+    extlib_path = HERE / EXTLIB
+    extlib_src = ""
+    if extlib_path.exists():
+        raw = extlib_path.read_text(encoding="utf-8").strip()
+        extlib_src = ("/* ---- %s ---- */\nvar EXTLIB = %s;\n"
+                      % (extlib_path.name, raw))
+        app_src = extlib_src + app_src
+
     # syntax-check the concatenated script before it is sealed into the page
     combined = engine_src + "\n" + app_src
     with tempfile.NamedTemporaryFile(
@@ -102,9 +116,11 @@ def build(out_path: pathlib.Path) -> int:
     size = out_path.stat().st_size
     print("wrote %s" % out_path)
     print("  %d bytes (%.1f KB), node --check passed" % (size, size / 1024.0))
-    print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB"
-          % (len(engine_src) / 1024.0, len(app_src) / 1024.0,
-             (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0))
+    print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, library %.1f KB"
+          % (len(engine_src) / 1024.0,
+             (len(app_src) - len(extlib_src)) / 1024.0,
+             (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0,
+             len(extlib_src) / 1024.0))
     return 0
 
 

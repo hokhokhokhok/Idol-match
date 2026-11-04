@@ -395,6 +395,25 @@ ul.why li span.d.neg { color: var(--red); }
 .figwrap svg { display: block; width: 100%; height: auto; }
 
 /* ---- batch bars ---- */
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.preset {
+  text-align: left;
+  font-family: inherit;
+  background: var(--card-sub);
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  padding: 15px 16px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: border-color .15s, background .15s;
+}
+.preset:hover:not([disabled]) { background: var(--line); }
+.preset.on { border-color: var(--blue); background: var(--blue-wash); }
+.preset[disabled] { opacity: .45; cursor: not-allowed; }
+.preset .pt { display: block; font-size: 14.5px; font-weight: 700; letter-spacing: -0.02em; }
+.preset.on .pt { color: var(--blue-ink); }
+.preset .pd { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.45; }
+@media (max-width: 560px) { .presets { grid-template-columns: 1fr; } }
 .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .bar { height: 7px; background: var(--blue); border-radius: 999px; min-width: 3px; }
 .bar.lo { background: var(--grey-node); }

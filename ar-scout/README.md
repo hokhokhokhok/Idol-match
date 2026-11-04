@@ -242,8 +242,15 @@ Ile899 접촉에만 겁니다(`H12_DISPLACEMENT`). 나머지 두 잔기는 접�
 | ChEMBL 2,500 | 1.050 | **out (0.34)** |
 | 합친 2,528 | **0.991** | in (1.00) |
 
-→ **교체하지 말고 합치세요.** 라이브러리 탭에서 `현재 라이브러리 JSON 보기`로
-기본 28종을 복사한 뒤 `ar_reference.json` 내용을 뒤에 이어붙이면 됩니다.
+→ **교체하지 말고 합치세요.** `merge_library.py`가 이 병합을 해 줍니다. 단순히
+이어붙이면 안 되는 이유가 있습니다: 큐레이션 28종 중 **20종이 ChEMBL에도 있고 그중
+8종이 0.5 log 넘게 어긋납니다**(에스트라디올 5.50 vs 7.72). 중복으로 남겨두면
+read-across가 한 구조에 대해 모순된 두 값을 평균 내게 됩니다. 그래서 구조
+단위(분자식 + Morgan 지문)로 중복을 제거하고 **큐레이션 값을 우선**하며, ChEMBL
+내부 중복(다롤루타미드 등 159건)은 중앙값으로 합칩니다. 결과는 2,349종입니다.
+
+**이 병합본은 웹앱에 이미 내장돼 있습니다.** 레퍼런스 탭에서 「확장 2,349종」을
+누르면 바로 바뀝니다.
 
 ### 3단계 — 2AM9 도킹 (22종, 2분 48초)
 
@@ -400,7 +407,8 @@ AR LBD 구조 중 비스테로이드 리간드를 가진 것은 대부분 점변
 | 수용체 편향 | 1Z95에서 비칼루타마이드 1위(−10.2), 같은 분자가 2AM9에선 −6.7 |
 | 앵커 잔기 검증 | 2AM9 경고 0건; 2OZ7 THR877→ALA877, 1Z95 TRP741LEU 자동 감지 |
 | ChEMBL (2,500종) | 무작위 R² 0.646 → 스캐폴드 R² 0.496; 복제 편차 중앙값 0.52 log |
-| 번들 크기 | 2.8 MB (의존성 0, 이 중 2.6 MB가 내장 Pretendard) |
+| 번들 크기 | 3.2 MB (의존성 0; 폰트 2.6 MB + 확장 라이브러리 0.4 MB + 코드 0.13 MB) |
+| 3D 좌표 | 15종 전부 결합오차 ≤0.081 Å, 결합각 ≤14.3°, 비결합 최단 ≥2.63 Å, 방향족 평면성 ≤0.009 Å |
 | `test_ar_dock.py` | 26종 통과 (PDB 파싱, 박스, 접촉/수소결합 컷오프, 해석 분기) |
 | `test_pipeline.py` | 38종 통과 (정제 규칙, 중앙값 통합, 계층 샘플링, 모델 학습) |
 | RDKit SDF 왕복 | DHT 51원자 → 중원자 21개(C19 O2) 정확히 파싱 |
@@ -432,18 +440,20 @@ ar-scout/
   web/
     armodel.js             SMILES 파서, 기술자, Morgan 지문, 구조 모티프
     layout.js              거리기하 완화 2D 좌표
+    layout3d.js            3D 좌표 (거리기하 + 평면 구속)
     predict.js             read-across + 파마코포어 규칙 + 레퍼런스 28종
     app.js                 UI 렌더링
     shell.html             HTML/CSS 템플릿
     assets/                내장 Pretendard Variable + OFL 라이선스
     build.py               단일 HTML 번들러 (폰트를 base64로 주입)
-    test/                  5종 테스트
+    test/                  6종 테스트
   local/
     train_qsar.py          ChEMBL → 레퍼런스 JSON + RandomForest
     ar_dock.py             smina 도킹 + 접촉 잔기 분석
     test_ar_dock.py        PDB 파싱·박스·접촉 분석 점검
     test_pipeline.py       정제 규칙·모델 학습 점검
     test_crosscheck.py     웹 엔진 ↔ RDKit 교차검증
+    merge_library.py       ChEMBL을 큐레이션 28종에 중복 없이 병합
     test_dock_integration.py  재도킹 통합 테스트
     requirements.txt
 ```

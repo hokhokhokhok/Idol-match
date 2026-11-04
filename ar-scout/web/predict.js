@@ -268,7 +268,7 @@ function compileEntry(entry) {
     c: entry.c || '',
     note: entry.note || '',
     mol: mol,
-    fp: AR.morganFingerprint(mol, 2),
+    fp: AR.packFingerprint(AR.morganFingerprint(mol, 2)),
     desc: AR.computeDescriptors(mol)
   };
 }
@@ -451,7 +451,7 @@ function predict(smiles, options) {
   var mol = AR.parseSmiles(smiles);
   var desc = AR.computeDescriptors(mol);
   var motifs = AR.detectMotifs(mol);
-  var fp = AR.morganFingerprint(mol, 2);
+  var fp = AR.packFingerprint(AR.morganFingerprint(mol, 2));
 
   var volume = AR.mcGowanVolume(mol);
   var occupancy = volume / POCKET_VOLUME * 100;
@@ -461,7 +461,7 @@ function predict(smiles, options) {
     if (exclude && lib[i].n === exclude) continue;
     neighbours.push({
       n: lib[i].n, p: lib[i].p, c: lib[i].c, s: lib[i].s,
-      sim: AR.tanimoto(fp, lib[i].fp)
+      sim: AR.tanimotoPacked(fp, lib[i].fp)
     });
   }
   neighbours.sort(function (a, b) { return b.sim - a.sim; });
