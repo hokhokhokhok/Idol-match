@@ -408,6 +408,9 @@ function makeAtom(el, arom) {
   return {
     el: el,
     arom: !!arom,
+    /* aromatic because the SMILES said so (lower case), as opposed to
+     * aromatic because perception worked it out from a Kekule ring */
+    aromInput: !!arom,
     charge: 0,
     isotope: 0,
     chirality: null,
@@ -573,8 +576,110 @@ function parseSmiles(smiles) {
 
   var mol = { smiles: smi, atoms: atoms, bonds: bonds, rings: [] };
   perceiveRings(mol);
+  perceiveAromaticity(mol);
   addImplicitHydrogens(mol);
   return mol;
+}
+
+/* ------------------------------------------------------- aromaticity */
+
+var AROMATIC_ELEMENTS = { C: 1, N: 1, O: 1, S: 1, P: 1, Se: 1 };
+
+/* Hueckel electron count for one ring.
+ *
+ * Lower-case SMILES already says which atoms are aromatic, but a Kekule
+ * spelling of the same molecule does not - and PubChem hands out Kekule
+ * forms. Without this, "c1ccccc1" and "C1=CC=CC=C1" produce different
+ * fingerprints, so the same compound scores differently depending on how
+ * it was typed.
+ */
+function ringPiElectrons(mol, ring) {
+  var inRing = {}, i;
+  for (i = 0; i < ring.length; i++) inRing[ring[i]] = true;
+
+  var electrons = 0;
+  for (i = 0; i < ring.length; i++) {
+    var idx = ring[i], at = mol.atoms[idx];
+    if (!AROMATIC_ELEMENTS[at.el]) return -1;
+
+    var innerDouble = false, outerPartner = -1, j;
+    for (j = 0; j < at.bidx.length; j++) {
+      var bd = mol.bonds[at.bidx[j]], nb = at.nbr[j];
+      if (bd.order === 3 || bd.order === 4) return -1;
+      if (bd.order === 2) {
+        if (inRing[nb]) innerDouble = true;
+        else outerPartner = nb;
+      }
+    }
+
+    if (innerDouble) { electrons += 1; continue; }
+
+    if (outerPartner >= 0) {
+      /* A double bond leaving the ring is either a fusion bond into another
+       * ring, which still shares its electron, or a carbonyl-like group,
+       * which donates none. A plain exocyclic alkene (fulvene) breaks it. */
+      if (mol.atoms[outerPartner].inRing) { electrons += 1; continue; }
+      var oel = mol.atoms[outerPartner].el;
+      if (oel === 'O' || oel === 'S' || oel === 'N') continue;
+      return -1;
+    }
+
+    if (at.arom) {
+      /* Already flagged by lower-case input: whether it offers a pi bond or
+       * a lone pair is decided by the valence it has left. Implicit
+       * hydrogens are not assigned yet, so only explicit ones count. */
+      var sigma = at.nbr.length;
+      var val = targetValence(at.el, at.charge, sigma);
+      var spare = (val === null ? 0 : val) - sigma - (at.explicitH ? at.nH : 0);
+      electrons += spare >= 1 ? 1 : 2;
+      continue;
+    }
+
+    if (at.el === 'C') {
+      if (at.charge < 0) { electrons += 2; continue; }
+      return -1;                       /* sp3 carbon breaks conjugation */
+    }
+    if (at.charge > 0 && (at.el === 'N' || at.el === 'P')) return -1;
+    electrons += 2;                    /* heteroatom lone pair */
+  }
+  return electrons;
+}
+
+function perceiveAromaticity(mol) {
+  /* Two aromatic atoms joined outside a ring - the biaryl bond of a
+   * flavone, say - make a plain single bond. The parser cannot know that
+   * while reading, so it optimistically flags any bond between two
+   * lower-case atoms; now that rings are known, take it back. Otherwise
+   * the same molecule written with an explicit "-" fingerprints
+   * differently from one written without. */
+  for (var b = 0; b < mol.bonds.length; b++) {
+    if (!mol.bonds[b].inRing) mol.bonds[b].arom = false;
+  }
+
+  var changed = true, guard = 0;
+  while (changed && guard++ < 5) {
+    changed = false;
+    for (var r = 0; r < mol.rings.length; r++) {
+      var ring = mol.rings[r];
+      if (ring.length < 5 || ring.length > 7) continue;
+
+      var allArom = true, t;
+      for (t = 0; t < ring.length; t++) {
+        if (!mol.atoms[ring[t]].arom) { allArom = false; break; }
+      }
+      if (allArom) continue;           /* nothing to add */
+
+      var e = ringPiElectrons(mol, ring);
+      if (e < 2 || (e - 2) % 4 !== 0) continue;
+
+      for (t = 0; t < ring.length; t++) {
+        var at = mol.atoms[ring[t]];
+        if (!at.arom) { at.arom = true; changed = true; }
+        var bi = bondBetween(mol, ring[t], ring[(t + 1) % ring.length]);
+        if (bi >= 0 && !mol.bonds[bi].arom) { mol.bonds[bi].arom = true; changed = true; }
+      }
+    }
+  }
 }
 
 /* ------------------------------------------------------------- ring finding */
@@ -675,18 +780,19 @@ function bondOrderSum(mol, idx) {
 function targetValence(el, charge, orderSum) {
   var base = DEFAULT_VALENCE[el];
   if (base === undefined) return null;
-  if (el === 'S') { if (orderSum > 2) return orderSum > 4 ? 6 : 4; return 2; }
-  if (el === 'P') { if (orderSum > 3) return 5; return 3; }
-  if (el === 'N') {
-    if (charge > 0) return 4;
-    if (charge < 0) return 2;
-    return 3;
-  }
-  if (el === 'O') {
-    if (charge < 0) return 1;
-    if (charge > 0) return 3;
+  /* Group 16: a charge moves the valence either way, so thiolate S- takes
+   * one bond and sulfonium S+ takes three. Only neutral S goes hypervalent. */
+  if (el === 'S' || el === 'Se') {
+    if (charge !== 0) return Math.max(1, 2 + charge);
+    if (orderSum > 2) return orderSum > 4 ? 6 : 4;
     return 2;
   }
+  if (el === 'P') {
+    if (charge !== 0) return Math.max(1, 3 + charge);
+    return orderSum > 3 ? 5 : 3;
+  }
+  if (el === 'N') return Math.max(1, 3 + charge);
+  if (el === 'O') return Math.max(1, 2 + charge);
   if (el === 'C' && charge !== 0) return 3;
   return base;
 }
@@ -700,10 +806,24 @@ function addImplicitHydrogens(mol) {
     if (val === null) { at.nH = 0; continue; }
 
     /* An aromatic atom carries one formal double bond inside the ring.
-     * Pyrrole-type N (aromatic N already using three sigma bonds) does not. */
-    if (at.arom) {
-      var pyrroleLike = (at.el === 'N' || at.el === 'P') && at.nbr.length >= 3;
-      if (!pyrroleLike) sum += 1;
+     * Pyrrole-type N is the exception: it donates its lone pair to the
+     * sextet instead, so it has three sigma bonds and no double bond.
+     * That only applies when neutral — a pyridinium or N-oxide nitrogen
+     * also has three connections but keeps its ring double bond, so it
+     * must still get the correction or it gains a phantom hydrogen. */
+    if (at.aromInput) {
+      var pyrroleLike = (at.el === 'N' || at.el === 'P') &&
+                        at.nbr.length >= 3 && at.charge === 0;
+      /* The correction stands in for a double bond that lower-case SMILES
+       * leaves unwritten. If the atom already carries an explicit multiple
+       * bond - an exocyclic carbonyl on an aromatic carbon - it is already
+       * counted and must not be added twice. A Kekule ring never reaches
+       * here, because only lower-case input sets aromInput. */
+      var hasMultiple = false;
+      for (var b = 0; b < at.bidx.length; b++) {
+        if (mol.bonds[at.bidx[b]].order >= 2) { hasMultiple = true; break; }
+      }
+      if (!pyrroleLike && !hasMultiple) sum += 1;
     }
     at.nH = Math.max(0, val - sum);
   }

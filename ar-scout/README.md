@@ -33,6 +33,7 @@ cd web
 node test/test_descriptors.js   # 분자식·MW·logP
 node test/test_layout.js        # 2D 좌표 품질
 node test/test_predict.js       # leave-one-out 성능
+node test/test_aromaticity.js   # 표기 불변성 (케쿨레 = 소문자)
 node test/smoke.js              # 번들 렌더링 (build.py 먼저 실행)
 ```
 
@@ -48,6 +49,7 @@ conda install -c conda-forge smina
 
 python3 test_ar_dock.py         # PDB 파싱·박스·접촉 분석 (네트워크/RDKit/smina 불필요)
 python3 test_pipeline.py        # 정제 규칙·모델 학습 (네트워크 불필요, RDKit·sklearn 필요)
+python3 test_crosscheck.py      # 웹 엔진 전체를 RDKit과 대조 (node + RDKit 필요)
 ```
 
 ---
@@ -182,7 +184,9 @@ helix-12(Met895/Ile899/Leu880)에 접촉이 잡히면 AF-2 교란 가능, 즉 �
 - **4-aza 스테로이드를 오분류합니다.** finasteride는 5α-환원효소 억제제이지
   AR 리간드가 아니지만 2D 유사도로는 DHT와 구분되지 않습니다.
 - **입체화학을 무시합니다.** 1단계 파서는 키랄리티·동위원소 표기를 읽기만 하고
-  값은 쓰지 않으므로 거울상 이성질체가 같게 평가됩니다.
+  값은 쓰지 않으므로 거울상 이성질체가 같게 평가됩니다. 반면 방향족성은
+  인식하므로 케쿨레 표기(PubChem의 Canonical SMILES 형식)와 소문자 표기는
+  같은 결과를 냅니다.
 - **금속 함유·고분자·혼합물은 범위 밖입니다.** 징크피리치온 같은 금속 배위
   화합물은 기술자 자체를 신뢰할 수 없습니다.
 
@@ -200,8 +204,10 @@ helix-12(Met895/Ile899/Leu880)에 접촉이 잡히면 AF-2 교란 가능, 즉 �
 | 분자식·MW 검증 | 18종 중 18종 통과 (허용오차 0.6) |
 | clogP | DHT 3.84, 스테로이드류 3.6–5.1, flutamide류 1.1–1.8 |
 | 2D 레이아웃 | 7종 전부 결합 교차 0개, 결합길이 표준편차 0.00–0.09 |
-| leave-one-out MAE | 0.851 log |
-| leave-one-out RMSE | 1.157 log |
+| leave-one-out MAE | 0.843 log |
+| leave-one-out RMSE | 1.156 log |
+| RDKit 대조 | 라이브러리 125종 전부 분자식·MW·중원자·고리수·방향족고리수 일치 |
+| 표기 불변성 | RDKit 생성 케쿨레 변형 104종 + 수기 19쌍, 전부 동일 결과 |
 | 번들 크기 | 112 KB (의존성 0) |
 | `test_ar_dock.py` | 26종 통과 (PDB 파싱, 박스, 접촉/수소결합 컷오프, 해석 분기) |
 | `test_pipeline.py` | 38종 통과 (정제 규칙, 중앙값 통합, 계층 샘플링, 모델 학습) |
@@ -238,11 +244,12 @@ ar-scout/
     app.js                 UI 렌더링
     shell.html             HTML/CSS 템플릿
     build.py               단일 HTML 번들러
-    test/                  4종 테스트
+    test/                  5종 테스트
   local/
     train_qsar.py          ChEMBL → 레퍼런스 JSON + RandomForest
     ar_dock.py             smina 도킹 + 접촉 잔기 분석
     test_ar_dock.py        PDB 파싱·박스·접촉 분석 점검
     test_pipeline.py       정제 규칙·모델 학습 점검
+    test_crosscheck.py     웹 엔진 ↔ RDKit 교차검증
     requirements.txt
 ```
