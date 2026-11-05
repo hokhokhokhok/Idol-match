@@ -323,6 +323,17 @@ function structureKey(mol) {
 var viewScene = { rx: -0.3, ry: 0.5, dragging: false, lastX: 0, lastY: 0,
                   pose: null, ghost: false };
 
+/* Labelling every contact buries the ligand under twenty residue names.
+ * Only the ones that carry the argument get a label: hydrogen-bond partners
+ * and the four anchor residues the rule engine reasons about. */
+var SCENE_ANCHORS = { GLN711: 1, ARG752: 1, ASN705: 1, THR877: 1 };
+
+function prettyResidue(id) {
+  var m = /^([A-Z]{3})(\d+)$/.exec(id);
+  if (!m) return id;
+  return m[1].charAt(0) + m[1].substring(1).toLowerCase() + m[2];
+}
+
 function svgScene(scene, pose, rx, ry, showGhost) {
   var W = 600, H = 420, pad = 26;
   var ligand = pose && pose.placed ? pose : null;
@@ -366,12 +377,12 @@ function svgScene(scene, pose, rx, ry, showGhost) {
       items.push({ z: (rot[u][2] + rot[v][2]) / 2, t: 'stick',
                    p1: rot[u], p2: rot[v], tier: tier });
     }
-    if (tier > 0 && rot.length) {
+    if ((tier === 2 || (tier === 1 && SCENE_ANCHORS[res.id])) && rot.length) {
       var lx = 0, ly = 0, lz = 0;
       for (i = 0; i < rot.length; i++) { lx += rot[i][0]; ly += rot[i][1]; lz += rot[i][2]; }
-      items.push({ z: lz / rot.length + 0.01, t: 'label',
+      items.push({ z: 1e6, t: 'label',          /* labels always on top */
                    p1: [lx / rot.length, ly / rot.length, lz / rot.length],
-                   text: res.id, tier: tier });
+                   text: prettyResidue(res.id), tier: tier });
     }
   }
 
@@ -435,19 +446,22 @@ function svgScene(scene, pose, rx, ry, showGhost) {
       parts.push('<line x1="' + fx(sx(it.p1), 1) + '" y1="' + fx(sy(it.p1), 1) +
                  '" x2="' + fx(sx(it.p2), 1) + '" y2="' + fx(sy(it.p2), 1) +
                  '" stroke="' + (ELEMENT_INK[it.el] || CARBON_INK) +
-                 '" stroke-width="' + fx(5.2 * fade(it.p1), 1) + '" stroke-linecap="round"/>');
+                 '" stroke-width="' + fx(6.0 * fade(it.p1), 1) + '" stroke-linecap="round"/>');
     } else if (it.t === 'ball') {
       var rad = (LY3.COVALENT[it.el] !== undefined ? LY3.COVALENT[it.el] : 0.9);
-      var r = rad * 8.2 * fade(it.p1);
+      var r = rad * 9.4 * fade(it.p1);
       parts.push('<circle cx="' + fx(sx(it.p1), 1) + '" cy="' + fx(sy(it.p1), 1) +
                  '" r="' + fx(r, 1) + '" fill="' + (ELEMENT_INK[it.el] || CARBON_INK) +
                  '" stroke="var(--card-sub)" stroke-width="1.2"/>');
     } else if (it.t === 'label') {
-      parts.push('<text x="' + fx(sx(it.p1), 1) + '" y="' + fx(sy(it.p1), 1) +
-                 '" text-anchor="middle" font-family="var(--sans)" font-size="11" ' +
-                 'font-weight="700" fill="' +
-                 (it.tier === 2 ? 'var(--blue-ink)' : 'var(--blue)') +
-                 '" opacity="' + (it.tier === 2 ? '1' : '0.8') + '">' +
+      var ox = sx(it.p1) - W / 2, oy = sy(it.p1) - H / 2;
+      var ol = Math.sqrt(ox * ox + oy * oy) || 1;
+      var tx = sx(it.p1) + ox / ol * 16, ty = sy(it.p1) + oy / ol * 16;
+      parts.push('<text x="' + fx(tx, 1) + '" y="' + fx(ty, 1) +
+                 '" text-anchor="middle" font-family="var(--sans)" font-size="12" ' +
+                 'font-weight="700" paint-order="stroke" stroke="var(--card-sub)" ' +
+                 'stroke-width="3.5" fill="' +
+                 (it.tier === 2 ? 'var(--blue-ink)' : 'var(--blue)') + '">' +
                  esc(it.text) + '</text>');
     }
   }
@@ -483,7 +497,8 @@ function mountScene(mol) {
       note.innerHTML = '<b>' + esc(pose.n) + '</b> · smina affinity ' +
         '<b>' + fx(pose.aff, 2) + ' kcal/mol</b> · 접촉 잔기 ' + (pose.c || []).length +
         '개' + ((pose.hb || []).length ? ', 수소결합 후보 ' + pose.hb.length + '개' : '') +
-        '<br>진한 파랑 = 수소결합 후보, 파랑 = 접촉, 회색 = 나머지 포켓 잔기.';
+        '<br>진한 파랑 = 수소결합 후보, 파랑 = 접촉, 회색 = 나머지 포켓 잔기. ' +
+        '라벨은 수소결합 후보와 앵커 잔기만 표시합니다.';
     } else if (pose) {
       note.innerHTML = '<b>' + esc(pose.n) + '</b>은(는) 이 수용체 형태에 <b>배치되지 ' +
         '않았습니다</b> (affinity ' + fx(pose.aff, 2) + ', 반발항이 지배). ' +

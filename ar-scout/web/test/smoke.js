@@ -244,8 +244,10 @@ check('model card', elements['modelcard-body'].innerHTML,
 const scene = global.SCENE;
 if (scene && scene.pocket) {
   APP.runSingle('디하이드로테스토스테론');
+  /* labels are title-cased to match the rest of the UI, and only anchors
+     and hydrogen-bond partners are labelled at all */
   check('binding scene (has a pose)', elements['scene3d'].innerHTML,
-        ['<svg', 'ASN705']);
+        ['<svg', 'Asn705', 'Thr877']);
   const noteA = elements['scene-note'].innerHTML;
   if (/affinity/.test(noteA) && !/\bNaN\b|\bundefined\b/.test(noteA)) {
     pass++; console.log(`  ok    ${'scene note (pose)'.padEnd(26)} ${noteA.length} chars`);
