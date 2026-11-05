@@ -34,6 +34,11 @@ APP = ("app.js", "APP")
 # font in a fallback stack is not enough when it is not installed locally.
 FONT = ("assets/PretendardVariable.woff2", "/*__FONT__*/")
 
+# The whole @font-face rule, dropped for the light build. The font stack in
+# :root still names Pretendard first, so a machine that has it installed
+# renders identically; everything else falls back to the platform sans.
+FONT_FACE = re.compile(r"@font-face\s*\{[^}]*\}\s*", re.DOTALL)
+
 # The expanded reference library ships inside the bundle so the extra few
 # thousand points are one click away rather than a file the user has to
 # carry around. Built by local/merge_library.py.
@@ -70,7 +75,7 @@ def prepare(path: pathlib.Path, namespace: str) -> str:
     return banner + src.strip() + "\n"
 
 
-def build(out_path: pathlib.Path) -> int:
+def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
     shell_path = HERE / "shell.html"
     shell = shell_path.read_text(encoding="utf-8")
     for token in ("/*__ENGINE__*/", "/*__APP__*/"):
@@ -78,13 +83,16 @@ def build(out_path: pathlib.Path) -> int:
             raise SystemExit("shell.html is missing the %s placeholder" % token)
 
     font_path = HERE / FONT[0]
-    if FONT[1] in shell:
+    font_b64 = ""
+    if embed_font and FONT[1] in shell:
         if not font_path.exists():
             raise SystemExit("missing vendored font: %s" % font_path)
         font_b64 = base64.b64encode(font_path.read_bytes()).decode("ascii")
         shell = shell.replace(FONT[1], font_b64)
-    else:
-        font_b64 = ""
+    elif not embed_font:
+        shell, dropped = FONT_FACE.subn("", shell)
+        if not dropped:
+            raise SystemExit("could not find the @font-face rule to drop")
 
     engine_src = "\n".join(prepare(HERE / name, ns) for name, ns in ENGINE)
     app_src = prepare(HERE / APP[0], APP[1])
@@ -128,7 +136,8 @@ def build(out_path: pathlib.Path) -> int:
 
     size = out_path.stat().st_size
     print("wrote %s" % out_path)
-    print("  %d bytes (%.1f KB), node --check passed" % (size, size / 1024.0))
+    print("  %d bytes (%.1f KB), node --check passed%s"
+          % (size, size / 1024.0, "" if embed_font else "  [font not embedded]"))
     print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, "
           "library %.1f KB, scene %.1f KB"
           % (len(engine_src) / 1024.0,
@@ -143,11 +152,22 @@ def main() -> int:
     ap.add_argument(
         "--out",
         type=pathlib.Path,
-        default=HERE.parent / "ar-scout.html",
-        help="output HTML path (default: ../ar-scout.html)",
+        default=None,
+        help="output HTML path (default: ../ar-scout.html, "
+             "or ../ar-scout-lite.html with --no-font)",
+    )
+    ap.add_argument(
+        "--no-font",
+        action="store_true",
+        help="leave Pretendard out; the page then uses a locally installed "
+             "copy if there is one, otherwise the platform sans. Cuts about "
+             "2.7 MB, which matters for an email attachment.",
     )
     args = ap.parse_args()
-    return build(args.out)
+    out = args.out
+    if out is None:
+        out = HERE.parent / ("ar-scout-lite.html" if args.no_font else "ar-scout.html")
+    return build(out, embed_font=not args.no_font)
 
 
 if __name__ == "__main__":

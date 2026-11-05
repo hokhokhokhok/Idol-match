@@ -24,6 +24,10 @@
 사내에 링크로 공유하면 됩니다. 의존성 0, 외부 요청 0이므로 **입력한 원료 구조는
 외부로 나가지 않습니다.**
 
+메일 첨부 용량이 빡빡하면 `--no-font`로 빌드한 **경량 버전**을 쓰세요. 기능은
+완전히 같고 0.7 MB이며, Pretendard가 설치된 PC에서는 보이는 것도 동일합니다.
+없으면 시스템 기본 산세리프로 폴백합니다. 둘 다 외부 요청은 0건입니다.
+
 글꼴 Pretendard는 CDN에서 받아오지 않고 **base64로 파일 안에 들어 있습니다**
 (가변 폰트 1종, 2.6 MB). 폰트 이름만 적어두고 로컬 설치를 기대하면 설치돼 있지
 않은 PC에서 디자인이 무너지고, CDN을 쓰면 단일 파일·외부요청 0 조건이 깨지기
@@ -32,7 +36,8 @@
 
 ```bash
 # 웹앱 다시 빌드 (소스를 고쳤을 때만)
-cd web && python3 build.py          # -> ../ar-scout.html
+cd web && python3 build.py          # -> ../ar-scout.html       (약 3.4 MB)
+cd web && python3 build.py --no-font # -> ../ar-scout-lite.html  (약 0.7 MB)
 
 # 웹앱 테스트
 cd web
