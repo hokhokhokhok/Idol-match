@@ -149,9 +149,14 @@ def main() -> int:
             problems.append("MW %.2f vs %.2f" % (got["mw"], Descriptors.MolWt(mol)))
         if got["heavy"] != mol.GetNumHeavyAtoms():
             problems.append("heavy %d vs %d" % (got["heavy"], mol.GetNumHeavyAtoms()))
-        if got["rings"] != rdMolDescriptors.CalcNumRings(mol):
-            problems.append("rings %d vs %d" % (got["rings"],
-                                                rdMolDescriptors.CalcNumRings(mol)))
+        # Compare against the cycle rank, not CalcNumRings: that returns the
+        # *symmetrised* SSSR, which reports an extra ring for a symmetric cage
+        # - 7 for adapalene's adamantyl where the cycle rank is 6. The engine
+        # computes the cycle rank, so compare like with like.
+        sssr = len(Chem.GetSSSR(mol))
+        if got["rings"] != sssr:
+            problems.append("rings %d vs SSSR %d (CalcNumRings %d)"
+                            % (got["rings"], sssr, rdMolDescriptors.CalcNumRings(mol)))
         if got["aromRings"] != rdMolDescriptors.CalcNumAromaticRings(mol):
             problems.append("aromatic rings %d vs %d"
                             % (got["aromRings"],

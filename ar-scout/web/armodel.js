@@ -352,8 +352,37 @@ function shortestPathExcluding(mol, a, b, skip) {
   return path;
 }
 
-/* Ring count from the cyclomatic number; rings themselves from per-bond
- * shortest cycles, smallest first. Not a true SSSR but stable and cheap. */
+/* A cycle as a bit vector over bonds, for independence testing. */
+function cycleBits(mol, path) {
+  var v = new Uint32Array((mol.bonds.length + 31) >> 5);
+  for (var t = 0; t < path.length; t++) {
+    var bi = bondBetween(mol, path[t], path[(t + 1) % path.length]);
+    if (bi >= 0) v[bi >> 5] ^= (1 << (bi & 31));
+  }
+  return v;
+}
+
+function firstSetBit(v) {
+  for (var i = 0; i < v.length; i++) {
+    if (!v[i]) continue;
+    for (var b = 0; b < 32; b++) if (v[i] & (1 << b)) return i * 32 + b;
+  }
+  return -1;
+}
+
+function xorInto(dst, src) {
+  for (var i = 0; i < dst.length; i++) dst[i] ^= src[i];
+}
+
+/* Ring count from the cyclomatic number; the rings themselves are the
+ * shortest cycles that form an independent basis.
+ *
+ * Taking simply the N smallest distinct cycles is not enough. A cage like
+ * adamantane has four six-membered cycles but a cyclomatic number of three,
+ * so the redundant fourth would be accepted and crowd a real ring out of the
+ * set - in adapalene that silently cost an aromatic ring. Each candidate is
+ * therefore reduced over GF(2) against the basis so far and kept only if it
+ * is independent. */
 function perceiveRings(mol) {
   var n = mol.atoms.length, m = mol.bonds.length;
   var nRings = m - n + components(mol);
@@ -369,11 +398,16 @@ function perceiveRings(mol) {
   }
   cands.sort(function (x, y) { return x.length - y.length; });
 
-  var seenKeys = {}, out = [];
+  var pivotRow = {}, out = [];
   for (var c = 0; c < cands.length && out.length < nRings; c++) {
-    var key = cands[c].slice().sort(function (x, y) { return x - y; }).join(',');
-    if (seenKeys[key]) continue;
-    seenKeys[key] = true;
+    var v = cycleBits(mol, cands[c]);
+    var piv = firstSetBit(v);
+    while (piv >= 0 && pivotRow[piv]) {
+      xorInto(v, pivotRow[piv]);
+      piv = firstSetBit(v);
+    }
+    if (piv < 0) continue;          /* dependent on the rings already chosen */
+    pivotRow[piv] = v;
     out.push(cands[c]);
   }
   mol.rings = out;
@@ -944,7 +978,9 @@ function detectMotifs(mol) {
     cf3: false, arylCF3: false, nitro: false, amide: false,
     sulfonyl: false, tertAlcohol: false, hydantoin: false,
     thiohydantoin: false, longestPath: longestPath(mol),
-    nonsteroidalAA: false
+    nonsteroidalAA: false,
+    steroidSpiro: false, steroidEster: false, steroidNitrile: false,
+    steroidBulky: false
   };
 
   var core = steroidCore(mol);
@@ -1037,6 +1073,58 @@ function detectMotifs(mol) {
 
   if (core) {
     m.steroidPolarTail = m.hydroxyl || m.carboxyl || m.nitrile || m.amide;
+
+    /* Bulky substitution on the steroid skeleton.
+     *
+     * Steroidal antiandrogens carry a large group where the androgens carry
+     * a 17-beta hydroxyl or ketone - spironolactone and drospirenone a spiro
+     * lactone, cyproterone and clascoterone a 17-alpha ester, dienogest a
+     * cyanomethyl. That substituent is what fouls helix-12, and it is the
+     * only thing separating them from the androgens by 2D similarity, which
+     * otherwise puts them next to testosterone. */
+    var coreRings = {};
+    for (var ci = 0; ci < core.rings.length; ci++) coreRings[core.rings[ci]] = true;
+    for (var ri = 0; ri < mol.rings.length; ri++) {
+      if (coreRings[ri]) continue;
+      var shared = 0;
+      for (var rt = 0; rt < mol.rings[ri].length; rt++) {
+        if (coreSet[mol.rings[ri][rt]]) shared++;
+      }
+      if (shared === 1) m.steroidSpiro = true;
+    }
+
+    for (var oi = 0; oi < mol.atoms.length; oi++) {
+      var oat = mol.atoms[oi];
+      if (oat.el !== 'O' || oat.nH > 0 || oat.nbr.length !== 2) continue;
+      var onCore = false, carbonyl = false;
+      for (var on = 0; on < oat.nbr.length; on++) {
+        var nb2 = oat.nbr[on];
+        if (coreSet[nb2]) onCore = true;
+        else if (mol.atoms[nb2].el === 'C' && doubleBondedTo(mol, nb2, 'O') >= 0) {
+          carbonyl = true;
+        }
+      }
+      if (onCore && carbonyl) m.steroidEster = true;
+    }
+
+    if (m.nitrile) {
+      for (var na = 0; na < mol.atoms.length; na++) {
+        if (mol.atoms[na].el !== 'N' || mol.atoms[na].nbr.length !== 1) continue;
+        var cc = mol.atoms[na].nbr[0];
+        if (mol.bonds[mol.atoms[na].bidx[0]].order !== 3) continue;
+        var reach = mol.atoms[cc].nbr;
+        for (var rr = 0; rr < reach.length; rr++) {
+          if (coreSet[reach[rr]]) m.steroidNitrile = true;
+          else {
+            var second = mol.atoms[reach[rr]].nbr;
+            for (var ss = 0; ss < second.length; ss++) {
+              if (coreSet[second[ss]]) m.steroidNitrile = true;
+            }
+          }
+        }
+      }
+    }
+    m.steroidBulky = !!(m.steroidSpiro || m.steroidEster || m.steroidNitrile);
   }
   m.nonsteroidalAA = (m.arylNitrile || m.nitro) && m.arylCF3;
   return m;

@@ -638,6 +638,11 @@ function renderSingle(result, title, subtitle) {
            fx(result.kiNM, result.kiNM < 10 ? 2 : 0) + ' nM</span></div>');
   out.push('<div><span class="k">기능 추정</span><span class="v' + fcClass + '">' +
            esc(fcLabel) + '<span class="sub">근거 ' + fx(fc.support, 2) + '</span></span></div>');
+  if (fc.evidence && fc.evidence.length) {
+    out.push('<div><span class="k">판정 근거</span><span class="v" ' +
+             'style="font-weight:500;font-size:13px;color:var(--ink-2)">' +
+             esc(fc.evidence.join(' · ')) + '</span></div>');
+  }
   out.push('<div><span class="k">구조 판정</span><span class="v">' + esc(p.verdict) + '</span></div>');
   out.push('<div><span class="k">적용영역</span><span class="v">' +
            '<span class="tag ' + esc(result.domain) + '">' + esc(domainWord) + '</span>' +
@@ -712,6 +717,20 @@ function renderSingle(result, title, subtitle) {
   }
   out.push('</ul>');
 
+  if (fc.neighbours && fc.neighbours.length) {
+    out.push('<h4 class="sect">기능 판정에 쓰인 레퍼런스</h4>');
+    out.push('<table><thead><tr><th>물질</th><th>알려진 기능</th>' +
+             '<th class="num">유사도</th></tr></thead><tbody>');
+    for (var f = 0; f < fc.neighbours.length; f++) {
+      var fn = fc.neighbours[f];
+      out.push('<tr><td>' + esc(fn.n) + '</td><td' +
+               (fn.c === 'antagonist' ? ' class="warnink"' : '') + '>' +
+               esc(PR.CLASS_LABELS[fn.c] || fn.c) + '</td><td class="num">' +
+               fx(fn.sim, 3) + '</td></tr>');
+    }
+    out.push('</tbody></table>');
+  }
+
   out.push('<h4 class="sect">최근접 레퍼런스</h4>');
   out.push('<table><thead><tr><th>물질</th><th>유형</th><th class="num">실측 pKi</th>' +
            '<th class="num">유사도</th></tr></thead><tbody>');
@@ -766,13 +785,35 @@ function runSingle(rawQuery) {
   var smiles = hit ? hit.s : query;
   var title = hit ? hit.ko + ' / ' + hit.en : query;
 
+  /* If this compound has a pre-computed pose, hand the docking evidence to
+   * the engine so the functional call can use it. */
+  var dock = null;
+  try {
+    var scene = sceneData();
+    if (scene) {
+      var probe = AR.parseSmiles(smiles);
+      var stored = scene.poses[structureKey(probe)];
+      if (stored && stored.placed) {
+        dock = { placed: true, affinity: stored.aff,
+                 ile899: (stored.c || []).indexOf('ILE899') >= 0 };
+      }
+    }
+  } catch (err) { dock = null; }
+
   var result;
   try {
-    result = PR.predict(smiles);
+    result = PR.predict(smiles, { dock: dock });
   } catch (err) {
     host.innerHTML = '';
-    showError('single-err', '해석 실패: ' + err.message +
-              (hit ? '' : ' — 사전에 없는 이름이면 SMILES로 입력해 주세요.'));
+    var tips = PR.suggestNames(query, 5);
+    var msg = '해석 실패: ' + err.message;
+    if (!hit && tips.length) {
+      msg += ' — 혹시 이 중 하나인가요? ' +
+             tips.map(function (t) { return t.ko + ' (' + t.en + ')'; }).join(', ');
+    } else if (!hit) {
+      msg += ' — 사전에 없는 이름이면 SMILES로 입력해 주세요.';
+    }
+    showError('single-err', msg);
     return;
   }
   host.innerHTML = renderSingle(result, title, smiles);
@@ -1098,13 +1139,34 @@ function renderModelCard() {
   }
 
   out.push('<h5>기능 추정(작용제/길항제)을 읽는 법</h5>');
-  out.push('<p>「기능 추정」은 최근접 레퍼런스 5종의 <b>실험적으로 측정된 분류</b>를 ' +
-           '유사도³로 가중해 옮겨온 값입니다. 괄호 안 「근거」는 그 가중치가 한 분류에 ' +
-           '얼마나 몰렸는지를 나타내며, 1.00에 가까울수록 이웃들의 의견이 일치한다는 뜻입니다. ' +
-           '최근접 유사도가 0.35 미만이면 옮겨올 근거가 없다고 보고 「판단 불가」로 표시합니다.</p>');
-  out.push('<p>「구조 판정」은 이와 별개로 구조 모티프와 포켓 접촉 규칙만으로 유추한 것입니다. ' +
-           '둘이 어긋나면 <b>기능 추정 쪽을 믿으세요</b> — 실측 분류에 근거하기 때문입니다. ' +
-           '단, 둘 다 전사활성 측정이 아니라는 점은 같습니다.</p>');
+  out.push('<p>세 가지 증거를 합칩니다. 어떤 것이 쓰였는지는 결과의 ' +
+           '「판정 근거」 줄에 표시됩니다.</p>');
+  out.push('<ul>');
+  out.push('<li><b>레퍼런스 read-across</b> — AR에서의 기능이 잘 확립된 38종' +
+           '(작용제 16, 길항제 17, 부분 5)과의 유사도³ 가중 투표입니다. ' +
+           '이 목록은 pKi 라이브러리와 <b>별개</b>입니다. ChEMBL 확장 라이브러리의 ' +
+           '분류는 「강한 결합」처럼 세기를 나타낼 뿐 작용/길항과 무관하므로, ' +
+           '그런 라벨은 기능 판정에 쓰지 않습니다.</li>');
+  out.push('<li><b>도킹 포즈의 helix-12 접촉</b> — 미리 계산된 2AM9 포즈가 있을 때, ' +
+           'helix-12 말단의 Ile899에 닿는지를 봅니다. Met895는 작용제 형태에서 ' +
+           '포켓 벽이라 대부분의 리간드가 닿지만, Ile899는 AF-2 표면 쪽으로 뻗는 ' +
+           '리간드만 닿습니다.</li>');
+  out.push('<li><b>스테로이드 부피 치환기</b> — 스테로이드계 길항제는 2D 유사도상 ' +
+           '안드로겐 바로 옆에 있어 read-across만으로는 작용제로 불립니다. ' +
+           '안드로겐이 작은 17번 치환기를 갖는 자리에 스피로 고리·에스터·나이트릴 같은 ' +
+           '부피 큰 기가 있으면 길항 쪽으로 투표합니다.</li>');
+  out.push('</ul>');
+  out.push('<p><b>성능 (leave-one-out, n = 38):</b> read-across만 27/38(71%), ' +
+           '여기에 도킹 신호를 더하면 30/38(79%), 부피 모티프까지 더하면 ' +
+           '<b>32/38(84%)</b>입니다. 가중치는 손으로 정했지만 넓은 범위에서 ' +
+           '결과가 같아 특정 값에 기대고 있지는 않습니다.</p>');
+  out.push('<p>여전히 틀리는 것들: 클라스코테론과 디에노게스트(길항인데 작용으로), ' +
+           '프로게스테론과 MPA(부분작용제 경계), 프로클로라즈(유사 레퍼런스 없음). ' +
+           '최근접 유사도가 낮으면 「판단 불가」로 나오며, 이때는 수치보다 ' +
+           '그 표시를 믿으세요.</p>');
+  out.push('<p>「구조 판정」은 이와 별개로 포켓 접촉 규칙만으로 유추한 것입니다. ' +
+           '둘이 어긋나면 <b>기능 추정 쪽을 믿으세요</b> — 실측 분류에 근거하기 ' +
+           '때문입니다. 단, 둘 다 전사활성 측정이 아니라는 점은 같습니다.</p>');
 
   out.push('<h5>3D 구조를 어디까지 믿을 수 있나</h5>');
   out.push('<p>거리기하 완화로 만든 <b>형태 스케치</b>입니다. 힘장(force field)도, ' +
