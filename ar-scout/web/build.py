@@ -39,6 +39,11 @@ FONT = ("assets/PretendardVariable.woff2", "/*__FONT__*/")
 # carry around. Built by local/merge_library.py.
 EXTLIB = "assets/ar_reference_merged.json"
 
+# Pre-computed binding scene: real 2AM9 pocket coordinates and real smina
+# poses, from local/build_pocket_scene.py. The browser cannot dock, so this
+# is the only honest way to show a bound ligand.
+SCENE = "assets/pocket_scene.json"
+
 REQUIRE_LINE = re.compile(
     r"^[ \t]*(?:var|const|let)[ \t]+\w+[ \t]*=[ \t]*require\([^)]*\)[ \t]*;?[ \t]*\r?\n?",
     re.MULTILINE,
@@ -90,7 +95,15 @@ def build(out_path: pathlib.Path) -> int:
         raw = extlib_path.read_text(encoding="utf-8").strip()
         extlib_src = ("/* ---- %s ---- */\nvar EXTLIB = %s;\n"
                       % (extlib_path.name, raw))
-        app_src = extlib_src + app_src
+
+    scene_path = HERE / SCENE
+    scene_src = ""
+    if scene_path.exists():
+        raw = scene_path.read_text(encoding="utf-8").strip()
+        scene_src = ("/* ---- %s ---- */\nvar SCENE = %s;\n"
+                     % (scene_path.name, raw))
+
+    app_src = extlib_src + scene_src + app_src
 
     # syntax-check the concatenated script before it is sealed into the page
     combined = engine_src + "\n" + app_src
@@ -116,11 +129,12 @@ def build(out_path: pathlib.Path) -> int:
     size = out_path.stat().st_size
     print("wrote %s" % out_path)
     print("  %d bytes (%.1f KB), node --check passed" % (size, size / 1024.0))
-    print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, library %.1f KB"
+    print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, "
+          "library %.1f KB, scene %.1f KB"
           % (len(engine_src) / 1024.0,
-             (len(app_src) - len(extlib_src)) / 1024.0,
+             (len(app_src) - len(extlib_src) - len(scene_src)) / 1024.0,
              (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0,
-             len(extlib_src) / 1024.0))
+             len(extlib_src) / 1024.0, len(scene_src) / 1024.0))
     return 0
 
 

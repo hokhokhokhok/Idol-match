@@ -71,6 +71,7 @@ function makeElement(id) {
 }
 
 const IDS = [
+  'scene3d', 'scene-note', 'scene-ghost',
   'themebtn', 'tabs', 'q', 'names', 'run', 'single-err', 'single-out',
   'batchin', 'batchrun', 'batchfile', 'batchsample', 'batchcopy', 'batch-err',
   'batch-out', 'libin', 'libapply', 'libfile', 'libreset', 'libexport',
@@ -238,6 +239,35 @@ if (PR.getLibrary().length === PR.REFERENCE_DEFAULT.length) {
 APP.renderModelCard();
 check('model card', elements['modelcard-body'].innerHTML,
       ['MAE', 'leave-one-out', '실패 모드', 'finasteride', 'flutamide']);
+
+/* the binding scene, when the bundle carries one */
+const scene = global.SCENE;
+if (scene && scene.pocket) {
+  APP.runSingle('디하이드로테스토스테론');
+  check('binding scene (has a pose)', elements['scene3d'].innerHTML,
+        ['<svg', 'ASN705']);
+  const noteA = elements['scene-note'].innerHTML;
+  if (/affinity/.test(noteA) && !/\bNaN\b|\bundefined\b/.test(noteA)) {
+    pass++; console.log(`  ok    ${'scene note (pose)'.padEnd(26)} ${noteA.length} chars`);
+  } else { fail++; console.log(`  FAIL  scene note (pose): ${noteA.slice(0, 80)}`); }
+
+  /* something certainly not in the pre-docked set */
+  APP.runSingle('CCCCCCCCCCCCCCCCCCCC');
+  const noteB = elements['scene-note'].innerHTML;
+  if (/들어 있지 않습니다/.test(noteB)) {
+    pass++; console.log(`  ok    ${'scene note (no pose)'.padEnd(26)} says so plainly`);
+  } else { fail++; console.log(`  FAIL  scene note (no pose): ${noteB.slice(0, 80)}`); }
+  check('binding scene (no pose)', elements['scene3d'].innerHTML, ['<svg']);
+
+  /* an unplaceable ligand must be named as such, not drawn */
+  APP.runSingle('엔잘루타미드');
+  const noteC = elements['scene-note'].innerHTML;
+  if (/배치되지 \s*않았습니다|배치되지/.test(noteC)) {
+    pass++; console.log(`  ok    ${'scene note (unplaced)'.padEnd(26)} flagged`);
+  } else { fail++; console.log(`  FAIL  scene note (unplaced): ${noteC.slice(0, 90)}`); }
+} else {
+  console.log('  note  no SCENE in this bundle, skipping binding-scene checks');
+}
 
 /* malformed input must surface an error, not a broken render */
 APP.runSingle('C1CC(((');
