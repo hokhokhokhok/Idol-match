@@ -19,6 +19,8 @@ sys.path.insert(0, str(ROOT / "app"))
 import blog_tab  # noqa: E402
 import susi_tab  # noqa: E402
 import jeongsi_tab  # noqa: E402
+import admission_tab  # noqa: E402
+import dashboard  # noqa: E402
 from blog.templates import templates_markdown  # noqa: E402
 from engine import db, segments, timeline  # noqa: E402
 
@@ -28,7 +30,7 @@ st.info("최종 지원 전 반드시 각 대학 공식 모집요강 원문을 �
 con = db.connect()
 profile = db.load_profile(con)
 
-tabs = st.tabs(["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🧮 정시 환산", "🗂 데이터 상태", "🧩 템플릿 6종 구조", "📝 블로그 포스팅"])
+tabs = st.tabs(["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🧮 정시 환산", "📊 합격 가능성", "🗂 데이터 상태", "🧩 템플릿 6종 구조", "📝 블로그 포스팅"])
 
 # ---------------------------------------------------------------- 1. 온보딩·대시보드
 with tabs[0]:
@@ -61,7 +63,13 @@ with tabs[0]:
         with cols[i % len(cols)]:
             with st.container(border=True):
                 st.markdown(f"**{i + 1}. {card.title}**")
-                st.caption(f"{card.feature} · {card.phase}에 구현 예정")
+                live = dashboard.summary(card.key, con)
+                if live:
+                    st.write(live)
+                    st.caption(card.feature)
+                else:
+                    done = card.phase in ("Phase 2", "Phase 3", "Phase 4")
+                    st.caption(f"{card.feature} · " + ("해당 탭에서 입력하면 요약이 표시됩니다" if done else f"{card.phase}에 구현 예정"))
     st.markdown("**다음 일정**")
     for e, dd in timeline.upcoming(date.today(), track, 3):
         st.write(f"- {'진행 중' if dd <= 0 else f'D-{dd}'} · {e.start:%m/%d}"
@@ -96,8 +104,12 @@ with tabs[2]:
 with tabs[3]:
     jeongsi_tab.render(con)
 
-# ---------------------------------------------------------------- 9. 데이터 상태
+# ---------------------------------------------------------------- F5 합격 가능성
 with tabs[4]:
+    admission_tab.render(con, profile)
+
+# ---------------------------------------------------------------- 9. 데이터 상태
+with tabs[5]:
     st.subheader("데이터 상태 (Phase 1 수집)")
     log = ROOT / "data" / "download_log.csv"
     if not log.exists():
@@ -118,8 +130,8 @@ with tabs[4]:
         st.caption("미러 = cdn013.negagea.net (서울 진로진학 계열 자료 CDN으로 추정). 연세대 2027 정시요강으로 공식본과 sha256 일치를 확인함. "
                    "어디가(adiga.kr)는 robots.txt가 자동 수집을 막아 수동 가져오기로만 지원.")
 
-with tabs[5]:
+with tabs[6]:
     st.markdown(templates_markdown())
 
-with tabs[6]:
+with tabs[7]:
     blog_tab.render()

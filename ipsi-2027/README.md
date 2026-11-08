@@ -26,6 +26,9 @@
 | **Phase 3** 20개교 정시 반영식 50개 그룹 (요강식 / 근사식 / 비율만 구분, 검증 필요) | ✅ `data/parsed/jeongsi_2027/` → [검토표](docs/jeongsi_2027_review.md) |
 | **Phase 3** 요강 계산 예시 재현 테스트 (서강·중앙·동국·홍익) | ✅ `tests/test_conversion.py` |
 | **Phase 3** 정시 환산 화면 + 유리한 반영 구조(구조 적합도) | ✅ `app/jeongsi_tab.py` |
+| **Phase 4** 동국대 공식 입결 파서(2024·2026, 107행, 계열 가중 평균 재현 검증) | ✅ `scrapers/parse_dongguk_results.py` |
+| **Phase 4** 합격 가능성 엔진: 환경 보정(조절 가능)·안정/적정/소신/위험·영어 경고·조합 위험 | ✅ `engine/admission.py` → [방법](docs/admission_method.md) |
+| **Phase 4** 합격 가능성 탭(입결 CSV 가져오기·모의지원 교차검증 칸), 대시보드 카드 실시간 요약 | ✅ `app/admission_tab.py` · `app/dashboard.py` |
 | **F10** 유형 ① 총정리·② 라이벌 비교 실데이터 생성 (경영: 연세·서강·성균관·한양) | ✅ `blog/real_data.py` · `samples/` |
 
 ## 실행
@@ -41,6 +44,7 @@ python -m scrapers.download               # 모집요강·입결 다운로드 (d
 python -m engine.db                       # data/app.db 생성·대학/출처 시드
 python -m engine.susi_report              # docs/susi_2027_review.md (수시 데이터 검토표) 재생성
 python -m engine.jeongsi_report           # docs/jeongsi_2027_review.md (정시 반영식 검토표) 재생성
+python -m scrapers.parse_dongguk_results  # 동국대 입결 PDF → data/parsed/results/dongguk.csv
 ```
 
 ## 샘플

@@ -2,3 +2,4 @@ __pycache__/
 data/app.db
 data/raw/
 .pytest_cache/
+data/parsed/results/import_*.csv
