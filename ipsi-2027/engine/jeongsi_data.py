@@ -43,7 +43,18 @@ class Group:
         return "근사식" if f.get("approx") else "요강식"
 
     def compute(self, scores: dict, maxes: dict | None = None) -> Result | None:
-        return compute(self.formula, scores, maxes) if self.formula else None
+        """대학별 변환표준점수표·최고 표준점수(공지 반영분)가 있으면 자동 적용."""
+        if not self.formula:
+            return None
+        from . import updates
+        sc, notes = updates.apply_conv(self.univ, scores)
+        mx = {**updates.load_csat_max(), **(maxes or {})}
+        r = compute(self.formula, sc, mx)
+        if any("반영" in n for n in notes):
+            r.provisional = [p for p in r.provisional if "변환표준점수 미발표" not in p]
+        r.provisional = sorted(set(r.provisional + [n for n in notes if "없음" in n]))
+        r.parts.extend(("공지", 0) for n in notes if "반영" in n)
+        return r
 
     def weights(self) -> dict[str, float]:
         if self.formula:

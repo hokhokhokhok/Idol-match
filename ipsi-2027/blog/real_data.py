@@ -176,6 +176,13 @@ def build_timely(univ: str, dept: str, event: str, numbers: dict | None = None) 
                              page=str(t.pages.get("일정")), kind="공식" if "negagea" not in t.source_url else "미러")
                 exams.append(SV(f"{e.date:%m/%d} {t.name} {e.kind}" + (f"({e.units})" if e.units else ""), src, "검증 필요"))
     base["susi_exams"] = exams
+    if event == "수시 이월" and not numbers:      # 공지 반영 탭에 저장된 이월 인원 자동 사용
+        from engine import updates
+        q = yaml.safe_load(QUOTA.read_text(encoding="utf-8"))[dept][univ]
+        c = next((c for c in updates.load_carryover() if c.univ == univ and (c.unit in q["unit"] or q["unit"] in c.unit)), None)
+        if c:
+            numbers = {"value": c.added, "label": f"수시 이월 인원({c.announced_at} 발표)", "url": c.source_url, "page": c.page,
+                       "doc": f"{base['univ']['name']} 정시 모집인원(이월) 발표"}
     if numbers and numbers.get("value") is not None:
         src = Source(doc=numbers.get("doc", f"{base['univ']['name']} 발표 자료"), url=numbers.get("url", ""),
                      collected_at=str(date.today()), page=str(numbers.get("page", "")), kind="공식")

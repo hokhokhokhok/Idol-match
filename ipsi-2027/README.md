@@ -32,6 +32,9 @@
 | **Phase 5** 인사이트 모듈: 시드 10건(출처·근거 수준), 신뢰도 순 피드, 주제별 기관 나란히 보기, 직접 추가, 유튜브 자막 추출 요약 | ✅ `insights/` · `app/insights_tab.py` |
 | **Phase 5** 수시 납치 판단(선호 순위 × 정시 예상) · 수시 결과별 정시 시나리오 | ✅ `engine/kidnap.py` (수시 대응 탭) |
 | **Phase 5** 블로그 유형 ③ 수시vs정시 · ④ 시점형 속보 · ⑤ 세그먼트형 · ⑥ 2027 변화 해설, 발행 캘린더 | ✅ `blog/generator.py` · `blog/calendar.py` |
+| **Phase 6** 공지 반영: 수시 이월 인원·대학별 탐구 변환표준점수표·수능 최고점(출처 필수) → 환산·판정·블로그 자동 반영 | ✅ `engine/updates.py` · `app/updates_tab.py` |
+| **Phase 6** 가/나/다 조합 추천: 세그먼트 프리셋, 전부 불합격 확률·기대 선호도, 반수생 필터, 2028 경고 | ✅ `engine/combo.py` · `app/combo_tab.py` |
+| **Phase 6** 재도전 판단(N수·반수 전용): 결과 범위·목표, 본인 점수 추이, 2028 변화, 선택지별 체크리스트 | ✅ `engine/retake.py` · `app/retake_tab.py` |
 | **F10** 유형 ① 총정리·② 라이벌 비교 실데이터 생성 (경영: 연세·서강·성균관·한양) | ✅ `blog/real_data.py` · `samples/` |
 
 ## 실행

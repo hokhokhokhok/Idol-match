@@ -9,6 +9,7 @@ import streamlit as st
 
 from engine import admission as A
 from engine import db
+from engine import updates as UP
 
 ICON = {"안정": "🟢 안정", "적정": "🔵 적정", "소신": "🟠 소신", "위험": "🔴 위험"}
 UNIV_NAME = {"dongguk": "동국대"}
@@ -106,7 +107,8 @@ def render(con, profile: dict | None) -> None:
     extra = db.get_state(con, f"adm_extra_{u}", {})
     st.markdown("**2027 변동 입력 (선택)** — 2027 모집인원·수시 이월·원서 접수 후 경쟁률 변화, 학원 모의지원 결과(교차검증용)")
     rows_in = st.data_editor(
-        [{"모집단위": x, "2027 모집인원": extra.get(x, {}).get("q", None), "이월 인원": extra.get(x, {}).get("c", 0),
+        [{"모집단위": x, "2027 모집인원": extra.get(x, {}).get("q", None),
+          "이월 인원": extra.get(x, {}).get("c") or (UP.carryover_for(u, x).added if UP.carryover_for(u, x) else 0),
           "경쟁률 변화(%)": extra.get(x, {}).get("cc", 0.0), "모의지원 결과(직접 입력)": extra.get(x, {}).get("mock", "")}
          for x in units], hide_index=True, disabled=["모집단위"], key=f"ed_{u}", use_container_width=True)
     if st.button("변동 입력 저장"):
@@ -143,7 +145,7 @@ def render(con, profile: dict | None) -> None:
 
     # ---------- 간이 조합 ----------
     st.subheader("가·나·다 간이 조합")
-    st.caption("같은 대학 안에서만 먼저 확인할 수 있습니다(다른 대학 입결 추가 시 확장). 본격 조합 추천은 Phase 6.")
+    st.caption("같은 대학 안의 빠른 확인용입니다. 여러 대학·직접 후보를 합친 추천은 '🧩 가나다 조합' 탭에서 보세요.")
     picks = []
     cols = st.columns(3)
     for i, gname in enumerate(("가", "나", "다")):

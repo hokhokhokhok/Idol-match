@@ -22,6 +22,9 @@ import jeongsi_tab  # noqa: E402
 import admission_tab  # noqa: E402
 import dashboard  # noqa: E402
 import insights_tab  # noqa: E402
+import combo_tab  # noqa: E402
+import updates_tab  # noqa: E402
+import retake_tab  # noqa: E402
 from blog.templates import templates_markdown  # noqa: E402
 from engine import db, segments, timeline  # noqa: E402
 
@@ -31,10 +34,14 @@ st.info("최종 지원 전 반드시 각 대학 공식 모집요강 원문을 �
 con = db.connect()
 profile = db.load_profile(con)
 
-tabs = st.tabs(["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🧮 정시 환산", "📊 합격 가능성", "💡 인사이트", "🗂 데이터 상태", "🧩 템플릿 6종 구조", "📝 블로그 포스팅"])
+NAMES = ["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🧮 정시 환산", "📊 합격 가능성", "🧩 가나다 조합"]
+if (profile or {}).get("history_type") in ("재수", "삼수", "N수", "반수"):
+    NAMES.append("🔁 재도전 판단")
+NAMES += ["💡 인사이트", "🔄 공지 반영", "🗂 데이터 상태", "🧱 템플릿 6종 구조", "📝 블로그 포스팅"]
+T = dict(zip(NAMES, st.tabs(NAMES)))
 
 # ---------------------------------------------------------------- 1. 온보딩·대시보드
-with tabs[0]:
+with T["🧭 온보딩·대시보드"]:
     st.subheader("나에게 맞는 화면 구성")
     c1, c2 = st.columns(2)
     tr_keys, hi_keys = list(segments.TRACKS), list(segments.HISTORIES)
@@ -69,7 +76,7 @@ with tabs[0]:
                     st.write(live)
                     st.caption(card.feature)
                 else:
-                    done = card.phase in ("Phase 2", "Phase 3", "Phase 4")
+                    done = card.phase in ("Phase 2", "Phase 3", "Phase 4") or "구현" in card.phase
                     st.caption(f"{card.feature} · " + ("해당 탭에서 입력하면 요약이 표시됩니다" if done else f"{card.phase}에 구현 예정"))
     st.markdown("**다음 일정**")
     for e, dd in timeline.upcoming(date.today(), track, 3):
@@ -77,7 +84,7 @@ with tabs[0]:
                  + (f"~{e.end:%m/%d}" if e.end != e.start else "") + f" {e.title}")
 
 # ---------------------------------------------------------------- 2. 타임라인
-with tabs[1]:
+with T["📅 타임라인"]:
     st.subheader("2027학년도 대입 주요 일정")
     tr = (profile or {}).get("track_type") or "정시"
     show_all = st.toggle("모든 일정 보기", value=True)
@@ -98,23 +105,34 @@ with tabs[1]:
     st.caption(f"출처: [{s['doc']}]({s['url']}) · {s['page']} · {s['collected_at']} 수집 · 대학별 논술·면접 일정은 Phase 2에서 추가")
 
 # ---------------------------------------------------------------- 4. 수시 대응
-with tabs[2]:
+with T["🎯 수시 대응"]:
     susi_tab.render(con, profile)
 
 # ---------------------------------------------------------------- 3·5. 정시 환산
-with tabs[3]:
+with T["🧮 정시 환산"]:
     jeongsi_tab.render(con)
 
 # ---------------------------------------------------------------- F5 합격 가능성
-with tabs[4]:
+with T["📊 합격 가능성"]:
     admission_tab.render(con, profile)
 
+# ---------------------------------------------------------------- 6. 가나다 조합
+with T["🧩 가나다 조합"]:
+    combo_tab.render(con, profile)
+
+if "🔁 재도전 판단" in T:
+    with T["🔁 재도전 판단"]:
+        retake_tab.render(con, profile)
+
+with T["🔄 공지 반영"]:
+    updates_tab.render()
+
 # ---------------------------------------------------------------- 7. 인사이트
-with tabs[5]:
+with T["💡 인사이트"]:
     insights_tab.render(profile)
 
 # ---------------------------------------------------------------- 9. 데이터 상태
-with tabs[6]:
+with T["🗂 데이터 상태"]:
     st.subheader("데이터 상태 (Phase 1 수집)")
     log = ROOT / "data" / "download_log.csv"
     if not log.exists():
@@ -135,8 +153,8 @@ with tabs[6]:
         st.caption("미러 = cdn013.negagea.net (서울 진로진학 계열 자료 CDN으로 추정). 연세대 2027 정시요강으로 공식본과 sha256 일치를 확인함. "
                    "어디가(adiga.kr)는 robots.txt가 자동 수집을 막아 수동 가져오기로만 지원.")
 
-with tabs[7]:
+with T["🧱 템플릿 6종 구조"]:
     st.markdown(templates_markdown())
 
-with tabs[8]:
+with T["📝 블로그 포스팅"]:
     blog_tab.render()

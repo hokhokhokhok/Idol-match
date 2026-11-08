@@ -26,14 +26,15 @@ def _inputs(con) -> tuple[dict, dict]:
     for i, col in enumerate(c3, 1):
         with col:
             st.markdown(f"탐구{i}")
-            cc = st.columns(4)
+            cc = st.columns(3)
             t = cc[0].selectbox("종류", ["사탐", "과탐"], index=["사탐", "과탐"].index(sv.get(f"t{i}", "사탐")), key=f"jt{i}")
             s = cc[1].number_input("표준점수", 0, 100, int(sv.get(f"t{i}s", 63)), key=f"jts{i}")
             p = cc[2].number_input("백분위", 0, 100, int(sv.get(f"t{i}p", 90)), key=f"jtp{i}")
-            v = cc[3].number_input("변환표준(선택)", 0.0, 100.0, float(sv.get(f"t{i}c", 0.0)), step=0.01, key=f"jtc{i}",
-                                   help="대학별 변환표준점수는 학교마다 다릅니다. 비워두면(0) 표준점수로 임시 계산")
-            inq[f"탐{i}"] = {"std": s, "pct": p, "type": t, **({"conv": v} if v > 0 else {})}
+            v = 0.0
+            inq[f"탐{i}"] = {"std": s, "pct": p, "type": t}
             inq[f"_t{i}"] = (t, s, p, v)
+    st.caption("탐구 변환표준점수는 대학마다 다릅니다. 대학이 변환표를 공지하면 '🔄 공지 반영' 탭에 넣으세요 — 그 대학 계산에 자동 적용되고, "
+               "그 전에는 표준점수로 임시 계산합니다.")
     with st.expander("최고 표준점수 (성적 발표 후 입력 — 표준점수÷최고점 방식 대학에 필요)", expanded=False):
         mc = st.columns(3)
         mk = mc[0].number_input("국어 최고 표준점수", 0, 200, int(sv.get("mx_k", 0)))

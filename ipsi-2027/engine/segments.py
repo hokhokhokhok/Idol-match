@@ -36,12 +36,12 @@ C = {
     "jeongsi_compare": Card("jeongsi_compare", "수시 대학 vs 정시 예상 위치 비교", "F3·F5", "Phase 4"),
     "conversion": Card("conversion", "대학별 환산점수", "F4", "Phase 3"),
     "nsu_adjust": Card("nsu_adjust", "N수생 유입 보정 예측", "F5", "Phase 4"),
-    "combo": Card("combo", "가/나/다 군 조합", "F6", "Phase 6"),
+    "combo": Card("combo", "가/나/다 군 조합", "F6", "Phase 6 (구현)"),
     "record_policy": Card("record_policy", "정시 학생부 반영·졸업생 처리", "F2", "Phase 3"),
-    "retake": Card("retake", "재도전 판단 재료", "F8", "Phase 6"),
+    "retake": Card("retake", "재도전 판단 재료", "F8", "Phase 6 (구현)"),
     "scenario_tree": Card("scenario_tree", "수시 결과 시나리오 트리 (전부 불합격 / A 합격 / 충원 대기)", "F3·F6", "Phase 4"),
     "ged_policy": Card("ged_policy", "대학별 검정고시 처리 방식", "F2", "Phase 3"),
-    "current_univ": Card("current_univ", "현 소속 대학과 비교·이중등록 금지 일정", "F6", "Phase 6"),
+    "current_univ": Card("current_univ", "현 소속 대학과 비교·이중등록 금지 일정", "F6", "Phase 6 (구현)"),
 }
 
 
