@@ -7,6 +7,7 @@ import streamlit.components.v1 as components
 from blog import render as R
 from blog import store
 from blog.dummy_data import UNIVERSITIES
+from blog.real_data import available, build_compare, build_overview
 from blog.generator import AUDIENCES, TONES, body_text, generate
 from blog.guardrails import DAILY_LIMIT_DEFAULT, check_daily_limit
 from blog.models import PostInput
@@ -16,7 +17,9 @@ TARGET_UNIVS = ["서울대", "연세대", "고려대", "서강대", "성균관�
                 "서울시립대", "이화여대", "건국대", "동국대", "홍익대"]
 TARGET_DEPTS = ["경영", "경제", "컴퓨터공학", "전기전자", "기계", "화공", "반도체 계약학과", "의예·약학",
                 "미디어·커뮤니케이션", "자유전공(무전공)"]
-DATA_KEYS = {("연세대", "경영"): "yonsei"}  # 데이터가 준비된 학교·학과 (현재 더미 1건)
+NAME2ID = {"서울대": "snu", "연세대": "yonsei", "고려대": "korea", "서강대": "sogang", "성균관대": "skku", "한양대": "hanyang",
+           "중앙대": "cau", "경희대": "khu", "한국외대": "hufs", "서울시립대": "uos", "이화여대": "ewha", "건국대": "konkuk",
+           "동국대": "dongguk", "홍익대": "hongik"}
 
 
 
@@ -45,9 +48,13 @@ def render() -> None:
         problems.append(f"{tpl.name}은 학교 {tpl.univ_count[0]}~{tpl.univ_count[1]}개를 골라야 합니다.")
     if tpl.status != "구현":
         problems.append(f"{tpl.name}은 {tpl.phase}에 구현 예정입니다. 구조는 '템플릿 6종 구조' 탭에서 볼 수 있어요.")
-    key = DATA_KEYS.get((univs[0], dept)) if univs else None
-    if not problems and key is None:
-        problems.append(f"{univs[0]} {dept}: 아직 파싱된 데이터가 없습니다 (데이터 상태 화면 참고). 현재는 '연세대 경영' 더미만 있음.")
+    ready = available(dept)
+    ids = [NAME2ID.get(u) for u in univs]
+    use_dummy = st.sidebar.checkbox("더미 샘플로 보기 (연세대 경영)", value=False) if ptype == "jeongsi_overview" else False
+    missing = [u for u, i in zip(univs, ids) if i not in ready]
+    if not problems and missing and not use_dummy:
+        problems.append(f"{', '.join(missing)} {dept}: 모집인원 데이터가 아직 없습니다. 현재 준비된 학과·학교: "
+                        f"경영 — {', '.join(k for k, v in NAME2ID.items() if v in available('경영'))}")
 
     with right:
         if problems:
@@ -56,8 +63,14 @@ def render() -> None:
             return
 
         con = store.connect()
-        inp = PostInput([key], dept, ptype, audience, tone, memo, [ad] if ad.strip() else [])
-        post = generate(inp, UNIVERSITIES[key], previous=store.previous_posts(con))
+        inp = PostInput(ids if not use_dummy else ["yonsei"], dept, ptype, audience, tone, memo, [ad] if ad.strip() else [])
+        if use_dummy:
+            data = UNIVERSITIES["yonsei"]
+        elif ptype == "rival_compare":
+            data = build_compare(ids, dept)
+        else:
+            data = build_overview(ids[0], dept)
+        post = generate(inp, data, previous=store.previous_posts(con))
         check_daily_limit(store.count_today(con), post.report, DAILY_LIMIT_DEFAULT)
 
         for e in post.report.errors:

@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "app"))
 
 import blog_tab  # noqa: E402
 import susi_tab  # noqa: E402
+import jeongsi_tab  # noqa: E402
 from blog.templates import templates_markdown  # noqa: E402
 from engine import db, segments, timeline  # noqa: E402
 
@@ -27,7 +28,7 @@ st.info("최종 지원 전 반드시 각 대학 공식 모집요강 원문을 �
 con = db.connect()
 profile = db.load_profile(con)
 
-tabs = st.tabs(["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🗂 데이터 상태", "🧩 템플릿 6종 구조", "📝 블로그 포스팅"])
+tabs = st.tabs(["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🧮 정시 환산", "🗂 데이터 상태", "🧩 템플릿 6종 구조", "📝 블로그 포스팅"])
 
 # ---------------------------------------------------------------- 1. 온보딩·대시보드
 with tabs[0]:
@@ -91,8 +92,12 @@ with tabs[1]:
 with tabs[2]:
     susi_tab.render(con, profile)
 
-# ---------------------------------------------------------------- 9. 데이터 상태
+# ---------------------------------------------------------------- 3·5. 정시 환산
 with tabs[3]:
+    jeongsi_tab.render(con)
+
+# ---------------------------------------------------------------- 9. 데이터 상태
+with tabs[4]:
     st.subheader("데이터 상태 (Phase 1 수집)")
     log = ROOT / "data" / "download_log.csv"
     if not log.exists():
@@ -108,12 +113,13 @@ with tabs[3]:
         st.dataframe([{"대학": r["univ_name"], "학년도": r["year"], "구분": r["kind"], "문서": r["doc"],
                        "출처": r["source_type"], "쪽수": r["pages"], "표지 검증": r["check"], "수집": r["collected_at"][:10],
                        "파싱": ("수시 최저·일정·자격 정리 (검증 필요)" if (r["year"], r["kind"], r["doc"]) == ("2027", "수시", "요강")
-                                 else "미착수 (Phase 3)")} for r in data], hide_index=True, use_container_width=True)
+                                 else "정시 반영식 정리 (검증 필요)" if (r["year"], r["kind"], r["doc"]) == ("2027", "정시", "요강")
+                                 else "미착수")} for r in data], hide_index=True, use_container_width=True)
         st.caption("미러 = cdn013.negagea.net (서울 진로진학 계열 자료 CDN으로 추정). 연세대 2027 정시요강으로 공식본과 sha256 일치를 확인함. "
                    "어디가(adiga.kr)는 robots.txt가 자동 수집을 막아 수동 가져오기로만 지원.")
 
-with tabs[4]:
+with tabs[5]:
     st.markdown(templates_markdown())
 
-with tabs[5]:
+with tabs[6]:
     blog_tab.render()

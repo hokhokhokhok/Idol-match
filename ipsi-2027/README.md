@@ -8,12 +8,12 @@
 | 항목 | 상태 |
 |---|---|
 | F10 포스트 템플릿 6종 구조 정의 | ✅ `blog/templates.py` → [docs/blog_templates.md](docs/blog_templates.md) |
-| ① 학과 정시 총정리 생성기 | ✅ (현재 **더미 데이터**: 연세대 경영) |
+| ① 학과 정시 총정리 생성기 | ✅ 실데이터(연세대 경영) + 더미 샘플 |
 | 차트 3장 + 썸네일 PNG, 대체 텍스트 | ✅ `blog/charts.py` |
 | 내보내기: 스마트에디터 HTML / 텍스트 / 이미지 ZIP | ✅ `blog/render.py` |
 | 가드레일: 출처 없는 값 차단, 더미·검증 필요 경고, 필자 메모 필수, 과장 표현 차단, 일 생성 한도, 유사도 검사, 광고 표기 | ✅ `blog/guardrails.py` |
 | blog_posts / blog_metrics 스키마 (로컬 SQLite) | ✅ `blog/store.py` |
-| ②~⑥ 생성기, 발행 캘린더, 성과 추적 | ⏳ Phase 3~6 |
+| ③~⑥ 생성기, 발행 캘린더, 성과 추적 | ⏳ Phase 5~6 |
 | **Phase 1** MVP 20개교 목록·입학처 URL | ✅ `config/universities.yaml` (+ 확장 대상 23개교) |
 | **Phase 1** 2027·2026 수시/정시 모집요강 80개 + 입결 4개 + 대교협 3개 다운로드 | ✅ `scrapers/download.py` → [docs/download_report.md](docs/download_report.md) |
 | **Phase 1** 출처·robots·접속 상태 정리 | ✅ [docs/sources.md](docs/sources.md) |
@@ -22,6 +22,11 @@
 | **Phase 2** 수능 최저 판정 엔진 (낙관/비관 등급 → 충족·경계·미충족, 결과를 가르는 영역) | ✅ `engine/minreq.py` |
 | **Phase 2** 20개교 2027 수시 60개 전형: 최저·졸업생 자격·수능 후 고사·발표일 (검증 필요) | ✅ `data/parsed/susi_2027/` → [검토표](docs/susi_2027_review.md) |
 | **Phase 2** 수시 대응 화면: 가채점 입력, 내 수시 6장 판정, 고사 캘린더·겹침 경고, 졸업생 자격 필터 | ✅ `app/susi_tab.py` |
+| **Phase 3** 환산점수 엔진 (가중합·상수 환산·최고점 대비·등급표·가감점·과탐/수학 가산·A/B 택상) | ✅ `engine/conversion.py` |
+| **Phase 3** 20개교 정시 반영식 50개 그룹 (요강식 / 근사식 / 비율만 구분, 검증 필요) | ✅ `data/parsed/jeongsi_2027/` → [검토표](docs/jeongsi_2027_review.md) |
+| **Phase 3** 요강 계산 예시 재현 테스트 (서강·중앙·동국·홍익) | ✅ `tests/test_conversion.py` |
+| **Phase 3** 정시 환산 화면 + 유리한 반영 구조(구조 적합도) | ✅ `app/jeongsi_tab.py` |
+| **F10** 유형 ① 총정리·② 라이벌 비교 실데이터 생성 (경영: 연세·서강·성균관·한양) | ✅ `blog/real_data.py` · `samples/` |
 
 ## 실행
 
@@ -35,13 +40,17 @@ python -m blog.build_docs                 # docs/blog_templates.md 재생성
 python -m scrapers.download               # 모집요강·입결 다운로드 (data/raw/, 약 270MB, git 제외)
 python -m engine.db                       # data/app.db 생성·대학/출처 시드
 python -m engine.susi_report              # docs/susi_2027_review.md (수시 데이터 검토표) 재생성
+python -m engine.jeongsi_report           # docs/jeongsi_2027_review.md (정시 반영식 검토표) 재생성
 ```
 
 ## 샘플
 
-`samples/yonsei_business_jeongsi/` — **더미 데이터**로 만든 "연세대 경영학과 정시 총정리".
-`preview.html`(모바일 미리보기), `post_smarteditor.html`(붙여넣기용), `post.txt`, `images/`, `screenshots/`.
-실제 모집요강·입결이 아니므로 발행하면 안 된다 (본문 상단과 썸네일에 '샘플' 표시가 붙음).
+- `samples/yonsei_business_jeongsi/` — 실데이터(2027 정시요강) "연세대 경영학과 정시 총정리"
+- `samples/sogang_skku_hanyang_business_compare/` — 실데이터 "서강·성균관·한양 경영 비교"
+- `samples/yonsei_business_jeongsi_dummy/` — 더미 데이터 샘플(발행 금지 표시)
+
+각 폴더: `preview.html`(모바일 미리보기), `post_smarteditor.html`(붙여넣기용), `post.txt`, `images/`.
+실데이터 샘플도 값 상태는 '검증 필요'이고, 전년도 입결은 출처 있는 자료가 없어 넣지 않았다.
 
 ## 폴더
 

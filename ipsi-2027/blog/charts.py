@@ -120,15 +120,18 @@ def competition_chart(univ: str, dept: str, past: list[dict], footnote: str) -> 
     return Image("chart_competition.png", img, alt, "연도별 정시 경쟁률")
 
 
-def thumbnail(univ: str, dept: str, headline: str, sub: str, badge: str | None = None) -> Image:
+def thumbnail(univ: str, dept: str, headline: str, sub: str, badge: str | None = None,
+              footer: str = "모집인원 · 반영비율 · 입결 총정리") -> Image:
     fig = plt.figure(figsize=(6, 6), dpi=180)
     fig.patch.set_facecolor("#10233f")
     fig.text(0.08, 0.86, "2027 정시", fontsize=20, color="#a9c7ee", fontweight="bold")
-    fig.text(0.08, 0.68, f"{univ}\n{dept}", fontsize=44, color="white", fontweight="bold", va="top", linespacing=1.15)
+    longest = max(len(univ), len(dept))
+    size = 44 if longest <= 7 else max(22, int(44 * 7 / longest))
+    fig.text(0.08, 0.68, f"{univ}\n{dept}", fontsize=size, color="white", fontweight="bold", va="top", linespacing=1.15)
     fig.text(0.08, 0.30, headline, fontsize=30, color="#ffd27a", fontweight="bold")
     fig.text(0.08, 0.20, sub, fontsize=15, color="#dfe6f0")
     fig.add_artist(plt.Line2D([0.08, 0.92], [0.12, 0.12], color="#3a5578", lw=1.5))
-    fig.text(0.08, 0.06, "모집인원 · 반영비율 · 입결 총정리", fontsize=13, color="#a9c7ee")
+    fig.text(0.08, 0.06, footer, fontsize=13, color="#a9c7ee")
     if badge:
         fig.text(0.92, 0.06, badge, fontsize=12, color="#10233f", ha="right",
                  bbox=dict(boxstyle="round,pad=0.4", fc="#ffd27a", ec="none"))
@@ -137,3 +140,28 @@ def thumbnail(univ: str, dept: str, headline: str, sub: str, badge: str | None =
     plt.close(fig)
     alt = f"썸네일: 2027 정시 {univ} {dept}, {headline}, {sub}"
     return Image("thumbnail.png", buf.getvalue(), alt, "썸네일")
+
+
+def compare_chart(names: list[str], dept: str, weights: list[dict], footnote: str) -> Image:
+    """대학별 영역 반영 비중 묶음 막대 (카테고리 색 고정 순서)."""
+    import numpy as np
+    areas = ["국", "수", "탐", "영"]
+    colors = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]
+    fig, ax = _fig(8, 4.6)
+    x = np.arange(len(names))
+    wdt = 0.8 / len(areas)
+    for i, a in enumerate(areas):
+        vals = [w.get(a, 0) for w in weights]
+        bars = ax.bar(x + (i - 1.5) * wdt, vals, width=wdt * 0.92, color=colors[i], label=a)
+        for b, v in zip(bars, vals):
+            if v:
+                ax.text(b.get_x() + b.get_width() / 2, v + 0.8, f"{v:g}", ha="center", fontsize=9, color=INK)
+    ax.set_xticks(x, names, fontsize=12, color=INK)
+    ax.set_yticks([])
+    ax.set_ylim(0, max(max(w.values()) for w in weights) * 1.25)
+    ax.legend(ncol=4, frameon=False, fontsize=10, labelcolor=INK2, loc="upper right")
+    _title(fig, f"{' · '.join(names)} {dept} 수능 반영 비중(%)", footnote)
+    img = _save(fig)
+    alt = f"{dept} 정시 수능 반영 비중 비교 막대그래프: " + "; ".join(
+        f"{n} " + ", ".join(f"{a} {w.get(a, 0):g}%" for a in areas if w.get(a)) for n, w in zip(names, weights))
+    return Image("chart_compare.png", img, alt, "대학별 수능 반영 비중")

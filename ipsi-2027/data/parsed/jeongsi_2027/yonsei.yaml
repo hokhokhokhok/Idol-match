@@ -1,0 +1,53 @@
+univ: yonsei
+pdf: data/raw/yonsei/2027_정시_요강.pdf
+track: 일반전형(가군) 일반계열
+notes:
+  - "수능 950점 + 학생부(교과·출결) 50점. 앱은 수능 950점 부분만 계산"
+  - "탐구는 백분위 활용 자체 변환점수(성적 통지 후 공지), 제2외국어/한문 불인정"
+dept_map: {경영: hum}
+groups:
+  - id: hum
+    label: 유형Ⅰ(인문)
+    page: 24
+    text: "국어 표준점수×3/2(300) + 수학(200) + 탐구 2과목 변환점수(200) + 영어 등급점수(100) = 800 → ×950/800, 한국사 5등급부터 감점"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1.5}
+        - {area: 수, metric: std, coef: 1}
+        - {area: 탐, metric: conv, coef: 1, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 95, 87.5, 75, 60, 40, 25, 12.5, 5]}
+      den: 800
+      scale: 950
+      max: 950
+      post:
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 0.2, 0.4, 0.6, 0.8, 1.0]}
+  - id: nat
+    label: 유형Ⅱ(자연, 의예 제외)
+    page: 24
+    text: "국어(200) + 수학×3/2(300) + 과학탐구 2과목 변환점수×3/2(300) + 영어(100) = 900 → ×950/900"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1}
+        - {area: 수, metric: std, coef: 1.5}
+        - {area: 탐, metric: conv, coef: 1.5, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 95, 87.5, 75, 60, 40, 25, 12.5, 5]}
+      den: 900
+      scale: 950
+      max: 950
+      post:
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 0.2, 0.4, 0.6, 0.8, 1.0]}
+  - id: int
+    label: 유형Ⅲ(통합)
+    page: 24
+    text: "국어(200) + 수학(200) + 탐구 변환점수×1/2(100) + 영어(100) = 600 → ×950/600"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1}
+        - {area: 수, metric: std, coef: 1}
+        - {area: 탐, metric: conv, coef: 0.5, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 95, 87.5, 75, 60, 40, 25, 12.5, 5]}
+      den: 600
+      scale: 950
+      max: 950
+      post:
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 0.2, 0.4, 0.6, 0.8, 1.0]}

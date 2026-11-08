@@ -1,0 +1,41 @@
+univ: kw
+pdf: data/raw/kw/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "국어·수학 표준점수, 영어 등급별 변환점수(200), 탐구 2과목 변환표준점수 합(과목별 100) — 결합 방식은 (점수÷200)×배점으로 근사 (27쪽)"
+  - "한국사 등급 가산점 표는 이번 정리에서 추출하지 못함 — 미반영"
+dept_map: {경영: biz}
+groups:
+  - id: hum
+    label: 인문계열·자율전공(인문)
+    page: 27
+    text: "국어 30 · 수학 25 · 영어 20 · 탐구 25"
+    formula:
+      approx: "광운대 결합식 미확인 — (점수÷200)×배점으로 근사"
+      parts:
+        - {area: 국, metric: std, coef: 1.5}
+        - {area: 수, metric: std, coef: 1.25}
+        - {area: 탐, metric: conv, coef: 1.25, n: 2}
+        - {area: 영, metric: grade_table, coef: 1.0, table: [200, 198, 195, 190, 182, 170, 158, 146, 0]}
+  - id: biz
+    label: 경영학부(경영학·빅데이터경영)
+    page: 27
+    text: "국어 30 · 수학 30 · 영어 20 · 탐구 20"
+    formula:
+      approx: "광운대 결합식 미확인 — (점수÷200)×배점으로 근사"
+      parts:
+        - {area: 국, metric: std, coef: 1.5}
+        - {area: 수, metric: std, coef: 1.5}
+        - {area: 탐, metric: conv, coef: 1.0, n: 2}
+        - {area: 영, metric: grade_table, coef: 1.0, table: [200, 198, 195, 190, 182, 170, 158, 146, 0]}
+  - id: nat
+    label: 자연계열·자율전공(자연)
+    page: 27
+    text: "국어 20 · 수학 35 · 영어 20 · 탐구 25"
+    formula:
+      approx: "광운대 결합식 미확인 — (점수÷200)×배점으로 근사"
+      parts:
+        - {area: 국, metric: std, coef: 1.0}
+        - {area: 수, metric: std, coef: 1.75}
+        - {area: 탐, metric: conv, coef: 1.25, n: 2}
+        - {area: 영, metric: grade_table, coef: 1.0, table: [200, 198, 195, 190, 182, 170, 158, 146, 0]}

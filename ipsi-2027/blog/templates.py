@@ -77,7 +77,7 @@ TEMPLATES: dict[str, PostTemplate] = {t.id: t for t in [
                 ("past[].cut70[]", "past[].competition[]", "past[].fill_rate[]")),
         Section("combo", "같은 군? 다른 군? 조합 포인트", "모집군이 겹치면 택1, 다르면 동시 지원 가능 안내",
                 ("jeongsi.group[]",)),
-    ), ("{univs} {dept} 비교", "2027 정시", "반영비율")),
+    ), ("{univs} {dept} 비교", "2027 정시", "반영비율"), status="구현"),
 
     _t("susi_vs_jeongsi", "③ 수시 vs 정시 경로 비교", (1, 1), "Phase 5", (
         Section("susi_list", "{univ} {dept} 수시, 수능 이후 남은 전형", "전형명·인원·최저·논술/면접일·발표일",

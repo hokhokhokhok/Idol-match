@@ -1,0 +1,31 @@
+univ: hongik
+pdf: data/raw/hongik/2027_정시_요강.pdf
+track: 수능우수자전형(서울캠퍼스)
+notes:
+  - "수능 반영점수 = Σ(영역별 반영비율 × 표준점수) + 한국사 가산, 탐구는 2과목 표준점수 합(변환표준 아님), 영어 환산점수 100점 (84~85쪽, 예시로 검증)"
+dept_map: {경영: hum}
+groups:
+  - id: hum
+    label: 인문계열·캠퍼스자율전공(인문·예능)
+    page: 84
+    text: "국어 30% · 수학 30% · 탐구 25% · 영어 15% + 한국사 10점 가산"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 0.30}
+        - {area: 수, metric: std, coef: 0.30}
+        - {area: 탐, metric: std, coef: 0.25, n: 2}
+        - {area: 영, metric: grade_table, coef: 0.15, table: [100, 95, 88, 79, 68, 55, 40, 23, 4]}
+      post: &hg_post
+        - {area: 한국사, op: add, table: [10, 10, 10, 9.9, 9.8, 9.7, 9.6, 9.5, 9.4]}
+  - id: nat
+    label: 자연계열·캠퍼스자율전공(자연·예능)
+    page: 84
+    text: "국어 20% · 수학 35%(미적분·기하 3% 가산) · 탐구 30%(과탐 3% 가산) · 영어 15%"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 0.20}
+        - {area: 수, metric: std, coef: 0.35}
+        - {area: 탐, metric: std, coef: 0.30, n: 2}
+        - {area: 영, metric: grade_table, coef: 0.15, table: [100, 95, 88, 79, 68, 55, 40, 23, 4]}
+      bonus: {math_pct: 3, math_in: [미적분, 기하], inq_pct: {과탐: 3}}
+      post: *hg_post

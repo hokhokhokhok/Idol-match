@@ -77,4 +77,20 @@ def test_duplicate_warning():
 
 def test_unimplemented_types_raise():
     with pytest.raises(NotImplementedError):
-        generate(_inp(post_type="rival_compare"), UNIVERSITIES["yonsei"])
+        generate(_inp(post_type="susi_vs_jeongsi"), UNIVERSITIES["yonsei"])
+
+
+def test_real_overview_and_compare():
+    from blog.real_data import build_compare, build_overview
+    d = build_overview("yonsei", "경영")
+    post = generate(_inp(), d)
+    html = render.to_html(post, embed_images=False)
+    assert not post.is_sample and post.report.export_allowed
+    assert "가군 113명" in html and "국어가 37.5%" in html
+    assert any("입결 데이터 없음" in w for w in post.report.warnings)
+    assert all(s.url for s in post.sources) and any("p.12" in s.label() for s in post.sources)
+    c = build_compare(["sogang", "skku", "hanyang"], "경영")
+    p2 = generate(_inp(univ_ids=["sogang", "skku", "hanyang"], post_type="rival_compare"), c)
+    t = render.to_text(p2)
+    assert "모두 나군" in t and "서강대 90명(+6)" in t and "한양대 71명(전년과 동일)" in t
+    assert "성균관대는 국어·수학 중 잘한 영역" in t

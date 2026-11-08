@@ -1,0 +1,34 @@
+univ: ewha
+pdf: data/raw/ewha/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "{Σ(영역 표준점수÷최고점 × 반영비율) + 영어 등급점수÷100 × 반영비율} ÷ 100 × 1,000 + 한국사 점수 (13쪽)"
+  - "간호학부·미래산업약학전공은 인문·자연 비율로 각각 계산해 높은 점수"
+  - "자연계열 과학탐구 과목당 변환표준점수 6% 가산(미래산업약학 제외)"
+dept_map: {경영: hum}
+groups:
+  - id: hum
+    label: 인문계열
+    page: 13
+    text: "국어 30% · 수학 30% · 탐구 20% · 영어 20%, 한국사 10점 만점 가산"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 300}
+        - {area: 수, metric: std_max, coef: 300}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 2, table: [100, 98, 94, 88, 84, 80, 76, 72, 68]}
+      post:
+        - {area: 한국사, op: add, table: [10.0, 10.0, 10.0, 9.8, 9.6, 9.4, 9.2, 9.0, 8.5]}
+  - id: nat
+    label: 자연계열
+    page: 13
+    text: "국어 25% · 수학 30% · 탐구 25%(과탐 6% 가산) · 영어 20%, 한국사 가산"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 250}
+        - {area: 수, metric: std_max, coef: 300}
+        - {area: 탐, metric: std_max, coef: 250, n: 2}
+        - {area: 영, metric: grade_table, coef: 2, table: [100, 98, 94, 88, 84, 80, 76, 72, 68]}
+      bonus: {inq_pct: {과탐: 6}}
+      post:
+        - {area: 한국사, op: add, table: [10.0, 10.0, 10.0, 10.0, 9.8, 9.6, 9.4, 9.2, 8.5]}

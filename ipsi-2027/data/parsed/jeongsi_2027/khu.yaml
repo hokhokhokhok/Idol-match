@@ -1,0 +1,41 @@
+univ: khu
+pdf: data/raw/khu/2027_정시_요강.pdf
+track: 일반전형(가군, 수능 600점)
+notes:
+  - "수능 반영점수 = Y ÷ 2 × 6 + 영어 환산(감점) + 한국사 환산(감점), Y = 영역별 점수×반영비율 합 (44쪽)"
+  - "자연계열 과학탐구 응시자 과목당 백분위변환표준점수 4점 가산(자유전공학부 제외)"
+dept_map: {경영: soc}
+groups:
+  - id: hum
+    label: 인문(문과대·외국어대·생활과학대 등)
+    page: 44
+    text: "Y = 국어×0.40 + 수학×0.25 + 탐구 변환 합×0.35"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1.2}
+        - {area: 수, metric: std, coef: 0.75}
+        - {area: 탐, metric: conv, coef: 1.05, n: 2}
+      post: &khu_post
+        - {area: 영, op: sub, table: [0, 0, 2, 4, 8, 12, 18, 24, 30]}
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 2, 4, 8, 14, 20]}
+  - id: soc
+    label: 사회(자율전공·정경·경영·국제·호텔관광 등)
+    page: 44
+    text: "Y = 국어×0.35 + 수학×0.35 + 탐구 변환 합×0.30"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1.05}
+        - {area: 수, metric: std, coef: 1.05}
+        - {area: 탐, metric: conv, coef: 0.9, n: 2}
+      post: *khu_post
+  - id: nat
+    label: 자연(이과·공과·전자정보·소프트웨어·의약 등)
+    page: 44
+    text: "Y = 국어×0.25 + 수학×0.40 + 탐구 변환 합×0.35 (과탐 과목당 4점 가산)"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 0.75}
+        - {area: 수, metric: std, coef: 1.2}
+        - {area: 탐, metric: conv, coef: 1.05, n: 2}
+      bonus: {inq_add: {과탐: 4}}
+      post: *khu_post

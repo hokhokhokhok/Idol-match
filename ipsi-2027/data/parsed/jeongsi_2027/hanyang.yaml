@@ -1,0 +1,49 @@
+univ: hanyang
+pdf: data/raw/hanyang/2027_정시_요강.pdf
+track: 일반전형(수능 90% + 학생부종합평가 10%)
+notes:
+  - "구체 산출식은 '수능점수 발표 이후 공지' (47쪽) — 앱은 표준점수÷최고점 × 비율 × 1,000으로 근사"
+  - "영어는 1,000점 중 영어 비율만큼 부여 후 등급별 차감, 한국사는 1,000점에서 등급당 0.1점 차감"
+dept_map: {경영: biz}
+groups:
+  - id: nat
+    label: 자연계열
+    page: 9
+    text: "국어 25 · 수학 40 · 영어 10 · 탐구 25"
+    formula:
+      approx: "한양대 산출식 미공개 — 최고점 대비 비율로 근사"
+      parts:
+        - {area: 국, metric: std_max, coef: 250}
+        - {area: 수, metric: std_max, coef: 400}
+        - {area: 탐, metric: std_max, coef: 250, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 98, 94, 88, 80, 70, 58, 44, 28]}
+      post:
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 0.1, 0.2, 0.3, 0.4, 0.5]}
+      ratio: 0.9
+  - id: hum
+    label: 인문계열
+    page: 9
+    text: "국어 35 · 수학 30 · 영어 10 · 탐구 25"
+    formula:
+      approx: "한양대 산출식 미공개 — 최고점 대비 비율로 근사"
+      parts:
+        - {area: 국, metric: std_max, coef: 350}
+        - {area: 수, metric: std_max, coef: 300}
+        - {area: 탐, metric: std_max, coef: 250, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 96, 90, 82, 72, 60, 46, 30, 12]}
+      post: &hy_hum_post
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]}
+      ratio: 0.9
+  - id: biz
+    label: 상경계열·의류·실내건축디자인·한양인터칼리지
+    page: 9
+    text: "국어 35 · 수학 35 · 영어 10 · 탐구 20"
+    formula:
+      approx: "한양대 산출식 미공개 — 최고점 대비 비율로 근사"
+      parts:
+        - {area: 국, metric: std_max, coef: 350}
+        - {area: 수, metric: std_max, coef: 350}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 96, 90, 82, 72, 60, 46, 30, 12]}
+      post: *hy_hum_post
+      ratio: 0.9

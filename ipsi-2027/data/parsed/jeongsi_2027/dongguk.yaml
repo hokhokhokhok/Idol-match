@@ -1,0 +1,48 @@
+univ: dongguk
+pdf: data/raw/dongguk/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "(표준점수÷200)×반영총점×비율, 탐구 변환표준점수 합÷200, 영어 환산표준점수÷200 (40쪽, 예시로 검증)"
+  - "다군 일반전형(경영대학 등)은 반영총점 900점 — 한국사 감점도 90% 적용"
+dept_map: {경영: hum_da}
+groups:
+  - id: hum
+    label: 인문계열(가·나군, 1,000점)
+    page: 40
+    text: "국어 35% · 수학 25% · 탐구 25% · 영어 15%, 한국사 감점"
+    formula:
+      parts: &dg_hum
+        - {area: 국, metric: std, coef: 1.75}
+        - {area: 수, metric: std, coef: 1.25}
+        - {area: 탐, metric: conv, coef: 1.25, n: 2}
+        - {area: 영, metric: grade_table, coef: 0.75, table: [200, 199, 197, 190, 180, 140, 90, 20, 0]}
+      post: &dg_post
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 2, 4, 6, 8, 10]}
+  - id: hum_da
+    label: 인문계열(다군 일반, 900점 — 경영대학·교육·국어교육 등)
+    page: 40
+    text: "인문계열 식 × 0.9 (반영총점 900점)"
+    formula:
+      parts: *dg_hum
+      post: *dg_post
+      ratio: 0.9
+  - id: nat1
+    label: 자연 유형①(수학·통계·산업시스템 등 — 미적분/기하 3% 가산)
+    page: 41
+    text: "국어 25% · 수학 35%(미적분·기하 3% 가산) · 탐구 25% · 영어 15%"
+    formula:
+      parts: &dg_nat
+        - {area: 국, metric: std, coef: 1.25}
+        - {area: 수, metric: std, coef: 1.75}
+        - {area: 탐, metric: conv, coef: 1.25, n: 2}
+        - {area: 영, metric: grade_table, coef: 0.75, table: [200, 199, 197, 190, 180, 140, 90, 20, 0]}
+      bonus: {math_pct: 3, math_in: [미적분, 기하]}
+      post: *dg_post
+  - id: nat2
+    label: 자연 유형②(화학·융합환경·생명과학·가정교육 — 과탐 3% 가산)
+    page: 41
+    text: "국어 25% · 수학 35% · 탐구 25%(과탐 과목별 3% 가산) · 영어 15%"
+    formula:
+      parts: *dg_nat
+      bonus: {inq_pct: {과탐: 3}}
+      post: *dg_post
