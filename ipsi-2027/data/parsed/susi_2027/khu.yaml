@@ -1,0 +1,63 @@
+univ: khu
+pdf: data/raw/khu/2027_수시_요강.pdf
+scope: 지역균형·네오르네상스·논술우수자. 실기·고른기회 등 제외
+notes:
+  - "탐구는 사회/과학탐구 2과목 평균 등급, 소수점 버림 없이 그대로 반영"
+  - "지정과목 없음, 한국사 필수 응시"
+tracks:
+  - name: 학생부교과(지역균형전형)
+    type: 교과
+    grad_ok: true
+    grad_year_min: 2025
+    grad_note: 국내 고교 졸업예정자 및 2025년 2월 이후 졸업자, 3개 학기 이상 교과 성적, 학교장 추천(인원 제한 없음)
+    grad_page: 29
+    min_page: 29
+    min_text: "인문/자연, 자율·자유전공(의예·한의예·치의예·약학 제외): 국어, 수학, 영어, 사회/과학탐구(2과목) 중 2개 영역 등급의 합이 5 이내이고 한국사 5등급 이내 / 의예·한의예·치의예·약학: 3개 영역 합 4 이내, 한국사 5 / 예술·체육: 1개 영역 이상 3등급 이내(한국사 미반영)"
+    min_req:
+      - units: 인문·자연, 자율전공·자유전공(의약 제외)
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, inq: avg2, inq_round: none, extra: {한국사: 5}}
+      - units: 의예·한의예·치의예·약학
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 4, inq: avg2, inq_round: none, extra: {한국사: 5}}
+      - units: 예술·체육
+        rule: {pool: [국, 수, 영, 탐], pick: 1, each_max: 3, inq: avg2, inq_round: none}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 23
+  - name: 학생부종합(네오르네상스전형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 40
+    min_page: 40
+    min_text: "의예·한의예·치의예·약학: 국어, 수학, 영어, 사회/과학탐구(2과목) 중 3개 영역 등급의 합 4 이내, 한국사 5등급 이내 / 그 외 학과: 없음"
+    min_req:
+      - units: 의예·한의예·치의예·약학
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 4, inq: avg2, inq_round: none, extra: {한국사: 5}}
+      - units: 그 외 학과
+        rule: null
+    events:
+      - {kind: 1단계발표, date: 2026-11-25}
+      - {kind: 고사장발표, date: 2026-12-02}
+      - {kind: 면접, date: 2026-12-05, units: "모집단위별 12.5~6"}
+      - {kind: 면접, date: 2026-12-06, units: "의학계열(의예·한의예·치의예) 12.6 14~18시"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 41
+  - name: 논술우수자전형
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 (검증 필요)
+    min_page: 66
+    min_text: "인문/자연, 자율전공(의약 제외): 2개 영역 등급의 합 5 이내, 한국사 5등급 이내 / 의예·한의예·치의예·약학: 3개 영역 합 4 이내, 한국사 5 / 체육: 1개 영역 이상 3등급 이내"
+    min_req:
+      - units: 인문·자연, 자율전공(의약 제외)
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, inq: avg2, inq_round: none, extra: {한국사: 5}}
+      - units: 의예·한의예·치의예·약학
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 4, inq: avg2, inq_round: none, extra: {한국사: 5}}
+      - units: 체육
+        rule: {pool: [국, 수, 영, 탐], pick: 1, each_max: 3, inq: avg2, inq_round: none}
+    events:
+      - {kind: 고사장발표, date: 2026-11-18}
+      - {kind: 논술, date: 2026-11-21, units: "모집단위별(67쪽)"}
+      - {kind: 논술, date: 2026-11-22, units: "모집단위별(67쪽)"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 67

@@ -1,0 +1,34 @@
+univ: kookmin
+pdf: data/raw/kookmin/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "영역별 반영점수(표준점수 활용)는 나와 있으나 환산식(최고점 대비 여부)은 이번 정리에서 확인하지 못함 — 최고점 대비 비율로 근사 (28쪽)"
+  - "자연계 수학(기하·미적분)·과탐 과목당 표준점수 5% 가산"
+dept_map: {경영: hum}
+groups:
+  - id: hum
+    label: 인문계 전체
+    page: 28
+    text: "국어 400 · 수학 300 · 영어 100 · 탐구 200 (1,000점)"
+    formula:
+      approx: "국민대 환산식 미확인 — 최고점 대비 비율로 근사"
+      parts:
+        - {area: 국, metric: std_max, coef: 400}
+        - {area: 수, metric: std_max, coef: 300}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 98, 95, 90, 85, 80, 75, 70, 0]}
+      post: &km_post
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 0.2, 0.4, 0.6, 0.8, 1.0]}
+  - id: nat
+    label: 자연계 전체
+    page: 28
+    text: "국어 300 · 수학 400 · 영어 100 · 탐구 200 (수학 기하·미적분, 과탐 5% 가산)"
+    formula:
+      approx: "국민대 환산식 미확인 — 최고점 대비 비율로 근사"
+      parts:
+        - {area: 국, metric: std_max, coef: 300}
+        - {area: 수, metric: std_max, coef: 400}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 98, 95, 90, 85, 80, 75, 70, 0]}
+      bonus: {math_pct: 5, math_in: [미적분, 기하], inq_pct: {과탐: 5}}
+      post: *km_post

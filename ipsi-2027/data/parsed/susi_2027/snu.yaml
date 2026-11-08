@@ -1,0 +1,39 @@
+univ: snu
+pdf: data/raw/snu/2027_수시_요강.pdf
+scope: 일반 전형(지역균형·일반)만. 기회균형·정원외는 제외
+tracks:
+  - name: 학생부종합전형(지역균형전형)
+    type: 종합
+    grad_ok: false
+    grad_note: 2027년 2월 국내 고교 졸업예정자(조기졸업예정자 제외), 학교장 추천(고교별 2명)
+    grad_page: 18
+    min_page: 18
+    min_text: "전 모집단위: 4개 영역(국어, 수학, 영어, 탐구) 중 3개 영역 등급 합이 7등급 이내. 탐구영역의 등급은 2개 과목 등급 평균을 반영함. 모집단위별 수능 응시영역기준 준수"
+    min_req:
+      - units: 전 모집단위
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 7, inq: avg2, inq_round: none}
+        note: 평균의 소수점 처리 방식은 요강에 명시 없음 → 그대로 계산. 모집단위별 응시영역기준(50~51쪽) 별도 확인
+    events:
+      - {kind: 1단계발표, date: 2026-11-27}
+      - {kind: 면접, date: 2026-12-04, units: "전 모집단위(수의대·의대 제외)"}
+      - {kind: 면접, date: 2026-12-05, units: "수의과대학, 의과대학"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 5
+  - name: 학생부종합전형(일반전형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업자(2027년 2월 졸업예정자 포함), 검정고시 합격자 포함
+    grad_page: 24
+    min_page: 24
+    min_text: "전 모집단위(미술대학 디자인과 제외) 수능 최저 미적용. 미술대학 디자인과: 4개 영역 중 3개 영역 등급 합 7등급 이내, 탐구는 2개 과목 등급 평균"
+    min_req:
+      - units: 미술대학 디자인과
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 7, inq: avg2, inq_round: none}
+      - units: 그 외 전 모집단위
+        rule: null
+    events:
+      - {kind: 1단계발표, date: 2026-11-20}
+      - {kind: 면접, date: 2026-11-27, units: "사범대학 교직적성·인성면접 / 전 모집단위(수의대·의대·치의학과 제외)"}
+      - {kind: 면접, date: 2026-11-28, units: "수의과대학, 의과대학, 치의학과"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 6

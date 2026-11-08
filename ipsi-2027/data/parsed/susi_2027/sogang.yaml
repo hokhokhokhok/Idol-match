@@ -1,0 +1,46 @@
+univ: sogang
+pdf: data/raw/sogang/2027_수시_요강.pdf
+scope: 학생부교과(지역균형)·논술(일반). 학생부종합(일반·서강가치 등)은 최저 미적용
+notes:
+  - "최저 적용 시 국어·수학·탐구 선택과목 구분 없음, 탐구 1과목. 한국사 필수 응시(6쪽)"
+tracks:
+  - name: 학생부교과(지역균형)
+    type: 교과
+    grad_ok: false
+    grad_note: 국내고 졸업예정자 중 4개 학기 이상 성적 취득, 출신 고교장 추천
+    grad_page: 6
+    min_page: 6
+    min_text: "국어, 수학, 영어, 탐구(1과목) 4개 영역 중 3개 영역 각 3등급 이내, 한국사 4등급 이내"
+    min_req:
+      - units: 전 모집단위
+        rule: {pool: [국, 수, 영, 탐], pick: 3, each_max: 3, inq: best1, extra: {한국사: 4}}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 12
+  - name: 학생부종합(일반 등)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 17
+    min_page: 18
+    min_text: "수능최저학력기준: 적용하지 않음"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 12
+  - name: 논술(일반)
+    type: 논술
+    grad_ok: true
+    grad_note: 졸업(예정)자·검정고시·국외고 모두 지원 가능(6쪽 표)
+    grad_page: 6
+    min_page: 6
+    min_text: "국어, 수학, 영어, 탐구(1과목) 4개 영역 중 3개 영역 등급 합 7 이내, 한국사 4등급 이내"
+    min_req:
+      - units: 전 모집단위
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 7, inq: best1, extra: {한국사: 4}}
+    events:
+      - {kind: 논술, date: 2026-11-21, units: 자연}
+      - {kind: 논술, date: 2026-11-22, units: 인문}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 12

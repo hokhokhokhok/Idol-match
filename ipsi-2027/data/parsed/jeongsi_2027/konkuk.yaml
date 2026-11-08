@@ -1,0 +1,31 @@
+univ: konkuk
+pdf: data/raw/konkuk/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "Σ(영역별 반영지표 점수 × 반영비율) × 수능 반영총점 ÷ 200, 한국사 등급별 감점 (22쪽). 탐구는 2과목 변환표준점수 합으로 반영(200점 척도로 판단, 검증 필요)"
+  - "KU자유전공학부는 A·B 모두 계산해 높은 점수"
+dept_map: {경영: B}
+groups:
+  - id: A
+    label: 언어중심(A) — 문과대·예술디자인(일부)·사범(일부)
+    page: 22
+    text: "국어 40 · 수학 30 · 탐구 20 · 영어 10, 한국사 감점"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 2.0}
+        - {area: 수, metric: std, coef: 1.5}
+        - {area: 탐, metric: conv, coef: 1.0, n: 2}
+        - {area: 영, metric: grade_table, coef: 0.5, table: [200, 197, 194, 190, 185, 180, 170, 160, 150]}
+      post: &kk_post
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 1.00, 1.75, 3.00, 4.25, 5.00]}
+  - id: B
+    label: 수리중심(B) — 이과·공과·사회과학·경영·융합생명 등
+    page: 22
+    text: "국어 30 · 수학 40 · 탐구 20 · 영어 10, 한국사 감점"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1.5}
+        - {area: 수, metric: std, coef: 2.0}
+        - {area: 탐, metric: conv, coef: 1.0, n: 2}
+        - {area: 영, metric: grade_table, coef: 0.5, table: [200, 197, 194, 190, 185, 180, 170, 160, 150]}
+      post: *kk_post

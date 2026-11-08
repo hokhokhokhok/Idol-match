@@ -1,0 +1,125 @@
+# 인사이트 시드 (F7). 공식 데이터가 아닌 '참고 의견'. 요약은 원문 문장을 옮기지 않고 새로 쓴 1~3문장.
+# kind: 학원 | 언론 | 유튜브 | 공식   evidence: 데이터 | 경험 | 의견
+# status: 확인(원문 열람) | 검증 필요(검색 결과 요약으로만 확인, 원문 미열람) | 미확인
+# segments: 수시 정시 병행 현역 재수 삼수 N수 반수 검정고시 (빈 목록 = 전체)
+# topic: 같은 topic 끼리 화면에서 기관별로 나란히 보여줌
+- id: nsu-scale-2027
+  org: 종로학원
+  kind: 학원
+  title: 2027 수능 N수생 규모 23년 만 최대 전망
+  url: https://www.mt.co.kr/policy/2026/09/08/2026090810102413804
+  date: 2026-09-08
+  topic: N수생 증가
+  segments: [정시, 현역, 재수, N수, 반수]
+  tags: [N수생, 사탐런, 확통런]
+  evidence: 데이터
+  status: 검증 필요
+  summary: "수능 원서 접수 결과를 바탕으로 졸업생 등 N수생이 2004학년도 이후 가장 많다고 분석했다. 사회탐구 쏠림과 확률과 통계 선택 증가도 최고 수준이라고 봤다."
+- id: nsu-cause-jongro
+  org: 종로학원
+  kind: 학원
+  title: N수 증가 원인 — 정시 탈락자 누적과 의대 기대
+  url: https://www.metroseoul.co.kr/article/20260527500367
+  date: 2026-05-27
+  topic: N수생 증가
+  segments: [재수, N수, 반수]
+  tags: [N수생, 지역의사제]
+  evidence: 의견
+  status: 검증 필요
+  summary: "N수 증가의 직접 원인으로 통합수능 마지막 해라는 점보다 누적된 정시 탈락자와 의대 진입 기대를 더 크게 봤다. 본수능에는 반수생이 추가로 들어올 수 있다고 전망했다."
+- id: csat-apply-official
+  org: 한국교육과정평가원(보도 경유)
+  kind: 언론
+  title: 2027 수능 응시원서 접수 결과 — 졸업생 31.5%, 사탐만 선택 69.6%
+  url: https://www.educhang.co.kr/news/articleView.html?idxno=9934
+  date: 2026-09-08
+  topic: N수생 증가
+  segments: []
+  tags: [N수생, 사탐런, 공식수치]
+  evidence: 데이터
+  status: 검증 필요
+  summary: "전체 접수자는 55만 1,864명으로 줄었지만 졸업생은 17만 3,706명으로 8.6% 늘어 31.5%를 차지했다. 탐구 지원자 중 사회탐구만 고른 비율은 69.6%로 전년(61.0%)보다 높아졌다."
+- id: susi-2028-limit
+  org: 종로학원
+  kind: 학원
+  title: 2028 주요대 수시 N수생 지원 불가 인원 2.5배
+  url: https://www.newsis.com/view/NISX20260612_0003667413
+  date: 2026-06-12
+  topic: 2028 체제 변화
+  segments: [수시, 재수, 삼수, N수, 반수]
+  tags: [2028개편, 재학생전형, 재도전]
+  evidence: 데이터
+  status: 검증 필요
+  summary: "주요 10개대 2028 수시에서 N수생이 지원할 수 없는 인원이 2027보다 약 2.5배 늘어난다고 집계했다. 2027에 불합격하면 2028 재도전 조건이 크게 불리해질 수 있다는 해석이다."
+- id: susi-uphill
+  org: 진학사(보도 경유)
+  kind: 언론
+  title: 개편 전 마지막 수시, '우주상향' 지원 두 배
+  url: https://www.heraldk.com/article/2026082022451429382
+  date: 2026-08-20
+  topic: 지원 성향
+  segments: [수시, 병행]
+  tags: [상향지원, 양극화]
+  evidence: 데이터
+  status: 검증 필요
+  summary: "모의지원 데이터에서 합격 가능성이 매우 낮은 대학에 지원하는 비중이 전년의 약 두 배로 늘었다는 분석이다. 적정 지원은 비슷했고 어중간한 소신 지원이 줄어 양극화됐다고 봤다."
+- id: stable-jeongsi-mega
+  org: 메가스터디
+  kind: 학원
+  title: 개편 전 마지막 수능, 정시 안정 지원 전망 (원출처 미확인)
+  url: https://www.megastudy.net/
+  date: 2026-11-08
+  topic: 지원 성향
+  segments: [정시]
+  tags: [안정지원]
+  evidence: 의견
+  status: 미확인
+  summary: "기획안에 메가스터디 분석으로 적혀 있던 전망이지만 원출처를 찾지 못했다. 앱의 환경 보정에서는 기본으로 꺼 두었다."
+- id: jeongsi-record
+  org: 입시 전문가(보도 경유)
+  kind: 언론
+  title: 정시 학생부 반영 대학 확대 — 2027 동국대·중앙대 추가
+  url: https://www.etnews.com/20250508000045
+  date: 2025-05-08
+  topic: 정시 학생부 반영
+  segments: [정시, 재수, 삼수, N수, 반수]
+  tags: [학생부, 교과평가]
+  evidence: 데이터
+  status: 검증 필요
+  summary: "연세대·한양대·성균관대(사범대)에 이어 2027 정시에서 동국대와 중앙대도 학생부 평가를 시작한다고 정리했다. 재수생도 지원 대학의 학생부 반영 방식을 확인해야 한다는 조언이다."
+- id: regional-doctor
+  org: 보건복지부(보도 경유)
+  kind: 언론
+  title: 2027 의대 정원 +490명, 전원 지역의사전형
+  url: https://www.heraldk.com/article/2026021000174518709
+  date: 2026-02-10
+  topic: 의대·상위권 이동
+  segments: [정시, 재수, N수]
+  tags: [의대, 지역의사제]
+  evidence: 데이터
+  status: 검증 필요
+  summary: "2027학년도 의대 정원이 3,548명으로 490명 늘고, 증원분은 비서울권 32개 의대의 지역의사전형으로 선발된다. 인서울 의대 정원은 그대로지만 상위권 재수생 유입 요인으로 거론된다."
+- id: quota-official
+  org: 한국대학교육협의회
+  kind: 공식
+  title: 2027 정시 모집인원 68,134명(전년 대비 −1,197명)
+  url: https://www.kcue.or.kr/_upload/news/2025/04/30/application_a31187fc315c1a7e050c363a5cc99410.pdf
+  date: 2025-04-30
+  topic: 모집인원
+  segments: [정시]
+  tags: [모집인원, 공식수치]
+  evidence: 데이터
+  status: 확인
+  summary: "2027학년도 대학입학전형시행계획 기준 정시 모집인원은 68,134명(19.7%)으로 전년보다 1,197명 줄었다. 정시 수능위주 전형은 63,195명이다."
+- id: mimiminu-teachers3
+  org: 미미미누
+  kind: 유튜브
+  title: "'티처스3: 재수전쟁' MC — 재수생 공감 관점"
+  url: https://www.tenasia.co.kr/article/2026101535484
+  date: 2026-10-15
+  topic: 수험생 경험·심리
+  segments: [재수, 삼수, N수]
+  tags: [재수, 멘탈]
+  evidence: 경험
+  status: 검증 필요
+  summary: "5수 경험이 있는 유튜버로, 재수생 100명이 참여하는 입시 예능의 MC를 맡아 학생 입장에서 설명을 풀어주는 역할을 한다고 밝혔다. 입시 데이터가 아니라 수험생 경험·심리 관점의 참고 자료로 분류한다."

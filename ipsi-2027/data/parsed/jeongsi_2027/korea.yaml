@@ -1,0 +1,38 @@
+univ: korea
+pdf: data/raw/korea/2027_정시_요강.pdf
+track: 일반전형(수능 100%)
+notes:
+  - "탐구 변환점수는 백분위 활용, 원서 접수 전 공지. 자연·의학은 과학탐구 과목당 변환점수 3% 가산(18쪽)"
+dept_map: {경영: hum}
+groups:
+  - id: hum
+    label: 인문·체능, 가정교육과·간호학과
+    page: 17
+    text: "(국어 표준점수 + 수학 표준점수 + 탐구 변환점수 합×0.8) ÷ 560 × 1,000 − 영어 감점(3점씩) − 한국사 감점"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1}
+        - {area: 수, metric: std, coef: 1}
+        - {area: 탐, metric: conv, coef: 0.8, n: 2}
+      den: 560
+      scale: 1000
+      max: 1000
+      post:
+        - {area: 영, op: sub, table: [0, 3, 6, 9, 12, 15, 18, 21, 24]}
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 0.2, 0.4, 0.6, 0.8, 2.0]}
+  - id: nat
+    label: 의학·자연(가정교육·간호 제외)
+    page: 17
+    text: "(국어 + 수학×1.2 + 탐구 변환점수 합[과탐 3% 가산]) ÷ 640 × 1,000 − 영어·한국사 감점"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1}
+        - {area: 수, metric: std, coef: 1.2}
+        - {area: 탐, metric: conv, coef: 1, n: 2}
+      den: 640
+      scale: 1000
+      max: 1000
+      bonus: {inq_pct: {과탐: 3}}
+      post:
+        - {area: 영, op: sub, table: [0, 3, 6, 9, 12, 15, 18, 21, 24]}
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 0.2, 0.4, 0.6, 0.8, 2.0]}

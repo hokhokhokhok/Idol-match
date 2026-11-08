@@ -1,0 +1,46 @@
+univ: uos
+pdf: data/raw/uos/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "국어·수학: 표준점수÷최고점×반영점수, 탐구: 과목별 변환표준점수÷최고점×100 (7쪽) — 최고점은 성적 발표 후 입력"
+  - "인문은 사회탐구 2과목, 자연은 과학탐구 2과목 선택 시 탐구 산출 점수 3% 가산"
+  - "한국사 감점: 1~4등급 0, 5등급부터 −2·−4·−6·−8·−10 (병합 셀 위치로 판독, 검증 필요)"
+dept_map: {경영: hum1}
+groups:
+  - id: hum1
+    label: 인문계열Ⅰ(경제·사회복지·세무·경영·도시행정·자유전공(인문))
+    page: 6
+    text: "국어 350 · 수학 350 · 영어 150 · 탐구 200"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 350}
+        - {area: 수, metric: std_max, coef: 350}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [150, 146, 135, 120, 95, 75, 45, 15, 0]}
+      bonus: {inq_all: {type: 사탐, pct: 3}}
+      post: &uos_post
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 2, 4, 6, 8, 10]}
+  - id: hum2
+    label: 인문계열Ⅱ(행정·국제관계·영문·국문·국사·철학·중국어·도시사회)
+    page: 6
+    text: "국어 350 · 수학 250 · 영어 200 · 탐구 200"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 350}
+        - {area: 수, metric: std_max, coef: 250}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [200, 194, 184, 160, 130, 100, 60, 20, 0]}
+      bonus: {inq_all: {type: 사탐, pct: 3}}
+      post: *uos_post
+  - id: nat
+    label: 자연계열
+    page: 6
+    text: "국어 300 · 수학 400 · 영어 100 · 탐구 200"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 300}
+        - {area: 수, metric: std_max, coef: 400}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [100, 97, 90, 80, 65, 50, 30, 10, 0]}
+      bonus: {inq_all: {type: 과탐, pct: 3}}
+      post: *uos_post

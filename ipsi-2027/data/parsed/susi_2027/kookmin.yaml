@@ -1,0 +1,38 @@
+univ: kookmin
+pdf: data/raw/kookmin/2027_수시_요강.pdf
+scope: 교과우수자(학교장추천)·논술. 학생부종합(최저 없음) 제외
+notes:
+  - "모집계열은 학생이 아닌 모집단위 기준. 한국사·제2외국어·한문·직탐은 탐구 1과목으로 불인정, 한국사는 응시 필수"
+  - "자연계열은 과학탐구만 인정 (국어+사탐 등 사탐 조합은 미충족, 15쪽 예시)"
+common_min: &km_min
+  - units: 인문계열 모집단위
+    rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 6, inq: best1}
+  - units: 자연계열 모집단위
+    rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 6, inq: best1, inq_type: 과탐}
+    note: "과탐이 없어도 국·수·영 중 2개로 충족 가능하지만, 판정기는 탐구를 과탐으로만 셈"
+tracks:
+  - name: 교과우수자(학교장추천)전형
+    type: 교과
+    grad_ok: true
+    grad_note: 국내 고교 졸업(예정)자, 3학년 1학기까지 3개 학기 이상 지정교과 석차, 학교장 추천(인원 제한 없음). 졸업 연도 제한 문구 없음
+    grad_page: 15
+    min_page: 15
+    min_text: "국어, 수학, 영어, 탐구영역 중 2개 영역 등급 합 6 이내. 인문: 탐구 전체 과목 중 상위 1과목 / 자연: 과학탐구 전체 과목 중 상위 1과목"
+    min_req: *km_min
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 12
+  - name: 논술전형
+    type: 논술
+    grad_ok: true
+    grad_note: 국내 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 39
+    min_page: 39
+    min_text: "교과우수자와 동일: 2개 영역 등급 합 6 이내 (인문 탐구 상위 1과목 / 자연 과탐 상위 1과목)"
+    min_req: *km_min
+    events:
+      - {kind: 고사장발표, date: 2026-11-30}
+      - {kind: 논술, date: 2026-12-05, units: 인문계}
+      - {kind: 논술, date: 2026-12-06, units: 자연계}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 12

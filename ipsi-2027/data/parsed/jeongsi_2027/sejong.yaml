@@ -1,0 +1,36 @@
+univ: sejong
+pdf: data/raw/sejong/2027_정시_요강.pdf
+track: 수능(일반학생 전형)
+notes:
+  - "국어·수학 (표준점수÷200)×배점, 영어 (등급점수÷200)×배점, 탐구 (변환표준점수 합÷200)×배점 (47쪽)"
+  - "한국사 반영 방법은 이번 정리에서 추출하지 못함 — 미반영(검증 필요)"
+dept_map: {경영: hum}
+groups:
+  - id: hum
+    label: 인문계열
+    page: 47
+    text: "국어 30% · 수학 30% · 영어 20% · 탐구 20% (1,000점)"
+    formula:
+      parts:
+        - {area: 국, metric: std, coef: 1.5}
+        - {area: 수, metric: std, coef: 1.5}
+        - {area: 탐, metric: conv, coef: 1.0, n: 2}
+        - {area: 영, metric: grade_table, coef: 1.0, table: [200, 195, 190, 185, 170, 150, 120, 100, 0]}
+  - id: nat_bio
+    label: 자연(자연과학·생명과학 — 수학·과탐 5% 가산)
+    page: 47
+    text: "국어 20% · 수학 35% · 영어 20% · 탐구 25%"
+    formula:
+      parts: &sj_nat
+        - {area: 국, metric: std, coef: 1.0}
+        - {area: 수, metric: std, coef: 1.75}
+        - {area: 탐, metric: conv, coef: 1.25, n: 2}
+        - {area: 영, metric: grade_table, coef: 1.0, table: [200, 198, 196, 194, 170, 150, 120, 100, 0]}
+      bonus: {math_pct: 5, math_in: [미적분, 기하], inq_pct: {과탐: 5}}
+  - id: nat_eng
+    label: 자연(공과·IT·첨단융합·인공지능 — 수학·과탐 3% 가산)
+    page: 47
+    text: "국어 20% · 수학 35% · 영어 20% · 탐구 25%"
+    formula:
+      parts: *sj_nat
+      bonus: {math_pct: 3, math_in: [미적분, 기하], inq_pct: {과탐: 3}}

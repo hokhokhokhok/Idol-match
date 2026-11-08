@@ -1,0 +1,34 @@
+univ: sejong
+pdf: data/raw/sejong/2027_수시_요강.pdf
+scope: 지역균형(교과)·논술우수자. 학생부종합(최저 없음) 제외
+tracks:
+  - name: 학생부교과(지역균형 전형)
+    type: 교과
+    grad_ok: true
+    grad_note: 국내 정규 고교 졸업(예정)자, 3학년 1학기까지 5개 학기 이상 성적, 학교장 추천(인원 제한 없음). 졸업 연도 제한 문구 없음
+    grad_page: 11
+    min_page: 11
+    min_text: "자유전공학부: 국어, 수학, 영어, 탐구(사회/과학탐구 중 1과목) 중 2개 영역 등급의 합 5 이내 / 인문·자연계열: 2개 영역 등급의 합 6 이내"
+    min_req:
+      - units: 자유전공학부
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, inq: best1}
+      - units: 인문계열·자연계열
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 6, inq: best1}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 8
+  - name: 논술(논술우수자 전형)
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 및 동등 학력
+    grad_page: 28
+    min_page: 28
+    min_text: "자유전공학부, 인문계열, 자연계열: 국어, 수학, 영어, 탐구(사회/과학탐구 중 1과목) 중 2개 영역 등급의 합 5 이내"
+    min_req:
+      - units: 전 모집단위
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, inq: best1}
+    events:
+      - {kind: 논술, date: 2026-11-28, units: "인문계열 09시 / 자유전공학부 14시"}
+      - {kind: 논술, date: 2026-11-29, units: "인공지능융합대학 09시 / 생명과학대학 등 14시"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 8

@@ -1,0 +1,45 @@
+univ: ssu
+pdf: data/raw/ssu/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "자세한 환산방법은 요강 42~44쪽 — 이번 정리에서는 비율 기반 근사. 사탐·과탐 백분위 6%, 수학 표준점수 5~7% 가산은 별도 점수로 더해지는 방식이라 근사식에서 제외"
+  - "한국사: 1~4등급 감점 없음, 5등급부터 −2·−2.5·−3·−3.5·−4"
+dept_map: {경영: biz}
+groups:
+  - id: hum
+    label: 인문계열
+    page: 35
+    text: "국어 35 · 수학 20 · 영어 20 · 탐구 25(12.5+12.5)"
+    formula:
+      approx: "숭실대 환산식 미추출 — 최고점 대비 비율로 근사, 가산점 제외"
+      parts:
+        - {area: 국, metric: std_max, coef: 350}
+        - {area: 수, metric: std_max, coef: 200}
+        - {area: 탐, metric: std_max, coef: 250, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [200, 200, 197, 193, 160, 144, 120, 72, 0]}
+      post: &ss_post
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0, 2, 2.5, 3, 3.5, 4]}
+  - id: biz
+    label: 경상계열
+    page: 35
+    text: "국어 25 · 수학 35 · 영어 15 · 탐구 25"
+    formula:
+      approx: "숭실대 환산식 미추출 — 최고점 대비 비율로 근사, 가산점 제외"
+      parts:
+        - {area: 국, metric: std_max, coef: 250}
+        - {area: 수, metric: std_max, coef: 350}
+        - {area: 탐, metric: std_max, coef: 250, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [150, 150, 148, 145, 120, 108, 90, 54, 0]}
+      post: *ss_post
+  - id: nat
+    label: 자연계열1·2
+    page: 35
+    text: "국어 20 · 수학 35 · 영어 15 · 탐구 30"
+    formula:
+      approx: "숭실대 환산식 미추출 — 최고점 대비 비율로 근사, 가산점 제외"
+      parts:
+        - {area: 국, metric: std_max, coef: 200}
+        - {area: 수, metric: std_max, coef: 350}
+        - {area: 탐, metric: std_max, coef: 300, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [150, 150, 148, 145, 120, 108, 90, 54, 0]}
+      post: *ss_post

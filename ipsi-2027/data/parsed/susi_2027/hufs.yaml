@@ -1,0 +1,52 @@
+univ: hufs
+pdf: data/raw/hufs/2027_수시_요강.pdf
+scope: 학생부교과(학교장추천)·논술·학생부종합(면접형 일정). 서류형·SW인재·기회균형은 최저 미적용
+notes:
+  - "탐구는 사회 또는 과학탐구 1과목. 제2외국어·한문 대체 불가"
+common_min: &hf_min
+  - units: 서울캠퍼스 모집단위(영어·서양어·중국학·일본학·사회과학·상경·경영·국제학부·L&D·L&T·AI융합(서울)·자유전공(서울) 등)
+    rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 4, inq: best1}
+  - units: 글로벌캠퍼스 모집단위(인문·언어·경상·자연과학·공과·융합인재·Culture&Technology·AI융합(글로벌)·바이오메디컬·자유전공(글로벌) 등)
+    rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 6, inq: best1}
+tracks:
+  - name: 학생부교과전형(학교장추천)
+    type: 교과
+    grad_ok: true
+    grad_year_min: 2026
+    grad_note: 2026년 1월 이후(2026년 1월 포함) 국내 고교 졸업(예정)자, 학교장 추천
+    grad_page: 22
+    min_page: 23
+    min_text: "서울캠퍼스: 국어, 수학, 영어, 탐구(사회 혹은 과학탐구 1과목) 중 2개 영역 등급 합 4 이내 / 글로벌캠퍼스: 2개 영역 등급 합 6 이내 (모집단위 목록은 23쪽)"
+    min_req: *hf_min
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 21
+  - name: 논술전형
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력 (비교내신 대상자는 논술 성적으로 산출)
+    grad_page: 41
+    min_page: 36
+    min_text: "서울캠퍼스: 2개 영역 등급 합 4 이내 / 글로벌캠퍼스: 2개 영역 등급 합 6 이내 (탐구 1과목)"
+    min_req: *hf_min
+    events:
+      - {kind: 고사장발표, date: 2026-11-25}
+      - {kind: 논술, date: 2026-11-28, units: "모집단위별(21·37쪽)"}
+      - {kind: 논술, date: 2026-11-29, units: "모집단위별(21·37쪽)"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 21
+  - name: 학생부종합전형(면접형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 25
+    min_page: 25
+    min_text: "대학수학능력시험 최저학력기준을 적용하지 않음"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 1단계발표, date: 2026-11-16}
+      - {kind: 면접, date: 2026-11-21, units: 서울캠퍼스}
+      - {kind: 면접, date: 2026-11-22, units: 글로벌캠퍼스}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 26

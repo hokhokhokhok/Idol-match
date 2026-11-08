@@ -1,0 +1,54 @@
+univ: sookmyung
+pdf: data/raw/sookmyung/2027_수시_요강.pdf
+scope: 지역균형(교과)·숙명인재(면접형)·논술우수자
+notes:
+  - "탐구는 사탐/과탐 중 등급이 높은 1과목. 국어·수학 선택과목 미지정. 한국사 응시 필수(최저 미반영)"
+tracks:
+  - name: 학생부교과(지역균형선발전형)
+    type: 교과
+    grad_ok: true
+    grad_note: 국내 정규 고교 졸업(예정)자, 국내 고교 5학기 이상 재학·성적 기재, 출신고 추천(인원 제한 없음). 졸업 연도 제한 문구 없음
+    grad_page: 26
+    min_page: 26
+    min_text: "인문계/자연계(약학부 제외), 자유전공학부: 수능최저학력기준 없음 / 약학부: 4개 영역 중 3개 영역 등급 합 5 이내(수학 반드시 포함, 탐구 1과목)"
+    min_req:
+      - units: 인문계·자연계(약학부 제외)·자유전공학부
+        rule: null
+      - units: 약학부
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 5, must_all: [수], inq: best1}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 10
+  - name: 학생부종합(숙명인재-면접형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 (검증 필요)
+    min_page: 5
+    min_text: "인문/자연계/자유전공학부: 수능최저학력기준 없음"
+    min_req:
+      - {units: 해당 모집단위, rule: null}
+    events:
+      - {kind: 1단계발표, date: 2026-11-19}
+      - {kind: 고사장발표, date: 2026-11-24}
+      - {kind: 면접, date: 2026-11-28, units: "11.28~29 모집단위별"}
+      - {kind: 면접, date: 2026-11-29, units: "11.28~29 모집단위별"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 18
+  - name: 논술우수자
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력 (2024년 2월 이전 졸업자 등은 비교내신)
+    grad_page: 28
+    min_page: 28
+    min_text: "인문계/자연계(약학부 제외): 4개 영역 중 2개 영역 등급 합 5 이내(탐구 1과목) / 약학부: 3개 영역 등급 합 4 이내(수학 반드시 포함)"
+    min_req:
+      - units: 인문계·자연계(약학부 제외)
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, inq: best1}
+      - units: 약학부
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 4, must_all: [수], inq: best1}
+    events:
+      - {kind: 고사장발표, date: 2026-11-17}
+      - {kind: 논술, date: 2026-11-21, units: "자연계(의류학과 제외) / 인문계·의류학과 11.21~22"}
+      - {kind: 논술, date: 2026-11-22, units: 인문계·의류학과}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 28

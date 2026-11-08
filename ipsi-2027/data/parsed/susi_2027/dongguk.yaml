@@ -1,0 +1,50 @@
+univ: dongguk
+pdf: data/raw/dongguk/2027_수시_요강.pdf
+scope: 학교장추천인재(교과)·Do Dream(종합)·논술
+notes:
+  - "논술전형만 수능최저 적용. 탐구는 사회·과학탐구 2과목 중 상위 1과목, 제2외국어/한문 대체 없음, 선택과목 지정 없음(5쪽)"
+tracks:
+  - name: "[학생부교과] 학교장추천인재"
+    type: 교과
+    grad_ok: null
+    grad_note: 학교장 추천 — 졸업 연도 조건은 요강 원문 확인 필요
+    min_page: 5
+    min_text: "수능최저학력기준 미적용"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-01}
+    events_page: 8
+  - name: "[학생부종합] Do Dream"
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 (검증 필요)
+    min_page: 5
+    min_text: "수능최저학력기준 미적용"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 1단계발표, date: 2026-11-13}
+      - {kind: 고사장발표, date: 2026-11-17}
+      - {kind: 면접, date: 2026-12-11, units: "모집단위별 12.11~13 (21쪽)"}
+      - {kind: 면접, date: 2026-12-13, units: "모집단위별 12.11~13 (21쪽)"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 20
+  - name: 논술
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 (검증 필요)
+    min_page: 5
+    min_text: "국어/수학/영어/탐구 2개 영역 등급 합 5 [한국사 4등급] / 경찰행정학부: 2개 영역 합 4 [한국사 4] / 약학과: 3개 영역 합 4 [한국사 4] (인문/자연 공통)"
+    min_req:
+      - units: 전 모집단위(경찰행정·약학 제외)
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, inq: best1, extra: {한국사: 4}}
+      - units: 경찰행정학부
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 4, inq: best1, extra: {한국사: 4}}
+      - units: 약학과
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 4, inq: best1, extra: {한국사: 4}}
+    events:
+      - {kind: 고사장발표, date: 2026-11-18}
+      - {kind: 논술, date: 2026-11-22, units: "모집단위별 시간 구분(50쪽)"}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 50

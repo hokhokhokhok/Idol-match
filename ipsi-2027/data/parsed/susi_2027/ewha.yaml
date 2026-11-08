@@ -1,0 +1,83 @@
+univ: ewha
+pdf: data/raw/ewha/2027_수시_요강.pdf
+scope: 고교추천·미래인재(서류형/면접형)·논술. 고른기회·실기 제외
+notes:
+  - "탐구는 응시 과목 중 상위 1개 과목 등급, 제2외국어/한문 불인정"
+  - "인문계열(국제학부 포함)은 국어, 자연계열(의예·약학 포함)은 수학 응시 필수"
+  - "최초합격 발표가 12월 17일(목)로 대교협 마감(12.18)보다 하루 빠름"
+tracks:
+  - name: 학생부교과(고교추천전형)
+    type: 교과
+    grad_ok: true
+    grad_year_min: 2026
+    grad_note: 2026년 2월 이후 국내 고교 졸업자(2027년 2월 졸업예정자 포함), 학교폭력 기재 시 지원 불가
+    grad_page: 14
+    min_page: 14
+    min_text: "국어, 수학, 영어, 탐구(사회/과학) 4개 영역 중 2개 영역 등급 합 5 이내. 제2외국어/한문 불인정"
+    min_req:
+      - units: 전 모집단위
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, inq: best1}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-17}
+    events_page: 8
+  - name: 학생부종합(미래인재전형-서류형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업자(2027년 2월 졸업예정자 포함) 또는 동등 학력
+    grad_page: 16
+    min_page: 16
+    min_text: "인문: 국어 포함 2개 영역 합 5 / (인문 일부 모집단위: 국어 포함 2개 합 5 및 영어 2등급 — 모집단위명 추출 누락, 원문 확인) / 자연: 수학 포함 2개 합 5 / 의예: 4개 합 5 / 약학: 4개 합 6 / 스크랜튼: 3개 합 5. 탐구 상위 1과목"
+    min_req:
+      - units: 인문계열
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, must_all: [국], inq: best1}
+      - units: "인문계열 일부(영어 2등급 추가 — 원문 16쪽 확인)"
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, must_all: [국], inq: best1, extra: {영: 2}}
+      - units: 자연계열
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, must_all: [수], inq: best1}
+      - units: 의예과
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 5, inq: best1}
+      - units: 약학전공
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 6, inq: best1}
+      - units: 스크랜튼학부
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 5, inq: best1}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-17}
+    events_page: 8
+  - name: 학생부종합(미래인재전형-면접형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업자(2027년 2월 졸업예정자 포함) (검증 필요)
+    min_page: 19
+    min_text: "수능 최저학력기준 적용하지 않음 (검증 필요)"
+    min_req:
+      - {units: 해당 모집단위, rule: null}
+    events:
+      - {kind: 1단계발표, date: 2026-11-12}
+      - {kind: 면접, date: 2026-11-21, units: 공과대학 일부·사범대학 과학/수학교육}
+      - {kind: 면접, date: 2026-11-22, units: 의예과}
+      - {kind: 최초합격발표, date: 2026-12-03}
+    events_page: 8
+  - name: 논술(논술전형)
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업자(2027년 2월 졸업예정자 포함) 또는 동등 학력
+    grad_page: 21
+    min_page: 29
+    min_text: "인문: 국어 포함 2개 영역 합 5 / 자연: 수학 포함 2개 합 5 / 의예: 4개 합 5 / 약학: 4개 합 6 / 스크랜튼: 3개 합 5. 탐구 상위 1과목"
+    min_req:
+      - units: 인문계열
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, must_all: [국], inq: best1}
+      - units: 자연계열
+        rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 5, must_all: [수], inq: best1}
+      - units: 의예과
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 5, inq: best1}
+      - units: 약학전공
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 6, inq: best1}
+      - units: 스크랜튼학부
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 5, inq: best1}
+    events:
+      - {kind: 고사장발표, date: 2026-11-24}
+      - {kind: 논술, date: 2026-11-28, units: "모집단위별(9쪽)"}
+      - {kind: 논술, date: 2026-11-29, units: "모집단위별(9쪽)"}
+      - {kind: 최초합격발표, date: 2026-12-17}
+    events_page: 8

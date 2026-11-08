@@ -1,0 +1,45 @@
+univ: cau
+pdf: data/raw/cau/2027_정시_요강.pdf
+track: 수능(일반)
+notes:
+  - "[(국어×비율×5) + (수학×비율×5) + (탐구 변환표준점수 합×비율×5) + 영어 가산 + 한국사 가산] × 수능 반영비율 (56쪽, 예시 5개로 검증)"
+  - "수능(일반) 수능 90% 반영 (56쪽 예시 1·3). 나머지 10%는 비교과(출결) — 앱은 수능 부분만 계산"
+dept_map: {경영: soc}
+groups:
+  - id: hum
+    label: 인문대학·사범대학(인문)
+    page: 56
+    text: "국어 35% · 수학 30% · 탐구 35%(사탐 과목당 5% 가산), 영어·한국사 가산점"
+    formula:
+      ratio: 0.9
+      parts:
+        - {area: 국, metric: std, coef: 1.75}
+        - {area: 수, metric: std, coef: 1.5}
+        - {area: 탐, metric: conv, coef: 1.75, n: 2}
+      bonus: {inq_pct: {사탐: 5}}
+      post: &cau_post
+        - {area: 영, op: add, table: [100, 98, 95, 92, 86, 75, 64, 58, 50]}
+        - {area: 한국사, op: add, table: [10, 10, 10, 10, 9.6, 9.2, 8.8, 8.4, 8]}
+  - id: soc
+    label: 사회과학대학·경영경제대학
+    page: 31
+    text: "국어 30% · 수학 40% · 탐구 30%, 영어·한국사 가산점"
+    formula:
+      ratio: 0.9
+      parts:
+        - {area: 국, metric: std, coef: 1.5}
+        - {area: 수, metric: std, coef: 2.0}
+        - {area: 탐, metric: conv, coef: 1.5, n: 2}
+      post: *cau_post
+  - id: nat
+    label: 자연계열 전체
+    page: 31
+    text: "국어 30% · 수학 35% · 탐구 35%(과탐 과목당 5% 가산), 영어·한국사 가산점"
+    formula:
+      ratio: 0.9
+      parts:
+        - {area: 국, metric: std, coef: 1.5}
+        - {area: 수, metric: std, coef: 1.75}
+        - {area: 탐, metric: conv, coef: 1.75, n: 2}
+      bonus: {inq_pct: {과탐: 5}}
+      post: *cau_post

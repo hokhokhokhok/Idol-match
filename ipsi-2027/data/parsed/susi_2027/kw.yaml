@@ -1,0 +1,31 @@
+univ: kw
+pdf: data/raw/kw/2027_수시_요강.pdf
+scope: 지역균형(교과)·논술. 광운대는 수시 전 전형 수능최저 없음(14쪽)
+tracks:
+  - name: 학생부교과(지역균형전형)
+    type: 교과
+    grad_ok: true
+    grad_year_min: 2025
+    grad_note: 2025년 1월 이후 국내 고교 졸업(예정)자, 고교장 추천(인원 제한 없음)
+    grad_page: 37
+    min_page: 14
+    min_text: "수능최저학력기준 없음"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 18
+  - name: 논술우수자전형
+    type: 논술
+    grad_ok: true
+    grad_note: 고교졸업연도 제한 없음(14쪽)
+    grad_page: 14
+    min_page: 14
+    min_text: "수능최저학력기준 없음"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 논술, date: 2026-11-28, units: 자연계열}
+      - {kind: 논술, date: 2026-11-29, units: 인문계열}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 18

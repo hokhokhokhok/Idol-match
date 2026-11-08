@@ -1,0 +1,42 @@
+univ: hufs
+pdf: data/raw/hufs/2027_정시_요강.pdf
+track: 일반전형
+notes:
+  - "국어·수학은 표준점수÷최고 표준점수, 탐구는 변환표준점수 합÷(최고 변환표준점수×2) × 반영비율 × 1,000 (31쪽) — 최고점은 성적 발표 후 입력"
+  - "한국사 감점표는 병합 셀: 1~3등급 0, 4등급부터 0.2·0.4·0.6·0.8·1·2 (위치로 판독, 검증 필요)"
+dept_map: {경영: humB}
+groups:
+  - id: humA
+    label: 인문A(영어·서양어·아시아언어·중국학·일본학·사범 등)
+    page: 30
+    text: "국어 30% · 수학 30% · 영어 20% · 탐구 20%"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 300}
+        - {area: 수, metric: std_max, coef: 300}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [200, 198, 194, 188, 180, 170, 150, 120, 0]}
+      post: &hf_post
+        - {area: 한국사, op: sub, table: [0, 0, 0, 0.2, 0.4, 0.6, 0.8, 1, 2]}
+  - id: humB
+    label: 인문B(사회과학·상경·경영·국제학부·L&D·L&T 등)
+    page: 30
+    text: "국어 30% · 수학 35% · 영어 15% · 탐구 20%"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 300}
+        - {area: 수, metric: std_max, coef: 350}
+        - {area: 탐, metric: std_max, coef: 200, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [150, 148.5, 145.5, 141, 135, 127.5, 112.5, 90, 0]}
+      post: *hf_post
+  - id: nat
+    label: 자연(자연과학·공과·AI데이터 등)
+    page: 30
+    text: "국어 20% · 수학 35% · 영어 15% · 탐구 30%"
+    formula:
+      parts:
+        - {area: 국, metric: std_max, coef: 200}
+        - {area: 수, metric: std_max, coef: 350}
+        - {area: 탐, metric: std_max, coef: 300, n: 2}
+        - {area: 영, metric: grade_table, coef: 1, table: [150, 148.5, 145.5, 141, 135, 127.5, 112.5, 90, 0]}
+      post: *hf_post
