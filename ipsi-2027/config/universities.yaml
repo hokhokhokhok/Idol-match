@@ -1,0 +1,51 @@
+# 서울 소재 4년제 대학 목록 (Phase 1). mvp: true = MVP 20개교.
+# cdn_name: 서울진로진학정보센터 계열 CDN(cdn013.negagea.net)의 폴더·파일명에 쓰이는 학교명
+# admission_url: 입학처 첫 화면 (2026-11-08 접속 확인 결과는 docs/sites_status.md)
+# 비 MVP 학교의 입학처 URL은 아직 조사하지 않음(null) — 확장 단계에서 채움.
+mvp:
+  - {id: snu,      name: 서울대,     full_name: 서울대학교,         cdn_name: 서울대학교,         admission_url: "https://admission.snu.ac.kr/"}
+  - {id: yonsei,   name: 연세대,     full_name: 연세대학교,         cdn_name: 연세대학교,         admission_url: "https://admission.yonsei.ac.kr/seoul/admission/html/main/main.asp"}
+  - {id: korea,    name: 고려대,     full_name: 고려대학교,         cdn_name: 고려대학교,         admission_url: "https://oku.korea.ac.kr/"}
+  - {id: sogang,   name: 서강대,     full_name: 서강대학교,         cdn_name: 서강대학교,         admission_url: "https://admission.sogang.ac.kr/"}
+  - {id: skku,     name: 성균관대,   full_name: 성균관대학교,       cdn_name: 성균관대학교,       admission_url: "https://admission.skku.edu/"}
+  - {id: hanyang,  name: 한양대,     full_name: 한양대학교,         cdn_name: 한양대학교,         admission_url: "https://go.hanyang.ac.kr/"}
+  - {id: cau,      name: 중앙대,     full_name: 중앙대학교,         cdn_name: 중앙대학교,         admission_url: "https://admission.cau.ac.kr/"}
+  - {id: khu,      name: 경희대,     full_name: 경희대학교,         cdn_name: 경희대학교,         admission_url: "https://iphak.khu.ac.kr/"}
+  - {id: hufs,     name: 한국외대,   full_name: 한국외국어대학교,   cdn_name: 한국외국어대학교,   admission_url: "https://adms.hufs.ac.kr/"}
+  - {id: uos,      name: 서울시립대, full_name: 서울시립대학교,     cdn_name: 서울시립대학교,     admission_url: "https://admission.uos.ac.kr/"}
+  - {id: ewha,     name: 이화여대,   full_name: 이화여자대학교,     cdn_name: 이화여자대학교,     admission_url: "https://admission.ewha.ac.kr/"}
+  - {id: konkuk,   name: 건국대,     full_name: 건국대학교,         cdn_name: 건국대학교,         admission_url: "https://enter.konkuk.ac.kr/"}
+  - {id: dongguk,  name: 동국대,     full_name: 동국대학교,         cdn_name: 동국대학교,         admission_url: "https://ipsi.dongguk.edu/admission/html/main/main.asp"}
+  - {id: hongik,   name: 홍익대,     full_name: 홍익대학교,         cdn_name: 홍익대학교(서울),   admission_url: "https://ibsi.hongik.ac.kr/"}
+  - {id: sookmyung, name: 숙명여대,  full_name: 숙명여자대학교,     cdn_name: 숙명여자대학교,     admission_url: "https://admission.sookmyung.ac.kr/"}
+  - {id: kookmin,  name: 국민대,     full_name: 국민대학교,         cdn_name: 국민대학교,         admission_url: "https://admission.kookmin.ac.kr/"}
+  - {id: ssu,      name: 숭실대,     full_name: 숭실대학교,         cdn_name: 숭실대학교,         admission_url: "https://iphak.ssu.ac.kr/"}
+  - {id: sejong,   name: 세종대,     full_name: 세종대학교,         cdn_name: 세종대학교,         admission_url: "https://ipsi.sejong.ac.kr/"}
+  - {id: kw,       name: 광운대,     full_name: 광운대학교,         cdn_name: 광운대학교,         admission_url: "https://iphak.kw.ac.kr/"}
+  - {id: seoultech, name: 서울과기대, full_name: 서울과학기술대학교, cdn_name: 서울과학기술대학교, admission_url: "https://admission.seoultech.ac.kr/"}
+
+# 확장 대상 (서울 소재 4년제 일반대·교대·산업대). 캠퍼스가 서울 밖이 본교인 곳은 note 참고.
+others:
+  - {name: 가톨릭대,     note: "성의·성신교정(서울), 본교 성심교정은 경기 부천"}
+  - {name: 감리교신학대}
+  - {name: 경기대,       note: "서울캠퍼스(서대문) 일부 모집단위"}
+  - {name: 덕성여대}
+  - {name: 동덕여대}
+  - {name: 명지대,       note: "인문캠퍼스(서울)·자연캠퍼스(용인)"}
+  - {name: 삼육대}
+  - {name: 상명대,       note: "서울캠퍼스·천안캠퍼스"}
+  - {name: 서경대}
+  - {name: 서울교대}
+  - {name: 서울기독대}
+  - {name: 서울여대}
+  - {name: 서울한영대}
+  - {name: 성공회대}
+  - {name: 성신여대}
+  - {name: 장로회신학대}
+  - {name: 총신대}
+  - {name: 추계예대}
+  - {name: 케이씨대}
+  - {name: 한국성서대}
+  - {name: 한국체대}
+  - {name: 한성대}
+  - {name: 한국예술종합학교, note: "각종학교(대교협 일정 비적용) — 별도 처리"}
