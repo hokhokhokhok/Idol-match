@@ -7,7 +7,9 @@ import streamlit as st
 
 from engine import db
 from engine.minreq import judge
+from engine.kidnap import judge_app, scenarios
 from engine.susi_data import calendar, load
+from engine import admission as A
 
 AREAS = [("국", "국어"), ("수", "수학"), ("영", "영어"), ("탐1", "탐구1"), ("탐2", "탐구2"), ("한국사", "한국사")]
 STATUS_ICON = {"충족": "🟢 충족", "경계": "🟡 경계", "미충족": "🔴 미충족", "기준 없음": "⚪ 최저 없음"}
@@ -81,12 +83,13 @@ def render(con, profile: dict | None) -> None:
     # ---------- 판정 ----------
     if sel:
         st.subheader("수능 최저 판정")
-        rows, chosen = [], []
+        rows, chosen, statuses = [], [], []
         for label in sel:
             t, gi = options[label]
             g = t.groups[gi]
             v = judge(g.rule, ranges, inq_types, math_el)
             chosen.append(t)
+            statuses.append((t, g, v.status))
             detail = (v.optimistic.detail if v.optimistic else "")
             if v.status == "경계":
                 detail = f"낙관: {v.optimistic.detail} / 비관: {v.pessimistic.detail} · 결과를 가르는 영역: {', '.join(v.swing)}"
@@ -117,6 +120,7 @@ def render(con, profile: dict | None) -> None:
                            "겹침": "⚠️" if r["conflict"] else ""} for r in cal],
                          hide_index=True, use_container_width=True)
         st.caption("수시 합격(충원 포함) 시 등록 여부와 관계없이 정시·추가모집에 지원할 수 없습니다 (대교협 기본사항 PDF 46쪽).")
+        _kidnap(con, statuses)
 
     # ---------- 전체 보기 ----------
     with st.expander("전체 전형 보기 (20개교)", expanded=not sel):
@@ -135,3 +139,67 @@ def render(con, profile: dict | None) -> None:
                                 "발표": next((f"{e.date:%m/%d}" for e in t.events if e.kind == "최초합격발표"), "-")})
         st.dataframe(allrows, hide_index=True, use_container_width=True)
         st.caption("범위: 대학별 일반 전형(교과·종합·논술) 위주. 기회균형·특기자·실기·정원외 전형은 아직 정리하지 않았습니다.")
+
+
+GRADES = ["모름", "안정", "적정", "소신", "위험"]
+UNIVS = ["서울대", "연세대", "고려대", "서강대", "성균관대", "한양대", "중앙대", "경희대", "한국외대", "서울시립대", "이화여대",
+         "건국대", "동국대", "홍익대", "숙명여대", "국민대", "숭실대", "세종대", "광운대", "서울과기대"]
+V_ICON = {"재고 필요": "🟠 재고 필요", "수시 응시 강력 권장": "🟢 응시 강력 권장", "응시 유지": "🔵 응시 유지",
+          "판단 재료 부족": "⚪ 판단 재료 부족", "최저 미충족": "🔴 최저 미충족"}
+
+
+def _admission_cards(con) -> list[str]:
+    sv = db.get_state(con, "js_scores")
+    if not sv:
+        return []
+    pct = {"kor": sv["kor_p"], "math": sv["mat_p"], "inq": (sv["t1p"] + sv["t2p"]) / 2}
+    out = []
+    recs = A.load_results()
+    for u in sorted({r.univ for r in recs}):
+        latest = max(r.year for r in recs if r.univ == u)
+        for unit in db.get_state(con, f"adm_units_{u}", []):
+            rec = next((r for r in recs if r.univ == u and r.year == latest and r.unit == unit), None)
+            a = rec and A.assess(rec, pct, int(sv["eng"]))
+            if a:
+                out.append(f"{ {'dongguk': '동국대'}.get(u, u)} {unit}({rec.group}군 {a.grade})")
+    return out
+
+
+def _kidnap(con, statuses) -> None:
+    st.subheader("수시 납치 점검")
+    st.caption("수시 원서는 이미 냈으므로 남은 선택은 '수능 이후 고사에 응시할지'입니다(결시하면 불합격 처리). "
+               "아래 판단은 선택을 대신하지 않고 재료를 정리합니다. 정시 예상 위치는 합격 가능성 탭 판정이나 학원 모의지원 결과를 참고해 넣으세요.")
+    prefs = st.multiselect("대학 선호 순위 (먼저 고른 대학이 더 선호)", UNIVS, default=db.get_state(con, "susi_prefs", []))
+    pos_saved = db.get_state(con, "jeongsi_pos", {})
+    targets = list(dict.fromkeys(prefs + [t.univ_name for t, _, _ in statuses]))
+    cols = st.columns(4)
+    pos = {}
+    for i, u in enumerate(targets):
+        pos[u] = cols[i % 4].selectbox(f"{u} 정시 예상", GRADES, index=GRADES.index(pos_saved.get(u, "모름")), key=f"jp_{u}")
+    if st.button("선호 순위·정시 예상 저장"):
+        db.set_state(con, "susi_prefs", prefs)
+        db.set_state(con, "jeongsi_pos", pos)
+        st.success("저장했습니다.")
+    rows = []
+    for t, g, status in statuses:
+        v = judge_app(t.univ_name, t.name, status, prefs, pos)
+        exams = [e for e in t.events if e.kind in ("논술", "면접") and e.date >= CSAT]
+        rows.append({"판단": V_ICON[v.verdict], "대학": t.univ_name, "전형": t.name, "최저": status,
+                     "수능 후 고사": ", ".join(f"{e.kind} {e.date:%m/%d}" for e in exams) or "없음(서류·교과)",
+                     "근거": v.reason})
+    st.dataframe(rows, hide_index=True, use_container_width=True, column_config={"근거": st.column_config.TextColumn(width="large")})
+    st.caption("반대 경우도 점검합니다: 수시로 갈 수 있는 대학이 정시로는 소신·위험이면 '응시 강력 권장'으로 표시합니다.")
+
+    st.subheader("수시 결과별 정시 시나리오")
+    res_saved = db.get_state(con, "susi_results", {})
+    results = {}
+    rc = st.columns(3)
+    for i, (t, g, status) in enumerate(statuses):
+        k = f"{t.univ_name} {t.name}"
+        opts = ["대기", "합격", "충원대기", "불합격"]
+        results[k] = rc[i % 3].selectbox(k, opts, index=opts.index(res_saved.get(k, "대기")), key=f"sr_{i}")
+    if st.button("수시 결과 저장"):
+        db.set_state(con, "susi_results", results)
+        st.success("저장했습니다.")
+    for cond, action in scenarios(results, _admission_cards(con)):
+        st.markdown(f"- **{cond}** → {action}")

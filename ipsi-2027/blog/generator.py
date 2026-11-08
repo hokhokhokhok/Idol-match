@@ -106,6 +106,8 @@ def _finish(inp, B, titles, tags, images, sources, report, snap, is_sample, prev
 def generate(inp: PostInput, data, previous: list[dict] | None = None, today: date | None = None) -> Post:
     if inp.post_type == "rival_compare":
         return generate_rival(inp, data, previous)
+    if inp.post_type in MORE:
+        return MORE[inp.post_type](inp, data, previous)
     if inp.post_type != "jeongsi_overview":
         raise NotImplementedError(f"{TEMPLATES[inp.post_type].name}: {TEMPLATES[inp.post_type].phase}에 구현 예정")
     report = Report()
@@ -196,12 +198,7 @@ def generate(inp: PostInput, data, previous: list[dict] | None = None, today: da
         B.append(Block("p", "이 글에는 전년도 입결 수치를 넣지 않았습니다. 앱에 출처가 확인된 입결 자료가 아직 없기 때문입니다. "
                             f"{u} 입학처의 입시결과 자료나 대입정보포털 어디가에서 직접 확인하세요."))
 
-    if data.get("insights"):
-        B.append(Block("h", "2027에 달라지는 변수", section="factors"))
-        B.append(Block("p", "아래는 입시기관의 공개 전망입니다. 공식 데이터가 아닌 참고 의견으로 봐주세요."))
-        for ins in data["insights"]:
-            B.append(Block("insight", ins.value, section="factors",
-                           meta={"org": ins.source.doc.split()[0], "status": ins.status}))
+    _insight_blocks(B, data, "factors", heading="2027에 달라지는 변수")
 
     third = (f"학생부 {_v(j['record_reflect']).split(' ')[0]} — 졸업생도 학생부 반영 방식 확인"
              if "record_reflect" in j else "영어·한국사 반영 방식(가산/감점) 확인 — 등급 하나 차이가 몇 점인지 계산해보기")
@@ -299,6 +296,217 @@ def generate_rival(inp: PostInput, data: dict, previous=None) -> Post:
     tags = [f"{n}{dept}" for n in names] + ["2027정시", f"{dept}정시", "정시비교", "수능반영비율", "정시파이터",
                                             "2027입시", f"{groups[0]}"]
     return _finish(inp, B, titles, tags[:11], [thumb, chart], sources, report, snap, is_sample, previous)
+
+
+# ---------------------------------------------------------------- 유형 ③~⑥
+def _insight_blocks(B, data, section, heading=None, intro=True):
+    ins = data.get("insights") or []
+    if not ins:
+        return
+    if heading:
+        B.append(Block("h", heading, section=section))
+    if intro:
+        B.append(Block("p", "아래는 입시기관·언론의 공개 분석 요약입니다. 공식 데이터가 아닌 참고 의견으로 봐주세요.", section=section))
+    for sv in ins:
+        v = sv.value if isinstance(sv.value, dict) else {"org": sv.source.doc.split()[0], "summary": sv.value, "badge": "학원 관점"}
+        if not isinstance(sv.value, dict):          # 더미 데이터 호환: 기존 배지 문구 유지
+            B.append(Block("insight", v["summary"], section=section, meta={"org": v["org"], "status": sv.status}))
+            continue
+        B.append(Block("insight", v["summary"], section=section,
+                       meta={"org": f"{v.get('badge', '학원 관점').replace(' 관점', '')} · {v['org']}", "status": sv.status}))
+
+
+def _head(data, inp):
+    report = Report()
+    is_sample, snap, (sy, sm, sd) = _common_start(inp, data, report)
+    u = data["univ"]["name"]
+    dept = _v(data["program"]["name"])
+    return report, is_sample, snap, sm, sd, u, dept, TONES[inp.tone]
+
+
+def generate_susi_vs(inp, data, previous=None) -> Post:
+    report, is_sample, snap, sm, sd, u, dept, tone = _head(data, inp)
+    j = data["jeongsi"]
+    susi = data["susi"]
+    with_min = [r for r in susi if r["min"].value != "최저 없음"]
+    after = [r for r in susi if r["exam"].value != "-" and any(m in r["exam"].value for m in ("11/2", "11/3", "12/"))]
+    B = [Block("lead", section="summary3", items=[
+        f"{u} {dept}, 2027 수시는 {len(susi)}개 일반 전형 중 {len(with_min)}개가 수능 최저를 봅니다.",
+        f"수능 이후 고사가 남은 전형: " + (", ".join(_v(r['name']) for r in after) if after else "없음") + ".",
+        f"정시는 {_v(j['group'])} {_v(j['quota_2027'])}명 — 수시에 합격하면 등록과 관계없이 정시 지원이 막힙니다.",
+    ]), Block("p", tone["lead"])]
+    B.append(Block("h", f"{u} {dept} 수시, 수능 이후 남은 전형", section="susi_list"))
+    B.append(Block("table", section="susi_list", header=["전형", "수능 최저(정리)", "수능 후 고사", "발표"],
+                   rows=[[_v(r["name"]), _v(r["min"]), _v(r["exam"]), _v(r["announce"])] for r in susi],
+                   meta={"caption": f"모집단위 그룹: {susi[0]['units'] if susi else '-'} 기준 · 2027 수시모집요강"}))
+    B.append(Block("h", "졸업생도 지원할 수 있나", section="eligibility"))
+    B.append(Block("table", section="eligibility", header=["전형", "지원 자격"],
+                   rows=[[_v(r["name"]), _v(r["grad"])] for r in susi]))
+    B.append(Block("h", "정시로 가면", section="jeongsi"))
+    ratio = _v(j["ratio"])
+    B.append(Block("p", f"정시는 {_v(j['group'])} {_v(j['quota_2027'])}명(전년 {_v(j['quota_2026'])}명)이고, 수능 반영 비중은 "
+                        + " · ".join(f"{k} {v:g}%" for k, v in ratio.items()) + f"입니다. {_v(j['formula_text'])}."))
+    B.append(Block("h", "수시 납치 vs 수시 포기, 무엇을 볼까", section="kidnap"))
+    B.append(Block("p", "수시 원서를 이미 냈다면 남은 선택은 수능 이후 고사에 응시할지입니다. 가채점으로 정시 예상 위치를 먼저 보고, "
+                        f"정시로 {u}보다 더 원하는 대학이 안정권이면 응시를 다시 생각해볼 수 있습니다. 반대로 정시로는 {josa(u)} 어려운 점수라면 "
+                        "수시 고사를 놓치지 않는 쪽이 유리합니다."))
+    _insight_blocks(B, data, "kidnap", intro=False)
+    B.append(Block("h", "꼭 알아둘 규칙", section="rule"))
+    B.append(Block("p", _v(data["rule"]) + " (대교협 2027 대입전형 기본사항)."))
+    B.append(Block("box", "📌 지원 전 체크 3가지", section="checkbox", items=[
+        "가채점으로 수능 최저 충족·경계 여부부터 확인",
+        "정시로 더 원하는 대학이 안정권인지 — 수시 합격 시 정시 지원 불가",
+        "수능 후 고사 날짜가 다른 대학과 겹치는지",
+    ]))
+    sources = _tail(B, inp, data, u, sm, sd, f"{u} {dept}, 수시와 정시 중 어느 쪽에 더 무게를 두고 있나요? 댓글로 알려주세요.", tone["end"])
+    thumb = charts.thumbnail(u, dept, "수시 vs 정시", "최저 · 고사 일정 · 정시 경로", "샘플" if is_sample else None, "수시·정시 경로 비교")
+    titles = [("홈피드형", f"{u} {dept}, 수시로 갈까 정시로 갈까? 수능 끝나고 볼 것"),
+              ("홈피드형", f"수능 최저 {len(with_min)}개 전형, {u} {dept} 수시 남은 일정 정리"),
+              ("홈피드형", f"수시 붙으면 정시 못 쓴다 — {u} {dept} 수시 납치 점검"),
+              ("검색형", f"2027 {u} {dept} 수시 최저 정시 비교"),
+              ("검색형", f"{u} {dept} 수시 논술 면접 일정 2027")]
+    tags = [f"{u}{dept}", f"{u}수시", f"{u}정시", "수시최저", "수시납치", "2027수시", "2027정시", "수능최저학력기준", "논술일정", "정시파이터"]
+    return _finish(inp, B, titles, tags, [thumb], sources, report, snap, is_sample, previous)
+
+
+TODO = {
+    "수능 직후": ["가채점 후 수시 최저 충족·경계 판정", "수능 이후 논술·면접 응시 여부 결정(수시 납치 점검)", "기관별 예상 등급컷은 여러 곳을 비교"],
+    "성적 발표": ["실채점 표준점수·백분위로 대학별 환산 다시 계산", "대학별 탐구 변환표준점수 공지 확인", "최고 표준점수 대비 방식 대학은 최고점 반영"],
+    "수시 이월": ["대학별 최종 정시 모집인원 확인(이월 반영)", "인원이 늘어난 모집단위는 합격선 변화 가능성 점검", "가·나·다 조합 다시 보기"],
+    "원서 경쟁률": ["마감 직전 경쟁률은 변동이 크니 최종 경쟁률로 판단", "전년 경쟁률·충원율과 함께 보기", "같은 군 대학 간 복수지원 금지 확인"],
+    "충원 현황": ["충원 합격 통보 마감 시간 확인(홈페이지 14시, 개별 18시)", "등록 마감 시간 확인", "추가모집 일정 확인"],
+}
+EVENT_DATE = {"수능 직후": "2026-11-19", "성적 발표": "2026-12-11", "수시 이월": "2026-12-30", "원서 경쟁률": "2027-01-04",
+              "충원 현황": "2027-02-13"}
+
+
+def generate_timely(inp, data, previous=None) -> Post:
+    report, is_sample, snap, sm, sd, u, dept, tone = _head(data, inp)
+    ev = data["event"]
+    j = data["jeongsi"]
+    B = [Block("lead", section="summary3", items=[
+        f"[{ev}] {u} {dept}에 지금 필요한 정보만 정리했습니다.",
+        f"2027 정시 {_v(j['group'])} {_v(j['quota_2027'])}명(전년 {_v(j['quota_2026'])}명).",
+        ("이번 발표 수치: " + f"{data.get('live_label', '')} {_v(data['live'])}" if data.get("live") else
+         "아직 대학 발표 수치가 없어 일정과 체크리스트 위주로 정리했습니다."),
+    ]), Block("p", tone["lead"])]
+    B.append(Block("h", f"[{ev}] 지금 무슨 일이", section="what"))
+    tl = data["timeline_raw"]
+    ref = TL_date(EVENT_DATE.get(ev))
+    upcoming = [e for e in tl if e.end >= ref][:4]
+    B.append(Block("table", section="what", header=["날짜", "일정"],
+                   rows=[[f"{e.start:%m/%d}" + (f"~{e.end:%m/%d}" if e.end != e.start else ""), e.title] for e in upcoming],
+                   meta={"caption": "대교협 2027학년도 대학입학전형기본사항(2026.7.31 개정)"}))
+    if data.get("live"):
+        B.append(Block("h", f"{u} {dept} 숫자로 보기", section="numbers"))
+        B.append(Block("p", f"{data.get('live_label', '')}: {_v(data['live'])} (출처: {data['live'].source.doc})"))
+    if ev == "수능 직후" and data.get("susi_exams"):
+        B.append(Block("h", f"{u} 수능 이후 수시 고사", section="numbers"))
+        B.append(Block("table", section="numbers", header=["일정"], rows=[[_v(x)] for x in data["susi_exams"]]))
+    B.append(Block("h", "이 숫자가 의미하는 것", section="impact"))
+    B.append(Block("p", f"정시 모집인원은 수시 이월로 늘 수 있고, 올해는 N수생이 많아 전년 합격선을 그대로 쓰기 어렵습니다. "
+                        f"{u} {dept}는 전년 대비 {_v(j['quota_2027']) - _v(j['quota_2026']):+d}명입니다."))
+    _insight_blocks(B, data, "impact", intro=False)
+    B.append(Block("h", "다음 할 일", section="todo"))
+    B.append(Block("box", f"📌 [{ev}] 체크 3가지", section="checkbox", items=TODO.get(ev, TODO["수능 직후"])))
+    sources = _tail(B, inp, data, u, sm, sd, "지금 가장 고민되는 건 무엇인가요? 댓글로 남겨주시면 다음 글에서 다룰게요.", tone["end"])
+    thumb = charts.thumbnail(u, dept, ev, f"{_v(j['group'])} {_v(j['quota_2027'])}명", "샘플" if is_sample else None, "시점별 체크리스트")
+    titles = [("홈피드형", f"[{ev}] {u} {dept} 지원자가 지금 할 일 3가지"),
+              ("홈피드형", f"{ev}, {u} {dept} 정시 {_v(j['quota_2027'])}명 — 놓치면 안 되는 날짜"),
+              ("홈피드형", f"{ev} 이후 {u} {dept}, 무엇이 달라지나"),
+              ("검색형", f"2027 {u} {dept} {ev}"), ("검색형", f"{u} {dept} 정시 일정 2027 {ev}")]
+    tags = [f"{u}{dept}", f"{u}정시", "2027정시", ev.replace(" ", ""), "정시일정", "2027입시", "수능", "정시파이터", "입시체크리스트"]
+    return _finish(inp, B, titles, tags, [thumb], sources, report, snap, is_sample, previous)
+
+
+def TL_date(s):
+    from datetime import date as _d
+    return _d.fromisoformat(s or "2026-11-19")
+
+
+SEG_CHECK = {
+    "N수생": ["수시 전형별 졸업생 지원 가능 여부·졸업연도 제한 확인", "정시 학생부 반영 대학이면 졸업생 학생부 처리 방식 확인",
+             "2028 체제 변화(재학생 전용 수시 확대)를 판단 재료로 함께 보기 — 결과 수용도 정당한 선택"],
+    "재수생": ["수시 '추천' 전형은 졸업 1~2년 이내만 되는 곳이 많음", "정시 학생부 반영 여부와 졸업생 처리 확인",
+             "올해 결과와 재도전 조건을 차분히 비교(학교·전문 상담 권장)"],
+    "반수생": ["현 소속 대학과 이중등록 금지 — 등록 마감 일정 확인", "휴학·자퇴 등 학적 처리 시점 확인", "현 소속 대학보다 확실히 나은 곳인지 비교"],
+    "현역 정시파이터": ["N수생 유입이 큰 해 — 전년 합격선보다 보수적으로", "내 점수 구조(국·수 강약)와 반영 비중 맞추기", "가·나·다 중 안정 카드 1장은 확보"],
+    "수시파이터": ["가채점 최저 판정 먼저", "정시로 더 높은 대학이 가능한지(수시 납치) 점검", "수능 후 고사 일정 겹침 확인"],
+}
+
+
+def generate_segment(inp, data, previous=None) -> Post:
+    report, is_sample, snap, sm, sd, u, dept, tone = _head(data, inp)
+    seg = data["segment"]
+    j = data["jeongsi"]
+    susi = data["susi"]
+    grad_ok = [r for r in susi if r["grad_ok"]]
+    B = [Block("lead", section="summary3", items=[
+        f"{josa(seg)} {u} {josa(dept, '을/를')} 노린다면 먼저 지원 자격부터 확인하세요.",
+        f"수시 일반 전형 {len(susi)}개 중 졸업생 지원 가능: {len(grad_ok)}개" + (
+            " (일부는 졸업연도 제한)" if any(r["grad_year_min"] for r in grad_ok) else "") + ".",
+        f"정시는 {_v(j['group'])} {_v(j['quota_2027'])}명 — " + (_v(j["record_reflect"]) if "record_reflect" in j else "수능 위주 선발") + ".",
+    ]), Block("p", tone["lead"])]
+    B.append(Block("h", f"{seg}에게 {u} {dept}가 갖는 의미", section="who"))
+    B.append(Block("p", f"이 글은 {seg} 관점에서 {u} {dept}의 2027 전형 조건만 추렸습니다. 합격 가능성 판단은 개인 성적에 따라 달라집니다."))
+    B.append(Block("h", f"{seg}에게 달라지는 전형 조건", section="rules"))
+    B.append(Block("table", section="rules", header=["전형", "지원 자격"], rows=[[_v(r["name"]), _v(r["grad"])] for r in susi]))
+    if "record_reflect" in j:
+        B.append(Block("p", f"정시: {_v(j['record_reflect'])}."))
+    _insight_blocks(B, data, "position", heading="경쟁 환경 — 올해는 누구와 겨루나")
+    B.append(Block("h", f"{seg} 체크리스트", section="checklist"))
+    B.append(Block("box", f"📌 {seg} 체크 3가지", section="checkbox", items=SEG_CHECK.get(seg, SEG_CHECK["N수생"])))
+    if seg in ("N수생", "재수생", "반수생"):
+        B.append(Block("p", "진로·심리 고민은 학교 상담실이나 전문 상담을 함께 활용하길 권합니다. 결과를 받아들이는 것과 다시 도전하는 것 모두 정당한 선택입니다."))
+    sources = _tail(B, inp, data, u, sm, sd, f"{seg} 입장에서 가장 걱정되는 조건은 무엇인가요? 댓글로 나눠주세요.", tone["end"])
+    thumb = charts.thumbnail(u, dept, seg, "지원 자격 · 정시 조건 · 체크리스트", "샘플" if is_sample else None, "세그먼트 가이드")
+    titles = [("홈피드형", f"{josa(seg)} {u} {dept} 노릴 때 먼저 볼 것 3가지"),
+              ("홈피드형", f"{u} {dept}, {seg}도 수시 쓸 수 있을까? 전형별 자격 정리"),
+              ("홈피드형", f"{seg} 역대급인 해, {u} {dept} 정시 조건"),
+              ("검색형", f"{seg} {u} {dept} 2027 지원자격"), ("검색형", f"2027 {u} {dept} {seg} 수시 정시")]
+    tags = [f"{u}{dept}", seg.replace(" ", ""), f"{u}수시", f"{u}정시", "2027입시", "졸업생지원자격", "재수", "N수", "정시파이터"]
+    return _finish(inp, B, titles, tags, [thumb], sources, report, snap, is_sample, previous)
+
+
+def generate_change(inp, data, previous=None) -> Post:
+    report, is_sample, snap, sm, sd, u, dept, tone = _head(data, inp)
+    topic = data["topic"]
+    j = data["jeongsi"]
+    ins = data.get("insights") or []
+    if not ins:
+        report.errors.append(f"주제 '{topic}'에 등록된 인사이트가 없습니다 — 인사이트 탭에서 출처와 함께 추가하세요")
+    diff = _v(j["quota_2027"]) - _v(j["quota_2026"])
+    B = [Block("lead", section="summary3", items=[
+        f"2027 입시의 큰 변수 '{topic}', {u} {dept}에는 어떤 의미일까요.",
+        (ins[0].value["summary"].split(".")[0] + "." if ins else "관련 공개 분석을 정리했습니다."),
+        f"{u} {dept} 정시는 {_v(j['group'])} {_v(j['quota_2027'])}명({diff:+d}명).",
+    ]), Block("p", tone["lead"])]
+    B.append(Block("h", f"2027 {topic}, 무엇이 바뀌었나", section="change"))
+    facts = [sv for sv in ins if sv.value.get("kind") in ("공식", "언론")]
+    B.append(Block("p", " ".join(sv.value["summary"] for sv in (facts or ins)[:2]) or "-"))
+    B.append(Block("h", f"{u} {dept}에는 어떤 영향?", section="dept_link"))
+    B.append(Block("p", f"{u} {dept} 정시 모집인원은 {_v(j['quota_2026'])}명 → {_v(j['quota_2027'])}명입니다. 반영 비중은 "
+                        + " · ".join(f"{k} {v:g}%" for k, v in _v(j["ratio"]).items())
+                        + ". 환경 변화가 이 학과 합격선에 얼마나 반영될지는 수시 이월과 실제 지원 경쟁률을 보고 판단해야 합니다."))
+    _insight_blocks(B, data, "views", heading="기관별 전망 비교")
+    B.append(Block("h", "그래서 수험생은 무엇을 확인할까", section="so_what"))
+    B.append(Block("box", "📌 확인할 것 3가지", section="checkbox", items=[
+        "전년 합격선을 그대로 쓰지 말고 올해 변수와 함께 보기",
+        "12월 말 수시 이월 후 최종 모집인원 확인",
+        "기관 전망은 참고 의견 — 서로 다른 전망을 나란히 비교",
+    ]))
+    sources = _tail(B, inp, data, u, sm, sd, f"'{topic}', 체감하고 계신가요? 댓글로 의견을 나눠주세요.", tone["end"])
+    thumb = charts.thumbnail(u, dept, topic, "2027 변화 해설", "샘플" if is_sample else None, "2027 변화 해설")
+    titles = [("홈피드형", f"2027 {topic}, {u} {dept} 지원자에게 무슨 의미일까"),
+              ("홈피드형", f"{topic} — 기관마다 전망이 다르다, {u} {dept} 관점 정리"),
+              ("홈피드형", f"올해 입시 판이 바뀐 이유: {topic}"),
+              ("검색형", f"2027 입시 {topic} {u} {dept}"), ("검색형", f"{topic} 2027 정시 영향")]
+    tags = [f"{u}{dept}", topic.replace(" ", ""), "2027입시", "2027정시", "입시변화", "N수생", "사탐런", "정시파이터"]
+    return _finish(inp, B, titles, tags, [thumb], sources, report, snap, is_sample, previous)
+
+
+MORE = {"susi_vs_jeongsi": generate_susi_vs, "timely_news": generate_timely, "segment_guide": generate_segment,
+        "change_2027": generate_change}
 
 
 def body_text(post: Post) -> str:

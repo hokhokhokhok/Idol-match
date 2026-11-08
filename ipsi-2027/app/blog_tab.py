@@ -7,7 +7,12 @@ import streamlit.components.v1 as components
 from blog import render as R
 from blog import store
 from blog.dummy_data import UNIVERSITIES
-from blog.real_data import available, build_compare, build_overview
+from blog.calendar import WINDOWS, recommend
+from blog.generator import EVENT_DATE
+from blog.real_data import (available, build_change, build_compare, build_overview, build_segment,
+                            build_susi_vs, build_timely)
+from datetime import date
+from insights import store as INS
 from blog.generator import AUDIENCES, TONES, body_text, generate
 from blog.guardrails import DAILY_LIMIT_DEFAULT, check_daily_limit
 from blog.models import PostInput
@@ -23,7 +28,21 @@ NAME2ID = {"서울대": "snu", "연세대": "yonsei", "고려대": "korea", "서
 
 
 
+def _calendar() -> None:
+    with st.expander("🗓 발행 캘린더 · 오늘의 추천", expanded=False):
+        today = date.today()
+        con = store.connect()
+        recs = recommend(today, store.previous_posts(con))
+        st.markdown(f"**오늘({today:%m/%d}) — {recs[0]['window']}**: " + " / ".join(
+            r["name"] + (" (최근 같은 유형 있음)" if r["recent_dup"] else "") for r in recs))
+        st.caption(recs[0]["why"] + ". 하루에 대량으로 발행하지 마세요(기본 일 3개 한도).")
+        st.dataframe([{"기간": f"{w.start:%m/%d}~{w.end:%m/%d}", "시점": w.title,
+                       "추천 유형": " / ".join(f"{t}{'(' + ', '.join(p.values()) + ')' if p else ''}" for t, p in w.picks),
+                       "이유": w.why} for w in WINDOWS], hide_index=True, use_container_width=True)
+
+
 def render() -> None:
+    _calendar()
     left, right = st.columns([5, 6], gap="large")
     with left:
         st.subheader("1. 학교·학과")
@@ -33,6 +52,23 @@ def render() -> None:
         st.subheader("2. 유형·독자·톤")
         ptype = st.selectbox("포스트 유형", list(TEMPLATES), format_func=lambda k: f"{TEMPLATES[k].name}"
                              + ("" if TEMPLATES[k].status == "구현" else f"  · {TEMPLATES[k].phase} 예정"))
+        params = {}
+        if ptype == "timely_news":
+            params["event"] = st.selectbox("시점", list(EVENT_DATE))
+            if params["event"] in ("수시 이월", "원서 경쟁률", "충원 현황"):
+                with st.expander("대학 발표 수치 입력 (출처 필수)", expanded=False):
+                    lv = st.number_input("수치", 0.0, 10000.0, 0.0)
+                    ll = st.text_input("항목명", {"수시 이월": "수시 이월 인원", "원서 경쟁률": "원서 접수 경쟁률",
+                                                "충원 현황": "충원 합격 차수"}[params["event"]])
+                    lu = st.text_input("출처 URL")
+                    if lv and lu.startswith("http"):
+                        params["numbers"] = {"value": lv, "label": ll, "url": lu, "doc": f"{', '.join(univs)} 발표 자료"}
+                    elif lv:
+                        st.warning("출처 URL이 없는 수치는 넣지 않습니다.")
+        elif ptype == "segment_guide":
+            params["segment"] = st.selectbox("세그먼트", ["N수생", "재수생", "반수생", "현역 정시파이터", "수시파이터"])
+        elif ptype == "change_2027":
+            params["topic"] = st.selectbox("주제(인사이트 주제)", sorted({i.topic for i in INS.load()}))
         audience = st.multiselect("타깃 독자", AUDIENCES, default=["수험생", "정시파이터"])
         tone = st.radio("톤", list(TONES), horizontal=True)
 
@@ -68,6 +104,14 @@ def render() -> None:
             data = UNIVERSITIES["yonsei"]
         elif ptype == "rival_compare":
             data = build_compare(ids, dept)
+        elif ptype == "susi_vs_jeongsi":
+            data = build_susi_vs(ids[0], dept)
+        elif ptype == "timely_news":
+            data = build_timely(ids[0], dept, params["event"], params.get("numbers"))
+        elif ptype == "segment_guide":
+            data = build_segment(ids[0], dept, params["segment"])
+        elif ptype == "change_2027":
+            data = build_change(ids[0], dept, params["topic"])
         else:
             data = build_overview(ids[0], dept)
         post = generate(inp, data, previous=store.previous_posts(con))

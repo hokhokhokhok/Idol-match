@@ -13,7 +13,7 @@
 | 내보내기: 스마트에디터 HTML / 텍스트 / 이미지 ZIP | ✅ `blog/render.py` |
 | 가드레일: 출처 없는 값 차단, 더미·검증 필요 경고, 필자 메모 필수, 과장 표현 차단, 일 생성 한도, 유사도 검사, 광고 표기 | ✅ `blog/guardrails.py` |
 | blog_posts / blog_metrics 스키마 (로컬 SQLite) | ✅ `blog/store.py` |
-| ③~⑥ 생성기, 발행 캘린더, 성과 추적 | ⏳ Phase 5~6 |
+| 성과 추적·제목 추천 고도화 | ⏳ Phase 6 이후 |
 | **Phase 1** MVP 20개교 목록·입학처 URL | ✅ `config/universities.yaml` (+ 확장 대상 23개교) |
 | **Phase 1** 2027·2026 수시/정시 모집요강 80개 + 입결 4개 + 대교협 3개 다운로드 | ✅ `scrapers/download.py` → [docs/download_report.md](docs/download_report.md) |
 | **Phase 1** 출처·robots·접속 상태 정리 | ✅ [docs/sources.md](docs/sources.md) |
@@ -29,6 +29,9 @@
 | **Phase 4** 동국대 공식 입결 파서(2024·2026, 107행, 계열 가중 평균 재현 검증) | ✅ `scrapers/parse_dongguk_results.py` |
 | **Phase 4** 합격 가능성 엔진: 환경 보정(조절 가능)·안정/적정/소신/위험·영어 경고·조합 위험 | ✅ `engine/admission.py` → [방법](docs/admission_method.md) |
 | **Phase 4** 합격 가능성 탭(입결 CSV 가져오기·모의지원 교차검증 칸), 대시보드 카드 실시간 요약 | ✅ `app/admission_tab.py` · `app/dashboard.py` |
+| **Phase 5** 인사이트 모듈: 시드 10건(출처·근거 수준), 신뢰도 순 피드, 주제별 기관 나란히 보기, 직접 추가, 유튜브 자막 추출 요약 | ✅ `insights/` · `app/insights_tab.py` |
+| **Phase 5** 수시 납치 판단(선호 순위 × 정시 예상) · 수시 결과별 정시 시나리오 | ✅ `engine/kidnap.py` (수시 대응 탭) |
+| **Phase 5** 블로그 유형 ③ 수시vs정시 · ④ 시점형 속보 · ⑤ 세그먼트형 · ⑥ 2027 변화 해설, 발행 캘린더 | ✅ `blog/generator.py` · `blog/calendar.py` |
 | **F10** 유형 ① 총정리·② 라이벌 비교 실데이터 생성 (경영: 연세·서강·성균관·한양) | ✅ `blog/real_data.py` · `samples/` |
 
 ## 실행
@@ -51,6 +54,7 @@ python -m scrapers.parse_dongguk_results  # 동국대 입결 PDF → data/parsed
 
 - `samples/yonsei_business_jeongsi/` — 실데이터(2027 정시요강) "연세대 경영학과 정시 총정리"
 - `samples/sogang_skku_hanyang_business_compare/` — 실데이터 "서강·성균관·한양 경영 비교"
+- `samples/yonsei_business_susi_vs_jeongsi/` · `..._timely_csat/` · `..._segment_nsu/` · `..._change_nsu/` — 유형 ③~⑥
 - `samples/yonsei_business_jeongsi_dummy/` — 더미 데이터 샘플(발행 금지 표시)
 
 각 폴더: `preview.html`(모바일 미리보기), `post_smarteditor.html`(붙여넣기용), `post.txt`, `images/`.

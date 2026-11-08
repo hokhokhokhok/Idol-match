@@ -75,9 +75,25 @@ def test_duplicate_warning():
     assert similarity("가나다라마바", "가나다라마바") == 1.0
 
 
-def test_unimplemented_types_raise():
-    with pytest.raises(NotImplementedError):
-        generate(_inp(post_type="susi_vs_jeongsi"), UNIVERSITIES["yonsei"])
+def test_all_six_types_generate_with_real_data():
+    from blog.real_data import build_change, build_compare, build_overview, build_segment, build_susi_vs, build_timely
+    cases = {
+        "jeongsi_overview": build_overview("yonsei", "경영"),
+        "rival_compare": build_compare(["sogang", "skku", "hanyang"], "경영"),
+        "susi_vs_jeongsi": build_susi_vs("yonsei", "경영"),
+        "timely_news": build_timely("yonsei", "경영", "수능 직후"),
+        "segment_guide": build_segment("yonsei", "경영", "N수생"),
+        "change_2027": build_change("yonsei", "경영", "N수생 증가"),
+    }
+    for pt, data in cases.items():
+        post = generate(_inp(post_type=pt), data)
+        text = render.to_text(post)
+        assert post.report.export_allowed, (pt, post.report.errors)
+        assert len(post.titles) == 5 and 8 <= len(post.tags) <= 12, pt
+        assert "모집요강 원문을 확인" in text and "이(가)" not in text and "앱은" not in text, pt
+        assert all(s.url for s in post.sources), pt
+    p = generate(_inp(post_type="change_2027"), build_change("yonsei", "경영", "없는 주제"))
+    assert not p.report.export_allowed       # 출처 있는 인사이트가 없으면 생성 차단
 
 
 def test_real_overview_and_compare():
@@ -94,3 +110,15 @@ def test_real_overview_and_compare():
     t = render.to_text(p2)
     assert "모두 나군" in t and "서강대 90명(+6)" in t and "한양대 71명(전년과 동일)" in t
     assert "성균관대는 국어·수학 중 잘한 영역" in t
+
+
+def test_calendar():
+    from datetime import date as d
+    from blog.calendar import WINDOWS, recommend, window_for
+    assert window_for(d(2026, 11, 20)).title == "수능 당일·직후"
+    assert window_for(d(2026, 12, 11)).title == "수능 성적 발표"
+    r = recommend(d(2026, 11, 20))
+    assert r[0]["type"] == "timely_news" and r[0]["params"]["event"] == "수능 직후"
+    prev = [{"key": (("yonsei",), "경영", "timely_news"), "body": "", "created_at": "2026-11-20"}]
+    assert recommend(d(2026, 11, 20), prev)[0]["type"] == "susi_vs_jeongsi"
+    assert all(w.start <= w.end for w in WINDOWS)

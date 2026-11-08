@@ -3,7 +3,7 @@ from pathlib import Path
 
 from . import render
 from .dummy_data import UNIVERSITIES
-from .real_data import build_compare, build_overview
+from .real_data import build_change, build_compare, build_overview, build_segment, build_susi_vs, build_timely
 from .generator import generate
 from .models import PostInput
 
@@ -28,3 +28,11 @@ if __name__ == "__main__":
                    build_overview("yonsei", "경영")), "yonsei_business_jeongsi")
     write(generate(PostInput(["sogang", "skku", "hanyang"], "경영", "rival_compare", ["수험생", "정시파이터"], "선배 조언형",
                              SAMPLE_MEMO), build_compare(["sogang", "skku", "hanyang"], "경영")), "sogang_skku_hanyang_business_compare")
+
+    for pt, data, name in [
+        ("susi_vs_jeongsi", build_susi_vs("yonsei", "경영"), "yonsei_business_susi_vs_jeongsi"),
+        ("timely_news", build_timely("yonsei", "경영", "수능 직후"), "yonsei_business_timely_csat"),
+        ("segment_guide", build_segment("yonsei", "경영", "N수생"), "yonsei_business_segment_nsu"),
+        ("change_2027", build_change("yonsei", "경영", "N수생 증가"), "yonsei_business_change_nsu"),
+    ]:
+        write(generate(PostInput(["yonsei"], "경영", pt, ["수험생"], "정보형", SAMPLE_MEMO), data), name)

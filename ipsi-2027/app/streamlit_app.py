@@ -21,6 +21,7 @@ import susi_tab  # noqa: E402
 import jeongsi_tab  # noqa: E402
 import admission_tab  # noqa: E402
 import dashboard  # noqa: E402
+import insights_tab  # noqa: E402
 from blog.templates import templates_markdown  # noqa: E402
 from engine import db, segments, timeline  # noqa: E402
 
@@ -30,7 +31,7 @@ st.info("최종 지원 전 반드시 각 대학 공식 모집요강 원문을 �
 con = db.connect()
 profile = db.load_profile(con)
 
-tabs = st.tabs(["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🧮 정시 환산", "📊 합격 가능성", "🗂 데이터 상태", "🧩 템플릿 6종 구조", "📝 블로그 포스팅"])
+tabs = st.tabs(["🧭 온보딩·대시보드", "📅 타임라인", "🎯 수시 대응", "🧮 정시 환산", "📊 합격 가능성", "💡 인사이트", "🗂 데이터 상태", "🧩 템플릿 6종 구조", "📝 블로그 포스팅"])
 
 # ---------------------------------------------------------------- 1. 온보딩·대시보드
 with tabs[0]:
@@ -108,8 +109,12 @@ with tabs[3]:
 with tabs[4]:
     admission_tab.render(con, profile)
 
-# ---------------------------------------------------------------- 9. 데이터 상태
+# ---------------------------------------------------------------- 7. 인사이트
 with tabs[5]:
+    insights_tab.render(profile)
+
+# ---------------------------------------------------------------- 9. 데이터 상태
+with tabs[6]:
     st.subheader("데이터 상태 (Phase 1 수집)")
     log = ROOT / "data" / "download_log.csv"
     if not log.exists():
@@ -130,8 +135,8 @@ with tabs[5]:
         st.caption("미러 = cdn013.negagea.net (서울 진로진학 계열 자료 CDN으로 추정). 연세대 2027 정시요강으로 공식본과 sha256 일치를 확인함. "
                    "어디가(adiga.kr)는 robots.txt가 자동 수집을 막아 수동 가져오기로만 지원.")
 
-with tabs[6]:
+with tabs[7]:
     st.markdown(templates_markdown())
 
-with tabs[7]:
+with tabs[8]:
     blog_tab.render()

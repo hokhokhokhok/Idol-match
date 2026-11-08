@@ -79,7 +79,7 @@ TEMPLATES: dict[str, PostTemplate] = {t.id: t for t in [
                 ("jeongsi.group[]",)),
     ), ("{univs} {dept} 비교", "2027 정시", "반영비율"), status="구현"),
 
-    _t("susi_vs_jeongsi", "③ 수시 vs 정시 경로 비교", (1, 1), "Phase 5", (
+    _t("susi_vs_jeongsi", "③ 수시 vs 정시 경로 비교", (1, 1), "Phase 5 (구현)", (
         Section("susi_list", "{univ} {dept} 수시, 수능 이후 남은 전형", "전형명·인원·최저·논술/면접일·발표일",
                 ("susi[].name", "susi[].quota", "susi[].min_req", "susi[].exam_date", "susi[].announce_date")),
         Section("eligibility", "졸업생도 지원할 수 있나", "전형별 졸업생 가능 여부·졸업연도 제한",
@@ -88,27 +88,27 @@ TEMPLATES: dict[str, PostTemplate] = {t.id: t for t in [
         Section("kidnap", "수시 납치 vs 수시 포기, 무엇을 볼까", "정시 예상 위치와 수시 대학 수준 비교 기준 (F3 연계)",
                 ("past[].cut70", "insights[]")),
         Section("rule", "꼭 알아둘 규칙", "수시 합격(충원 포함) 시 정시·추가모집 지원 불가", ("timeline.susi_rule",)),
-    ), ("{univ} {dept} 수시", "정시", "최저", "논술")),
+    ), ("{univ} {dept} 수시", "정시", "최저", "논술"), status="구현"),
 
-    _t("timely_news", "④ 시점형 속보", (1, 4), "Phase 5", (
+    _t("timely_news", "④ 시점형 속보", (1, 4), "Phase 5 (구현)", (
         Section("what", "[{event}] 지금 무슨 일이", "이벤트 요약(수능 직후/성적 발표/이월 발표/원서 경쟁률/충원)",
                 ("timeline.event", "timeline.date")),
         Section("numbers", "{univ} {dept} 숫자로 보기", "이벤트별 데이터: 이월 인원 / 실시간 경쟁률 / 충원 차수",
                 ("carryover.added_quota", "carryover.announced_at", "live.competition", "live.fill_round"), required=False),
         Section("impact", "이 숫자가 의미하는 것", "최종 모집인원 변화·전년 대비 비교 (단정 금지)", ("jeongsi.quota_2027", "past[].competition")),
         Section("todo", "다음 할 일 (D-day)", "세그먼트별 다음 액션", ("timeline.next[]",)),
-    ), ("{univ} {dept}", "{event}", "2027")),
+    ), ("{univ} {dept}", "{event}", "2027"), status="구현"),
 
-    _t("segment_guide", "⑤ 세그먼트형 가이드", (1, 2), "Phase 5", (
+    _t("segment_guide", "⑤ 세그먼트형 가이드", (1, 2), "Phase 5 (구현)", (
         Section("who", "{segment}가 {univ} {dept}를 노린다면", "대상 세그먼트 정의와 이 글의 범위", ("audience.segment",)),
         Section("rules", "{segment}에게 달라지는 전형 조건", "졸업생 학생부 처리·검정고시·수시 졸업생 자격",
                 ("jeongsi.grad_record_policy", "jeongsi.ged_policy", "susi[].eligibility_grad_ok")),
         Section("position", "경쟁 환경 — 올해는 누구와 겨루나", "N수생 유입·안정 지원 등 환경 요인 (학원 관점 배지)",
                 ("insights[]",)),
         Section("checklist", "{segment} 체크리스트", "세그먼트별 판단 재료 (N수·반수는 중립 톤, F8 연계)", ("segment.checklist[]",)),
-    ), ("{segment}", "{univ} {dept}", "2027 정시")),
+    ), ("{segment}", "{univ} {dept}", "2027 정시"), status="구현"),
 
-    _t("change_2027", "⑥ 2027 변화 해설", (1, 4), "Phase 5", (
+    _t("change_2027", "⑥ 2027 변화 해설", (1, 4), "Phase 5 (구현)", (
         Section("change", "2027 {topic}, 무엇이 바뀌었나", "변화 주제(무전공·사탐런·확통런·N수 증가) 사실 정리",
                 ("change.topic", "change.facts[]")),
         Section("dept_link", "{univ} {dept}에는 어떤 영향?", "모집인원·선택과목 조건·반영비율과 연결",
@@ -116,7 +116,7 @@ TEMPLATES: dict[str, PostTemplate] = {t.id: t for t in [
         Section("views", "기관별 전망 비교", "종로·대성·메가 등 의견을 나란히 (학원 관점 배지, 출처당 짧은 인용 1회)",
                 ("insights[].org", "insights[].summary", "insights[].evidence_type")),
         Section("so_what", "그래서 수험생은 무엇을 확인할까", "확인 항목 3~5개 (단정 금지)", ()),
-    ), ("2027", "{topic}", "{univ} {dept}")),
+    ), ("2027", "{topic}", "{univ} {dept}"), status="구현"),
 ]}
 
 
