@@ -10,12 +10,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 GOOD = ("안정", "적정")
+WEAK = ("소신", "위험")
 
 
 def _ga(word: str) -> str:
+    """받침 유무로 이/가."""
     ch = word[-1]
     return word + ("이" if "가" <= ch <= "힣" and (ord(ch) - 0xAC00) % 28 else "가")
-WEAK = ("소신", "위험")
 
 
 @dataclass
