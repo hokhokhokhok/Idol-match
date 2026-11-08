@@ -1,0 +1,52 @@
+univ: korea
+pdf: data/raw/korea/2027_수시_요강.pdf
+scope: 학교추천·학업우수·논술. 계열적합(최저 없음)·고른기회·특기자 제외
+notes:
+  - "탐구영역은 사회탐구와 과학탐구 중 1개 과목 반영(6쪽)"
+tracks:
+  - name: 학생부교과(학교추천전형)
+    type: 교과
+    grad_ok: false
+    grad_note: 국내 고교 졸업예정자 중 5학기 교과 성적 기재자, 출신고 추천(고교별 최대 12명)
+    grad_page: 13
+    min_page: 6
+    min_text: "전체(의학과 제외): 국어, 수학, 영어, 탐구 4개 영역 중 3개 영역 등급의 합이 7 이내 및 한국사 4등급 이내 / 의학과: 4개 영역 등급의 합이 5 이내 및 한국사 4등급 이내. 탐구는 1개 과목 반영"
+    min_req:
+      - units: 전체(의학과 제외)
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 7, inq: best1, extra: {한국사: 4}}
+      - units: 의학과
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 5, inq: best1, extra: {한국사: 4}}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 8
+  - name: 학생부종합(학업우수전형)
+    type: 종합
+    grad_ok: true
+    grad_note: 국내·외 정규 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 14
+    min_page: 6
+    min_text: "전체(의학과 제외): 4개 영역 등급의 합이 8 이내 및 한국사 4등급 이내 / 의학과: 4개 영역 등급의 합이 5 이내 및 한국사 4등급 이내. 탐구는 1개 과목 반영"
+    min_req:
+      - units: 전체(의학과 제외)
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 8, inq: best1, extra: {한국사: 4}}
+      - units: 의학과
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 5, inq: best1, extra: {한국사: 4}}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 8
+  - name: 논술(논술전형)
+    type: 논술
+    grad_ok: true
+    grad_note: 국내·외 정규 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 22
+    min_page: 6
+    min_text: "전체: 국어, 수학, 영어, 탐구 4개 영역 등급의 합이 8 이내 및 한국사 4등급 이내 (논술전형은 의학과 미선발로 보임 — 검증 필요). 탐구는 1개 과목 반영"
+    min_req:
+      - units: 전체
+        rule: {pool: [국, 수, 영, 탐], pick: 4, sum_max: 8, inq: best1, extra: {한국사: 4}}
+    events:
+      - {kind: 고사장발표, date: 2026-11-17}
+      - {kind: 논술, date: 2026-11-21, units: 자연}
+      - {kind: 논술, date: 2026-11-22, units: 인문}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 8

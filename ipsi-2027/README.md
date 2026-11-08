@@ -19,6 +19,9 @@
 | **Phase 1** 출처·robots·접속 상태 정리 | ✅ [docs/sources.md](docs/sources.md) |
 | **Phase 1** 2027 환경 가정 + 출처 검증 | ✅ [docs/context.md](docs/context.md) |
 | **Phase 1** DB 스키마(v2), 세그먼트 온보딩·맞춤 대시보드, 타임라인, 데이터 상태 화면 | ✅ `engine/` · `app/` |
+| **Phase 2** 수능 최저 판정 엔진 (낙관/비관 등급 → 충족·경계·미충족, 결과를 가르는 영역) | ✅ `engine/minreq.py` |
+| **Phase 2** 20개교 2027 수시 60개 전형: 최저·졸업생 자격·수능 후 고사·발표일 (검증 필요) | ✅ `data/parsed/susi_2027/` → [검토표](docs/susi_2027_review.md) |
+| **Phase 2** 수시 대응 화면: 가채점 입력, 내 수시 6장 판정, 고사 캘린더·겹침 경고, 졸업생 자격 필터 | ✅ `app/susi_tab.py` |
 
 ## 실행
 
@@ -31,6 +34,7 @@ python -m blog.build_sample               # samples/ 샘플 재생성
 python -m blog.build_docs                 # docs/blog_templates.md 재생성
 python -m scrapers.download               # 모집요강·입결 다운로드 (data/raw/, 약 270MB, git 제외)
 python -m engine.db                       # data/app.db 생성·대학/출처 시드
+python -m engine.susi_report              # docs/susi_2027_review.md (수시 데이터 검토표) 재생성
 ```
 
 ## 샘플

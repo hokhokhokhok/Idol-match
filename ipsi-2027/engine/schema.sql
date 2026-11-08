@@ -125,4 +125,9 @@ CREATE TABLE IF NOT EXISTS retake_inputs (
   trend_json TEXT,                   -- 모평·수능 영역별 추이
   record_note TEXT
 );
+CREATE TABLE IF NOT EXISTS app_state (     -- 화면 입력값 저장 (가채점 등급, 선택한 수시 지원 등)
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT
+);
 -- blog_posts / blog_metrics 는 blog/store.py 에서 생성

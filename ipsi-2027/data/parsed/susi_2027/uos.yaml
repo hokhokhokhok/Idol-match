@@ -1,0 +1,46 @@
+univ: uos
+pdf: data/raw/uos/2027_수시_요강.pdf
+scope: 학생부교과(고교추천)·학생부종합Ⅰ(면접)·논술. 그 외 전형 최저 없음
+tracks:
+  - name: 학생부교과(고교추천전형)
+    type: 교과
+    grad_ok: true
+    grad_year_min: 2026
+    grad_note: 국내 고교 2026년 이후 졸업(예정)자 중 소속 고교장 추천
+    grad_page: 14
+    min_page: 15
+    min_text: "국어, 수학, 영어, 탐구(사회/과학 중 상위 1과목) 중 3개 영역 등급합 8 이내 및 한국사 4등급 이내"
+    min_req:
+      - units: 전 모집단위
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 8, inq: best1, extra: {한국사: 4}}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 5
+  - name: 학생부종합전형Ⅰ(면접형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 12
+    min_page: 3
+    min_text: "수능최저학력기준 없음"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 1단계발표, date: 2026-11-20}
+      - {kind: 면접, date: 2026-11-28, units: 인문·예체능계열}
+      - {kind: 면접, date: 2026-11-29, units: 자연계열}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 5
+  - name: 논술전형
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 12
+    min_page: 13
+    min_text: "대학수학능력시험 최저학력기준: 없음"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 논술, date: 2026-10-03}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 5

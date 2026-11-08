@@ -59,6 +59,19 @@ def load_profile(con) -> dict | None:
     return dict(r) if r else None
 
 
+def get_state(con, key: str, default=None):
+    import json
+    r = con.execute("SELECT value FROM app_state WHERE key=?", (key,)).fetchone()
+    return json.loads(r["value"]) if r else default
+
+
+def set_state(con, key: str, value) -> None:
+    import json
+    con.execute("INSERT OR REPLACE INTO app_state (key, value, updated_at) VALUES (?,?,?)",
+                (key, json.dumps(value, ensure_ascii=False), datetime.now().isoformat(timespec="seconds")))
+    con.commit()
+
+
 if __name__ == "__main__":
     c = connect()
     print(seed(c))

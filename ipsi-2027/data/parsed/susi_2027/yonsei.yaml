@@ -1,0 +1,57 @@
+univ: yonsei
+pdf: data/raw/yonsei/2027_수시_요강.pdf
+scope: 추천형·활동우수형·논술. 기회균형·국제형·특기자는 제외
+notes:
+  - "요강 5~6쪽의 '논술전형 수능최저 적용' 등은 2028학년도 변경 예고임. 2027 논술전형은 최저 미적용(49쪽)"
+  - "추천형과 활동우수형은 중복지원 불가(택1)"
+common_min: &ys_min
+  - units: 인문
+    rule: {pool: [국, 수, 탐1, 탐2], pick: 2, sum_max: 4, must_any: [국, 수], extra: {영: 3, 한국사: 4}}
+  - units: 자연(일반)
+    rule: {pool: [국, 수, 탐1, 탐2], pick: 2, sum_max: 5, must_all: [수], extra: {영: 3, 한국사: 4}, inq_type: 과탐, math: [미적분, 기하]}
+  - units: 의예과·치의예과·약학과
+    rule: {pool: [국, 수, 탐1, 탐2], pick: 2, each_max: 1, must_any: [국, 수], extra: {영: 3, 한국사: 4}, inq_type: 과탐, math: [미적분, 기하]}
+  - units: 통합(응용통계학과·생활과학대학·간호대학)
+    rule:
+      any_of:
+        - {pool: [국, 수, 탐1, 탐2], pick: 2, sum_max: 4, must_any: [국, 수], extra: {영: 3, 한국사: 4}}
+        - {pool: [국, 수, 탐1, 탐2], pick: 2, sum_max: 5, must_all: [수], extra: {영: 3, 한국사: 4}, inq_type: 과탐, math: [미적분, 기하]}
+tracks:
+  - name: 학생부교과전형[추천형]
+    type: 교과
+    grad_ok: false
+    grad_note: 국내 고교 3학년 재학생(2027년 2월 졸업예정), 학교장 추천. 조기졸업예정자 불가
+    grad_page: 25
+    min_page: 26
+    min_text: "인문: 국어, 수학 중 1개 과목을 포함하여 2개 과목 등급 합 4 이내 / 자연(일반): 수학을 포함하여 2개 과목 등급 합 5 이내 / 의예·치의예·약학: 국어, 수학 중 1개 과목을 포함하여 1등급 2개 이상 / 영어 3등급, 한국사 4등급 이내 / 통합: 인문 또는 자연(일반) 중 하나. 탐구는 개별 과목 등급 기준, 자연은 과학탐구만·수학 미적분/기하"
+    min_req: *ys_min
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 19
+  - name: 학생부종합전형[활동우수형]
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업자(2027년 2월 졸업예정자 포함), 검정고시 포함
+    grad_page: 28
+    min_page: 29
+    min_text: "추천형과 동일 (인문 2개 합 4·국수 중 1 포함 / 자연 수학 포함 2개 합 5 / 의치약 1등급 2개 / 영어 3, 한국사 4)"
+    min_req: *ys_min
+    events:
+      - {kind: 1단계발표, date: 2026-11-16}
+      - {kind: 면접, date: 2026-11-21, units: 인문·통합계열}
+      - {kind: 면접, date: 2026-11-22, units: 자연계열}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 19
+  - name: 논술전형
+    type: 논술
+    grad_ok: true
+    grad_note: 국내·외 고교 졸업자(2027년 2월 졸업예정자 포함), 검정고시 포함
+    grad_page: 48
+    min_page: 49
+    min_text: "수능최저학력기준: 적용하지 않음. 자연·통합계열은 수학 점수 20점 미만(100점 만점) 불합격"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 논술, date: 2026-10-10}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 19

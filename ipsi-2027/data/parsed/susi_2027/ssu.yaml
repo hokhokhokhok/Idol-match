@@ -1,0 +1,48 @@
+univ: ssu
+pdf: data/raw/ssu/2027_수시_요강.pdf
+scope: 교과우수자(학교장 추천)·논술우수자·SSU미래인재(면접형 일정)
+notes:
+  - "2027 변경: 교과 자연계열 수학 선택과목 제한 해제, 논술 최저 2개 합 5 → 6으로 완화(7쪽)"
+  - "탐구는 2과목 중 상위 1과목, 필수 응시 영역 없음"
+common_min: &ss_min
+  - units: 전 계열
+    rule: {pool: [국, 수, 영, 탐], pick: 2, sum_max: 6, inq: best1}
+tracks:
+  - name: 학생부교과(교과우수자전형-학교장 추천)
+    type: 교과
+    grad_ok: true
+    grad_year_min: 2025
+    grad_note: 국내 고교 2025·2026·2027년 졸업(예정)자, 국내 고교 3학기 이상 교과성적, 학교장 추천(인원 제한 없음)
+    grad_page: 24
+    min_page: 25
+    min_text: "전 계열: 국어, 수학, 영어, 사회/과학탐구(1과목) 중 2개 영역 등급 합 6등급 이내. 탐구 상위 1과목"
+    min_req: *ss_min
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 11
+  - name: 논술(논술우수자전형)
+    type: 논술
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력 (검증 필요)
+    min_page: 27
+    min_text: "전 계열: 국어, 수학, 영어, 사회/과학탐구(1과목) 중 2개 영역 등급 합 6등급 이내"
+    min_req: *ss_min
+    events:
+      - {kind: 고사장발표, date: 2026-11-17}
+      - {kind: 논술, date: 2026-11-21}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 28
+  - name: 학생부종합(SSU미래인재전형-면접형)
+    type: 종합
+    grad_ok: true
+    grad_note: 고교 졸업(예정)자 또는 동등 학력
+    grad_page: 18
+    min_page: 18
+    min_text: "수능최저학력기준: 없음"
+    min_req:
+      - {units: 전 모집단위, rule: null}
+    events:
+      - {kind: 1단계발표, date: 2026-11-23}
+      - {kind: 면접, date: 2026-11-27}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 18

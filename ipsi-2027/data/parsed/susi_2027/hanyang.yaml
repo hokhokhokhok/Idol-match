@@ -1,0 +1,67 @@
+univ: hanyang
+pdf: data/raw/hanyang/2027_수시_요강.pdf
+scope: 학생부교과(추천형)·학생부종합(추천형)·논술·학생부종합(면접형 일정). 서류형·고른기회 등은 최저 미적용
+notes:
+  - "수능 필수 응시영역: 국어, 수학, 영어, 탐구(2과목), 한국사 (최저 적용 전형)"
+  - "2027 논술전형 전 모집단위 수능최저 신설(44쪽)"
+common_min: &hy_min
+  - units: 전체(의예과 제외)
+    rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 7, inq: best1}
+  - units: 의예과
+    rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 4, inq: avg2}
+tracks:
+  - name: 학생부교과(추천형)
+    type: 교과
+    grad_ok: true
+    grad_year_min: 2026
+    grad_note: 고교장 추천, 2026년 2월 이후(2026년 2월 졸업자 포함) 국내 정규 고교 졸업(예정)자, 국내 고교 5개 학기 이상
+    grad_page: 28
+    min_page: 29
+    min_text: "자연·인문·상경: 국어, 수학, 영어, 탐구(상위 1개 과목) 중 3개 영역 등급합 7 이내"
+    min_req:
+      - units: 전 모집단위(자연·인문·상경)
+        rule: {pool: [국, 수, 영, 탐], pick: 3, sum_max: 7, inq: best1}
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 9
+  - name: 학생부종합(추천형)
+    type: 종합
+    grad_ok: true
+    grad_year_min: 2026
+    grad_note: 고교장 추천, 2026년 2월 이후 졸업자 포함 국내 정규 고교 졸업(예정)자
+    grad_page: 30
+    min_page: 31
+    min_text: "전체(의예과 제외): 국어, 수학, 영어, 탐구(상위 1개 과목) 중 3개 영역 등급합 7 이내 / 의예과: 국어, 수학, 영어, 탐구(2개 과목 평균) 중 3개 영역 등급합 4 이내"
+    min_req: *hy_min
+    events:
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 8
+  - name: 논술
+    type: 논술
+    grad_ok: true
+    grad_note: 국내 정규 고교 졸업(예정)자 및 동등 학력
+    grad_page: 44
+    min_page: 45
+    min_text: "전체(의예과 제외): 국어, 수학, 영어, 탐구(상위 1개 과목) 중 3개 영역 등급합 7 이내 / 의예과: 탐구(2개 과목 평균) 중 3개 영역 등급합 4 이내"
+    min_req: *hy_min
+    events:
+      - {kind: 고사장발표, date: 2026-11-23}
+      - {kind: 논술, date: 2026-11-28, units: 상경/인문계열}
+      - {kind: 논술, date: 2026-11-29, units: 자연계열(의예 포함)}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 9
+  - name: 학생부종합(면접형)
+    type: 종합
+    grad_ok: true
+    grad_note: 국내 정규 고교 졸업(예정)자 (검증 필요)
+    min_page: 35
+    min_text: "수능최저학력기준: 미적용"
+    min_req:
+      - {units: 해당 모집단위, rule: null}
+    events:
+      - {kind: 1단계발표, date: 2026-11-13}
+      - {kind: 면접, date: 2026-11-22, units: 공과대학·한양인터칼리지(자연)}
+      - {kind: 면접, date: 2026-12-05, units: 의과대학}
+      - {kind: 면접, date: 2026-12-06, units: 사범대학}
+      - {kind: 최초합격발표, date: 2026-12-18}
+    events_page: 9
