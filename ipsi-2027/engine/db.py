@@ -12,7 +12,9 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = ROOT / "data" / "app.db"
+from .paths import local
+
+DB_PATH = local("app.db", default=ROOT / "data" / "app.db")
 
 
 def connect(path: Path = DB_PATH) -> sqlite3.Connection:

@@ -37,7 +37,17 @@
 | **Phase 6** 재도전 판단(N수·반수 전용): 결과 범위·목표, 본인 점수 추이, 2028 변화, 선택지별 체크리스트 | ✅ `engine/retake.py` · `app/retake_tab.py` |
 | **F10** 유형 ① 총정리·② 라이벌 비교 실데이터 생성 (경영: 연세·서강·성균관·한양) | ✅ `blog/real_data.py` · `samples/` |
 
-## 실행
+## 바로 쓰기 (설치 없음)
+
+**https://hokhokhokhok.github.io/Idol-match/ipsi/**
+
+- 브라우저 안에서 Python이 돌아가는 stlite(Streamlit WebAssembly판)로 배포 — 서버 없음
+- 처음 열 때 실행 환경을 내려받느라 30초~1분 걸림 (이후 캐시)
+- 입력한 성적·지원 목록·직접 추가 인사이트는 **이 브라우저의 IndexedDB에만 저장**되고 서버로 전송되지 않음 (다른 기기·브라우저와 공유 안 됨, 브라우저 데이터 삭제 시 사라짐)
+- 빌드: `python web/build_web.py <출력폴더>` → `index.html` + `ipsi-app.zip`. `main`에 머지되면 `.github/workflows/pages.yml`이 테스트 후 자동 배포
+- 브라우저판에서 안 되는 것: 모집요강 다운로드(`scrapers/`), 유튜브 자막 자동 요약(직접 요약 입력은 됨)
+
+## 실행 (PC)
 
 ```bash
 cd ipsi-2027

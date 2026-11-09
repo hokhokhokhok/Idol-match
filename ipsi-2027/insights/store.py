@@ -14,7 +14,9 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED = ROOT / "data" / "insights" / "seed.yaml"
-USER = ROOT / "data" / "insights" / "user.yaml"
+from engine.paths import local  # noqa: E402
+
+USER = local("insights", "user.yaml", default=ROOT / "data" / "insights" / "user.yaml")
 BADGE = {"공식": "공식 데이터", "학원": "학원 관점", "언론": "언론 보도", "유튜브": "수험생 경험·심리"}
 TRUST = {"공식": 0, "학원": 1, "언론": 1, "유튜브": 2}   # 기획안 9장: 공식 > 학원 분석 > 유튜브·커뮤니티
 MAX_SUMMARY = 400

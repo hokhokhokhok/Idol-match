@@ -6,7 +6,9 @@ import sqlite3
 from datetime import date, datetime
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
+from engine.paths import local
+
+DB_PATH = local("app.db", default=Path(__file__).resolve().parent.parent / "data" / "app.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS blog_posts (

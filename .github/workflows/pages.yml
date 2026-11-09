@@ -51,6 +51,15 @@ jobs:
           npm run check:data
           npm run build
       - run: cp -r magok-academy/out www/magok-academy && touch www/.nojekyll
+      # 2027 인서울 입시 전략 앱(ipsi-2027/)은 브라우저 실행판(stlite)으로 /Idol-match/ipsi/ 에 배포
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test & build ipsi-2027
+        run: |
+          pip install -q -r ipsi-2027/requirements.txt
+          (cd ipsi-2027 && python -m pytest -q tests)
+          python ipsi-2027/web/build_web.py www/ipsi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
