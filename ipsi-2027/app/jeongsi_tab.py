@@ -6,6 +6,8 @@ import streamlit as st
 from engine import db
 from engine.jeongsi_data import load
 
+import ui
+
 KIND_BADGE = {"요강식": "요강식", "근사식": "근사(임시)", "비율만": "비율만"}
 
 
@@ -33,7 +35,7 @@ def _inputs(con) -> tuple[dict, dict]:
             v = 0.0
             inq[f"탐{i}"] = {"std": s, "pct": p, "type": t}
             inq[f"_t{i}"] = (t, s, p, v)
-    st.caption("탐구 변환표준점수는 대학마다 다릅니다. 대학이 변환표를 공지하면 '🔄 공지 반영' 탭에 넣으세요 — 그 대학 계산에 자동 적용되고, "
+    st.caption("탐구 변환표준점수는 대학마다 다릅니다. 대학이 변환표를 공지하면 왼쪽 메뉴 '발표 자료 입력'에 넣으세요 — 그 대학 계산에 자동 적용되고, "
                "그 전에는 표준점수로 임시 계산합니다.")
     with st.expander("최고 표준점수 (성적 발표 후 입력 — 표준점수÷최고점 방식 대학에 필요)", expanded=False):
         mc = st.columns(3)
@@ -57,9 +59,7 @@ def _inputs(con) -> tuple[dict, dict]:
 
 def render(con) -> None:
     groups, meta = load()
-    st.caption("데이터: 20개교 2027 정시 모집요강의 반영식을 옮긴 값(상태: 검증 필요). '요강식'은 요강 산출식 그대로, "
-               "'근사(임시)'는 산출식이 공개되지 않아 비율로 근사한 값, '비율만'은 영어 변환표 등이 미공개라 점수를 계산하지 않음. "
-               "서강·중앙·동국·홍익은 요강 계산 예시로 엔진을 검증했습니다.")
+    st.caption("20개 대학 2027 정시 모집요강의 반영식을 옮긴 값입니다(검증 필요). 서강·중앙·동국·홍익은 요강의 계산 예시와 같은 점수가 나오는 것을 확인했습니다.")
     scores, maxes = _inputs(con)
 
     st.divider()
@@ -86,11 +86,23 @@ def render(con) -> None:
                      "비고": note, "반영 비중": wtxt})
     st.subheader("대학별 환산점수")
     rows.sort(key=lambda r: r["대학"])
-    st.dataframe(rows, hide_index=True, use_container_width=True,
-                 column_config={"만점 대비": st.column_config.ProgressColumn("만점 대비(%)", min_value=0, max_value=100, format="%.2f"),
-                                "비고": st.column_config.TextColumn(width="large")})
+    ui.chips([("요강식", "요강 공식 = 대학 발표식 그대로"), ("근사(임시)", "근사 계산 = 식 일부가 없어 비슷하게"), ("비율만", "비율만 확인 = 점수 계산 안 함")])
+    cells = []
+    for r in rows:
+        sc = r["환산점수"]
+        if sc == sc:   # not NaN
+            body = f'<div class="ui-score">{sc:g}<span> / {r["만점"]:g}점</span></div>'
+        else:
+            body = '<div class="ui-why" style="font-weight:600;padding:8px 0">점수 계산 안 함</div>'
+        body += f'<div class="ui-why">{ui.e(r["비고"])}</div>' if r["비고"] else ""
+        body += f'<div class="ui-why">반영 비중: {ui.e(r["반영 비중"])}</div>'
+        cells.append(ui.card(r["대학"], r["모집단위 그룹"], body, badges=ui.pill(r["계산"])))
+    ui.show('<div class="ui-grid">' + "".join(cells) + "</div>")
+    with st.expander("표로 보기"):
+        st.dataframe(rows, hide_index=True, use_container_width=True,
+                     column_config={"만점 대비": st.column_config.ProgressColumn("만점 대비(%)", min_value=0, max_value=100, format="%.2f")})
     st.caption("환산점수는 대학마다 만점·척도가 달라 학교끼리 직접 비교할 수 없습니다. 합격 가능성은 대학별 전년도 입결(같은 환산 기준)과 "
-               "비교해야 하며, 그 기능은 Phase 4에서 추가합니다. 서울대는 지원자 최고·최저점으로 최종 환산하므로 원점수 합만 표시합니다.")
+               "비교해야 하며, 왼쪽 메뉴의 '정시 · 합격 가능성'에서 볼 수 있습니다. 서울대는 지원자 최고·최저점으로 최종 환산하므로 원점수 합만 표시합니다.")
 
     # ---------- 유리한 반영 구조 ----------
     st.subheader("나에게 유리한 반영 구조")

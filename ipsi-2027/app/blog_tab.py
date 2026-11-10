@@ -83,7 +83,7 @@ def render() -> None:
     if not (tpl.univ_count[0] <= len(univs) <= tpl.univ_count[1]):
         problems.append(f"{tpl.name}은 학교 {tpl.univ_count[0]}~{tpl.univ_count[1]}개를 골라야 합니다.")
     if tpl.status != "구현":
-        problems.append(f"{tpl.name}은 {tpl.phase}에 구현 예정입니다. 구조는 '템플릿 6종 구조' 탭에서 볼 수 있어요.")
+        problems.append(f"{tpl.name}은 {tpl.phase}에 구현 예정입니다. 구조는 왼쪽 메뉴 '블로그 템플릿 구조'에서 볼 수 있어요.")
     ready = available(dept)
     ids = [NAME2ID.get(u) for u in univs]
     use_dummy = st.sidebar.checkbox("더미 샘플로 보기 (연세대 경영)", value=False) if ptype == "jeongsi_overview" else False

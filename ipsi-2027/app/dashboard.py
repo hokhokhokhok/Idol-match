@@ -41,7 +41,7 @@ def _conversion(con) -> str | None:
         return None
     groups, _ = load_js()
     ok = sum(1 for g in groups if g.formula and (r := g.compute(s)) and r.score is not None)
-    return f"{ok}개 그룹 환산 완료 (임시 포함) — 정시 환산 탭에서 확인"
+    return f"{ok}개 그룹 환산 완료 (임시 포함) — '정시 · 환산점수'에서 확인"
 
 
 def _admission(con) -> str | None:
@@ -60,7 +60,7 @@ def _admission(con) -> str | None:
             if a:
                 out.append(a.grade)
     if not out:
-        return "합격 가능성 탭에서 모집단위를 고르면 요약이 나옵니다"
+        return "'정시 · 합격 가능성'에서 모집단위를 고르면 요약이 나옵니다"
     return " · ".join(f"{g} {out.count(g)}" for g in ("안정", "적정", "소신", "위험") if out.count(g))
 
 

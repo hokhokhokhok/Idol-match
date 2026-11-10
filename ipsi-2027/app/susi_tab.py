@@ -11,6 +11,8 @@ from engine.kidnap import judge_app, scenarios
 from engine.susi_data import calendar, load
 from engine import admission as A
 
+import ui
+
 AREAS = [("국", "국어"), ("수", "수학"), ("영", "영어"), ("탐1", "탐구1"), ("탐2", "탐구2"), ("한국사", "한국사")]
 STATUS_ICON = {"충족": "🟢 충족", "경계": "🟡 경계", "미충족": "🔴 미충족", "기준 없음": "⚪ 최저 없음"}
 CSAT = date(2026, 11, 19)
@@ -19,14 +21,14 @@ WD = "월화수목금토일"
 
 def _grades_input(con) -> tuple[dict, dict, str]:
     saved = db.get_state(con, "susi_grades", {})
-    st.markdown("**가채점 등급** — 등급컷 근처라 한 등급 내려갈 수 있으면 '경계'를 체크하세요. "
-                "기관별 예상 등급컷은 수능 당일 저녁부터 발표되니, 여러 기관 컷을 보고 보수적으로 넣는 걸 권합니다.")
+    st.markdown("**가채점 등급**")
+    st.caption("등급컷 근처라 한 등급 떨어질 수도 있으면 '한 등급 낮을 수도'를 체크하세요. 그러면 좋을 때와 나쁠 때를 모두 따져 판정합니다.")
     cols = st.columns(6)
     ranges = {}
     for i, (k, label) in enumerate(AREAS):
         with cols[i]:
             g = st.number_input(label, 1, 9, int(saved.get(k, [2, 2])[0]), key=f"g_{k}")
-            edge = st.checkbox("경계", value=saved.get(k, [2, 2])[1] > saved.get(k, [2, 2])[0], key=f"e_{k}")
+            edge = st.checkbox("한 등급 낮을 수도", value=saved.get(k, [2, 2])[1] > saved.get(k, [2, 2])[0], key=f"e_{k}")
             ranges[k] = (g, min(g + 1, 9) if edge else g)
     c1, c2, c3 = st.columns(3)
     t1 = c1.selectbox("탐구1 종류", ["사탐", "과탐"], index=["사탐", "과탐"].index(saved.get("_t1", "사탐")))
@@ -43,8 +45,7 @@ def render(con, profile: dict | None) -> None:
     tracks, errors = load()
     if errors:
         st.error("데이터 검증 오류: " + "; ".join(errors))
-    st.caption("데이터: 20개교 2027 수시 모집요강을 사람이 읽고 옮긴 값입니다(상태: **검증 필요**). "
-               "판정 옆 원문 발췌·쪽수로 반드시 대조하고, 최종 판단은 대학 공식 요강으로 하세요.")
+    st.caption("20개 대학 2027 수시 모집요강을 옮긴 값입니다(검증 필요). 카드 아래 요강 기준과 쪽수로 꼭 대조하세요.")
 
     # ---------- 졸업생 자격 ----------
     hist = (profile or {}).get("history_type") or "현역"
@@ -92,19 +93,22 @@ def render(con, profile: dict | None) -> None:
             statuses.append((t, g, v.status))
             detail = (v.optimistic.detail if v.optimistic else "")
             if v.status == "경계":
-                detail = f"낙관: {v.optimistic.detail} / 비관: {v.pessimistic.detail} · 결과를 가르는 영역: {', '.join(v.swing)}"
+                detail = f"등급이 좋게 나오면 충족, 한 등급 낮으면 못 맞춥니다. 갈리는 과목: {', '.join(v.swing)}"
             elif v.status == "미충족" and v.pessimistic:
                 detail = v.optimistic.detail
             rows.append({"판정": STATUS_ICON[v.status], "대학": t.univ_name, "전형": t.name, "모집단위": g.units,
                          "근거": detail, "기준(정리)": g.text,
                          "요강 원문": f"{t.min_text} (p.{t.min_page})"})
-        st.dataframe(rows, hide_index=True, use_container_width=True,
-                     column_config={"근거": st.column_config.TextColumn(width="large"),
-                                    "요강 원문": st.column_config.TextColumn(width="large")})
+        n0 = {k: sum(x[2] == k for x in statuses) for k in STATUS_ICON}
+        ui.chips([(k, f"{ui.LABEL[k]} {n0[k]}") for k in ("충족", "경계", "미충족", "기준 없음") if n0[k]])
+        for r, (t, g, stt) in zip(rows, statuses):
+            ui.show(ui.card(t.univ_name, t.name, ui.row(stt, g.units, (r["근거"] or "수능 최저가 없는 전형입니다.").replace("최선 조합", "가장 유리한 조합")),
+                            foot=f"요강 기준: {ui.e(t.min_text)} · {t.min_page}쪽"))
+        with st.expander("표로 보기"):
+            st.dataframe(rows, hide_index=True, use_container_width=True)
         n = {s: sum(r["판정"] == STATUS_ICON[s] for r in rows) for s in STATUS_ICON}
-        st.caption(f"충족 {n['충족']} · 경계 {n['경계']} · 미충족 {n['미충족']} · 최저 없음 {n['기준 없음']}. "
-                   "경계는 실채점(12월 11일 성적 통지)으로 확정됩니다. 미충족이 확실한 전형의 고사 응시 여부는 본인 판단이지만, "
-                   "경계인 전형은 응시해 두는 쪽이 선택지를 남깁니다.")
+        st.caption("아슬아슬한 전형은 실채점(12월 11일 성적 통지)으로 확정됩니다. 미충족이 확실한 전형의 고사 응시 여부는 본인 판단이지만, "
+                   "아슬아슬한 전형은 응시해 두는 쪽이 선택지를 남깁니다.")
 
         # ---------- 캘린더 ----------
         st.subheader("수능 이후 일정")
@@ -168,7 +172,7 @@ def _admission_cards(con) -> list[str]:
 def _kidnap(con, statuses) -> None:
     st.subheader("수시 납치 점검")
     st.caption("수시 원서는 이미 냈으므로 남은 선택은 '수능 이후 고사에 응시할지'입니다(결시하면 불합격 처리). "
-               "아래 판단은 선택을 대신하지 않고 재료를 정리합니다. 정시 예상 위치는 합격 가능성 탭 판정이나 학원 모의지원 결과를 참고해 넣으세요.")
+               "아래 판단은 선택을 대신하지 않고 재료를 정리합니다. 정시 예상 위치는 '정시 · 합격 가능성' 판정이나 학원 모의지원 결과를 참고해 넣으세요.")
     prefs = st.multiselect("대학 선호 순위 (먼저 고른 대학이 더 선호)", UNIVS, default=db.get_state(con, "susi_prefs", []))
     pos_saved = db.get_state(con, "jeongsi_pos", {})
     targets = list(dict.fromkeys(prefs + [t.univ_name for t, _, _ in statuses]))
