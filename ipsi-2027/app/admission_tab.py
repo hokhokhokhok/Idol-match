@@ -37,7 +37,8 @@ def _import_box() -> None:
                 st.error(f"출처 URL 또는 쪽수가 없는 행: {bad[:10]} — 출처 없는 수치는 넣지 않습니다.")
             elif st.button(f"{len(rows)}행 저장"):
                 univ = rows[0]["univ"]
-                out = A.RESULTS / f"import_{univ}.csv"
+                A.IMPORTS.mkdir(parents=True, exist_ok=True)
+                out = A.IMPORTS / f"import_{univ}.csv"
                 with out.open("w", encoding="utf-8", newline="") as f:
                     w = csv.DictWriter(f, fieldnames=REQUIRED + ["track", "conv_avg", "status"])
                     w.writeheader()

@@ -15,6 +15,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "data" / "parsed" / "results"
+from .paths import local  # noqa: E402
+
+IMPORTS = local("results", default=RESULTS)   # 사용자가 가져온 입결(import_*.csv)
 
 # 보정 요인 기본값 — shift: 기준을 올리는 백분위 점수(가중치 1일 때), evidence: docs/context.md 근거 수준
 FACTORS = {
@@ -61,7 +64,8 @@ class Record:
 @lru_cache(maxsize=1)
 def load_results() -> list[Record]:
     recs = []
-    for f in sorted(RESULTS.glob("*.csv")):
+    files = sorted(RESULTS.glob("*.csv")) + (sorted(IMPORTS.glob("import_*.csv")) if IMPORTS != RESULTS and IMPORTS.exists() else [])
+    for f in files:
         with f.open(encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
                 recs.append(Record(r["univ"], int(r["year"]), r["unit"], r["group"], int(r["quota"] or 0),

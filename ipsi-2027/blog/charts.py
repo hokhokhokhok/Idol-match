@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+from pathlib import Path
 from dataclasses import dataclass
 
 import matplotlib
@@ -19,7 +20,15 @@ SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
 S1, S2 = "#2a78d6", "#eb6834"  # 카테고리 1·2번 (검증된 순서)
 
 
+BUNDLED = Path(__file__).resolve().parent.parent / "assets" / "fonts" / "NanumGothic.ttf"
+
+
 def _setup_font() -> str:
+    if BUNDLED.exists():                         # 브라우저 실행판·폰트 없는 PC 대비
+        try:
+            font_manager.fontManager.addfont(str(BUNDLED))
+        except Exception:  # noqa: BLE001
+            pass
     have = {f.name for f in font_manager.fontManager.ttflist}
     for name in KOREAN_FONTS:
         if name in have:

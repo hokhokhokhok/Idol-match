@@ -16,7 +16,9 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-DIR = ROOT / "data" / "parsed" / "updates"
+from .paths import local  # noqa: E402
+
+DIR = local("updates", default=ROOT / "data" / "parsed" / "updates")
 CARRY = DIR / "carryover.csv"
 CMAX = DIR / "csat_max.yaml"
 CARRY_COLS = ["univ", "unit", "added_quota", "announced_at", "source_url", "page"]
