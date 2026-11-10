@@ -39,7 +39,10 @@
 
 ## 바로 쓰기 (설치 없음)
 
-**https://hokhokhokhok.github.io/Idol-match/ipsi/**
+**https://hokhokhokhok.github.io/Idol-match/ipsi/** — 계산기(HTML판): 수시 최저·정시 환산·합격 가능성·조합·수시 납치·일정·인사이트. 바로 열림
+**https://hokhokhokhok.github.io/Idol-match/ipsi/full/** — 전체 앱(아래 stlite판, 블로그 생성·공지 반영 포함)
+
+- HTML판: `python web/html/build_html.py <출력.html>` (계산 로직 `web/html/logic.js`는 `engine/`을 JS로 옮긴 것, 요강 계산 예시로 검증)
 
 - 브라우저 안에서 Python이 돌아가는 stlite(Streamlit WebAssembly판)로 배포 — 서버 없음
 - 처음 열 때 실행 환경을 내려받느라 30초~1분 걸림 (이후 캐시)

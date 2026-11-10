@@ -22,23 +22,23 @@
   --ok:#6fd3a0; --ok-bg:#183327; --warn:#f0b35a; --warn-bg:#3a2a12; --bad:#ff8a80; --bad-bg:#3d1c1a; --info:#8fb5f5; --info-bg:#1a2740; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--paper);color:var(--ink);font:14px/1.6 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+body{background:var(--paper);color:var(--ink);font:16px/1.7 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
 .wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 header.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--omr);padding-bottom:12px}
 header.top h1{font:700 1.6rem/1.2 var(--f-head);margin:0;text-wrap:balance}
 header.top h1 small{display:block;font:600 .72rem var(--f-num);letter-spacing:.12em;color:var(--omr);margin-bottom:4px}
 .dday{font:600 .9rem var(--f-num);color:var(--ink2)} .dday b{color:var(--omr);font-size:1.15rem}
 .notice{background:var(--omr-soft);border:1px solid var(--rule);border-radius:6px;padding:10px 14px;font-size:.86rem}
-.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;align-items:start}
+.grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;align-items:start}
 @media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
-.card{background:var(--sheet);border:1px solid var(--rule);border-radius:8px;padding:16px;min-width:0}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:20px;min-width:0}
 .card h2{font:700 1rem var(--f-head);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .lbl{font:600 .7rem var(--f-num);letter-spacing:.08em;color:var(--ink2);text-transform:uppercase}
 aside.card{position:sticky;top:max(12px,env(safe-area-inset-top,0px))}
 @media (max-width:860px){aside.card{position:static}}
-.sc{width:100%;border-collapse:collapse;font-size:.85rem;table-layout:fixed}
+.sc{width:100%;border-collapse:collapse;font-size:.95rem;table-layout:fixed}
 .sc col.a{width:58px}.sc col.g{width:46px}
-.sc input{padding:4px 3px;text-align:center}
+.sc input{padding:6px 2px;text-align:center;font-size:.95rem}
 .sc th{font:600 .7rem var(--f-num);color:var(--ink2);text-align:left;padding:3px 2px}
 .sc td{padding:2px}
 .sc td:first-child{font-weight:700;white-space:nowrap;padding-right:6px}
@@ -51,18 +51,47 @@ button{font:600 .85rem var(--f-body);border:1px solid var(--omr);background:var(
 button.primary{background:var(--omr);color:var(--sheet)}
 button:hover{filter:brightness(.95)}
 .tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--rule)}
-.tabs button{border:none;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--ink2);padding:8px 12px;white-space:nowrap}
+.tabs button{border:none;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--ink2);padding:12px 14px;white-space:nowrap;font-size:1rem}
 .tabs button[aria-selected=true]{color:var(--omr);border-bottom-color:var(--omr)}
 .pane{padding-top:14px;display:flex;flex-direction:column;gap:14px}
 .tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:6px}
-table.t{border-collapse:collapse;width:100%;font-size:.84rem}
+table.t{border-collapse:collapse;width:100%;font-size:.95rem}
 table.t th{background:var(--paper);font:600 .72rem var(--f-num);color:var(--ink2);text-align:left;padding:7px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
 table.t td{padding:7px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
 table.t tr:last-child td{border-bottom:none}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
-.pill{display:inline-block;font:600 .74rem var(--f-body);padding:1px 8px;border-radius:999px;white-space:nowrap}
+.pill{display:inline-block;font:600 .82rem var(--f-body);padding:2px 10px;border-radius:999px;white-space:nowrap}
 .p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--info-bg);color:var(--info)} .p-mute{background:var(--paper);color:var(--ink2);border:1px solid var(--rule)}
-.muted{color:var(--ink2);font-size:.8rem}
+.muted{color:var(--ink2);font-size:.9rem}
+.filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.filters>label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--ink2);flex:1 1 180px;min-width:0}
+.filters>label.check{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.filters input[type=checkbox]{width:20px;height:20px}
+select,input{padding:8px 10px;font-size:1rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--rule);color:var(--ink);background:var(--sheet);border-radius:999px;padding:6px 14px;font-size:.92rem}
+.chip[aria-pressed=true]{border-color:var(--omr);box-shadow:inset 0 0 0 1px var(--omr)}
+.tlist,.alist{display:flex;flex-direction:column;gap:12px}
+.tcard{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;background:var(--sheet)}
+.tcard header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+.tcard h3,.jcard h3{font:700 1.1rem var(--f-head);margin:0}
+.tcard h3 span{font-weight:400;color:var(--ink2);font-size:.95rem;margin-left:4px}
+.unit,.arow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:start}
+.alist .arow{border-bottom:1px solid var(--rule);padding-bottom:12px}
+.unit .pill,.arow .pill{text-align:center;padding:4px 8px;font-size:.85rem}
+.uname{font-weight:600}
+.why{color:var(--ink2);font-size:.9rem;line-height:1.6}
+.tcard footer{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem;color:var(--ink2);border-top:1px dashed var(--rule);padding-top:10px}
+.tcard details p,.jcard details p,.box p{font-size:.9rem;color:var(--ink2);margin:8px 0 0}
+.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.jcard{border:1px solid var(--rule);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px;background:var(--sheet)}
+.jhead{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.jlabel{color:var(--ink2);font-size:.92rem}
+.score b{font-size:1.7rem;font-weight:600;color:var(--ink)} .score span{color:var(--ink2)}
+.score.none{color:var(--warn);font-weight:600;padding:6px 0}
+.box{border:1px solid var(--rule);border-radius:8px;padding:10px 14px;background:var(--paper)}
+.empty{padding:20px;text-align:center;color:var(--ink2)}
+@media (max-width:520px){.unit,.arow{grid-template-columns:minmax(0,1fr)}.unit .pill,.arow .pill{justify-self:start}}
 .src a{color:var(--info)}
 a{color:var(--info)}
 .tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -87,7 +116,7 @@ footer{font-size:.8rem;color:var(--ink2);border-top:1px solid var(--rule);paddin
     <h1><small>2027학년도 · 대교협 일정·대학 모집요강 기반</small>인서울 입시 계산기</h1>
     <div class="dday" id="dday"></div>
   </header>
-  <div class="notice">계산 결과는 합격을 보장하지 않습니다. 반영식·최저 기준은 모집요강을 옮긴 값이라 대부분 <b>검증 필요</b> 상태입니다. <b>최종 지원 전 반드시 대학 모집요강을 다시 확인하세요.</b> 입력한 성적은 이 브라우저에만 저장되고 어디로도 전송되지 않습니다.</div>
+  <div class="notice"><b>지원 전에 꼭 대학 모집요강을 다시 확인하세요.</b> 이 계산은 모집요강을 옮겨 만든 참고용이고 합격을 보장하지 않습니다. 입력한 성적은 이 브라우저에만 저장됩니다.</div>
 
   <div class="grid">
     <aside class="card" aria-label="내 성적">
@@ -97,7 +126,7 @@ footer{font-size:.8rem;color:var(--ink2);border-top:1px solid var(--rule);paddin
         <label>고교 졸업연도<input id="gradYear" type="number" min="2000" max="2027"></label>
       </div>
       <table class="sc">
-        <colgroup><col class="a"><col><col><col class="g"><col class="g"></colgroup><thead><tr><th></th><th>표준</th><th>백분위</th><th>등급<br>낙관</th><th>등급<br>비관</th></tr></thead>
+        <colgroup><col class="a"><col><col><col class="g"><col class="g"></colgroup><thead><tr><th></th><th>표준</th><th>백분위</th><th>등급<br>좋을 때</th><th>등급<br>나쁠 때</th></tr></thead>
         <tbody id="scBody"></tbody>
       </table>
       <div class="row" style="margin-top:8px">
@@ -109,7 +138,7 @@ footer{font-size:.8rem;color:var(--ink2);border-top:1px solid var(--rule);paddin
         <label>탐1 변환표준<input id="t1conv" type="number" step="0.01" placeholder="대학 발표 후"></label>
         <label>탐2 변환표준<input id="t2conv" type="number" step="0.01" placeholder="대학 발표 후"></label>
       </div>
-      <p class="muted">가채점이면 등급을 낙관·비관 두 칸으로 넣으세요. 같으면 같은 값을. 변환표준점수는 대학이 12월에 발표하며, 비우면 표준점수로 임시 계산합니다.</p>
+      <p class="muted">가채점이라 등급이 애매하면 '좋을 때·나쁠 때'에 다른 값을 넣으세요. 확실하면 같은 값을 넣으면 됩니다. 탐구 변환점수는 대학이 12월에 발표하니 지금은 비워 두세요.</p>
       <div class="row"><button class="primary" id="saveBtn">이 기기에 저장</button><button id="resetBtn">예시로 되돌리기</button><span class="muted" id="saveMsg"></span></div>
     </aside>
 
@@ -121,7 +150,7 @@ footer{font-size:.8rem;color:var(--ink2);border-top:1px solid var(--rule);paddin
 
   <footer>
     데이터: 20개 대학 2027 수시 60개 전형·정시 50개 반영 그룹(대학 모집요강), 동국대 공식 입결(2024·2026), 대교협 「2027학년도 대학입학전형기본사항」. 학원·언론 자료는 '참고 인사이트'로만 구분해 실었습니다.
-    브라우저판에서는 블로그 생성·공지 반영·입결 CSV 가져오기는 빠져 있습니다(전체 기능은 Python 앱).
+    블로그 생성·공지 반영·입결 CSV 가져오기는 <a href="full/">전체 앱</a>에 있습니다(처음 열 때 30초~1분 걸림).
   </footer>
 </div>
 
@@ -222,38 +251,45 @@ function rTimeline(el){
 
 // ---------- 수시 최저
 function minPill(st){ return {"충족":"p-ok","경계":"p-warn","미충족":"p-bad","기준 없음":"p-mute"}[st] || "p-mute"; }
+const MINLABEL = {"충족":"최저 충족","경계":"아슬아슬","미충족":"최저 못 맞춤","기준 없음":"최저 없음"};
+function plain(j){
+  if (j.status === "기준 없음") return "수능 최저가 없는 전형입니다.";
+  if (j.status === "경계") return `예상 등급이 좋게 나오면 충족, 나쁘게 나오면 못 맞춥니다. 갈리는 과목: ${j.swing.join(", ") || "여러 과목"}`;
+  const d = (j.status === "미충족" ? j.opt : j.pes).detail;
+  return d.replace("최선 조합 ", "가장 유리한 조합 ").replace(/\(기준 (\S+) 이내\)/, "· 기준 $1 이내");
+}
 function rSusi(el){
-  const f = UI.susi || (UI.susi = {univ:"", type:"", elig:true});
+  const f = UI.susi || (UI.susi = {univ:"", type:"", elig:true, st:""});
   const univs = [...new Map(DATA.susi.map(t => [t.univ, t.univ_name])).entries()];
   const rg = ranges(), inq = {"탐1":S.t1type,"탐2":S.t2type}, ged = S.hist === "검정고시";
-  const rows = DATA.susi.filter(t => (!f.univ || t.univ === f.univ) && (!f.type || t.type === f.type)).map(t => {
+  const cnt = {"충족":0,"경계":0,"미충족":0,"기준 없음":0};
+  const cards = DATA.susi.filter(t => (!f.univ || t.univ === f.univ) && (!f.type || t.type === f.type)).map(t => {
     const el2 = IPSI.eligibility(t, S.gradYear || 2027, ged);
-    return {t, el2};
-  }).filter(x => !f.elig || x.el2 !== "불가");
-  const cnt = {"충족":0,"경계":0,"미충족":0};
-  const body = rows.map(({t, el2}) => {
-    const g = t.groups.map(gr => {
-      const j = IPSI.judge(gr.rule, rg, inq, S.mathEl); if (cnt[j.status] != null) cnt[j.status]++;
-      const why = j.status === "경계" ? `비관 등급이면 미충족 · 결과를 가르는 영역: ${j.swing.join(", ")||"복합"}` : j.opt ? (j.status === "미충족" ? j.opt.detail : j.pes.detail) : "수능 최저 없음";
-      return `<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><span class="pill ${minPill(j.status)}">${j.status}</span><span>${esc(gr.units)}</span><span class="muted">${esc(why)}</span></div>`;
-    }).join("");
-    const ev = (t.events||[]).filter(e => ["논술","면접","1단계발표","최초합격발표"].includes(e.kind)).map(e => `${e.kind} ${md(e.date)}${e.units?`(${e.units})`:""}`).join(" · ");
-    const ep = {"가능":"p-ok","불가":"p-bad","확인 필요":"p-warn"}[el2];
-    return `<tr><td><b>${esc(t.univ_name)}</b><br><span class="muted">${esc(t.name)}</span><br><span class="pill p-info">${esc(t.type)}</span> <span class="pill ${ep}" title="${esc(t.grad_note)}">지원 ${el2}</span></td>
-      <td style="min-width:260px">${g}<details><summary>요강 기준 원문</summary><p class="muted">${esc(t.min_text)}</p></details></td>
-      <td class="muted" style="min-width:140px">${esc(ev)||"-"}<br><span class="src">${src(t.source_url, t.min_page)}</span></td></tr>`;
+    if (f.elig && el2 === "불가") return "";
+    const js = t.groups.map(gr => ({gr, j: IPSI.judge(gr.rule, rg, inq, S.mathEl)})).filter(x => !f.st || x.j.status === f.st);
+    if (!js.length) return "";
+    js.forEach(x => cnt[x.j.status]++);
+    const units = js.map(({gr, j}) => `<div class="unit"><span class="pill ${minPill(j.status)}">${MINLABEL[j.status]}</span><div><div class="uname">${esc(gr.units)}</div><div class="why">${esc(plain(j))}</div></div></div>`).join("");
+    const ev = (t.events||[]).filter(e => ["논술","면접","최초합격발표"].includes(e.kind)).map(e => `${e.kind === "최초합격발표" ? "발표" : e.kind} ${md(e.date)}`).join(" · ");
+    const ep = {"가능":"","불가":`<span class="pill p-bad">지원 불가</span>`,"확인 필요":`<span class="pill p-warn" title="${esc(t.grad_note)}">지원 자격 확인 필요</span>`}[el2];
+    return `<article class="tcard"><header><h3>${esc(t.univ_name)} <span>${esc(t.name)}</span></h3><div class="kv"><span class="pill p-info">${esc(t.type)}</span>${ep}</div></header>
+      ${units}
+      <footer>${ev ? `<span>📅 ${esc(ev)}</span>` : ""}<span class="src">${src(t.source_url, t.min_page)}</span></footer>
+      <details><summary>요강 원문 기준 보기</summary><p>${esc(t.min_text)}</p></details></article>`;
   }).join("");
-  el.innerHTML = `<div class="row">
+  const chip = (k, lab, cls) => `<button class="chip ${cls}" data-st="${k}" aria-pressed="${f.st===k}">${lab} <b>${k ? cnt[k] : ""}</b></button>`;
+  el.innerHTML = `<div class="filters">
       <label>대학<select id="fs-univ"><option value="">전체 20개교</option>${univs.map(([k,n]) => `<option value="${k}" ${f.univ===k?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
-      <label>전형<select id="fs-type"><option value="">교과·종합·논술</option>${["교과","종합","논술"].map(x => `<option ${f.type===x?"selected":""}>${x}</option>`).join("")}</select></label>
-      <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="fs-elig" style="width:auto" ${f.elig?"checked":""}>내가 지원 가능한 전형만 (${esc(S.hist)}, ${S.gradYear||"-"}년 졸업)</label>
+      <label>전형<select id="fs-type"><option value="">전체</option>${["교과","종합","논술"].map(x => `<option ${f.type===x?"selected":""}>${x}</option>`).join("")}</select></label>
+      <label class="check"><input type="checkbox" id="fs-elig" ${f.elig?"checked":""}> 내가 지원할 수 있는 전형만</label>
     </div>
-    <div class="kv"><span class="pill p-ok">충족 ${cnt["충족"]}</span><span class="pill p-warn">경계 ${cnt["경계"]}</span><span class="pill p-bad">미충족 ${cnt["미충족"]}</span><span class="muted">모집단위 묶음 기준 · 경계 = 낙관 등급이면 충족, 비관 등급이면 미충족</span></div>
-    <div class="tbl"><table class="t"><thead><tr><th>전형</th><th>최저 판정</th><th>수능 후 일정 · 출처</th></tr></thead><tbody>${body || `<tr><td colspan="3">조건에 맞는 전형이 없습니다.</td></tr>`}</tbody></table></div>
-    <p class="muted">졸업 연도 자격은 요강 문구를 옮긴 것이라 '확인 필요'가 많습니다. 수시 합격자는 등록하지 않아도 정시에 지원할 수 없습니다(대교협 기본사항 PDF 46쪽).</p>`;
+    <div class="chips">${chip("","전체","")}${chip("충족","최저 충족","p-ok")}${chip("경계","아슬아슬","p-warn")}${chip("미충족","못 맞춤","p-bad")}</div>
+    <div class="tlist">${cards || `<p class="empty">조건에 맞는 전형이 없습니다.</p>`}</div>
+    <p class="muted">예상 등급은 왼쪽 '내 성적'의 좋을 때·나쁠 때 두 칸으로 판정합니다. 수시에 합격하면 등록하지 않아도 정시에 지원할 수 없습니다.</p>`;
   el.querySelector("#fs-univ").onchange = e => { f.univ = e.target.value; persistUI(); render(); };
   el.querySelector("#fs-type").onchange = e => { f.type = e.target.value; persistUI(); render(); };
   el.querySelector("#fs-elig").onchange = e => { f.elig = e.target.checked; persistUI(); render(); };
+  el.querySelectorAll("[data-st]").forEach(b => b.onclick = () => { f.st = b.dataset.st; persistUI(); render(); });
 }
 
 // ---------- 정시 환산
@@ -261,27 +297,29 @@ function rJeongsi(el){
   const f = UI.js || (UI.js = {univ:"", mx:{}});
   const sc = jsScores(), mx = {}; for (const k of ["국","수","탐"]) if (f.mx[k]) mx[k] = +f.mx[k];
   const univs = [...new Map(DATA.jeongsi.map(g => [g.univ, g.univ_name])).entries()];
-  const body = DATA.jeongsi.filter(g => !f.univ || g.univ === f.univ).map(g => {
-    const kp = {"요강식":"p-ok","근사식":"p-warn","비율만":"p-mute"}[g.kind];
-    let res = "", note = "";
-    if (!g.formula) { res = `<span class="muted">계산 안 함</span>`; note = g.blocked || "반영비율만 확인됨"; }
+  const KL = {"요강식":["p-ok","요강 공식"],"근사식":["p-warn","근사 계산"],"비율만":["p-mute","비율만 확인"]};
+  const cards = DATA.jeongsi.filter(g => !f.univ || g.univ === f.univ).map(g => {
+    let score, note = "";
+    if (!g.formula) { score = `<div class="score none">계산 안 함</div>`; note = g.blocked || "반영비율만 확인된 학교라 점수를 내지 않습니다."; }
     else {
       const r = IPSI.compute(g.formula, sc, mx);
-      if (r.score == null) { res = `<span class="pill p-warn">입력 필요</span>`; note = [...r.missing].join(", "); }
-      else { res = `<span class="num big" style="font-size:1.05rem">${r.score}</span> <span class="num muted">/ ${r.max}</span>${r.variant?`<br><span class="muted">${esc(r.variant)}</span>`:""}`; note = [...r.provisional].join(" · "); }
+      if (r.score == null) { score = `<div class="score none">입력 필요</div>`; note = [...r.missing].join(", "); }
+      else { score = `<div class="score"><b class="num">${r.score}</b><span class="num"> / ${r.max}점</span></div>`; note = [r.variant ? r.variant + " 적용" : "", ...r.provisional].filter(Boolean).join(" · "); }
     }
-    return `<tr><td><b>${esc(g.univ_name)}</b><br><span class="muted">${esc(g.label)}</span></td><td><span class="pill ${kp}">${g.kind}</span></td><td>${res}</td>
-      <td style="min-width:220px"><span class="muted">${esc(note)}</span><details><summary>반영식</summary><p class="muted">${esc(g.text)}</p></details></td><td class="src muted">${src(g.source_url, g.page)}</td></tr>`;
+    return `<article class="jcard"><div class="jhead"><h3>${esc(g.univ_name)}</h3><span class="pill ${KL[g.kind][0]}">${KL[g.kind][1]}</span></div>
+      <div class="jlabel">${esc(g.label)}</div>${score}${note ? `<div class="why">${esc(note)}</div>` : ""}
+      <details><summary>반영식 보기</summary><p>${esc(g.text)}</p></details><div class="src why">${src(g.source_url, g.page)}</div></article>`;
   }).join("");
-  el.innerHTML = `<div class="row">
-      <label>대학<select id="fj-univ"><option value="">전체 20개교 (50개 그룹)</option>${univs.map(([k,n]) => `<option value="${k}" ${f.univ===k?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
-      <label>국어 최고 표준점수<input id="fj-국" type="number" value="${esc(f.mx["국"]||"")}" placeholder="12.11 발표 후"></label>
-      <label>수학 최고 표준점수<input id="fj-수" type="number" value="${esc(f.mx["수"]||"")}" placeholder="12.11 발표 후"></label>
-      <label>탐구 최고 변환표준<input id="fj-탐" type="number" value="${esc(f.mx["탐"]||"")}" placeholder="대학 발표 후"></label>
+  el.innerHTML = `<div class="filters">
+      <label>대학<select id="fj-univ"><option value="">전체 20개교</option>${univs.map(([k,n]) => `<option value="${k}" ${f.univ===k?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
     </div>
-    <div class="kv"><span class="pill p-ok">요강식</span><span class="muted">요강 산출식 그대로</span><span class="pill p-warn">근사식</span><span class="muted">요강에 식이 일부만 있어 근사</span><span class="pill p-mute">비율만</span><span class="muted">반영비율만 확인, 점수 계산 안 함</span></div>
-    <div class="tbl"><table class="t"><thead><tr><th>대학 · 그룹</th><th>구분</th><th>환산점수</th><th>메모</th><th>출처</th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="muted">서강·중앙·동국·홍익은 요강에 실린 계산 예시를 그대로 재현해 검증했습니다(예: 서강 504.82, 동국 인문 721.175). 환산점수는 대학끼리 비교하는 값이 아닙니다.</p>`;
+    <details class="box"><summary>최고 표준점수 입력 (12월 11일 성적 발표 후, 일부 대학만 필요)</summary>
+      <div class="filters" style="margin-top:10px">
+      <label>국어 최고점<input id="fj-국" type="number" value="${esc(f.mx["국"]||"")}"></label>
+      <label>수학 최고점<input id="fj-수" type="number" value="${esc(f.mx["수"]||"")}"></label>
+      <label>탐구 최고 변환점수<input id="fj-탐" type="number" value="${esc(f.mx["탐"]||"")}"></label></div></details>
+    <div class="jgrid">${cards}</div>
+    <p class="muted">'요강 공식'은 대학이 발표한 식 그대로, '근사 계산'은 식 일부가 빠져 비슷하게 계산한 값입니다. 서강·중앙·동국·홍익은 요강의 계산 예시와 같은 점수가 나오는 것을 확인했습니다. 대학마다 만점이 달라 학교끼리 점수를 비교하면 안 됩니다.</p>`;
   el.querySelector("#fj-univ").onchange = e => { f.univ = e.target.value; persistUI(); render(); };
   for (const k of ["국","수","탐"]) el.querySelector("#fj-"+k).onchange = e => { f.mx[k] = e.target.value; persistUI(); render(); };
 }
@@ -303,19 +341,21 @@ function admRows(track, nsuW){
 function rAdm(el){
   const f = UI.adm || (UI.adm = {track:"", nsu:1});
   const rows = admRows(f.track, +f.nsu);
-  if (!rows) { el.innerHTML = `<p>왼쪽에 국어·수학·탐구 백분위를 넣으면 판정이 나옵니다.</p>`; return; }
-  const body = rows.map(({r, a}) => `<tr><td><span class="pill ${GP[a.grade]}">${a.grade}</span></td><td><b>${esc(r.unit)}</b><br><span class="muted">${esc(r.track)} · ${esc(r.group)}군 · ${r.quota}명</span></td>
-    <td class="num">${a.my.toFixed(2)}</td><td class="num">${r.avg.toFixed(2)} → ${a.adj.toFixed(2)}</td><td class="num">${a.z>=0?"+":""}${a.z.toFixed(2)}</td>
-    <td class="num">${a.trend==null?"-":(a.trend>=0?"+":"")+a.trend.toFixed(2)}</td><td class="muted" style="min-width:180px">${esc(a.warns.join("; "))}</td></tr>`).join("");
+  if (!rows) { el.innerHTML = `<p class="empty">'내 성적'에 국어·수학·탐구 백분위를 넣으면 판정이 나옵니다.</p>`; return; }
+  const cnt = {"안정":0,"적정":0,"소신":0,"위험":0}; rows.forEach(x => cnt[x.a.grade]++);
+  const list = rows.map(({r, a}) => { const d = a.my - a.adj;
+    return `<div class="arow"><span class="pill ${GP[a.grade]}">${a.grade}</span><div><div class="uname">${esc(r.unit)}</div>
+      <div class="why">${esc(r.group)}군 · ${r.quota}명 · 내 점수 ${a.my.toFixed(1)} / 합격자 평균 ${a.adj.toFixed(1)} (${d>=0?"+":""}${d.toFixed(1)})${a.warns.length ? "<br>⚠ " + esc(a.warns.join(" · ")) : ""}</div></div></div>`; }).join("");
   const url = DATA.results[0].source_url;
-  el.innerHTML = `<p>출처가 확인된 공식 입결은 지금 <b>동국대(2024·2026학년도)</b>뿐입니다. 기준은 '최종등록자 상위 80% 계열 가중 백분위 평균'이고, 내 백분위를 같은 가중치로 평균해 비교합니다.</p>
-    <div class="row">
+  el.innerHTML = `<p>지금은 공식 입결이 확인된 <b>동국대</b>만 판정할 수 있습니다. 2026학년도 합격자 상위 80% 평균 백분위와 내 백분위를 같은 방식으로 비교합니다.</p>
+    <div class="chips"><span class="pill p-ok">안정 ${cnt["안정"]}</span><span class="pill p-info">적정 ${cnt["적정"]}</span><span class="pill p-warn">소신 ${cnt["소신"]}</span><span class="pill p-bad">위험 ${cnt["위험"]}</span></div>
+    <div class="filters">
       <label>계열<select id="fa-track"><option value="">전체</option><option ${f.track==="인문"?"selected":""}>인문</option><option ${f.track==="자연"?"selected":""}>자연</option></select></label>
-      <label>N수생 증가 보정 가중치 <span class="num">${(+f.nsu).toFixed(1)}</span><input id="fa-nsu" type="range" min="0" max="2" step="0.1" value="${f.nsu}"></label>
+      <label>N수생 증가 반영 정도 <b class="num">${(+f.nsu).toFixed(1)}</b><input id="fa-nsu" type="range" min="0" max="2" step="0.1" value="${f.nsu}"></label>
     </div>
-    <p class="muted">N수생 증가 근거: ${esc(IPSI.FACTORS.nsu.evidence)}. 기준을 0.2점 올리는 이동폭은 근거 수치가 없는 가정값이라 조절할 수 있게 두었습니다. 판정: z ≥ 0.5 안정, ≥ −0.5 적정, ≥ −1.5 소신, 그 아래 위험. 상위 80% 평균은 실제 최저 합격선보다 높아서 z가 음수여도 합격할 수 있습니다.</p>
-    <div class="tbl"><table class="t"><thead><tr><th>판정</th><th>모집단위</th><th>내 점수</th><th>기준 → 보정</th><th>z</th><th>전년 대비</th><th>주의</th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="muted src">출처: <a href="${esc(url)}" target="_blank" rel="noopener">동국대 입학전형 결과(공식 PDF)</a> · 상태: 검증 필요. 학원 모의지원 결과와 함께 교차검증하세요.${["재수","삼수","N수","반수"].includes(S.hist)?" 결과를 받아들이는 것과 다시 도전하는 것 모두 정당한 선택입니다. 판정은 판단 재료 중 하나일 뿐입니다.":""}</p>`;
+    <div class="alist">${list}</div>
+    <details class="box"><summary>판정 기준 자세히</summary><p>z = (내 점수 − 보정한 합격자 평균) ÷ 표준편차. z가 0.5 이상이면 안정, −0.5 이상 적정, −1.5 이상 소신, 그 아래는 위험입니다. 상위 80% 평균은 실제 최저 합격선보다 높아서 '소신'이어도 합격할 수 있습니다. N수생 증가는 보도로 확인됐지만(졸업생 지원자 +8.6%), 기준을 0.2점 올리는 폭은 근거 수치가 없는 가정값이라 조절할 수 있게 두었습니다.</p></details>
+    <p class="muted src">출처: <a href="${esc(url)}" target="_blank" rel="noopener">동국대 입학전형 결과 (공식 PDF)</a> · 검증 필요. 학원 모의지원 결과와 함께 보세요.${["재수","삼수","N수","반수"].includes(S.hist)?" 결과를 받아들이는 것도, 다시 도전하는 것도 모두 정당한 선택입니다.":""}</p>`;
   el.querySelector("#fa-track").onchange = e => { f.track = e.target.value; persistUI(); render(); };
   el.querySelector("#fa-nsu").onchange = e => { f.nsu = e.target.value; persistUI(); render(); };
 }
