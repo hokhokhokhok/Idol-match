@@ -24,7 +24,7 @@ def render(con, profile: dict | None) -> None:
     exp = c[1].text_input("기대(가장 가능성 높은 곳)", sv.get("exp", ""))
     worst = c[2].text_input("최악(안정 카드)", sv.get("worst", ""))
     target = c[3].text_input("목표 대학·학과", sv.get("target", ""))
-    st.caption(f"수험 횟수: {attempt}번째 (온보딩에서 수정) · 합격 가능성·조합 탭 결과를 참고해 적어 보세요.")
+    st.caption(f"수험 횟수: {attempt}번째 ('시작하기'에서 수정) · 합격 가능성·조합 결과를 참고해 적어 보세요.")
     record = st.text_area("학생부 상황 (정시 학생부 반영 대학 지원 시 참고)", sv.get("record", ""), height=70)
 
     st.subheader("2. 내 점수 추이 (모평·수능 백분위)")

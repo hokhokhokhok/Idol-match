@@ -11,6 +11,8 @@ from engine import admission as A
 from engine import db
 from engine import updates as UP
 
+import ui
+
 ICON = {"안정": "🟢 안정", "적정": "🔵 적정", "소신": "🟠 소신", "위험": "🔴 위험"}
 UNIV_NAME = {"dongguk": "동국대"}
 REQUIRED = ["univ", "year", "unit", "group", "quota", "kor_pct", "math_pct", "eng_grade", "inq_pct", "pct_avg", "pct_sd",
@@ -54,13 +56,13 @@ def render(con, profile: dict | None) -> None:
                "현재 앱에 출처가 확인된 입결은 동국대(2024·2026)뿐이며, 다른 대학은 아래 '입결 가져오기'로 추가할 수 있습니다.")
     sv = db.get_state(con, "js_scores")
     if not sv:
-        st.warning("먼저 '🧮 정시 환산' 탭에서 성적(백분위 포함)을 입력하고 저장하세요.")
+        st.warning("먼저 왼쪽 메뉴 '정시 · 환산점수'에서 성적(백분위 포함)을 입력하고 저장하세요.")
         _import_box()
         return
     pct = {"kor": sv["kor_p"], "math": sv["mat_p"], "inq": (sv["t1p"] + sv["t2p"]) / 2}
     eng = int(sv["eng"])
     st.write(f"내 백분위: 국어 {pct['kor']} · 수학 {pct['math']} · 탐구 평균 {pct['inq']:.1f} · 영어 {eng}등급 "
-             "(정시 환산 탭에 저장된 값)")
+             "('정시 · 환산점수'에 저장된 값)")
 
     # ---------- 보정 요인 ----------
     saved_f = db.get_state(con, "adm_factors", {})
@@ -135,9 +137,23 @@ def render(con, profile: dict | None) -> None:
                     "환산점수 평균(참고)": rec.conv, "모의지원": r_in["모의지원 결과(직접 입력)"] or "",
                     "출처": f"p.{rec.page}"})
     st.subheader("판정")
-    st.dataframe(out, hide_index=True, use_container_width=True,
-                 column_config={"근거": st.column_config.TextColumn(width="large"),
-                                "주의": st.column_config.TextColumn(width="medium")})
+    cnt = {g: sum(1 for o in out if o.get("판정") == ICON[g]) for g in ICON}
+    ui.chips([(g, f"{g} {cnt[g]}") for g in ICON if cnt[g]])
+    rev = {v: k for k, v in ICON.items()}
+    for o in out:
+        g = rev.get(o["판정"])
+        if not g:
+            ui.show(ui.card(o["모집단위"], body=ui.row("기준 없음", "계산 불가", o["근거"], text="계산 불가")))
+            continue
+        d = o["내 점수"] - o["보정 기준"]
+        name = f'내 점수 {o["내 점수"]:.1f} · 합격자 평균(보정) {o["보정 기준"]:.1f} ({d:+.1f})'
+        why = f'{o["군"]}군 · {o["인원"]}명' + (f' · 전년 대비 {o["추세"]}' if o["추세"] != "-" else "")
+        foot = ("⚠ " + ui.e(o["주의"])) if o["주의"] else ""
+        ui.show(ui.card(o["모집단위"], body=ui.row(g, name, why, text=g), foot=foot))
+    with st.expander("표로 보기 (계산 근거 포함)"):
+        st.dataframe(out, hide_index=True, use_container_width=True,
+                     column_config={"근거": st.column_config.TextColumn(width="large"),
+                                    "주의": st.column_config.TextColumn(width="medium")})
     st.caption(f"출처: {UNIV_NAME.get(u, u)} {latest}학년도 입학전형 결과(공식) — {cand[0].source_url} · 상태: {cand[0].status}. "
                "실시간 모의지원 데이터가 없으므로, 대형 입시업체 모의지원 결과를 '모의지원' 칸에 적어 교차검증하세요. "
                "이 판정은 합격을 보장하지 않습니다.")
@@ -146,7 +162,7 @@ def render(con, profile: dict | None) -> None:
 
     # ---------- 간이 조합 ----------
     st.subheader("가·나·다 간이 조합")
-    st.caption("같은 대학 안의 빠른 확인용입니다. 여러 대학·직접 후보를 합친 추천은 '🧩 가나다 조합' 탭에서 보세요.")
+    st.caption("같은 대학 안의 빠른 확인용입니다. 여러 대학·직접 후보를 합친 추천은 왼쪽 메뉴 '정시 · 가나다 조합'에서 보세요.")
     picks = []
     cols = st.columns(3)
     for i, gname in enumerate(("가", "나", "다")):

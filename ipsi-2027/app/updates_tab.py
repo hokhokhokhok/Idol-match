@@ -37,7 +37,7 @@ def render() -> None:
             try:
                 UP.save_carryover([{"univ": UNIVS[uname], "unit": unit.strip(), "added_quota": n,
                                     "announced_at": str(when), "source_url": url.strip(), "page": page}])
-                st.success("저장했습니다. 합격 가능성 탭의 '이월 인원' 기본값과 블로그 '수시 이월' 속보에 반영됩니다.")
+                st.success("저장했습니다. '정시 · 합격 가능성'의 '이월 인원' 기본값과 블로그 '수시 이월' 속보에 반영됩니다.")
             except UP.UpdateError as e:
                 st.error(str(e))
 
@@ -53,7 +53,7 @@ def render() -> None:
         try:
             rows = list(csv.DictReader(io.StringIO(up.getvalue().decode("utf-8-sig"))))
             n = UP.save_conv(UNIVS[u2], rows)
-            st.success(f"{u2} 변환표 {n}행 저장 — 정시 환산 탭에서 이 대학 계산에 자동 적용됩니다.")
+            st.success(f"{u2} 변환표 {n}행 저장 — '정시 · 환산점수'에서 이 대학 계산에 자동 적용됩니다.")
         except (UP.UpdateError, KeyError, ValueError) as e:
             st.error(f"저장 실패: {e}")
 

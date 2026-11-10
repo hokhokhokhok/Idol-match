@@ -33,7 +33,7 @@ def _auto(con) -> list[dict]:
 
 
 def render(con, profile: dict | None) -> None:
-    st.caption("후보는 합격 가능성 탭의 자동 판정(입결 있는 대학)과, 직접 넣은 후보(학원 모의지원 판정 등)를 합칩니다. "
+    st.caption("후보는 '정시 · 합격 가능성'의 자동 판정(입결 있는 대학)과, 직접 넣은 후보(학원 모의지원 판정 등)를 합칩니다. "
                "판정별 합격 확률은 근거 데이터가 없는 가정값이므로 아래에서 조절하세요. 추천은 판단 재료이며 합격을 보장하지 않습니다.")
     res = db.get_state(con, "susi_results", {})
     passed = [k for k, v in res.items() if v == "합격"]

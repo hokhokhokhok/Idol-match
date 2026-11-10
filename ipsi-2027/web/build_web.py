@@ -48,7 +48,7 @@ const app = mount({{
   archives: [{{ url: "./ipsi-app.zip", format: "zip" }}],
   env: {{ IPSI_LOCAL_DIR: "/home/pyodide/ipsi_local", MPLBACKEND: "Agg" }},
   idbfsMountpoints: ["/home/pyodide/ipsi_local"],
-  streamlitConfig: {{ "client.toolbarMode": "viewer" }},
+  streamlitConfig: {{ "client.toolbarMode": "viewer", "theme.primaryColor": "#c4334f", "theme.base": "light", "theme.textColor": "#1f1a1c", "theme.secondaryBackgroundColor": "#fbf6f7" }},
 }}, document.getElementById("root"));
 document.getElementById("boot").remove();
 </script>
