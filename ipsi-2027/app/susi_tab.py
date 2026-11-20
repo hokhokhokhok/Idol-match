@@ -22,13 +22,13 @@ WD = "월화수목금토일"
 def _grades_input(con) -> tuple[dict, dict, str]:
     saved = db.get_state(con, "susi_grades", {})
     st.markdown("**가채점 등급**")
-    st.caption("등급컷 근처라 한 등급 떨어질 수도 있으면 '한 등급 낮을 수도'를 체크하세요. 그러면 좋을 때와 나쁠 때를 모두 따져 판정합니다.")
+    st.caption("등급컷 근처라 한 등급 떨어질 수도 있으면 '컷 근처'를 체크하세요. 그러면 좋을 때와 나쁠 때를 모두 따져 판정합니다.")
     cols = st.columns(6)
     ranges = {}
     for i, (k, label) in enumerate(AREAS):
         with cols[i]:
             g = st.number_input(label, 1, 9, int(saved.get(k, [2, 2])[0]), key=f"g_{k}")
-            edge = st.checkbox("한 등급 낮을 수도", value=saved.get(k, [2, 2])[1] > saved.get(k, [2, 2])[0], key=f"e_{k}")
+            edge = st.checkbox("컷 근처", value=saved.get(k, [2, 2])[1] > saved.get(k, [2, 2])[0], key=f"e_{k}")
             ranges[k] = (g, min(g + 1, 9) if edge else g)
     c1, c2, c3 = st.columns(3)
     t1 = c1.selectbox("탐구1 종류", ["사탐", "과탐"], index=["사탐", "과탐"].index(saved.get("_t1", "사탐")))

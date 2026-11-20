@@ -7,36 +7,53 @@ import streamlit as st
 
 CSS = """
 <style>
-:root{--omr:#c4334f;--ink2:#5f5458;--rule:#ead9dc;--soft:#fbf6f7;
-  --ok:#1f7a4d;--ok-bg:#e2f3ea;--warn:#a15c00;--warn-bg:#fbeed8;--bad:#b3261e;--bad-bg:#fbe3e1;--info:#2457a6;--info-bg:#e3ecf9;--mute-bg:#f1eeef}
-html, body, [class*="css"], .stMarkdown, .stText{font-size:17px}
-.block-container{max-width:1100px;padding-top:2.2rem}
-.stMarkdown p, .stMarkdown li{line-height:1.75}
-[data-testid="stCaptionContainer"], .stCaption{font-size:.95rem !important;color:var(--ink2) !important;line-height:1.65}
-h1{font-size:1.9rem !important} h2{font-size:1.45rem !important} h3{font-size:1.2rem !important}
-[data-testid="stWidgetLabel"] p{font-size:1rem !important;font-weight:600}
-[data-testid="stSidebar"] [role="radiogroup"] label p{font-size:1.02rem}
-[data-testid="stSidebar"] [role="radiogroup"]{gap:.35rem}
-[data-testid="stDataFrame"]{font-size:1rem}
-.ui-card{border:1px solid var(--rule);border-radius:12px;padding:16px 18px;margin:0 0 12px;background:#fff}
-.ui-card h4{margin:0 0 4px;font-size:1.12rem;font-weight:700}
-.ui-card h4 small{font-weight:400;color:var(--ink2);font-size:.92rem;margin-left:6px}
-.ui-row{display:flex;gap:12px;align-items:flex-start;margin-top:10px}
-.ui-row .ui-pill{flex:0 0 auto;min-width:104px;text-align:center}
-.ui-why{color:var(--ink2);font-size:.95rem;line-height:1.6}
-.ui-name{font-weight:600}
-.ui-foot{border-top:1px dashed var(--rule);margin-top:12px;padding-top:8px;color:var(--ink2);font-size:.92rem}
-.ui-pill{display:inline-block;font-weight:600;font-size:.88rem;padding:3px 12px;border-radius:999px;white-space:nowrap}
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+:root{--blue:#3182f6;--blue-soft:#e8f3ff;--ink:#191f28;--ink2:#4e5968;--ink3:#8b95a1;--line:#e5e8eb;--fill:#f2f4f6;--card:#fff;
+  --ok:#03b26c;--ok-bg:#e5f8f0;--warn:#b45309;--warn-bg:#fff4e0;--bad:#f04452;--bad-bg:#ffeeee;--info:#1b64da;--info-bg:#e8f3ff;--mute-bg:#f2f4f6}
+html, body, [class*="css"], .stMarkdown, .stText, button, input, select, textarea{font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif !important;letter-spacing:-.01em}
+html, body, .stMarkdown{font-size:17px}
+.block-container{max-width:1080px;padding-top:2rem}
+.stMarkdown p, .stMarkdown li{line-height:1.7}
+[data-testid="stCaptionContainer"], .stCaption{font-size:.93rem !important;color:#6b7684 !important;line-height:1.6}
+h1{font-size:1.8rem !important;font-weight:800 !important;letter-spacing:-.03em} h2{font-size:1.4rem !important;font-weight:700 !important;letter-spacing:-.02em} h3{font-size:1.15rem !important;font-weight:700 !important}
+[data-testid="stWidgetLabel"] p{font-size:.95rem !important;font-weight:600;color:var(--ink2)}
+[data-testid="stSidebar"]{background:#fff;border-right:1px solid var(--line)}
+[data-testid="stSidebar"] [role="radiogroup"] label{padding:8px 10px;border-radius:12px;width:100%}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked){background:var(--blue-soft)}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p{color:var(--info);font-weight:700}
+[data-testid="stSidebar"] [role="radiogroup"] label > div:first-child{display:none}
+[data-testid="stSidebar"] [role="radiogroup"] label p{font-size:1rem}
+.stButton > button, .stDownloadButton > button{border-radius:12px;border:none;background:var(--fill);font-weight:600;padding:.55rem 1.1rem}
+.stButton > button[kind="primary"]{background:var(--blue);color:#fff}
+.stButton > button:hover{background:var(--blue-soft);color:var(--info)}
+[data-baseweb="input"], [data-baseweb="select"] > div, [data-baseweb="textarea"]{border-radius:12px !important}
+[data-testid="stExpander"] details{border-radius:16px;border:none;background:#fff}
+[data-testid="stVerticalBlockBorderWrapper"]{border-radius:20px}
+[data-testid="stAlert"]{border-radius:16px}
+[data-testid="stDataFrame"]{font-size:1rem;border-radius:16px;overflow:hidden}
+.ui-card{border-radius:20px;padding:20px 22px;margin:0 0 12px;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ui-card h4{margin:0 0 4px;font-size:1.1rem;font-weight:700;letter-spacing:-.02em}
+.ui-card h4 small{font-weight:500;color:var(--ink3);font-size:.9rem;margin-left:6px}
+.ui-row{display:flex;gap:12px;align-items:flex-start;margin-top:12px}
+.ui-row .ui-pill{flex:0 0 auto;min-width:100px;text-align:center}
+.ui-why{color:var(--ink3);font-size:.93rem;line-height:1.55}
+.ui-name{font-weight:700;color:var(--ink)}
+.ui-foot{border-top:1px solid var(--line);margin-top:14px;padding-top:10px;color:var(--ink3);font-size:.9rem}
+.ui-pill{display:inline-block;font-weight:700;font-size:.82rem;padding:4px 10px;border-radius:8px;white-space:nowrap}
 .p-ok{background:var(--ok-bg);color:var(--ok)}.p-warn{background:var(--warn-bg);color:var(--warn)}
-.p-bad{background:var(--bad-bg);color:var(--bad)}.p-info{background:var(--info-bg);color:var(--info)}.p-mute{background:var(--mute-bg);color:var(--ink2)}
-.ui-score{font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums}
-.ui-score span{font-size:1rem;font-weight:400;color:var(--ink2)}
-.ui-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.p-bad{background:var(--bad-bg);color:var(--bad)}.p-info{background:var(--info-bg);color:var(--info)}.p-mute{background:var(--mute-bg);color:var(--ink3)}
+.ui-score{font-size:1.85rem;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.ui-score span{font-size:1rem;font-weight:600;color:var(--ink3)}
+.ui-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
 .ui-grid .ui-card{margin:0}
 .ui-chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+.ui-hero{background:var(--blue);color:#fff;border-radius:20px;padding:24px 26px;margin-bottom:16px}
+.ui-hero small{opacity:.85;font-weight:600}
+.ui-hero strong{display:block;font-size:1.55rem;font-weight:800;letter-spacing:-.03em;margin:4px 0}
+.ui-fact .v{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;margin:4px 0}
 @media (max-width:640px){.ui-row{flex-direction:column;gap:4px}.ui-row .ui-pill{min-width:0}}
-@media (prefers-color-scheme: dark){:root{--ink2:#b3a4a9;--rule:#3a2f33;--soft:#211b1e;--ok:#6fd3a0;--ok-bg:#183327;--warn:#f0b35a;--warn-bg:#3a2a12;
-  --bad:#ff8a80;--bad-bg:#3d1c1a;--info:#8fb5f5;--info-bg:#1a2740;--mute-bg:#2a2326}.ui-card{background:transparent}}
+@media (prefers-color-scheme: dark){:root{--ink:#f9fafb;--ink2:#c3c8cf;--ink3:#8b95a1;--line:#2c2c35;--fill:#2c2c35;--card:#1e1e24;--ok:#3ddc97;--ok-bg:#12302a;--warn:#fbbf24;--warn-bg:#3a2c10;
+  --bad:#ff6b77;--bad-bg:#3d1b20;--info:#8fbaff;--info-bg:#1b2a44;--mute-bg:#2c2c35;--blue-soft:#1b2a44}}
 </style>
 """
 
@@ -77,3 +94,13 @@ def show(htm: str) -> None:
 
 def chips(items: list[tuple[str, str]]) -> None:
     show('<div class="ui-chips">' + "".join(pill(k, t) for k, t in items) + "</div>")
+
+
+def hero(small: str, title: str, sub: str = "") -> None:
+    show(f'<div class="ui-hero"><small>{e(small)}</small><strong>{e(title)}</strong>' + (f'<span style="opacity:.9">{e(sub)}</span>' if sub else "") + "</div>")
+
+
+def fact(label: str, value: str, note: str, status: str, link: str) -> str:
+    st = {"추정": "p-warn", "보도": "p-info", "공식": "p-ok"}.get(status, "p-mute")
+    return (f'<div class="ui-card ui-fact"><div style="display:flex;justify-content:space-between;gap:6px"><span class="ui-why" style="font-weight:600">{e(label)}</span>'
+            f'<span class="ui-pill {st}">{e(status)}</span></div><div class="v">{e(value)}</div><div class="ui-why">{e(note)} · {link}</div></div>')

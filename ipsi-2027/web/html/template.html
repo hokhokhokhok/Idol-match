@@ -1,113 +1,150 @@
 <title>2027 인서울 입시 계산기</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-/* 레이아웃: OMR 답안지 — 왼쪽 성적 카드(고정) + 오른쪽 탭 작업 영역, 폰에서는 한 열 */
+/* 레이아웃: 핀테크 앱식 — 회색 바탕 위 흰 둥근 카드, 큰 숫자, 파란 단일 강조색. 데스크톱 2열(성적 | 화면), 폰 1열 + 하단 고정 탭 */
 :root{
-  --paper:#fbf8f6; --sheet:#ffffff; --ink:#1f1a1c; --ink2:#6b5f63; --rule:#ead9dc;
-  --omr:#c4334f; --omr-soft:#f8e3e7;
-  --ok:#1f7a4d; --ok-bg:#e2f3ea; --warn:#a15c00; --warn-bg:#fbeed8; --bad:#b3261e; --bad-bg:#fbe3e1; --info:#2457a6; --info-bg:#e3ecf9;
-  --f-head:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --bg:#f2f4f6; --card:#ffffff; --ink:#191f28; --ink2:#4e5968; --ink3:#8b95a1; --line:#e5e8eb; --fill:#f2f4f6;
+  --blue:#3182f6; --blue-soft:#e8f3ff; --blue-ink:#1b64da;
+  --ok:#03b26c; --ok-bg:#e5f8f0; --warn:#f59e0b; --warn-ink:#b45309; --warn-bg:#fff4e0; --bad:#f04452; --bad-bg:#ffeeee; --mute-bg:#f2f4f6;
+  --f:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --r:20px; --shadow:0 1px 2px rgba(0,0,0,.04);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --paper:#171315; --sheet:#211b1e; --ink:#f2eaec; --ink2:#b3a4a9; --rule:#3a2f33;
-  --omr:#ff7a92; --omr-soft:#3d2128;
-  --ok:#6fd3a0; --ok-bg:#183327; --warn:#f0b35a; --warn-bg:#3a2a12; --bad:#ff8a80; --bad-bg:#3d1c1a; --info:#8fb5f5; --info-bg:#1a2740; color-scheme:dark}}
+  --bg:#101013; --card:#1e1e24; --ink:#f9fafb; --ink2:#c3c8cf; --ink3:#8b95a1; --line:#2c2c35; --fill:#2c2c35;
+  --blue:#4b96ff; --blue-soft:#1b2a44; --blue-ink:#8fbaff;
+  --ok:#3ddc97; --ok-bg:#12302a; --warn:#fbbf24; --warn-ink:#fbbf24; --warn-bg:#3a2c10; --bad:#ff6b77; --bad-bg:#3d1b20; --mute-bg:#2c2c35; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --paper:#171315; --sheet:#211b1e; --ink:#f2eaec; --ink2:#b3a4a9; --rule:#3a2f33;
-  --omr:#ff7a92; --omr-soft:#3d2128;
-  --ok:#6fd3a0; --ok-bg:#183327; --warn:#f0b35a; --warn-bg:#3a2a12; --bad:#ff8a80; --bad-bg:#3d1c1a; --info:#8fb5f5; --info-bg:#1a2740; color-scheme:dark}
+  --bg:#101013; --card:#1e1e24; --ink:#f9fafb; --ink2:#c3c8cf; --ink3:#8b95a1; --line:#2c2c35; --fill:#2c2c35;
+  --blue:#4b96ff; --blue-soft:#1b2a44; --blue-ink:#8fbaff;
+  --ok:#3ddc97; --ok-bg:#12302a; --warn:#fbbf24; --warn-ink:#fbbf24; --warn-bg:#3a2c10; --bad:#ff6b77; --bad-bg:#3d1b20; --mute-bg:#2c2c35; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--paper);color:var(--ink);font:16px/1.7 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
-.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
-header.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--omr);padding-bottom:12px}
-header.top h1{font:700 1.6rem/1.2 var(--f-head);margin:0;text-wrap:balance}
-header.top h1 small{display:block;font:600 .72rem var(--f-num);letter-spacing:.12em;color:var(--omr);margin-bottom:4px}
-.dday{font:600 .9rem var(--f-num);color:var(--ink2)} .dday b{color:var(--omr);font-size:1.15rem}
-.notice{background:var(--omr-soft);border:1px solid var(--rule);border-radius:6px;padding:10px 14px;font-size:.86rem}
-.grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;align-items:start}
-@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
-.card{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:20px;min-width:0}
-.card h2{font:700 1rem var(--f-head);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.lbl{font:600 .7rem var(--f-num);letter-spacing:.08em;color:var(--ink2);text-transform:uppercase}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:20px 4px}
+header.top h1{font-size:1.35rem;font-weight:700;margin:0;letter-spacing:-.03em}
+header.top h1 small{display:block;font-size:.8rem;font-weight:500;color:var(--ink3);letter-spacing:0}
+.dday{background:var(--card);border-radius:999px;padding:8px 14px;font-size:.88rem;font-weight:600;color:var(--ink2);box-shadow:var(--shadow);white-space:nowrap}
+.dday b{color:var(--blue)}
+.notice{background:var(--card);border-radius:16px;padding:14px 18px;font-size:.9rem;color:var(--ink2);display:flex;gap:10px;align-items:flex-start}
+.notice::before{content:"!";flex:0 0 22px;height:22px;border-radius:50%;background:var(--blue-soft);color:var(--blue);font-weight:800;display:grid;place-items:center;font-size:.8rem}
+.grid{display:grid;grid-template-columns:350px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border-radius:var(--r);padding:22px;min-width:0;box-shadow:var(--shadow)}
+.card h2{font-size:1.15rem;font-weight:700;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;letter-spacing:-.02em}
+.lbl{font-size:.82rem;font-weight:600;color:var(--ink3)}
 aside.card{position:sticky;top:max(12px,env(safe-area-inset-top,0px))}
-@media (max-width:860px){aside.card{position:static}}
-.sc{width:100%;border-collapse:collapse;font-size:.95rem;table-layout:fixed}
-.sc col.a{width:58px}.sc col.g{width:46px}
-.sc input{padding:6px 2px;text-align:center;font-size:.95rem}
-.sc th{font:600 .7rem var(--f-num);color:var(--ink2);text-align:left;padding:3px 2px}
-.sc td{padding:2px}
-.sc td:first-child{font-weight:700;white-space:nowrap;padding-right:6px}
-input,select,textarea{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:4px 6px;width:100%;min-width:0}
-input[type=number]{font-family:var(--f-num);font-size:.85rem}
-input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--omr);outline-offset:1px}
+@media (max-width:880px){aside.card{position:static}main.card{order:-1}}
+.sc{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:.95rem;table-layout:fixed}
+.sc col.a{width:56px}.sc col.g{width:50px}
+.sc th{font-size:.74rem;font-weight:600;color:var(--ink3);text-align:center;padding:0 2px;line-height:1.3}
+.sc td{padding:0 2px}
+.sc td:first-child{font-weight:700;white-space:nowrap}
+.sc input{text-align:center;padding:10px 2px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--fill);border:1.5px solid transparent;border-radius:12px;padding:11px 12px;width:100%;min-width:0;font-size:1rem;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--blue);background:var(--card)}
+input[type=number]{font-variant-numeric:tabular-nums}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--blue)}
+input[type=range]{padding:0;accent-color:var(--blue);background:none}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.row>label{display:flex;flex-direction:column;gap:2px;font-size:.78rem;color:var(--ink2);flex:1 1 120px;min-width:0}
-button{font:600 .85rem var(--f-body);border:1px solid var(--omr);background:var(--sheet);color:var(--omr);border-radius:4px;padding:5px 12px;cursor:pointer}
-button.primary{background:var(--omr);color:var(--sheet)}
-button:hover{filter:brightness(.95)}
-.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--rule)}
-.tabs button{border:none;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--ink2);padding:12px 14px;white-space:nowrap;font-size:1rem}
-.tabs button[aria-selected=true]{color:var(--omr);border-bottom-color:var(--omr)}
-.pane{padding-top:14px;display:flex;flex-direction:column;gap:14px}
-.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:6px}
+.row>label,.filters>label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:600;color:var(--ink2);flex:1 1 120px;min-width:0}
+button{font:inherit;font-weight:600;font-size:.95rem;border:none;background:var(--fill);color:var(--ink2);border-radius:12px;padding:11px 16px;cursor:pointer;transition:transform .1s,filter .15s}
+button:active{transform:scale(.97)}
+button.primary{background:var(--blue);color:#fff}
+button.primary:hover{filter:brightness(1.05)}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{border-radius:999px;background:var(--fill);color:var(--ink2);padding:9px 16px;white-space:nowrap;font-size:.95rem}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--card)}
+.pane{padding-top:18px;display:flex;flex-direction:column;gap:16px}
+.tbl{overflow-x:auto;border-radius:16px;background:var(--fill)}
 table.t{border-collapse:collapse;width:100%;font-size:.95rem}
-table.t th{background:var(--paper);font:600 .72rem var(--f-num);color:var(--ink2);text-align:left;padding:7px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
-table.t td{padding:7px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
-table.t tr:last-child td{border-bottom:none}
-.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
-.pill{display:inline-block;font:600 .82rem var(--f-body);padding:2px 10px;border-radius:999px;white-space:nowrap}
-.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--info-bg);color:var(--info)} .p-mute{background:var(--paper);color:var(--ink2);border:1px solid var(--rule)}
-.muted{color:var(--ink2);font-size:.9rem}
+table.t th{font-size:.8rem;font-weight:600;color:var(--ink3);text-align:left;padding:10px 12px;white-space:nowrap}
+table.t td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle;background:var(--card)}
+table.t input,table.t select{padding:8px 10px}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font-weight:700;font-size:.8rem;padding:4px 10px;border-radius:8px;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn-ink)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--blue-soft);color:var(--blue-ink)} .p-mute{background:var(--mute-bg);color:var(--ink3)}
+.muted{color:var(--ink3);font-size:.88rem}
+a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+.src a{color:var(--ink3);text-decoration:underline}
 .filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
-.filters>label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--ink2);flex:1 1 180px;min-width:0}
-.filters>label.check{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
-.filters input[type=checkbox]{width:20px;height:20px}
-select,input{padding:8px 10px;font-size:1rem}
+.filters>label.check{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-weight:500}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1px solid var(--rule);color:var(--ink);background:var(--sheet);border-radius:999px;padding:6px 14px;font-size:.92rem}
-.chip[aria-pressed=true]{border-color:var(--omr);box-shadow:inset 0 0 0 1px var(--omr)}
-.tlist,.alist{display:flex;flex-direction:column;gap:12px}
-.tcard{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;background:var(--sheet)}
+.chip{background:var(--fill);color:var(--ink2);border-radius:999px;padding:8px 14px;font-size:.9rem}
+.chip b{margin-left:2px}
+.chip[aria-pressed=true]{background:var(--blue);color:#fff}
+.tlist,.alist{display:flex;flex-direction:column;gap:10px}
+.tcard,.jcard{background:var(--fill);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
 .tcard header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
-.tcard h3,.jcard h3{font:700 1.1rem var(--f-head);margin:0}
-.tcard h3 span{font-weight:400;color:var(--ink2);font-size:.95rem;margin-left:4px}
-.unit,.arow{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:start}
-.alist .arow{border-bottom:1px solid var(--rule);padding-bottom:12px}
-.unit .pill,.arow .pill{text-align:center;padding:4px 8px;font-size:.85rem}
-.uname{font-weight:600}
-.why{color:var(--ink2);font-size:.9rem;line-height:1.6}
-.tcard footer{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem;color:var(--ink2);border-top:1px dashed var(--rule);padding-top:10px}
+.tcard h3,.jcard h3{font-size:1.08rem;font-weight:700;margin:0;letter-spacing:-.02em}
+.tcard h3 span{font-weight:500;color:var(--ink3);font-size:.92rem;margin-left:4px}
+.unit,.arow{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;align-items:start}
+.alist .arow{background:var(--fill);border-radius:16px;padding:16px}
+.unit .pill,.arow .pill{text-align:center}
+.uname{font-weight:700}
+.why{color:var(--ink3);font-size:.9rem;line-height:1.55}
+.tcard footer{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.86rem;color:var(--ink3)}
+details summary{cursor:pointer;color:var(--ink3);font-size:.88rem;font-weight:500;list-style:none}
+details summary::after{content:" ›";}
+details[open] summary::after{content:" ⌄"}
 .tcard details p,.jcard details p,.box p{font-size:.9rem;color:var(--ink2);margin:8px 0 0}
-.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.jcard{border:1px solid var(--rule);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px;background:var(--sheet)}
+.jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .jhead{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.jlabel{color:var(--ink2);font-size:.92rem}
-.score b{font-size:1.7rem;font-weight:600;color:var(--ink)} .score span{color:var(--ink2)}
-.score.none{color:var(--warn);font-weight:600;padding:6px 0}
-.box{border:1px solid var(--rule);border-radius:8px;padding:10px 14px;background:var(--paper)}
-.empty{padding:20px;text-align:center;color:var(--ink2)}
-@media (max-width:520px){.unit,.arow{grid-template-columns:minmax(0,1fr)}.unit .pill,.arow .pill{justify-self:start}}
-.src a{color:var(--info)}
-a{color:var(--info)}
-.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.tl li{display:grid;grid-template-columns:200px minmax(0,1fr) auto;gap:10px;padding:8px 0;border-bottom:1px dashed var(--rule);align-items:baseline}
-.tl li.past{opacity:.5}
-.tl li.next{background:var(--omr-soft);border-radius:4px;padding-inline:6px}
-@media (max-width:520px){.tl li{grid-template-columns:minmax(0,1fr) auto}.tl li .d{grid-column:1/-1}}
-.ins{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.ins article{border:1px solid var(--rule);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--sheet)}
-.ins h3{font:700 .92rem var(--f-head);margin:0;text-wrap:balance}
+.jlabel{color:var(--ink3);font-size:.9rem;margin-top:-6px}
+.score b{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;color:var(--ink)} .score span{color:var(--ink3);font-weight:600}
+.score.none{color:var(--warn-ink);font-weight:700;padding:6px 0}
+.box{background:var(--fill);border-radius:16px;padding:14px 18px}
+.empty{padding:28px;text-align:center;color:var(--ink3)}
+.big{font-size:1.5rem;font-weight:800}
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.tl li{display:grid;grid-template-columns:190px minmax(0,1fr) auto;gap:12px;padding:14px 12px;border-radius:14px;align-items:center}
+.tl li.past{opacity:.4}
+.tl li.next{background:var(--blue-soft)}
+.tl li.next .num:last-child{color:var(--blue);font-weight:800}
+@media (max-width:560px){.tl li{grid-template-columns:minmax(0,1fr) auto;gap:2px 12px}.tl li .d{grid-column:1/-1;font-size:.85rem;color:var(--ink3)}}
+.ins{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ins article{background:var(--fill);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.ins h3{font-size:1rem;font-weight:700;margin:0;text-wrap:balance}
 .kv{display:flex;flex-wrap:wrap;gap:6px}
-details summary{cursor:pointer;color:var(--ink2);font-size:.82rem}
-.big{font:600 1.5rem var(--f-num)}
-.combo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-.combo>div{border:1px solid var(--rule);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:6px}
-footer{font-size:.8rem;color:var(--ink2);border-top:1px solid var(--rule);padding-top:12px}
+.combo{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.combo>div{background:var(--fill);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px}
+/* 홈 */
+.hero{background:var(--blue);color:#fff;border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:6px}
+.hero small{opacity:.85;font-weight:600}
+.hero strong{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;line-height:1.3;text-wrap:balance}
+.hero .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.hero .acts button{background:rgba(255,255,255,.18);color:#fff}
+.hero .acts .only-m{background:#fff;color:var(--blue)}
+@media (min-width:881px){.only-m{display:none}}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.fact{background:var(--fill);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.tcard .p-mute,.fact .p-mute,.arow .p-mute{background:var(--card)}
+.fact .v{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;line-height:1.35}
+.fact .l{font-size:.85rem;color:var(--ink3);font-weight:600;display:flex;justify-content:space-between;gap:6px}
+.sec h3{font-size:1.1rem;font-weight:700;margin:6px 0 10px;letter-spacing:-.02em}
+.list{display:flex;flex-direction:column}
+.list>div{display:flex;gap:14px;padding:14px 4px;border-bottom:1px solid var(--line);align-items:center}
+.list>div:last-child{border-bottom:none}
+.list .dd{flex:0 0 58px;text-align:center;font-weight:800;color:var(--blue);font-size:.95rem}
+footer{font-size:.85rem;color:var(--ink3);padding:8px 4px}
+@media (max-width:880px){
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);border-radius:0;
+    padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+  .card{padding:18px}
+  main.card{background:none;padding:0;box-shadow:none}
+  .pane{padding-top:0}
+  .tcard,.jcard,.fact,.box,.ins article,.combo>div,.alist .arow,.tbl{background:var(--card)}
+  .tcard .p-mute,.fact .p-mute,.arow .p-mute{background:var(--fill)}
+  .sec{background:var(--card);border-radius:var(--r);padding:18px}
+  .sec .fact{background:var(--fill)} .sec .fact .p-mute{background:var(--card)}
+  header.top{flex-wrap:wrap}
+  .filters select,.filters input{background:var(--card)}
+  .dday .lab{display:none}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -116,12 +153,12 @@ footer{font-size:.8rem;color:var(--ink2);border-top:1px solid var(--rule);paddin
     <h1><small>2027학년도 · 대교협 일정·대학 모집요강 기반</small>인서울 입시 계산기</h1>
     <div class="dday" id="dday"></div>
   </header>
-  <div class="notice"><b>지원 전에 꼭 대학 모집요강을 다시 확인하세요.</b> 이 계산은 모집요강을 옮겨 만든 참고용이고 합격을 보장하지 않습니다. 입력한 성적은 이 브라우저에만 저장됩니다.</div>
+  <div class="notice"><span><b>지원 전에 꼭 대학 모집요강을 다시 확인하세요.</b> 모집요강을 옮겨 만든 참고용 계산이고 합격을 보장하지 않아요. 입력한 성적은 이 브라우저에만 저장돼요.</span></div>
 
   <div class="grid">
     <aside class="card" aria-label="내 성적">
       <h2>내 성적 <span class="pill p-warn" id="sampleTag">예시 값</span></h2>
-      <div class="row" style="margin-bottom:8px">
+      <div class="row" style="margin-bottom:10px">
         <label>구분<select id="hist"><option>현역</option><option>재수</option><option>삼수</option><option>N수</option><option>반수</option><option>검정고시</option></select></label>
         <label>고교 졸업연도<input id="gradYear" type="number" min="2000" max="2027"></label>
       </div>
@@ -129,28 +166,29 @@ footer{font-size:.8rem;color:var(--ink2);border-top:1px solid var(--rule);paddin
         <colgroup><col class="a"><col><col><col class="g"><col class="g"></colgroup><thead><tr><th></th><th>표준</th><th>백분위</th><th>등급<br>좋을 때</th><th>등급<br>나쁠 때</th></tr></thead>
         <tbody id="scBody"></tbody>
       </table>
-      <div class="row" style="margin-top:8px">
+      <div class="row" style="margin-top:10px">
         <label>수학 선택<select id="mathEl"><option>확률과통계</option><option>미적분</option><option>기하</option></select></label>
         <label>탐1<select id="t1type"><option>사탐</option><option>과탐</option></select></label>
         <label>탐2<select id="t2type"><option>사탐</option><option>과탐</option></select></label>
       </div>
-      <div class="row" style="margin-top:6px">
+      <div class="row" style="margin-top:8px">
         <label>탐1 변환표준<input id="t1conv" type="number" step="0.01" placeholder="대학 발표 후"></label>
         <label>탐2 변환표준<input id="t2conv" type="number" step="0.01" placeholder="대학 발표 후"></label>
       </div>
-      <p class="muted">가채점이라 등급이 애매하면 '좋을 때·나쁠 때'에 다른 값을 넣으세요. 확실하면 같은 값을 넣으면 됩니다. 탐구 변환점수는 대학이 12월에 발표하니 지금은 비워 두세요.</p>
-      <div class="row"><button class="primary" id="saveBtn">이 기기에 저장</button><button id="resetBtn">예시로 되돌리기</button><span class="muted" id="saveMsg"></span></div>
+      <p class="muted">가채점이라 등급이 애매하면 '좋을 때·나쁠 때'에 다른 값을 넣으세요. 예상 1등급컷은 홈 화면에서 볼 수 있어요. 탐구 변환점수는 대학이 12월에 발표해요.</p>
+      <div class="row"><button class="primary" id="saveBtn" style="flex:1">이 기기에 저장</button><button id="resetBtn">예시로</button></div>
+      <p class="muted" id="saveMsg" style="margin:8px 0 0"></p>
     </aside>
 
-    <main class="card" style="padding-top:6px">
+    <main class="card">
       <div class="tabs" role="tablist" id="tabs"></div>
       <div id="panes"></div>
     </main>
   </div>
 
   <footer>
-    데이터: 20개 대학 2027 수시 60개 전형·정시 50개 반영 그룹(대학 모집요강), 동국대 공식 입결(2024·2026), 대교협 「2027학년도 대학입학전형기본사항」. 학원·언론 자료는 '참고 인사이트'로만 구분해 실었습니다.
-    블로그 생성·공지 반영·입결 CSV 가져오기는 <a href="full/">전체 앱</a>에 있습니다(처음 열 때 30초~1분 걸림).
+    데이터: 20개 대학 2027 수시 60개 전형·정시 50개 반영 그룹(대학 모집요강), 동국대 공식 입결(2024·2026), 대교협 「2027학년도 대학입학전형기본사항」, 2027 수능 가채점 보도(추정치). 학원·언론 자료는 '참고 인사이트'로 구분했어요.
+    블로그 생성·공지 반영·입결 CSV 가져오기는 <a href="full/">전체 앱</a>에 있어요(처음 열 때 30초~1분).
   </footer>
 </div>
 
@@ -215,11 +253,11 @@ const md = s => { const d = ymd(s); return `${d.getMonth()+1}.${d.getDate()}`; }
 const dow = s => "일월화수목금토"[ymd(s).getDay()];
 
 // ---------- 탭
-const TABS = [["timeline","일정"],["susi","수시 최저"],["jeongsi","정시 환산"],["adm","합격 가능성"],["combo","가나다 조합"],["kidnap","수시 납치"],["insight","인사이트"]];
+const TABS = [["home","홈"],["timeline","일정"],["susi","수시 최저"],["jeongsi","정시 환산"],["adm","합격 가능성"],["combo","가나다 조합"],["kidnap","수시 납치"],["insight","인사이트"]];
 $("#tabs").innerHTML = TABS.map(([k,n]) => `<button role="tab" id="tab-${k}" aria-controls="pane-${k}">${n}</button>`).join("");
 $("#panes").innerHTML = TABS.map(([k]) => `<section class="pane" role="tabpanel" id="pane-${k}" hidden></section>`).join("");
 function show(k){
-  if (!TABS.some(t => t[0] === k)) k = UI.tab || "susi";
+  if (!TABS.some(t => t[0] === k)) k = UI.tab || "home";
   UI.tab = k; persistUI();
   for (const [t] of TABS) { $("#tab-"+t).setAttribute("aria-selected", t === k); $("#pane-"+t).hidden = t !== k; }
   render();
@@ -227,13 +265,43 @@ function show(k){
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { const k = b.id.slice(4); if (location.hash !== "#"+k) location.hash = k; else show(k); } });
 addEventListener("hashchange", () => show(location.hash.slice(1)));
 
+// ---------- 홈 · 수능 직후
+function rHome(el){
+  const B = DATA.briefing;
+  const cs = DATA.timeline.find(e => e.title.includes("성적 통지"));
+  const dCs = cs ? Math.round((ymd(cs.start) - TODAY) / 864e5) : null;
+  const ev = [];
+  for (const t of DATA.susi) for (const e of (t.events||[])) if (["논술","면접"].includes(e.kind) && ymd(e.date) >= TODAY) ev.push({...e, u:t.univ_name, n:t.name});
+  ev.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.u.localeCompare(b.u));
+  const days = [...new Set(ev.map(e => e.date))].slice(0, 4);
+  const st = {"추정":"p-warn","보도":"p-info","공식":"p-ok"};
+  const groups = [...new Set(B.facts.map(f => f.group))];
+  el.innerHTML = `<div class="hero"><small>${dCs != null && dCs > 0 ? `성적 발표까지 D-${dCs}` : "성적 발표 이후"}</small>
+      <strong>수능 끝! 이제 가채점으로 최저부터 확인해요</strong>
+      <span style="opacity:.9">확정 성적은 12월 11일에 나와요. 그 전까지 숫자는 모두 추정치예요.</span>
+      <div class="acts"><button id="goScore" class="only-m">내 성적 입력</button><button data-go="susi">수시 최저 판정</button><button data-go="kidnap">논술 볼지 판단</button><button data-go="jeongsi">정시 환산</button></div></div>
+    <section class="sec"><h3>2027 수능 한눈에</h3>
+      ${groups.map(g => `<div class="lbl" style="margin:12px 2px 8px">${esc(g)}</div><div class="facts">${B.facts.filter(f => f.group === g).map(f => `<div class="fact">
+        <div class="l"><span>${esc(f.label)}</span><span class="pill ${st[f.status]}">${esc(f.status)}</span></div>
+        <div class="v">${esc(f.value)}</div><div class="why">${esc(f.note)} · <a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.source)}</a></div></div>`).join("")}</div>`).join("")}
+      <p class="muted">'추정'은 입시기관이 가채점 참여자 점수로 낸 값이에요. 기관마다 다르니 가장 보수적인 값으로 판단하세요. (수집 ${esc(B.collected_at)})</p></section>
+    <section class="sec"><h3>다가오는 논술·면접</h3><div class="list">${days.map(d => { const x = ev.filter(e => e.date === d); const dd = Math.round((ymd(d) - TODAY) / 864e5);
+      return `<div><span class="dd">${dd === 0 ? "오늘" : "D-" + dd}</span><div><div class="uname">${md(d)}(${dow(d)}) · ${x.length}건</div><div class="why">${esc([...new Set(x.map(e => `${e.u} ${e.kind}${e.units ? "(" + e.units.slice(0, 14) + ")" : ""}`))].join(" · "))}</div></div></div>`; }).join("") || `<div class="empty">남은 수능 이후 고사가 없어요.</div>`}</div>
+      <p class="muted">대학 모집요강 기준 · 시간과 고사장은 대학 공지로 꼭 확인하세요.</p></section>
+    <section class="sec"><h3>지금 하면 좋은 판단</h3><div class="facts">${B.advice.map(a => `<div class="fact"><div class="uname">${esc(a.title)}</div><div class="why">${esc(a.body)} · <a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.source)}</a></div></div>`).join("")}</div></section>
+    <section class="sec"><h3>최저 계산, 이건 꼭 확인</h3><div class="list">${B.traps.map((t, i) => `<div><span class="dd">${i + 1}</span><div><div class="uname">${esc(t.title)}</div><div class="why">${esc(t.body)}</div></div></div>`).join("")}</div>
+      <p class="muted">근거: 각 대학 2027 수시 모집요강</p></section>`;
+  el.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
+  el.querySelector("#goScore").onclick = () => document.querySelector("aside").scrollIntoView({behavior:"smooth"});
+}
+
 // ---------- 일정
 const SUSI_DONE = ymd("2026-12-18");
 function dday(){
   const ev = DATA.timeline.find(e => ymd(e.end) >= TODAY);
   if (!ev) { $("#dday").textContent = ""; return; }
   const d = Math.round((ymd(ev.start) - TODAY) / 864e5);
-  $("#dday").innerHTML = `다음 일정 · ${esc(ev.title)} <b>${d > 0 ? "D-" + d : d === 0 ? "D-DAY" : "진행 중"}</b>`;
+  $("#dday").innerHTML = `<span class="lab">다음 일정 · </span>${esc(ev.title)} <b>${d > 0 ? "D-" + d : d === 0 ? "D-DAY" : "진행 중"}</b>`;
 }
 function rTimeline(el){
   let next = false;
@@ -245,7 +313,7 @@ function rTimeline(el){
   }).join("");
   const s = DATA.timeline_source;
   el.innerHTML = `<div><span class="lbl">2026.11 ~ 2027.2 대입 일정</span><ul class="tl">${li}</ul></div>
-  <div class="card" style="background:var(--paper)"><h2>꼭 알아둘 규칙</h2><ul>${DATA.rules.map(r => `<li>${esc(r[0])} <span class="muted">(${esc(r[1])})</span></li>`).join("")}</ul></div>
+  <div class="box"><h3 style="margin:0 0 6px">꼭 알아둘 규칙</h3><ul>${DATA.rules.map(r => `<li>${esc(r[0])} <span class="muted">(${esc(r[1])})</span></li>`).join("")}</ul></div>
   <p class="muted src">출처: ${esc(s.doc)} · ${esc(s.page)} · <a href="${esc(s.url)}" target="_blank" rel="noopener">원문 PDF</a> · 수집 ${esc(s.collected_at)}</p>`;
 }
 
@@ -420,8 +488,8 @@ function rInsight(el){
       <h3>${esc(x.title)}</h3><p style="margin:0">${esc(x.summary)}</p><div class="muted">${esc(x.date)} · 주제 ${esc(x.topic)}</div><a href="${esc(x.url)}" target="_blank" rel="noopener">원문 보기</a></article>`).join("")}</div>`;
 }
 
-const R = {timeline:rTimeline, susi:rSusi, jeongsi:rJeongsi, adm:rAdm, combo:rCombo, kidnap:rKidnap, insight:rInsight};
-function render(){ dday(); const k = UI.tab || "susi"; const el = $("#pane-"+k); if (el && R[k]) R[k](el); }
-show(location.hash.slice(1) || UI.tab || "susi");
+const R = {home:rHome, timeline:rTimeline, susi:rSusi, jeongsi:rJeongsi, adm:rAdm, combo:rCombo, kidnap:rKidnap, insight:rInsight};
+function render(){ dday(); const k = UI.tab || "home"; const el = $("#pane-"+k); if (el && R[k]) R[k](el); }
+show(location.hash.slice(1) || UI.tab || "home");
 })();
 </script>

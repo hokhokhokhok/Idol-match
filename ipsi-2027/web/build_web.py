@@ -16,7 +16,7 @@ STLITE = "1.11.0"
 INCLUDE = [
     ("app", "*.py"), ("blog", "*.py"), ("engine", "*.py"), ("engine", "*.sql"), ("insights", "*.py"),
     ("config", "*.yaml"), ("data", "download_log.csv"), ("data/insights", "seed.yaml"),
-    ("data/parsed/susi_2027", "*.yaml"), ("data/parsed/jeongsi_2027", "*.yaml"), ("data/parsed/results", "dongguk.csv"),
+    ("data/parsed/susi_2027", "*.yaml"), ("data/parsed/jeongsi_2027", "*.yaml"), ("data/parsed/results", "dongguk.csv"), ("data/parsed/csat_2027", "*.yaml"),
     ("assets/fonts", "NanumGothic.ttf"), ("assets/fonts", "README.md"),
 ]
 STREAMLIT_PY = ROOT / "app" / "streamlit_app.py"
@@ -48,7 +48,7 @@ const app = mount({{
   archives: [{{ url: "./ipsi-app.zip", format: "zip" }}],
   env: {{ IPSI_LOCAL_DIR: "/home/pyodide/ipsi_local", MPLBACKEND: "Agg" }},
   idbfsMountpoints: ["/home/pyodide/ipsi_local"],
-  streamlitConfig: {{ "client.toolbarMode": "viewer", "theme.primaryColor": "#c4334f", "theme.base": "light", "theme.textColor": "#1f1a1c", "theme.secondaryBackgroundColor": "#fbf6f7" }},
+  streamlitConfig: {{ "client.toolbarMode": "viewer", "theme.primaryColor": "#3182f6", "theme.base": "light", "theme.textColor": "#191f28", "theme.backgroundColor": "#f2f4f6", "theme.secondaryBackgroundColor": "#ffffff" }},
 }}, document.getElementById("root"));
 document.getElementById("boot").remove();
 </script>
