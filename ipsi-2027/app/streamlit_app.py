@@ -27,7 +27,7 @@ import updates_tab  # noqa: E402
 import retake_tab  # noqa: E402
 import ui  # noqa: E402
 from blog.templates import templates_markdown  # noqa: E402
-from engine import db, segments, timeline  # noqa: E402
+from engine import briefing, db, segments, susi_data, timeline  # noqa: E402
 
 st.set_page_config(page_title="2027 인서울 입시 전략", page_icon="🎓", layout="wide")
 ui.style()
@@ -36,7 +36,7 @@ st.info("**지원 전에 꼭 대학 모집요강 원문을 다시 확인하세�
 con = db.connect()
 profile = db.load_profile(con)
 
-MENU = {"🧭 온보딩·대시보드": "🧭 시작하기 · 내 유형", "📅 타임라인": "📅 입시 일정", "🎯 수시 대응": "🎯 수시 · 최저 판정",
+MENU = {"🏠 브리핑": "🏠 수능 직후 브리핑", "🧭 온보딩·대시보드": "🧭 시작하기 · 내 유형", "📅 타임라인": "📅 입시 일정", "🎯 수시 대응": "🎯 수시 · 최저 판정",
         "🧮 정시 환산": "🧮 정시 · 환산점수", "📊 합격 가능성": "📊 정시 · 합격 가능성", "🧩 가나다 조합": "🧩 정시 · 가나다 조합",
         "🔁 재도전 판단": "🔁 재도전 판단", "💡 인사이트": "💡 참고 인사이트", "🔄 공지 반영": "🔄 발표 자료 입력",
         "📝 블로그 포스팅": "📝 블로그 글 만들기", "🗂 데이터 상태": "🗂 데이터 상태", "🧱 템플릿 6종 구조": "🧱 블로그 템플릿 구조"}
@@ -47,6 +47,38 @@ with st.sidebar:
     PAGE = st.radio("메뉴", list(MENU), format_func=MENU.get, key="nav", label_visibility="collapsed")
     st.caption("성적·지원 목록은 이 브라우저에만 저장됩니다.")
     st.divider()
+
+# ---------------------------------------------------------------- 0. 수능 직후 브리핑
+if PAGE == "🏠 브리핑":
+    B = briefing.load()
+    today = date.today()
+    cs = next((e for e in timeline.EVENTS if "성적 통지" in e.title), None)
+    dcs = (cs.start - today).days if cs else None
+    ui.hero(f"성적 발표까지 D-{dcs}" if dcs and dcs > 0 else "성적 발표 이후",
+            "수능 끝! 이제 가채점으로 최저부터 확인해요", "확정 성적은 12월 11일에 나와요. 그 전까지 숫자는 모두 추정치예요.")
+    st.subheader("2027 수능 한눈에")
+    for g in dict.fromkeys(f["group"] for f in B["facts"]):
+        st.caption(g)
+        ui.show('<div class="ui-grid">' + "".join(
+            ui.fact(f["label"], f["value"], f["note"], f["status"], f'<a href="{ui.e(f["url"])}" target="_blank">{ui.e(f["source"])}</a>')
+            for f in B["facts"] if f["group"] == g) + "</div>")
+    st.caption(f"'추정'은 입시기관이 가채점 참여자 점수로 낸 값이에요. 기관마다 다르니 가장 보수적인 값으로 판단하세요. (수집 {B['collected_at']})")
+    st.subheader("다가오는 논술·면접")
+    tracks, _ = susi_data.load()
+    ev = sorted(((e.date, t.univ_name, e.kind, e.units) for t in tracks for e in t.events
+                 if e.kind in ("논술", "면접") and e.date >= today), key=lambda x: (x[0], x[1]))
+    days = list(dict.fromkeys(x[0] for x in ev))[:4]
+    WD = "월화수목금토일"
+    ui.show("".join(ui.card(f"{d.month}.{d.day}({WD[d.weekday()]})", f"D-{(d - today).days}" if d > today else "오늘",
+                            f'<div class="ui-why">{ui.e(" · ".join(dict.fromkeys(f"{u} {k}" for dd, u, k, _ in ev if dd == d)))}</div>')
+                    for d in days) or "남은 수능 이후 고사가 없어요.")
+    st.caption("대학 모집요강 기준 · 시간과 고사장은 대학 공지로 꼭 확인하세요. 내 지원 전형만 보려면 '수시 · 최저 판정'에서 고르세요.")
+    st.subheader("지금 하면 좋은 판단")
+    ui.show('<div class="ui-grid">' + "".join(ui.card(a["title"], body=f'<div class="ui-why">{ui.e(a["body"])} · <a href="{ui.e(a["url"])}" target="_blank">{ui.e(a["source"])}</a></div>')
+                                             for a in B["advice"]) + "</div>")
+    st.subheader("최저 계산, 이건 꼭 확인")
+    ui.show("".join(ui.card(f'{i}. {t["title"]}', body=f'<div class="ui-why">{ui.e(t["body"])}</div>') for i, t in enumerate(B["traps"], 1)))
+    st.caption("근거: 각 대학 2027 수시 모집요강")
 
 # ---------------------------------------------------------------- 1. 온보딩·대시보드
 if PAGE == "🧭 온보딩·대시보드":

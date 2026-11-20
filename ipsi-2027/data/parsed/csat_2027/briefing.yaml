@@ -1,0 +1,108 @@
+# 2027 수능 직후 브리핑 (2026.11.20 수집). 가채점 기반 값은 모두 '추정' — 12월 11일 성적 통지로 확정.
+# 모든 항목에 출처 URL 필수. status: 추정(입시기관 가채점) | 보도 | 공식
+collected_at: 2026-11-20
+facts:
+  - id: kor_cut
+    group: 등급컷
+    label: 국어 1등급컷 (표준점수)
+    value: 129~131점
+    note: 지난해 133점보다 낮아질 전망
+    status: 추정
+    source: 네이트뉴스 2026.11.19
+    url: https://m.news.nate.com/view/20261119n40483
+  - id: math_cut
+    group: 등급컷
+    label: 수학 1등급컷 (표준점수)
+    value: 127~131점
+    note: 기관마다 1~2점 차이
+    status: 추정
+    source: 네이트뉴스 2026.11.19
+    url: https://m.news.nate.com/view/20261119n40483
+  - id: raw_cut
+    group: 등급컷
+    label: 1등급 원점수 컷
+    value: 화작 94~95 · 언매 90~91 · 확통 88~90 · 미적 84~86 · 기하 86~89
+    note: 기관 추정 범위
+    status: 추정
+    source: 교육을 비추다 · 한국경제
+    url: https://www.kyobit.com/news/articleView.html?idxno=8265
+  - id: eng_ratio
+    group: 등급컷
+    label: 영어 1등급 비율
+    value: 7~10% (종로학원 8.0%)
+    note: 지난해 3.11%
+    status: 추정
+    source: 한국경제 2026.11.19
+    url: https://www.hankyung.com/article/202611198639i
+  - id: difficulty
+    group: 난이도
+    label: 난이도 평가
+    value: 국어·영어 쉬움, 수학 비슷하거나 약간 어려움
+    note: 국어 표준점수 최고점 하락 → 상위권은 수학이 변별
+    status: 보도
+    source: 이투데이 2026.11.19
+    url: https://www.etoday.co.kr/news/view/2650761
+  - id: sat_shift
+    group: 탐구
+    label: 사탐런 규모
+    value: 과탐 접수 −28.3% · 사탐 +11.4%
+    note: 과탐 23만4518건, 사탐 81만2691건 (종로학원)
+    status: 보도
+    source: 메트로신문 2026.11.16
+    url: https://www.metroseoul.co.kr/article/20261116500358
+  - id: sat_cut
+    group: 탐구
+    label: 사탐 1등급 표준점수
+    value: 생윤·사문 64점, 정법 68점
+    note: 응시자가 많은 과목일수록 컷이 낮게 추정 (진학사)
+    status: 추정
+    source: 아주경제 2026.11.20
+    url: https://www.ajunews.com/view/20261120101026312
+  - id: nsu
+    group: 지원자
+    label: N수생
+    value: 23년 만에 최대
+    note: 전체 지원자 55만1864명, 졸업생 17만3706명(+8.6%)
+    status: 보도
+    source: 엠에스투데이
+    url: https://www.mstoday.co.kr/news/articleView.html?idxno=200509
+  - id: med
+    group: 지원자
+    label: 의대 정시 모집인원
+    value: 984명 (−7명)
+    note: 수시 2,524명(+499) · 정시 비중 28.1% (진학사)
+    status: 보도
+    source: 서울경제
+    url: https://m.sedaily.com/article/20116275
+  - id: y2028
+    group: 2028
+    label: 2028 N수생 지원 불가 수시 인원
+    value: 4,894명 (2027년의 약 2.5배)
+    note: 주요 10개대, 고려대·서강대는 정시에도 신설 (종로학원 분석)
+    status: 보도
+    source: 뉴시스 2026.6.12
+    url: https://www.newsis.com/view/NISX20260612_0003667413
+advice:
+  - title: 최저가 애매하면 일단 응시
+    body: 최저 충족이 불확실하면 등급컷이 예상과 달라질 수 있어 응시가 유리하다는 조언. 예년에도 확정 성적으로 최저를 맞춘 사례가 적지 않았음.
+    source: kbc 2026.11.19
+    url: https://news.ikbc.co.kr/article/view/kbc202611190066
+  - title: 가장 보수적인 컷으로 판단
+    body: 기관마다 등급컷 예측이 달라, 여러 기관 중 가장 보수적인 값으로 내 등급을 잡으라는 조언.
+    source: kbc 2026.11.19
+    url: https://news.ikbc.co.kr/article/view/kbc202611190066
+  - title: 탐구는 가채점만으로 단정 금지
+    body: 과목별 응시 집단과 점수 분포에 따라 실제 등급·표준점수가 크게 달라질 수 있음.
+    source: 메트로신문 2026.11.16
+    url: https://www.metroseoul.co.kr/article/20261116500358
+traps:   # 최저 계산 함정 — 2027 수시 모집요강 근거
+  - title: 탐구 1과목 vs 2과목 평균
+    body: 고려대는 탐구 1과목(수시요강 6쪽), 성균관대 융합인재는 2과목 평균(13쪽).
+  - title: 2과목 평균 소수점
+    body: 중앙대 논술은 소수점 그대로 반영(60쪽). 3개 합 6 기준에서 합 6.5면 미충족.
+  - title: 영어 1·2등급 통합
+    body: 중앙대는 영어 2등급을 1등급으로 간주(19쪽).
+  - title: 한국사 별도 기준
+    body: 고려대·서강대·중앙대 4등급 이내, 경희대 5등급 이내를 따로 요구.
+  - title: 과목 포함 조건
+    body: 연세대 교과 인문은 국어·수학 중 1개 포함 2개 합 4, 자연은 수학 포함 2개 합 5(26쪽).
