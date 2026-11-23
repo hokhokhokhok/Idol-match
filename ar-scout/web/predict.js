@@ -89,11 +89,11 @@ var REFERENCE_DEFAULT = [
     s: 'CC(C)(C)NC(=O)C1CCC2C3CCC4NC(=O)C=CC4(C)C3CCC12C',
     note: '5a-reductase inhibitor, not an AR ligand' },
   { n: 'Niacinamide', p: 4.00, c: 'non-binder',
-    s: 'NC(=O)c1ccncc1', note: 'cosmetic actives baseline' },
+    s: 'NC(=O)c1ccncc1', note: 'nominal inactive floor; Tox21 AR assays measured inactive in all three' },
   { n: 'Caffeine', p: 4.00, c: 'non-binder',
-    s: 'CN1C=NC2=C1C(=O)N(C)C(=O)N2C', note: 'cosmetic actives baseline' },
+    s: 'CN1C=NC2=C1C(=O)N(C)C(=O)N2C', note: 'nominal inactive floor; Tox21 AR assays measured inactive in all three' },
   { n: 'Panthenol', p: 4.00, c: 'non-binder',
-    s: 'CC(C)(CO)C(O)C(=O)NCCCO', note: 'cosmetic actives baseline' }
+    s: 'CC(C)(CO)C(O)C(=O)NCCCO', note: 'nominal inactive floor; Tox21 AR assays measured inactive in all three' }
 ];
 
 /* ------------------------------------------- ingredient name dictionary */
@@ -347,6 +347,69 @@ var FUNCTION_CLASS = {
 
 var FUNCTIONAL_LABELS = { agonist: 1, antagonist: 1, partial: 1 };
 
+/* Tox21 result codes, as emitted by local/build_tox21.py: one character per
+ * assay, in the order [agonist BLA, antagonist MDA-kb2, antagonist BLA]. */
+var TOX21_CODE = {
+  '0': 'inactive', '1': 'active agonist', '2': 'active antagonist',
+  '3': 'inconclusive', '4': 'cytotoxic', '9': 'not tested'
+};
+var TOX21_LABEL_KO = {
+  'inactive': '비활성', 'active agonist': '작용제 활성',
+  'active antagonist': '길항제 활성', 'inconclusive': '판정 보류',
+  'cytotoxic': '세포독성으로 판정 보류', 'not tested': '미시험'
+};
+
+/* Read a Tox21 record into a verdict.
+ *
+ * This is a measurement, not a prediction, so it outranks everything else
+ * the tool computes. Two things need care. Antagonist-mode signal in a
+ * reporter assay is produced by anything that kills the cell, so a
+ * "cytotoxic" call is explicitly NOT evidence of antiandrogen activity -
+ * ketoconazole and triclosan land there. And a compound can genuinely read
+ * active in both modes (spironolactone does); the antagonist call is
+ * reported then, because that is the safety-relevant one. */
+function readTox21(code) {
+  if (!code || code.length < 3) return null;
+  var calls = [];
+  for (var i = 0; i < 3; i++) calls.push(TOX21_CODE[code.charAt(i)] || 'not tested');
+  var agonist = false, antagonist = false, cytotoxic = false, inconclusive = false;
+  var tested = 0;
+  for (var j = 0; j < calls.length; j++) {
+    if (calls[j] === 'not tested') continue;
+    tested++;
+    if (calls[j] === 'active agonist') agonist = true;
+    else if (calls[j] === 'active antagonist') antagonist = true;
+    else if (calls[j] === 'cytotoxic') cytotoxic = true;
+    else if (calls[j] === 'inconclusive') inconclusive = true;
+  }
+  if (!tested) return null;
+
+  /* What each call actually means.
+   *
+   * Antagonist mode co-treats with a strong reference agonist and measures
+   * the drop in signal, so anything that competes for the receptor scores
+   * there - including weak and partial agonists. Measured over the labelled
+   * set, Tox21 calls 11 of 12 known antagonists "active antagonist", but
+   * also 5 of 5 known partial agonists and 2 of 8 full agonists. Taking the
+   * antagonist call at face value dropped the functional accuracy from 84%
+   * to 76%, flipping progesterone, levonorgestrel and the rest.
+   *
+   * So a verdict is only returned where the assay is unambiguous. Signal in
+   * both modes means the compound does both, which is true of cyproterone
+   * and progesterone alike; the assay is right to refuse and the structural
+   * evidence breaks the tie instead. */
+  var verdict = null;
+  if (agonist && !antagonist) verdict = 'agonist';
+  else if (antagonist && !agonist) verdict = 'antagonist';
+  else if (calls.every(function (c) { return c === 'inactive' || c === 'not tested'; })) {
+    verdict = 'inactive';
+  }
+  return {
+    calls: calls, verdict: verdict, cytotoxic: cytotoxic,
+    inconclusive: inconclusive, mixed: agonist && antagonist
+  };
+}
+
 var functionLibrary = null;
 
 function ensureFunctionLibrary() {
@@ -394,6 +457,17 @@ function callFunction(fp, options) {
   var dock = options.dock || null;
   var motifs = options.motifs || null;
   var evidence = [];
+
+  /* A measured result ends the argument. */
+  var tox = options.tox21 ? readTox21(options.tox21) : null;
+  if (tox && tox.verdict) {
+    var measuredNote = 'Tox21 리포터 어세이 실측';
+    if (tox.cytotoxic) measuredNote += ' (일부 어세이는 세포독성으로 판정 보류)';
+    return {
+      label: tox.verdict, support: 1, nearest: 0, neighbours: [],
+      evidence: [measuredNote], weights: {}, measured: true, tox21: tox
+    };
+  }
   if (total > 1e-12) {
     evidence.push('유사 레퍼런스 ' + top.length + '종');
   }
@@ -430,6 +504,14 @@ function callFunction(fp, options) {
     if (!Object.prototype.hasOwnProperty.call(weights, key)) continue;
     if (weights[key] > bestWeight) { bestWeight = weights[key]; best = key; }
   }
+  if (tox) {
+    if (tox.mixed) {
+      evidence.push('Tox21에서 작용·길항 양쪽 신호 — 혼합 활성이므로 구조 증거로 판단');
+    } else {
+      evidence.push('Tox21 실측은 판정 보류' +
+                    (tox.cytotoxic ? ' (세포독성)' : '') + ' — 아래는 예측입니다');
+    }
+  }
   var nearest = top.length ? top[0].sim : 0;
   var confident = nearest >= 0.35 || (dock && dock.placed && nearest >= 0.2);
   return {
@@ -438,7 +520,9 @@ function callFunction(fp, options) {
     nearest: nearest,
     neighbours: top,
     evidence: evidence,
-    weights: weights
+    weights: weights,
+    measured: false,
+    tox21: tox
   };
 }
 
@@ -489,6 +573,7 @@ var CLASS_LABELS = {
   partial: '부분 작용제',
   weak: '약한 상호작용',
   'non-binder': '비결합',
+  inactive: '비활성 (실측)',
   unknown: '판단 불가'
 };
 
@@ -766,7 +851,8 @@ function predict(smiles, options) {
   var nearest = top.length ? top[0].sim : 0;
 
   var functionCall = callFunction(fp, {
-    exclude: exclude, dock: options.dock || null, motifs: motifs
+    exclude: exclude, dock: options.dock || null, motifs: motifs,
+    tox21: options.tox21 || null
   });
 
   var wRead = nearest >= 0.55 ? 0.78 : (nearest >= 0.35 ? 0.50 : 0.20);
@@ -939,6 +1025,9 @@ module.exports = {
   CLASS_LABELS: CLASS_LABELS,
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
+  readTox21: readTox21,
+  TOX21_CODE: TOX21_CODE,
+  TOX21_LABEL_KO: TOX21_LABEL_KO,
   ensureFunctionLibrary: ensureFunctionLibrary,
   INGREDIENTS: INGREDIENTS,
   POCKET_RESIDUES: POCKET_RESIDUES,

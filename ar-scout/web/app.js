@@ -630,6 +630,31 @@ function renderSingle(result, title, subtitle) {
   var fcLabel = PR.CLASS_LABELS[fc.label] || fc.label;
   var fcClass = (fc.label === 'antagonist' || fc.label === 'unknown') ? ' warnink' : '';
 
+  var tox = result.functionCall.tox21;
+  if (tox) {
+    var assays = (typeof TOX21 !== 'undefined' && TOX21 && TOX21.assays) ? TOX21.assays : [];
+    out.push('<div class="measured">');
+    out.push('<div class="mhead">실측 — Tox21 AR 리포터 어세이</div>');
+    out.push('<table style="margin-top:6px"><tbody>');
+    for (var t = 0; t < tox.calls.length; t++) {
+      var a = assays[t] || {};
+      var ko = PR.TOX21_LABEL_KO[tox.calls[t]] || tox.calls[t];
+      var bad = tox.calls[t] === 'active antagonist';
+      out.push('<tr><td style="width:46%">' +
+               esc((a.mode === 'agonist' ? '작용제 모드' : '길항제 모드') +
+                   (a.line ? ' · ' + a.line : '')) + '</td>' +
+               '<td' + (bad ? ' class="warnink"' : '') +
+               ' style="font-weight:700">' + esc(ko) + '</td></tr>');
+    }
+    out.push('</tbody></table>');
+    out.push('<p class="hint" style="margin:8px 0 0">이 물질은 실제로 시험됐습니다. ' +
+             '아래 예측값보다 이 결과를 우선하세요.' +
+             (tox.cytotoxic ? ' 「세포독성으로 판정 보류」는 길항 활성의 근거가 아닙니다 — ' +
+              '세포를 죽이는 물질은 길항제 모드에서 신호를 내기 때문입니다.' : '') +
+             '</p>');
+    out.push('</div>');
+  }
+
   out.push('<div class="headline">');
   out.push('<div class="pk num">' + fx(result.pKi, 2) +
            '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>');
@@ -806,9 +831,16 @@ function runSingle(rawQuery) {
     }
   } catch (err) { dock = null; }
 
+  var tox21 = null;
+  try {
+    if (typeof TOX21 !== 'undefined' && TOX21 && TOX21.calls) {
+      tox21 = TOX21.calls[AR.structureIdOf(AR.parseSmiles(smiles))] || null;
+    }
+  } catch (err) { tox21 = null; }
+
   var result;
   try {
-    result = PR.predict(smiles, { dock: dock });
+    result = PR.predict(smiles, { dock: dock, tox21: tox21 });
   } catch (err) {
     host.innerHTML = '';
     var tips = PR.suggestNames(query, 5);
@@ -1145,9 +1177,18 @@ function renderModelCard() {
   }
 
   out.push('<h5>기능 추정(작용제/길항제)을 읽는 법</h5>');
-  out.push('<p>세 가지 증거를 합칩니다. 어떤 것이 쓰였는지는 결과의 ' +
-           '「판정 근거」 줄에 표시됩니다.</p>');
+  out.push('<p>증거를 합쳐 판정하며, 어떤 것이 쓰였는지는 결과의 ' +
+           '「판정 근거」 줄에 표시됩니다. <b>Tox21 실측이 있으면 그것이 우선</b>이고, ' +
+           '없을 때만 아래 세 가지를 조합합니다.</p>');
   out.push('<ul>');
+  out.push('<li><b>Tox21 리포터 어세이 실측</b> — 약 7,800종이 작용제·길항제 모드로 ' +
+           '실제 시험된 결과입니다. 사전 205종 중 151종이 여기 들어 있고 98종은 ' +
+           '확정 판정이 납니다. 다만 <b>길항제 모드는 「기준 작용제의 신호를 줄였다」를 ' +
+           '재는 것</b>이라, 수용체를 두고 경쟁하는 부분작용제도 길항제로 읽힙니다 — ' +
+           '실제로 알려진 부분작용제 5종이 5종 모두 그렇게 나옵니다. 그래서 ' +
+           '<b>한쪽 모드에서만 활성일 때만 실측 판정으로 쓰고</b>, 양쪽 다 뜨면 ' +
+           '혼합 활성으로 보아 아래 구조 증거에 맡깁니다. ' +
+           '「세포독성으로 판정 보류」도 길항 활성의 근거로 쓰지 않습니다.</li>');
   out.push('<li><b>레퍼런스 read-across</b> — AR에서의 기능이 잘 확립된 38종' +
            '(작용제 16, 길항제 17, 부분 5)과의 유사도³ 가중 투표입니다. ' +
            '이 목록은 pKi 라이브러리와 <b>별개</b>입니다. ChEMBL 확장 라이브러리의 ' +
@@ -1165,7 +1206,11 @@ function renderModelCard() {
   out.push('<p><b>성능 (leave-one-out, n = 38):</b> read-across만 27/38(71%), ' +
            '여기에 도킹 신호를 더하면 30/38(79%), 부피 모티프까지 더하면 ' +
            '<b>32/38(84%)</b>입니다. 가중치는 손으로 정했지만 넓은 범위에서 ' +
-           '결과가 같아 특정 값에 기대고 있지는 않습니다.</p>');
+           '결과가 같아 특정 값에 기대고 있지는 않습니다. Tox21을 더해도 이 38종에서는 ' +
+           '32/38 그대로인데, 전부 이미 유사 레퍼런스가 충분한 약물이기 때문입니다. ' +
+           'Tox21의 값어치는 정확도가 아니라 <b>예측을 실측으로 바꾸는 범위</b>에 ' +
+           '있습니다 — 사전의 48%가 실측 판정으로 바뀌고, pKi 적용영역 밖이던 128종 중 ' +
+           '67종(52%)이 그래도 기능만은 확정됩니다.</p>');
   out.push('<p>여전히 틀리는 것들: 클라스코테론과 디에노게스트(길항인데 작용으로), ' +
            '프로게스테론과 MPA(부분작용제 경계), 프로클로라즈(유사 레퍼런스 없음). ' +
            '최근접 유사도가 낮으면 「판단 불가」로 나오며, 이때는 수치보다 ' +

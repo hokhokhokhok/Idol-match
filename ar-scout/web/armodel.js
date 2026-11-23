@@ -845,6 +845,38 @@ function fnv1a(str) {
   return h >>> 0;
 }
 
+/* 64-bit FNV-1a over a structure key, as 16 hex characters. Used to look a
+ * compound up in the bundled measured-data tables without shipping the full
+ * fingerprint string for every row. Two independent 32-bit passes: one is
+ * not enough, 7.8k entries in a 32-bit space collide about 0.7% of the
+ * time. */
+function structureHash(key) {
+  var a = 0x811c9dc5, b = 0x01000193;
+  for (var i = 0; i < key.length; i++) {
+    var c = key.charCodeAt(i);
+    a ^= c;
+    a = (a + ((a << 1) + (a << 4) + (a << 7) + (a << 8) + (a << 24))) >>> 0;
+    b ^= c + i;
+    b = Math.imul(b, 0x85ebca6b) >>> 0;
+    b = (b ^ (b >>> 13)) >>> 0;
+  }
+  function hex8(v) { return ('00000000' + (v >>> 0).toString(16)).slice(-8); }
+  return hex8(a) + hex8(b);
+}
+
+/* The canonical key a bundled table is indexed by: formula plus the set
+ * fingerprint bits, which is stereochemistry-blind in the same way the rest
+ * of the engine is. */
+function structureKeyOf(mol) {
+  var d = computeDescriptors(mol);
+  var fp = morganFingerprint(mol, 2);
+  var bits = '';
+  for (var i = 0; i < fp.length; i++) if (fp[i]) bits += i + ',';
+  return d.formula + '|' + bits;
+}
+
+function structureIdOf(mol) { return structureHash(structureKeyOf(mol)); }
+
 function initialInvariants(mol) {
   var inv = new Array(mol.atoms.length);
   for (var i = 0; i < mol.atoms.length; i++) {
@@ -1160,6 +1192,9 @@ module.exports = {
   morganFingerprint: morganFingerprint,
   tanimoto: tanimoto,
   packFingerprint: packFingerprint,
+  structureHash: structureHash,
+  structureKeyOf: structureKeyOf,
+  structureIdOf: structureIdOf,
   tanimotoPacked: tanimotoPacked,
   detectMotifs: detectMotifs,
   mcGowanVolume: mcGowanVolume,

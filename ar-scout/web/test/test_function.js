@@ -146,6 +146,107 @@ function run() {
     console.log(`  ok    ${'flags the 6 steroidal antagonists'.padEnd(30)} and none of the 10 androgens/progestins`);
   } else { fail++; }
 
+  /* --- Tox21, read correctly ----------------------------------------- */
+  console.log('\n  Tox21 reading');
+  const toxPath = path.join(__dirname, '..', 'assets', 'tox21_ar.json');
+  const haveTox = fs.existsSync(toxPath);
+  const cases = [
+    ['000', 'inactive', 'inactive in all three'],
+    ['100', 'agonist', 'agonist mode only'],
+    ['020', 'antagonist', 'antagonist mode only'],
+    ['122', null, 'both modes - the assay cannot separate them'],
+    ['344', null, 'inconclusive and cytotoxic only'],
+    ['999', null, 'not tested']
+  ];
+  let readOk = true;
+  for (const [code, want, why] of cases) {
+    const r = PR.readTox21(code);
+    const got = r ? r.verdict : null;
+    if (got !== want) {
+      readOk = false;
+      console.log(`  FAIL  ${code} -> ${got}, expected ${want} (${why})`);
+    }
+  }
+  if (readOk) {
+    pass++;
+    console.log(`  ok    ${'verdict only when unambiguous'.padEnd(30)} 6 codes`);
+  } else fail++;
+
+  /* Antagonist mode co-treats with a reference agonist, so a partial agonist
+     that competes also scores there. Taking it at face value flipped every
+     progestin; the engine must not do that. */
+  const bothModes = PR.readTox21('122');
+  if (bothModes && bothModes.mixed && bothModes.verdict === null) {
+    pass++;
+    console.log(`  ok    ${'mixed signal defers to structure'.padEnd(30)} no verdict forced`);
+  } else {
+    fail++;
+    console.log('  FAIL  a both-modes record must not be called antagonist');
+  }
+
+  const cyto = PR.readTox21('344');
+  if (cyto && cyto.cytotoxic && cyto.verdict === null) {
+    pass++;
+    console.log(`  ok    ${'cytotoxicity is not antagonism'.padEnd(30)} no verdict forced`);
+  } else {
+    fail++;
+    console.log('  FAIL  a cytotoxic record must not be called antagonist');
+  }
+
+  if (haveTox) {
+    const tox = JSON.parse(fs.readFileSync(toxPath, 'utf8'));
+    const withTox = (function () {
+      let correct = 0;
+      for (const entry of lib) {
+        const mol = AR.parseSmiles(byName[entry.n]);
+        const fp = AR.packFingerprint(AR.morganFingerprint(mol, 2));
+        let dock = null;
+        if (scene) {
+          const stored = scene.poses[structureKey(mol)];
+          if (stored && stored.placed) {
+            dock = { placed: true, ile899: (stored.c || []).indexOf('ILE899') >= 0 };
+          }
+        }
+        const call = PR.callFunction(fp, {
+          exclude: entry.n, dock: dock, motifs: AR.detectMotifs(mol),
+          tox21: tox.calls[AR.structureIdOf(mol)] || null
+        });
+        if (call.label === entry.c) correct++;
+      }
+      return correct;
+    })();
+    console.log(`        with Tox21             ${withTox}/${n}  ` +
+                `${(100 * withTox / n).toFixed(0)}%`);
+    if (withTox >= both.correct) {
+      pass++;
+      console.log(`  ok    ${'Tox21 does not make it worse'.padEnd(30)} ${both.correct} -> ${withTox}`);
+    } else {
+      fail++;
+      console.log(`  FAIL  Tox21 lowered accuracy: ${both.correct} -> ${withTox}`);
+    }
+
+    /* the point of the table is coverage, not accuracy on these 38 drugs */
+    let tested = 0, verdicts = 0;
+    for (const [ko, en, smi] of PR.INGREDIENTS) {
+      let mol;
+      try { mol = AR.parseSmiles(smi); } catch (err) { continue; }
+      const code = tox.calls[AR.structureIdOf(mol)];
+      if (!code) continue;
+      tested++;
+      const r = PR.readTox21(code);
+      if (r && r.verdict) verdicts++;
+    }
+    if (tested > 120 && verdicts > 80) {
+      pass++;
+      console.log(`  ok    ${'dictionary coverage'.padEnd(30)} ${tested} tested, ${verdicts} decisive`);
+    } else {
+      fail++;
+      console.log(`  FAIL  thin coverage: ${tested} tested, ${verdicts} decisive`);
+    }
+  } else {
+    console.log('  note  no tox21_ar.json in this build, skipping');
+  }
+
   /* a potency label must never be reported as a function */
   const bogus = PR.callFunction(
     AR.packFingerprint(AR.morganFingerprint(AR.parseSmiles('OCC(O)CO'), 2)), {});

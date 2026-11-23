@@ -49,6 +49,10 @@ EXTLIB = "assets/ar_reference_merged.json"
 # is the only honest way to show a bound ligand.
 SCENE = "assets/pocket_scene.json"
 
+# Measured Tox21 androgen-receptor calls. Not a model: a lookup of what the
+# assay actually found, which outranks anything the tool predicts.
+TOX21 = "assets/tox21_ar.json"
+
 REQUIRE_LINE = re.compile(
     r"^[ \t]*(?:var|const|let)[ \t]+\w+[ \t]*=[ \t]*require\([^)]*\)[ \t]*;?[ \t]*\r?\n?",
     re.MULTILINE,
@@ -111,7 +115,13 @@ def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
         scene_src = ("/* ---- %s ---- */\nvar SCENE = %s;\n"
                      % (scene_path.name, raw))
 
-    app_src = extlib_src + scene_src + app_src
+    tox_path = HERE / TOX21
+    tox_src = ""
+    if tox_path.exists():
+        raw = tox_path.read_text(encoding="utf-8").strip()
+        tox_src = "/* ---- %s ---- */\nvar TOX21 = %s;\n" % (tox_path.name, raw)
+
+    app_src = extlib_src + scene_src + tox_src + app_src
 
     # syntax-check the concatenated script before it is sealed into the page
     combined = engine_src + "\n" + app_src
@@ -139,11 +149,11 @@ def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
     print("  %d bytes (%.1f KB), node --check passed%s"
           % (size, size / 1024.0, "" if embed_font else "  [font not embedded]"))
     print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, "
-          "library %.1f KB, scene %.1f KB"
+          "library %.1f KB, scene %.1f KB, tox21 %.1f KB"
           % (len(engine_src) / 1024.0,
-             (len(app_src) - len(extlib_src) - len(scene_src)) / 1024.0,
+             (len(app_src) - len(extlib_src) - len(scene_src) - len(tox_src)) / 1024.0,
              (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0,
-             len(extlib_src) / 1024.0, len(scene_src) / 1024.0))
+             len(extlib_src) / 1024.0, len(scene_src) / 1024.0, len(tox_src) / 1024.0))
     return 0
 
 
