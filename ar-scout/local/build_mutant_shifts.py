@@ -119,7 +119,20 @@ def main() -> int:
         for k, p in scene["poses"].items():
             wild[k] = p.get("aff")
 
+    # Checkpoint as we go. This run takes the better part of an hour and a
+    # container restart kills it silently; without this the work is simply
+    # lost, which is what happened the first time.
+    ckpt = args.out.parent / "_mutant_progress.json"
     shifts = {}
+    if ckpt.exists():
+        try:
+            shifts = json.loads(ckpt.read_text(encoding="utf-8"))
+            have = sum(1 for v in shifts.values()
+                       for _, lb, _, _ in MUTANTS if lb in v)
+            print("resuming: %d compounds, %d dockings already done"
+                  % (len(shifts), have))
+        except Exception:
+            shifts = {}
     total = len(rows) * len(MUTANTS)
     done, started = 0, time.time()
     for workdir, label, pdb, mutation in MUTANTS:
@@ -142,9 +155,10 @@ def main() -> int:
             except Exception:
                 entry[label] = None
             if done % 25 == 0:
-                rate = (time.time() - started) / done
+                rate = (time.time() - started) / max(1, done)
                 print("  %d/%d  (%.1fs each, ~%.0f min left)"
-                      % (done, total, rate, rate * (total - done) / 60))
+                      % (done, total, rate, rate * (total - done) / 60), flush=True)
+                ckpt.write_text(json.dumps(shifts), encoding="utf-8")
 
     payload = {
         "wild_type": {"pdb": WILD_TYPE[1], "note": "intact AR LBD"},
@@ -171,6 +185,7 @@ def main() -> int:
     print("\ncompounds           %d" % len(payload["shifts"]))
     print("with both shifts    %d" % withboth)
     print("wrote %s (%.0f KB)" % (args.out, args.out.stat().st_size / 1024))
+    ckpt.unlink(missing_ok=True)
     return 0
 
 

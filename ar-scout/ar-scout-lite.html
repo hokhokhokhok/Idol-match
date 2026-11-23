@@ -3750,6 +3750,17 @@ function predict(smiles, options) {
 
   var pocket = mapContacts(desc, motifs, options.dock || null);
 
+  /* Keep the two verdicts from contradicting each other. The anchor rules
+   * answer "could the polar groups reach the anchors", which a tetra-alanine
+   * satisfies on paper; saying "binding plausible" next to a predicted Ki of
+   * 100 uM is incoherent, so the weaker reading wins. */
+  if (pocket.verdictKey === 'binder' && pKi < 5.0) {
+    pocket.verdictKey = 'weak';
+    pocket.verdict = '결합 가능성 낮음';
+    pocket.notes = pocket.notes.concat(
+      ['앵커 조건은 형식상 충족하나 예측 친화도가 낮아 결합 주장으로 보지 않음']);
+  }
+
   return {
     smiles: smiles,
     mol: mol,
@@ -3818,6 +3829,13 @@ function bigramScore(a, b) {
   return (2 * hit) / (total + count);
 }
 
+/* A partial match must be at least this long, and cover at least this much
+ * of the name it matched. Both were tuned so that every real alias in the
+ * dictionary still resolves by exact match, and the generic fragments that
+ * used to mis-resolve now fall through to suggestions. */
+var PARTIAL_MIN_CHARS = 4;
+var PARTIAL_MIN_COVER = 0.7;
+
 function lookupName(query) {
   if (!query) return null;
   var q = normalizeName(query);
@@ -3830,26 +3848,53 @@ function lookupName(query) {
       if (normalizeName(names[j]) === q) return asResult(INGREDIENTS[i]);
     }
   }
-  /* a prefix is a stronger signal than a substring anywhere */
+  /* Partial matching, deliberately strict.
+   *
+   * A loose substring rule silently resolves a generic fragment to an
+   * arbitrary compound and then renders a full, authoritative-looking
+   * prediction for a molecule the user never asked about: "페놀" came back
+   * as bisphenol A, "산" as oxandrolone, "acid" as gallic acid. That is the
+   * worst failure this tool can have. So a partial match has to be long
+   * enough to mean something, has to cover most of the name it matches, and
+   * has to be unambiguous - otherwise the caller gets nothing and the UI
+   * offers suggestions instead of picking one. */
+  if (q.length < PARTIAL_MIN_CHARS) return null;
+
+  var hits = [];
+  for (i = 0; i < INGREDIENTS.length; i++) {
+    names = entryNames(INGREDIENTS[i]);
+    var bestCover = 0;
+    for (j = 0; j < names.length; j++) {
+      n = normalizeName(names[j]);
+      if (n.length < PARTIAL_MIN_CHARS) continue;
+      var longer = n.length >= q.length ? n : q;
+      var shorter = n.length >= q.length ? q : n;
+      if (longer.indexOf(shorter) < 0) continue;
+      var cover = shorter.length / longer.length;
+      if (cover > bestCover) bestCover = cover;
+    }
+    if (bestCover >= PARTIAL_MIN_COVER) {
+      hits.push({ entry: INGREDIENTS[i], cover: bestCover });
+    }
+  }
+  if (!hits.length) return null;
+
+  /* A query that begins several names is ambiguous however well it covers
+   * one of them: "estro" starts estrone, estradiol and estriol, and
+   * silently picking the shortest is the same silent wrong answer. */
+  var prefixOf = 0;
   for (i = 0; i < INGREDIENTS.length; i++) {
     names = entryNames(INGREDIENTS[i]);
     for (j = 0; j < names.length; j++) {
-      n = normalizeName(names[j]);
-      if (n.length >= 3 && (n.indexOf(q) === 0 || q.indexOf(n) === 0)) {
-        return asResult(INGREDIENTS[i]);
-      }
+      if (normalizeName(names[j]).indexOf(q) === 0) { prefixOf++; break; }
     }
   }
-  for (i = 0; i < INGREDIENTS.length; i++) {
-    names = entryNames(INGREDIENTS[i]);
-    for (j = 0; j < names.length; j++) {
-      n = normalizeName(names[j]);
-      if (n.length >= 3 && (n.indexOf(q) >= 0 || (q.length >= 3 && q.indexOf(n) >= 0))) {
-        return asResult(INGREDIENTS[i]);
-      }
-    }
-  }
-  return null;
+  if (prefixOf > 1) return null;
+
+  hits.sort(function (a, b) { return b.cover - a.cover; });
+  /* a clear winner only; a near-tie means the query was ambiguous */
+  if (hits.length > 1 && hits[1].cover >= hits[0].cover - 1e-9) return null;
+  return asResult(hits[0].entry);
 }
 
 /* Closest names, for when the lookup fails and the input is not a SMILES

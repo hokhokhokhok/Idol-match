@@ -74,6 +74,74 @@ function run() {
     }
   }
 
+  /* --- name lookup must never silently resolve to the wrong compound ---
+   *
+   * A loose substring rule used to turn "페놀" into bisphenol A and "산"
+   * into oxandrolone, then render a full prediction page for a molecule the
+   * user never asked about. A miss that offers suggestions is fine; a
+   * confident wrong hit is not. */
+  console.log('\n  name lookup safety');
+  const mustNotResolve = [
+    ['페놀', 'a fragment of several unrelated names'],
+    ['산', 'one syllable, inside dozens of names'],
+    ['acid', 'the tail of 20 different acids'],
+    ['아세테이트', 'the tail of several esters'],
+    ['부틸', 'a fragment'],
+    ['알코올', 'a fragment'],
+    ['파라벤', 'matches five parabens equally'],
+    ['메틸', 'a fragment'],
+    ['프탈레이트', 'matches several phthalates'],
+    ['스테론', 'a fragment of many steroids']
+  ];
+  let wrongHits = 0;
+  for (const [q, why] of mustNotResolve) {
+    const hit = PR.lookupName(q);
+    if (hit) {
+      wrongHits++;
+      console.log(`  FAIL  "${q}" resolved to ${hit.en} — ${why}`);
+    }
+  }
+  if (wrongHits) fail += wrongHits;
+  else {
+    pass++;
+    console.log(`  ok    ${'generic fragments do not resolve'.padEnd(30)} ${mustNotResolve.length} queries`);
+  }
+
+  /* and each of those must still offer something useful */
+  let noHelp = 0;
+  for (const [q] of mustNotResolve) {
+    if (q.length >= 2 && PR.suggestNames(q, 3).length === 0) {
+      noHelp++;
+      console.log(`  FAIL  "${q}" gives neither a hit nor a suggestion`);
+    }
+  }
+  if (noHelp) fail += noHelp;
+  else { pass++; console.log(`  ok    ${'misses still suggest'.padEnd(30)} all offer candidates`); }
+
+  const mustResolve = [
+    ['Fisetin', 'Fisetin'], ['피세틴', 'Fisetin'],
+    ['벤조페논-3', 'Benzophenone-3'], ['옥시벤존', 'Benzophenone-3'],
+    ['에틸헥실메톡시신나메이트', 'Octinoxate'], ['살리실릭애씨드', 'Salicylic acid'],
+    ['R1881', 'Metribolone'], ['DHT', 'Dihydrotestosterone'],
+    ['EGCG', 'Epigallocatechin gallate'], ['니코틴아마이드', 'Niacinamide'],
+    ['레티닐 팔미테이트', 'Retinyl palmitate'], ['비타민C', 'Ascorbic acid'],
+    ['알파아르부틴', 'alpha-Arbutin'], ['17베타에스트라디올', 'Estradiol'],
+    ['citric acid', 'Citric acid'], ['THDA', 'Tetrahexyldecyl ascorbate']
+  ];
+  let missed = 0;
+  for (const [q, want] of mustResolve) {
+    const hit = PR.lookupName(q);
+    if (!hit || hit.en !== want) {
+      missed++;
+      console.log(`  FAIL  "${q}" -> ${hit ? hit.en : 'nothing'}, expected ${want}`);
+    }
+  }
+  if (missed) fail += missed;
+  else {
+    pass++;
+    console.log(`  ok    ${'real names and aliases resolve'.padEnd(30)} ${mustResolve.length} queries`);
+  }
+
   /* the library tab must survive a replacement and a reset */
   console.log('\n  library replacement');
   try {
