@@ -455,10 +455,24 @@ var POCKET_RESIDUES = [
   { id: 'Phe764', role: 'hydrophobic' },
   { id: 'Met787', role: 'hydrophobic' },
   { id: 'Leu873', role: 'hydrophobic' },
-  { id: 'Thr877', role: 'D-ring / helix-12' },
+  { id: 'Trp741', role: '입체 관문 (W741L 내성)' },
+  { id: 'Phe876', role: '입체 관문 (F876L 내성)' },
+  { id: 'Thr877', role: 'D-ring / helix-12 (T877A 내성)' },
   { id: 'Met895', role: 'helix-12 / AF-2' },
   { id: 'Ile899', role: 'helix-12 / AF-2' }
 ];
+
+/* Trp741, Phe876 and Thr877 are where the classic resistance mutations sit:
+ * W741L turns bicalutamide into an agonist, T877A does the same for
+ * hydroxyflutamide and cyproterone, F876L for enzalutamide. They are
+ * reported, and the role text says why they matter, but they are NOT used
+ * to call antagonism. Measured over the docked panel they do not separate
+ * the classes at all - Trp741 is touched by 75% of agonists and 87% of
+ * antagonists, Phe876 by 88% and 93%, Thr877 by every compound. They line
+ * the pocket, so everything touches them. What the mutation evidence is
+ * really about is the side chain being *gone*, which is measured by docking
+ * the same ligand into the mutant structure, not by counting contacts. */
+var RESISTANCE_SITES = ['Trp741', 'Phe876', 'Thr877'];
 
 var ARING_ANCHORS = ['Gln711', 'Arg752'];
 var DRING_ANCHORS = ['Asn705', 'Thr877'];
@@ -585,8 +599,60 @@ function ruleScore(desc, motifs, occupancy) {
 
 /* ------------------------------------------------------- contact mapping */
 
-function mapContacts(desc, motifs) {
+function mapContacts(desc, motifs, dock) {
   var contact = {}, clash = {}, notes = [];
+
+  /* When a real docked pose exists, use what it actually touches. The rules
+   * below are an inference from structure for compounds with no pose; they
+   * cannot know, for instance, that Trp741 and Phe876 line the cavity and
+   * are touched by almost every ligand that binds at all. */
+  var measured = !!(dock && dock.placed && dock.contacts && dock.contacts.length);
+  if (measured) {
+    var byId = {};
+    for (var pi = 0; pi < POCKET_RESIDUES.length; pi++) {
+      byId[POCKET_RESIDUES[pi].id.toUpperCase()] = POCKET_RESIDUES[pi].id;
+    }
+    for (var ci = 0; ci < dock.contacts.length; ci++) {
+      var hit = byId[String(dock.contacts[ci]).toUpperCase()];
+      if (hit) contact[hit] = true;
+    }
+    var h12measured = !!dock.ile899;
+    if (h12measured) {
+      for (var hi = 0; hi < H12_RESIDUES.length; hi++) {
+        if (contact[H12_RESIDUES[hi]]) clash[H12_RESIDUES[hi]] = true;
+      }
+      notes.push('도킹 포즈가 helix-12 말단(Ile899)에 닿음 — AF-2 교란 가능');
+    }
+    var hbs = [];
+    for (var bi = 0; bi < (dock.hbonds || []).length; bi++) {
+      var hb = byId[String(dock.hbonds[bi]).toUpperCase()];
+      if (hb) hbs.push(hb);
+    }
+    if (hbs.length) notes.push('수소결합 후보: ' + hbs.join(', '));
+
+    var aMet = ARING_ANCHORS.every(function (r) { return contact[r]; });
+    var dMet = DRING_ANCHORS.every(function (r) { return contact[r]; });
+    var verdictM, keyM;
+    if (h12measured) { keyM = 'antagonist'; verdictM = '길항제 가능성'; }
+    else if (aMet && dMet && motifs.steroidKeto3) { keyM = 'agonist'; verdictM = '작용제 가능성'; }
+    else if (aMet && dMet) { keyM = 'binder'; verdictM = '결합 가능 · 기능 미정'; }
+    else { keyM = 'weak'; verdictM = '결합 가능성 낮음'; }
+
+    return {
+      residues: POCKET_RESIDUES.map(function (r) {
+        return { id: r.id, role: r.role,
+                 contact: !!contact[r.id], clash: !!clash[r.id] };
+      }),
+      contactCount: Object.keys(contact).length,
+      h12Clash: h12measured,
+      aringAnchored: aMet,
+      dringAnchored: dMet,
+      verdict: verdictM,
+      verdictKey: keyM,
+      measured: true,
+      notes: notes
+    };
+  }
 
   var aringTrigger = motifs.steroidKeto3 || motifs.enone ||
                      motifs.arylNitrile || motifs.nitro || motifs.carboxyl;
@@ -653,6 +719,7 @@ function mapContacts(desc, motifs) {
   return {
     residues: residues,
     contactCount: residues.filter(function (r) { return r.contact; }).length,
+    measured: false,
     h12Clash: h12,
     aringAnchored: aringMet,
     dringAnchored: dringMet,
@@ -710,7 +777,7 @@ function predict(smiles, options) {
   else if (nearest >= 0.35) { domain = 'edge'; ci = 1.1; }
   else { domain = 'out'; ci = 1.6; }
 
-  var pocket = mapContacts(desc, motifs);
+  var pocket = mapContacts(desc, motifs, options.dock || null);
 
   return {
     smiles: smiles,
@@ -875,5 +942,6 @@ module.exports = {
   ensureFunctionLibrary: ensureFunctionLibrary,
   INGREDIENTS: INGREDIENTS,
   POCKET_RESIDUES: POCKET_RESIDUES,
+  RESISTANCE_SITES: RESISTANCE_SITES,
   POCKET_VOLUME: POCKET_VOLUME
 };

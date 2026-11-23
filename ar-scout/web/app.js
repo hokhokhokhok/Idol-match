@@ -555,7 +555,8 @@ var RESIDUE_XY = {
   Asn705: [488, 116], Thr877: [488, 200],
   Leu704: [148, 292], Leu707: [238, 302], Met742: [330, 302], Met745: [420, 292],
   Phe764: [150, 38], Met787: [252, 26], Leu873: [352, 26],
-  Met895: [448, 40], Ile899: [534, 82]
+  Met895: [448, 40], Ile899: [534, 82],
+  Trp741: [72, 162], Phe876: [488, 158]
 };
 
 function svgPocket(pocket, occupancy) {
@@ -651,7 +652,11 @@ function renderSingle(result, title, subtitle) {
 
   out.push('<h4 class="sect">포켓 접촉도</h4>');
   out.push('<div class="figwrap">' + svgPocket(p, result.occupancy) + '</div>');
-  out.push('<p class="hint" style="margin:10px 0 0">파랑 = 접촉 가능 · 빨강 = helix-12 충돌 · 회색 = 미접촉<br>' +
+  out.push('<p class="hint" style="margin:10px 0 0">' +
+           (p.measured
+             ? '<b>2AM9 도킹 포즈에서 실제로 측정된 접촉</b>입니다. '
+             : '도킹 포즈가 없어 <b>구조 규칙으로 추정</b>한 접촉입니다. ') +
+           '파랑 = 접촉 · 빨강 = helix-12 충돌 · 회색 = 미접촉<br>' +
            '분자 부피 ' + fx(result.volume, 0) + ' &Aring;&sup3; / 공동 ' + PR.POCKET_VOLUME + ' &Aring;&sup3;</p>');
 
   out.push('<h4 class="sect">접촉 잔기</h4>');
@@ -795,7 +800,8 @@ function runSingle(rawQuery) {
       var stored = scene.poses[structureKey(probe)];
       if (stored && stored.placed) {
         dock = { placed: true, affinity: stored.aff,
-                 ile899: (stored.c || []).indexOf('ILE899') >= 0 };
+                 ile899: (stored.c || []).indexOf('ILE899') >= 0,
+                 contacts: stored.c || [], hbonds: stored.hb || [] };
       }
     }
   } catch (err) { dock = null; }
