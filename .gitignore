@@ -16,3 +16,4 @@ ar-scout/local/*.log
 ar-scout/local/shortlist.csv
 ar-scout/local/dock2/
 ar-scout/local/dock3/
+ar-scout/web/assets/_mutant_progress.json
