@@ -655,6 +655,30 @@ function renderSingle(result, title, subtitle) {
     out.push('</div>');
   }
 
+  var ms = result.mutantShift;
+  if (ms) {
+    out.push('<div class="measured">');
+    out.push('<div class="mhead">실측 — 내성 변이체 재도킹</div>');
+    out.push('<table style="margin-top:6px"><tbody>');
+    var rows = [['T877A (2OZ7)', ms.t877a, 'Thr877 &rarr; Ala'],
+                ['W741L (1Z95)', ms.w741l, 'Trp741 &rarr; Leu']];
+    for (var mi = 0; mi < rows.length; mi++) {
+      var dv = rows[mi][1];
+      out.push('<tr><td style="width:46%">' + esc(rows[mi][0]) + ' <span class="hint">' +
+               rows[mi][2] + '</span></td><td' + (dv < -1.5 ? ' class="warnink"' : '') +
+               ' style="font-weight:700">' + (dv >= 0 ? '+' : '') + fx(dv, 1) +
+               ' kcal/mol</td></tr>');
+    }
+    out.push('</tbody></table>');
+    out.push('<p class="hint" style="margin:8px 0 0">' + esc(ms.reading) + '</p>');
+    out.push('<p class="hint" style="margin:6px 0 0">음수는 변이체에서 결합이 더 좋아졌다는 ' +
+             '뜻입니다. 길항제를 작용제로 바꾸는 임상 내성 변이를 같은 도킹으로 재현한 값이며, ' +
+             '<b>아래 판정에는 들어가지 않습니다</b> — 38종 라벨 집합에서 넣어도 ' +
+             '32/38이 그대로였고 사전 204종 중 판정이 바뀐 것이 하나도 없어, ' +
+             '다른 신호와 완전히 겹치는 것으로 측정됐습니다.</p>');
+    out.push('</div>');
+  }
+
   out.push('<div class="headline">');
   out.push('<div class="pk num">' + fx(result.pKi, 2) +
            '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>');
@@ -838,9 +862,19 @@ function runSingle(rawQuery) {
     }
   } catch (err) { tox21 = null; }
 
+  var shift = null;
+  try {
+    if (typeof MUTANT !== 'undefined' && MUTANT && MUTANT.shifts) {
+      var rec = MUTANT.shifts[AR.structureIdOf(AR.parseSmiles(smiles))];
+      if (rec && isFinite(rec.d_t877a) && isFinite(rec.d_w741l)) {
+        shift = { t877a: rec.d_t877a, w741l: rec.d_w741l };
+      }
+    }
+  } catch (err) { shift = null; }
+
   var result;
   try {
-    result = PR.predict(smiles, { dock: dock, tox21: tox21 });
+    result = PR.predict(smiles, { dock: dock, tox21: tox21, shift: shift });
   } catch (err) {
     host.innerHTML = '';
     var tips = PR.suggestNames(query, 5);
@@ -1203,6 +1237,17 @@ function renderModelCard() {
            '안드로겐이 작은 17번 치환기를 갖는 자리에 스피로 고리·에스터·나이트릴 같은 ' +
            '부피 큰 기가 있으면 길항 쪽으로 투표합니다.</li>');
   out.push('</ul>');
+  out.push('<p><b>판정에 쓰지 <i>않는</i> 증거 — 내성 변이체 Δ.</b> ' +
+           '같은 물질을 야생형(2AM9)과 T877A(2OZ7)·W741L(1Z95) 변이체에 각각 ' +
+           '도킹한 차이를 203종에 대해 측정해, 데이터가 있으면 단건 화면에 ' +
+           '표시합니다. 분리 자체는 실재합니다 — min(Δ) 평균이 길항제 −2.86, ' +
+           '작용제 +0.71로 3.6 kcal/mol 벌어집니다. ' +
+           '<b>그런데 네 번째 투표로 넣어도 38종 성능은 32/38 그대로였고, ' +
+           '사전 204종 중 판정이 바뀐 물질이 0건이었습니다</b> — 위의 부피 모티프와 ' +
+           'Ile899 접촉이 이미 같은 정보를 담고 있어 완전히 중복입니다. ' +
+           '답을 한 번도 바꾸지 않는 투표는 근거가 많아 보이는 착시만 주므로 ' +
+           '판정에서 뺐습니다. 반례도 하나 있습니다: 하이드록시플루타마이드는 ' +
+           'T877A가 바로 그 물질의 알려진 내성 변이인데도 구제되지 않습니다(+0.7).</p>');
   out.push('<p><b>성능 (leave-one-out, n = 38):</b> read-across만 27/38(71%), ' +
            '여기에 도킹 신호를 더하면 30/38(79%), 부피 모티프까지 더하면 ' +
            '<b>32/38(84%)</b>입니다. 가중치는 손으로 정했지만 넓은 범위에서 ' +

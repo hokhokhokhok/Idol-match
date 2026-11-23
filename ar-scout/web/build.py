@@ -53,6 +53,10 @@ SCENE = "assets/pocket_scene.json"
 # assay actually found, which outranks anything the tool predicts.
 TOX21 = "assets/tox21_ar.json"
 
+# Docking the same ligands into the two resistance mutants. Shown as evidence
+# in the single-compound view; deliberately not part of the prediction.
+MUTANT = "assets/mutant_shifts.json"
+
 REQUIRE_LINE = re.compile(
     r"^[ \t]*(?:var|const|let)[ \t]+\w+[ \t]*=[ \t]*require\([^)]*\)[ \t]*;?[ \t]*\r?\n?",
     re.MULTILINE,
@@ -121,7 +125,13 @@ def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
         raw = tox_path.read_text(encoding="utf-8").strip()
         tox_src = "/* ---- %s ---- */\nvar TOX21 = %s;\n" % (tox_path.name, raw)
 
-    app_src = extlib_src + scene_src + tox_src + app_src
+    mut_path = HERE / MUTANT
+    mut_src = ""
+    if mut_path.exists():
+        raw = mut_path.read_text(encoding="utf-8").strip()
+        mut_src = "/* ---- %s ---- */\nvar MUTANT = %s;\n" % (mut_path.name, raw)
+
+    app_src = extlib_src + scene_src + tox_src + mut_src + app_src
 
     # syntax-check the concatenated script before it is sealed into the page
     combined = engine_src + "\n" + app_src
@@ -149,11 +159,13 @@ def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
     print("  %d bytes (%.1f KB), node --check passed%s"
           % (size, size / 1024.0, "" if embed_font else "  [font not embedded]"))
     print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, "
-          "library %.1f KB, scene %.1f KB, tox21 %.1f KB"
+          "library %.1f KB, scene %.1f KB, tox21 %.1f KB, mutant %.1f KB"
           % (len(engine_src) / 1024.0,
-             (len(app_src) - len(extlib_src) - len(scene_src) - len(tox_src)) / 1024.0,
+             (len(app_src) - len(extlib_src) - len(scene_src)
+              - len(tox_src) - len(mut_src)) / 1024.0,
              (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0,
-             len(extlib_src) / 1024.0, len(scene_src) / 1024.0, len(tox_src) / 1024.0))
+             len(extlib_src) / 1024.0, len(scene_src) / 1024.0,
+             len(tox_src) / 1024.0, len(mut_src) / 1024.0))
     return 0
 
 

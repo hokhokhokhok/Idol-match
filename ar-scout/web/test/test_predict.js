@@ -126,7 +126,15 @@ function run() {
     ['EGCG', 'Epigallocatechin gallate'], ['니코틴아마이드', 'Niacinamide'],
     ['레티닐 팔미테이트', 'Retinyl palmitate'], ['비타민C', 'Ascorbic acid'],
     ['알파아르부틴', 'alpha-Arbutin'], ['17베타에스트라디올', 'Estradiol'],
-    ['citric acid', 'Citric acid'], ['THDA', 'Tetrahexyldecyl ascorbate']
+    ['citric acid', 'Citric acid'], ['THDA', 'Tetrahexyldecyl ascorbate'],
+    /* both transliterations of -amide, both in daily use. The dictionary
+     * stores 비칼루타미드 and 플루타마이드 - inconsistently - so a user typing
+     * the other spelling used to get nothing for the single most important
+     * antagonist in the tool. */
+    ['비칼루타마이드', 'Bicalutamide'], ['비칼루타미드', 'Bicalutamide'],
+    ['플루타마이드', 'Flutamide'], ['플루타미드', 'Flutamide'],
+    ['엔잘루타마이드', 'Enzalutamide'], ['엔잘루타미드', 'Enzalutamide'],
+    ['니코틴아미드', 'Niacinamide'], ['하이드록시플루타미드', 'Hydroxyflutamide']
   ];
   let missed = 0;
   for (const [q, want] of mustResolve) {
@@ -164,6 +172,25 @@ function run() {
   } catch (err) {
     fail++;
     console.log(`  FAIL  library replacement threw: ${err.message}`);
+  }
+
+  /* widening the normaliser must not merge two different compounds */
+  const seenNorm = {};
+  let collisions = 0;
+  for (const e of PR.INGREDIENTS) {
+    for (const nm of [e[0], e[1]].concat(e[3] || [])) {
+      const k = PR.normalizeName(nm);
+      if (seenNorm[k] && seenNorm[k] !== e[1]) {
+        collisions++;
+        console.log(`  FAIL  "${k}" is now shared by ${seenNorm[k]} and ${e[1]}`);
+      }
+      seenNorm[k] = e[1];
+    }
+  }
+  if (collisions) fail += collisions;
+  else {
+    pass++;
+    console.log(`  ok    ${'no two compounds share a name'.padEnd(30)} ${PR.INGREDIENTS.length} entries`);
   }
 
   console.log(`\n  predict: ${pass} passed, ${fail} failed`);

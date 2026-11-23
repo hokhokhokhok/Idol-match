@@ -247,6 +247,82 @@ function run() {
     console.log('  note  no tox21_ar.json in this build, skipping');
   }
 
+  /* --- resistance mutants: reported, never voted on ------------------
+   *
+   * The shift is real evidence (antagonists average -2.86 kcal/mol on
+   * min(delta), agonists +0.71) but measured redundant, so it must stay out
+   * of callFunction. If someone wires it back in as a vote, this fails. */
+  console.log('\n  resistance-mutant shifts');
+  const mutPath = path.join(__dirname, '..', 'assets', 'mutant_shifts.json');
+  if (fs.existsSync(mutPath)) {
+    const mut = JSON.parse(fs.readFileSync(mutPath, 'utf8'));
+    let covered = 0, separates = { agonist: [], antagonist: [] };
+    for (const entry of lib) {
+      const rec = mut.shifts[AR.structureIdOf(AR.parseSmiles(byName[entry.n]))];
+      if (!rec || !isFinite(rec.d_t877a) || !isFinite(rec.d_w741l)) continue;
+      covered++;
+      if (separates[entry.c]) separates[entry.c].push(Math.min(rec.d_t877a, rec.d_w741l));
+    }
+    const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+    const ag = mean(separates.agonist), an = mean(separates.antagonist);
+    console.log(`        coverage ${covered}/${n};  mean min(delta): ` +
+                `agonist ${ag >= 0 ? '+' : ''}${ag.toFixed(2)}, ` +
+                `antagonist ${an >= 0 ? '+' : ''}${an.toFixed(2)}`);
+    if (covered >= n - 2 && an < ag - 2.0) {
+      pass++;
+      console.log(`  ok    ${'the shift does separate'.padEnd(30)} gap ${(ag - an).toFixed(2)} kcal/mol`);
+    } else {
+      fail++;
+      console.log(`  FAIL  weak separation: covered ${covered}, gap ${(ag - an).toFixed(2)}`);
+    }
+
+    /* but it must change nothing: same call with and without it */
+    let swayed = 0;
+    for (const entry of lib) {
+      const mol = AR.parseSmiles(byName[entry.n]);
+      const fp = AR.packFingerprint(AR.morganFingerprint(mol, 2));
+      const rec = mut.shifts[AR.structureIdOf(mol)] || {};
+      const opts = { exclude: entry.n, motifs: AR.detectMotifs(mol) };
+      const a = PR.callFunction(fp, opts);
+      const b = PR.callFunction(fp, Object.assign({
+        shift: { t877a: rec.d_t877a, w741l: rec.d_w741l } }, opts));
+      if (a.label !== b.label) swayed++;
+    }
+    if (swayed === 0) {
+      pass++;
+      console.log(`  ok    ${'and does not vote'.padEnd(30)} passing it changes 0/${n} calls`);
+    } else {
+      fail++;
+      console.log(`  FAIL  the shift swayed ${swayed} calls — it must be evidence only`);
+    }
+
+    /* the reading handed to the page must match the sign convention */
+    const readings = [
+      ['Bicalutamide', '길항제'], ['Cyproterone acetate', '길항제'],
+      ['Dihydrotestosterone', null]
+    ];
+    let readOkM = true;
+    for (const [name, want] of readings) {
+      const rec = mut.shifts[AR.structureIdOf(AR.parseSmiles(byName[name]))];
+      const d = PR.describeShift({ t877a: rec.d_t877a, w741l: rec.d_w741l });
+      if (!d) { readOkM = false; console.log(`  FAIL  ${name}: no reading`); continue; }
+      if (want && d.reading.indexOf(want) < 0) {
+        readOkM = false;
+        console.log(`  FAIL  ${name} (${d.t877a}/${d.w741l}) reads "${d.reading}"`);
+      }
+    }
+    if (PR.describeShift(null) !== null || PR.describeShift({ t877a: 1 }) !== null) {
+      readOkM = false;
+      console.log('  FAIL  a missing shift must give no reading at all');
+    }
+    if (readOkM) {
+      pass++;
+      console.log(`  ok    ${'readings follow the signs'.padEnd(30)} and absent data reads as nothing`);
+    } else fail++;
+  } else {
+    console.log('  note  no mutant_shifts.json in this build, skipping');
+  }
+
   /* a potency label must never be reported as a function */
   const bogus = PR.callFunction(
     AR.packFingerprint(AR.morganFingerprint(AR.parseSmiles('OCC(O)CO'), 2)), {});

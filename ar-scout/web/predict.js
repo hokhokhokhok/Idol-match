@@ -308,6 +308,38 @@ var INGREDIENTS = [
 ];
 /* INGREDIENTS:END */
 
+/* Resistance-mutant rescue, reported but not voted on.
+ *
+ * W741L turns bicalutamide into an agonist and T877A does the same for
+ * cyproterone, because the side chain holding the antagonist out is gone.
+ * Docking the same ligand into the mutant measures that directly, which a
+ * contact count cannot: Trp741 and Thr877 are touched by everything that
+ * binds at all.
+ *
+ * The separation is real - over the labelled set min(delta) averages -2.86
+ * for antagonists against +0.71 for agonists - but it is redundant. Tried
+ * as a fourth vote it left the leave-one-out score at 32/38 and changed
+ * the call for 0 of 204 dictionary compounds, because the bulky-substituent
+ * motif and the Ile899 contact already carry the same information. So it is
+ * shown as evidence for the reader and kept out of the arithmetic. */
+function describeShift(shift) {
+  if (!shift || !isFinite(shift.t877a) || !isFinite(shift.w741l)) return null;
+  var best = Math.min(shift.t877a, shift.w741l);
+  var which = shift.t877a <= shift.w741l ? 'T877A' : 'W741L';
+  var reading;
+  if (best < -1.5) {
+    reading = which + ' 변이체에서 결합이 뚜렷이 좋아집니다 — 야생형에서는 그 곁사슬이 ' +
+              '막고 있었다는 뜻이고, 길항제의 전형적 거동입니다.';
+  } else if (shift.t877a > 1.0 && shift.w741l > 1.0) {
+    reading = '두 변이체 모두에서 결합이 나빠집니다 — 온전한 포켓을 그대로 쓰는 ' +
+              '결합 양상으로, 작용제에서 흔합니다.';
+  } else {
+    reading = '변이에 크게 영향받지 않습니다. 이 두 곁사슬에 의존하지 않는 결합입니다.';
+  }
+  return { t877a: shift.t877a, w741l: shift.w741l, best: best,
+           which: which, reading: reading };
+}
+
 /* ------------------------------------------------ functional reference */
 
 /* Known AR function, keyed by the dictionary's English name.
@@ -895,6 +927,7 @@ function predict(smiles, options) {
     weightReadAcross: wRead,
     neighbours: top,
     functionCall: functionCall,
+    mutantShift: describeShift(options.shift || null),
     pocket: pocket
   };
 }
@@ -907,6 +940,13 @@ function normalizeName(value) {
     .toLowerCase()
     .replace(/[\s\-_.,()\[\]{}'"/\\+·・]/g, '');
   v = v.replace(/애씨드/g, '산').replace(/액시드/g, '산');
+  /* The same drug is transliterated two ways and both are in daily use. The
+   * dictionary itself is inconsistent - it has 플루타마이드 but 비칼루타미드 -
+   * so collapsing the variants is better than chasing aliases one at a time.
+   * "비칼루타마이드" missing entirely is how this was found. */
+  v = v.replace(/마이드/g, '미드');
+  v = v.replace(/하이드록시/g, '히드록시').replace(/하이드로/g, '히드로');
+  v = v.replace(/카르복/g, '카복').replace(/술폰/g, '설폰').replace(/술페이트/g, '설페이트');
   v = v.replace(/alpha/g, 'a').replace(/beta/g, 'b').replace(/gamma/g, 'g');
   v = v.replace(/알파/g, 'a').replace(/베타/g, 'b').replace(/감마/g, 'g');
   return v;
@@ -1070,6 +1110,7 @@ module.exports = {
   CLASS_LABELS: CLASS_LABELS,
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
+  describeShift: describeShift,
   readTox21: readTox21,
   TOX21_CODE: TOX21_CODE,
   TOX21_LABEL_KO: TOX21_LABEL_KO,

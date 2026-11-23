@@ -64,11 +64,7 @@ const out = {};
 for (const r of rows) {
   try {
     const m = AR.parseSmiles(r.smiles);
-    const d = AR.computeDescriptors(m);
-    const fp = AR.morganFingerprint(m, 2);
-    let bits = '';
-    for (let i = 0; i < fp.length; i++) if (fp[i]) bits += i + ',';
-    out[r.smiles] = d.formula + '|' + bits;
+    out[r.smiles] = AR.structureIdOf(m);
   } catch (err) { out[r.smiles] = null; }
 }
 fs.writeFileSync(%(outfile)s, JSON.stringify(out));
@@ -111,6 +107,8 @@ def main() -> int:
         raise SystemExit("keying failed")
     keys = json.loads(keyfile.read_text(encoding="utf-8"))
 
+    # keyed by the engine's own structure id, the same as the Tox21 table, so
+    # a browser lookup needs no crypto and the two tables agree
     # wild-type scores come from the binding scene that is already built
     scene_path = WEB / "assets" / "pocket_scene.json"
     wild = {}
