@@ -16,3 +16,14 @@ def load() -> dict:
         if not str(f.get("url", "")).startswith("http"):
             raise ValueError(f"출처 URL 없음: {f.get('label') or f.get('title')}")
     return d
+
+
+CUTS = PATH.parent / "cuts.yaml"
+
+
+@lru_cache(maxsize=1)
+def cuts() -> dict:
+    d = yaml.safe_load(CUTS.read_text(encoding="utf-8"))
+    if not str(d.get("url", "")).startswith("http"):
+        raise ValueError("등급컷 출처 URL 없음")
+    return d

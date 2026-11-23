@@ -112,6 +112,45 @@ details[open] summary::after{content:" ⌄"}
 .kv{display:flex;flex-wrap:wrap;gap:6px}
 .combo{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
 .combo>div{background:var(--fill);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px}
+
+/* 단계별 모드(모바일 기본) */
+.wiz{display:flex;flex-direction:column;gap:14px;max-width:560px;width:100%;margin:0 auto}
+.wiz .steps{display:flex;gap:6px}
+.wiz .steps i{flex:1;height:4px;border-radius:4px;background:var(--line)}
+.wiz .steps i.on{background:var(--blue)}
+.wiz h2{font-size:1.45rem;font-weight:800;letter-spacing:-.03em;margin:4px 0 0;line-height:1.35}
+.wiz .sub{color:var(--ink3);margin:-6px 0 4px;font-size:.95rem}
+.wcard{background:var(--card);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:12px}
+.wcard .lbl{font-size:.9rem;color:var(--ink2)}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{background:var(--fill);color:var(--ink2);border-radius:12px;padding:11px 14px;font-size:.98rem}
+.seg button[aria-pressed=true]{background:var(--blue-soft);color:var(--blue-ink);box-shadow:inset 0 0 0 1.5px var(--blue)}
+.raw{display:grid;grid-template-columns:76px minmax(0,1fr) 116px;gap:10px;align-items:center;padding:6px 0}
+.raw .nm{font-weight:700}
+.raw .nm small{display:block;color:var(--ink3);font-weight:500;font-size:.78rem}
+.raw input{font-size:1.25rem;font-weight:700;text-align:right;padding:12px 14px}
+.gchip{border-radius:12px;padding:8px 6px;text-align:center;font-weight:800;font-size:1.05rem;background:var(--fill);color:var(--ink3);line-height:1.2}
+.gchip small{display:block;font-size:.72rem;font-weight:600}
+.gchip.g{background:var(--blue-soft);color:var(--blue-ink)}
+.gchip.edge{background:var(--warn-bg);color:var(--warn-ink)}
+.gpick{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
+.gpick.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.gpick button{padding:9px 0;border-radius:10px;background:var(--fill);font-size:.92rem}
+.gpick button[aria-pressed=true]{background:var(--blue);color:#fff}
+.wbar{position:sticky;bottom:0;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%);display:flex;gap:8px}
+.wbar button{flex:1;padding:16px;font-size:1.05rem;border-radius:16px}
+.wbar button.ghost{flex:0 0 auto;background:var(--card)}
+.ures{background:var(--card);border-radius:var(--r);overflow:hidden}
+.ures summary{list-style:none;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+.ures summary::after{content:none}
+.ures summary b{font-size:1.08rem}
+.ures .body{padding:0 20px 16px;display:flex;flex-direction:column;gap:10px}
+.ures .it{display:grid;grid-template-columns:92px minmax(0,1fr);gap:10px;align-items:start;padding-top:10px;border-top:1px solid var(--line)}
+.linkbtn{background:none;color:var(--blue);padding:4px 0;font-size:.92rem}
+body.wizmode .notice,body.wizmode .dday,body.wizmode #toWiz,body.wizmode footer{display:none}
+body.wizmode header.top{padding-block:16px 0}
+.grp summary{font-weight:700}
+.grp .cnt{color:var(--ink3);font-weight:600}
 /* 홈 */
 .hero{background:var(--blue);color:#fff;border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:6px}
 .hero small{opacity:.85;font-weight:600}
@@ -151,9 +190,11 @@ footer{font-size:.85rem;color:var(--ink3);padding:8px 4px}
 <div class="wrap">
   <header class="top">
     <h1><small>2027학년도 · 대교협 일정·대학 모집요강 기반</small>인서울 입시 계산기</h1>
-    <div class="dday" id="dday"></div>
+    <div class="row" style="gap:8px;flex-wrap:nowrap"><button id="toWiz" class="linkbtn" style="white-space:nowrap">단계별로 보기</button><div class="dday" id="dday"></div></div>
   </header>
   <div class="notice"><span><b>지원 전에 꼭 대학 모집요강을 다시 확인하세요.</b> 모집요강을 옮겨 만든 참고용 계산이고 합격을 보장하지 않아요. 입력한 성적은 이 브라우저에만 저장돼요.</span></div>
+
+  <section id="wiz" class="wiz" hidden aria-live="polite"></section>
 
   <div class="grid">
     <aside class="card" aria-label="내 성적">
@@ -488,8 +529,147 @@ function rInsight(el){
       <h3>${esc(x.title)}</h3><p style="margin:0">${esc(x.summary)}</p><div class="muted">${esc(x.date)} · 주제 ${esc(x.topic)}</div><a href="${esc(x.url)}" target="_blank" rel="noopener">원문 보기</a></article>`).join("")}</div>`;
 }
 
+
+// ---------- 단계별 모드 (모바일 기본): 과목 선택 → 원점수 → 갈 수 있는 대학
+const C = DATA.cuts;
+const W = UI.wiz || (UI.wiz = {step:1, kor:"화법과 작문", math:"확률과 통계", i1:"생활과 윤리", i2:"사회·문화", raw:{}, man:{}, pct:{}});
+const SUBJ = [...C.inq_subjects["사탐"].map(x => [x,"사탐"]), ...C.inq_subjects["과탐"].map(x => [x,"과탐"])];
+const typeOf = n => (SUBJ.find(x => x[0] === n) || [n,"사탐"])[1];
+function gradeFrom(raw, cut){            // cut[i] = (i+1)등급 최저점. 표 밖이면 null
+  if (raw == null || raw === "" || isNaN(raw)) return null;
+  raw = +raw;
+  for (let i = 0; i < cut.length; i++) if (raw >= cut[i]) return {g:i+1, edge: raw - cut[i] <= 1 && i + 1 < 9};
+  return {g:null, below:cut.length};
+}
+const ROWS = () => [
+  {k:"국", nm:"국어", sub:W.kor, max:100, cut:C.kor[W.kor]},
+  {k:"수", nm:"수학", sub:W.math, max:100, cut:C.math[W.math]},
+  {k:"영", nm:"영어", sub:"절대평가", max:100, cut:C.eng},
+  {k:"한국사", nm:"한국사", sub:"절대평가", max:50, cut:C.hist},
+  {k:"탐1", nm:"탐구1", sub:W.i1, max:50, cut:null},
+  {k:"탐2", nm:"탐구2", sub:W.i2, max:50, cut:null},
+];
+function wizGrades(){                     // {k: {g, g2, edge, src}}
+  const out = {};
+  for (const r of ROWS()) {
+    const man = W.man[r.k];
+    if (r.cut) {
+      const x = gradeFrom(W.raw[r.k], r.cut);
+      if (x && x.g) out[r.k] = {g:x.g, g2: x.edge ? x.g + 1 : x.g, edge:x.edge, src:"calc"};
+      else if (x && x.below && man) out[r.k] = {g:man, g2:man, src:"man"};
+      else if (x && x.below) out[r.k] = {need:true, below:x.below};
+    } else if (man) out[r.k] = {g:man, g2:man, src:"man"};
+  }
+  return out;
+}
+function syncToS(){                       // 단계별 입력을 기존 계산기 상태(S)에 반영
+  const G = wizGrades();
+  S.hist = S.hist || "현역";
+  S.mathEl = {"확률과 통계":"확률과통계","미적분":"미적분","기하":"기하"}[W.math];
+  S.t1type = typeOf(W.i1); S.t2type = typeOf(W.i2);
+  for (const k of ["국","수","영","한국사","탐1","탐2"]) {
+    S[k] = S[k] || {};
+    if (G[k] && G[k].g) { S[k].g = G[k].g; S[k].g2 = G[k].g2; }
+    if (["국","수","탐1","탐2"].includes(k)) S[k].pct = W.pct[k] === "" || W.pct[k] == null ? null : +W.pct[k];
+  }
+  saved = {scores:S, ui:UI}; store(saved); fill();
+}
+const bar = (n) => `<div class="steps">${[1,2,3].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</div>`;
+function wizShow(on){ document.body.classList.toggle("wizmode", on); $("#wiz").hidden = !on; document.querySelector(".grid").hidden = on; UI.view = on ? "wiz" : "classic"; persistUI(); if (on) wizRender(); else render(); scrollTo(0,0); }
+function wizRender(){
+  const el = $("#wiz"), segBtns = (key, opts) => opts.map(o => `<button data-seg="${key}" data-v="${esc(o)}" aria-pressed="${W[key] === o || S[key] === o}">${esc(o)}</button>`).join("");
+  if (W.step === 1) {
+    el.innerHTML = `${bar(1)}<h2>어떤 과목을 봤나요?</h2><p class="sub">선택한 과목 기준으로 등급컷을 적용해요.</p>
+      <div class="wcard"><span class="lbl">수험 구분</span><div class="seg">${segBtns("hist", ["현역","재수","삼수","N수","반수","검정고시"])}</div></div>
+      <div class="wcard"><span class="lbl">국어 선택과목</span><div class="seg">${segBtns("kor", Object.keys(C.kor))}</div>
+        <span class="lbl">수학 선택과목</span><div class="seg">${segBtns("math", Object.keys(C.math))}</div></div>
+      <div class="wcard"><span class="lbl">탐구 과목</span>
+        <div class="row"><label>탐구1<select id="wi1">${SUBJ.map(([n,t]) => `<option ${W.i1===n?"selected":""}>${n}</option>`).join("")}</select></label>
+        <label>탐구2<select id="wi2">${SUBJ.map(([n,t]) => `<option ${W.i2===n?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
+      <div class="wbar"><button class="primary" id="wNext">다음</button></div>
+      <button class="linkbtn" id="wClassic">전체 계산기로 보기</button>`;
+    el.querySelectorAll("[data-seg]").forEach(b => b.onclick = () => { const k = b.dataset.seg, v = b.dataset.v;
+      if (k === "hist") { S.hist = v; S.gradYear = {"현역":2027,"재수":2026,"삼수":2025,"N수":2024,"반수":2026}[v] || S.gradYear; } else W[k] = v; persistUI(); wizRender(); });
+    el.querySelector("#wi1").onchange = e => { W.i1 = e.target.value; persistUI(); };
+    el.querySelector("#wi2").onchange = e => { W.i2 = e.target.value; persistUI(); };
+    el.querySelector("#wNext").onclick = () => { W.step = 2; persistUI(); wizRender(); scrollTo(0,0); };
+  } else if (W.step === 2) {
+    const G = wizGrades();
+    const rows = ROWS().map(r => { const x = G[r.k] || {};
+      const chip = x.g ? `<div class="gchip ${x.edge ? "edge" : "g"}">${x.g}등급<small>${x.edge ? "컷 근처" : x.src === "man" ? "직접 선택" : "예상"}</small></div>`
+                       : `<div class="gchip">-<small>${r.cut ? "점수 입력" : "등급 선택"}</small></div>`;
+      const pick = (!r.cut || x.need || x.src === "man") ? `<div class="gpick ${r.cut ? "five" : ""}" style="grid-column:1/-1">${(r.cut ? [5,6,7,8,9] : [1,2,3,4,5,6,7,8,9]).map(g => `<button data-man="${r.k}" data-g="${g}" aria-pressed="${W.man[r.k] === g}">${g}</button>`).join("")}</div>` : "";
+      const note = r.k === "탐2" ? "" : !r.cut ? `<div class="why" style="grid-column:1/-1">탐구는 과목마다 기관 예상 컷이 크게 달라 등급을 직접 골라 주세요.</div>` : x.need ? `<div class="why" style="grid-column:1/-1">${x.below}등급 컷보다 낮아요. 예상 등급을 골라 주세요.</div>` : "";
+      return `<div class="raw"><div class="nm">${r.nm}<small>${esc(r.sub)}</small></div>
+        ${r.cut ? `<input id="wr-${r.k}" type="number" inputmode="numeric" min="0" max="${r.max}" placeholder="원점수 / ${r.max}" value="${esc(W.raw[r.k] ?? "")}" aria-label="${r.nm} 원점수">` : `<span class="why">등급 선택</span>`}
+        ${chip}${pick}${note}</div>`; }).join("");
+    const ready = ["국","수","영","한국사","탐1","탐2"].every(k => G[k] && G[k].g);
+    el.innerHTML = `${bar(2)}<h2>가채점 원점수를 넣어 주세요</h2><p class="sub">입력하면 예상 등급이 바로 나와요. 컷과 2점 이내면 '컷 근처'로 표시하고 한 등급 낮은 경우도 함께 따져요.</p>
+      <div class="wcard" style="gap:4px">${rows}</div>
+      <p class="muted">등급컷: ${esc(C.source)} · <span class="pill p-warn">${esc(C.status)}</span> · ${esc(C.note)} · <a href="${esc(C.url)}" target="_blank" rel="noopener">출처</a>. 영어·한국사는 절대평가 기준. 확정 등급은 12월 11일 성적표로 확인하세요.</p>
+      <div class="wbar"><button class="ghost" id="wBack">이전</button><button class="primary" id="wGo" ${ready ? "" : "disabled style=\"opacity:.45\""}>갈 수 있는 대학 확인</button></div>`;
+    el.querySelectorAll("input[id^=wr-]").forEach(inp => inp.oninput = e => { W.raw[inp.id.slice(3)] = e.target.value; persistUI(); clearTimeout(wizRender.t); wizRender.t = setTimeout(() => { const pos = inp.id; wizRender(); const n = $("#"+pos); if (n) { n.focus(); const v = n.value; n.value = ""; n.value = v; } }, 350); });
+    el.querySelectorAll("[data-man]").forEach(b => b.onclick = () => { W.man[b.dataset.man] = +b.dataset.g; persistUI(); wizRender(); });
+    el.querySelector("#wBack").onclick = () => { W.step = 1; persistUI(); wizRender(); };
+    el.querySelector("#wGo").onclick = () => { if (!ready) return; syncToS(); W.step = 3; persistUI(); wizRender(); scrollTo(0,0); };
+  } else wizResult(el);
+}
+function wizResult(el){
+  syncToS();
+  const G = wizGrades(), rg = ranges(), inq = {"탐1":S.t1type,"탐2":S.t2type}, ged = S.hist === "검정고시";
+  const sumChips = ["국","수","영","탐1","탐2","한국사"].filter(k => G[k] && G[k].g).map(k => `<span class="pill ${G[k].edge ? "p-warn" : "p-info"}">${k} ${G[k].g}${G[k].g2 !== G[k].g ? "~" + G[k].g2 : ""}</span>`).join("");
+  // 수시: 대학별 최저 충족
+  const by = new Map();
+  for (const t of DATA.susi) {
+    if (IPSI.eligibility(t, S.gradYear || 2027, ged) === "불가") continue;
+    for (const gr of t.groups) { if (!gr.rule) continue; const j = IPSI.judge(gr.rule, rg, inq, S.mathEl); if (j.status === "미충족") continue;
+      if (!by.has(t.univ_name)) by.set(t.univ_name, []); by.get(t.univ_name).push({t, gr, j}); }
+  }
+  const univ = [...by.entries()].sort((a, b) => b[1].filter(x => x.j.status === "충족").length - a[1].filter(x => x.j.status === "충족").length);
+  const susiHtml = univ.map(([u, xs]) => { const ok = xs.filter(x => x.j.status === "충족").length;
+    return `<details class="ures"><summary><b>${esc(u)}</b><span class="kv"><span class="pill p-ok">충족 ${ok}</span>${xs.length - ok ? `<span class="pill p-warn">아슬아슬 ${xs.length - ok}</span>` : ""}</span></summary><div class="body">
+      ${xs.map(({t, gr, j}) => `<div class="it"><span class="pill ${minPill(j.status)}" style="text-align:center">${MINLABEL[j.status]}</span><div><div class="uname">${esc(gr.units)}</div><div class="why">${esc(t.name)} · ${esc(plain(j))}</div></div></div>`).join("")}
+      <div class="why src">${src(t0(xs).source_url, t0(xs).min_page, "모집요강")}</div></div></details>`; }).join("");
+  // 정시: 등급 비율로 백분위 범위 → 동국대 학과별 판정 범위
+  const band = g => C.pct_band[g - 1];
+  const hasPct = ["국","수","탐1","탐2"].every(k => W.pct[k] !== "" && W.pct[k] != null);
+  const pctLo = {kor: hasPct ? +W.pct["국"] : band(rg["국"][1])[0], math: hasPct ? +W.pct["수"] : band(rg["수"][1])[0], inq: hasPct ? (+W.pct["탐1"] + +W.pct["탐2"]) / 2 : (band(rg["탐1"][1])[0] + band(rg["탐2"][1])[0]) / 2};
+  const pctHi = {kor: hasPct ? +W.pct["국"] : band(rg["국"][0])[1], math: hasPct ? +W.pct["수"] : band(rg["수"][0])[1], inq: hasPct ? (+W.pct["탐1"] + +W.pct["탐2"]) / 2 : (band(rg["탐1"][0])[1] + band(rg["탐2"][0])[1]) / 2};
+  const recs = DATA.results.map(r => ({...r, year:+r.year, quota:+r.quota, avg:+r.pct_avg, sd:+r.pct_sd, eng:+r.eng_grade,
+    weights:Object.fromEntries((r.avg_weights||"").split("/").filter(Boolean).map(p => [{"국":"kor","수":"math","탐":"inq"}[p[0]], +p.slice(1)]))}));
+  const latest = Math.max(...recs.map(r => r.year)), ORD = ["위험","소신","적정","안정"];
+  const js = recs.filter(r => r.year === latest).map(r => { const lo = IPSI.assess(r, pctLo, rg["영"][1]), hi = IPSI.assess(r, pctHi, rg["영"][0]); return lo && hi ? {r, lo, hi} : null; })
+    .filter(Boolean).filter(x => x.hi.grade !== "위험").sort((a, b) => ORD.indexOf(b.lo.grade) - ORD.indexOf(a.lo.grade) || b.hi.z - a.hi.z);
+  const item = ({r, lo, hi}) => `<div class="it"><span class="pill ${GP[hi.grade]}" style="text-align:center">${lo.grade === hi.grade ? lo.grade : lo.grade + "~" + hi.grade}</span><div><div class="uname">${esc(r.unit)}</div><div class="why">${esc(r.track)} · ${esc(r.group)}군 · ${r.quota}명 · 합격자 평균 백분위 ${r.avg}</div></div></div>`;
+  const GRP = [["나쁠 때도 안정", x => x.lo.grade === "안정"], ["나쁠 때도 적정 이상", x => x.lo.grade === "적정"], ["잘 나오면 가능 (소신·도전)", x => ["소신","위험"].includes(x.lo.grade)]];
+  const jsHtml = GRP.map(([name, f], gi) => { const xs = js.filter(f); if (!xs.length) return "";
+    return `<details class="ures grp" ${gi === 0 || (gi === 1 && !js.some(GRP[0][1])) ? "open" : ""}><summary><span>${name}</span><span class="cnt">${xs.length}개 학과</span></summary><div class="body">${xs.map(item).join("")}</div></details>`; }).join("");
+  el.innerHTML = `${bar(3)}<h2>갈 수 있는 대학</h2><div class="kv">${sumChips}</div>
+    <div class="seg" role="tablist"><button data-rt="susi" aria-pressed="${(W.rt||"susi")==="susi"}">수시 · 최저 충족</button><button data-rt="js" aria-pressed="${W.rt==="js"}">정시 · 학과 판정</button></div>
+    <div id="rt-susi" ${W.rt==="js"?"hidden":""}>
+      <p class="sub" style="margin:0 0 10px">이미 지원한 수시 전형의 최저를 맞췄는지 확인하는 용도예요. 20개 대학 ${univ.length}곳에서 충족·아슬아슬한 전형이 있어요.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">${susiHtml || `<div class="wcard empty">최저를 맞춘 전형이 없어요. 등급을 다시 확인해 보세요.</div>`}</div></div>
+    <div id="rt-js" ${W.rt==="js"?"":"hidden"}>
+      <div class="wcard"><div class="uname">${hasPct ? "입력한 예상 백분위로 판정했어요" : "등급만으로 판정해 범위가 넓어요"}</div>
+        <div class="why">${hasPct ? "" : "등급별 백분위 구간(상위 4·11·23·40·60·77·89·96%)으로 가장 나쁠 때~좋을 때를 잡았어요. 입시기관 가채점 서비스의 예상 백분위를 넣으면 정확해져요."}</div>
+        <div class="row">${["국","수","탐1","탐2"].map(k => `<label>${k} 백분위<input data-pct="${k}" type="number" inputmode="numeric" min="0" max="100" value="${esc(W.pct[k] ?? "")}" placeholder="선택"></label>`).join("")}</div></div>
+      <h3 style="margin:16px 2px 8px;font-size:1.1rem">동국대 학과별 판정 <span class="muted">(공식 입결 2026)</span></h3>
+      <div style="display:flex;flex-direction:column;gap:10px">${jsHtml || `<div class="wcard why">가능성이 있는 학과가 없어요.</div>`}</div>
+      <p class="muted">출처가 확인된 정시 입결은 아직 동국대뿐이에요. 다른 대학은 '전체 계산기'의 정시 환산점수로 비교해 보세요. <a href="${esc(DATA.results[0].source_url)}" target="_blank" rel="noopener">입결 출처</a></p></div>
+    <p class="muted">합격을 보장하지 않아요. 지원 전 대학 모집요강을 꼭 다시 확인하세요.</p>
+    <div class="wbar"><button class="ghost" id="wBack">점수 수정</button><button class="primary" id="wClassic2">전체 계산기로 자세히</button></div>`;
+  el.querySelectorAll("[data-rt]").forEach(b => b.onclick = () => { W.rt = b.dataset.rt; persistUI(); wizRender(); });
+  el.querySelectorAll("[data-pct]").forEach(inp => inp.onchange = e => { W.pct[inp.dataset.pct] = e.target.value; persistUI(); wizRender(); });
+  el.querySelector("#wBack").onclick = () => { W.step = 2; persistUI(); wizRender(); scrollTo(0,0); };
+  el.querySelector("#wClassic2").onclick = () => { wizShow(false); location.hash = "susi"; };
+}
+const t0 = xs => xs[0].t;
+$("#toWiz").onclick = () => { W.step = W.step || 1; wizShow(true); };
+document.addEventListener("click", e => { if (e.target && e.target.id === "wClassic") wizShow(false); });
+
 const R = {home:rHome, timeline:rTimeline, susi:rSusi, jeongsi:rJeongsi, adm:rAdm, combo:rCombo, kidnap:rKidnap, insight:rInsight};
 function render(){ dday(); const k = UI.tab || "home"; const el = $("#pane-"+k); if (el && R[k]) R[k](el); }
 show(location.hash.slice(1) || UI.tab || "home");
+if (UI.view === "wiz" || (UI.view !== "classic" && matchMedia("(max-width: 880px)").matches && !location.hash)) wizShow(true);
 })();
 </script>
