@@ -65,5 +65,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: www
+      # 업로드 직후엔 GitHub API가 아티팩트를 아직 못 찾는 경우가 있어(최근 3회 연속 'No artifacts named github-pages') 잠시 기다린 뒤 배포
+      - run: sleep 20
       - id: deployment
         uses: actions/deploy-pages@v4
