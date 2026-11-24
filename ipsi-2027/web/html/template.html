@@ -604,9 +604,9 @@ function wizRender(){
       const chip = x.g ? `<div class="gchip ${x.edge ? "edge" : "g"}">${x.g}등급<small>${x.edge ? "컷 근처" : x.src === "man" ? "직접 선택" : "예상"}</small></div>`
                        : `<div class="gchip">-<small>${r.cut ? "점수 입력" : "등급 선택"}</small></div>`;
       const pick = (!r.cut || x.need || x.src === "man") ? `<div class="gpick ${r.cut ? "five" : ""}" style="grid-column:1/-1">${(r.cut ? [5,6,7,8,9] : [1,2,3,4,5,6,7,8,9]).map(g => `<button data-man="${r.k}" data-g="${g}" aria-pressed="${W.man[r.k] === g}">${g}</button>`).join("")}</div>` : "";
-      const note = r.k === "탐2" ? "" : !r.cut ? `<div class="why" style="grid-column:1/-1">탐구는 과목마다 기관 예상 컷이 크게 달라 등급을 직접 골라 주세요.</div>` : x.need ? `<div class="why" style="grid-column:1/-1">${x.below}등급 컷보다 낮아요. 예상 등급을 골라 주세요.</div>` : "";
+      const note = r.k === "탐2" ? "" : !r.cut ? `<div class="why" style="grid-column:1/-1">탐구는 과목마다 기관 예상 컷이 크게 달라 등급은 직접 골라 주세요. 원점수를 넣으면 정시 예상 합격선(국·수·탐 합)과 비교할 수 있어요.</div>` : x.need ? `<div class="why" style="grid-column:1/-1">${x.below}등급 컷보다 낮아요. 예상 등급을 골라 주세요.</div>` : "";
       return `<div class="raw"><div class="nm">${r.nm}<small>${esc(r.sub)}</small></div>
-        ${r.cut ? `<input id="wr-${r.k}" type="number" inputmode="numeric" min="0" max="${r.max}" placeholder="원점수 / ${r.max}" value="${esc(W.raw[r.k] ?? "")}" aria-label="${r.nm} 원점수">` : `<span class="why">등급 선택</span>`}
+        <input id="wr-${r.k}" type="number" inputmode="numeric" min="0" max="${r.max}" placeholder="${r.cut ? "원점수 / " + r.max : "원점수(선택)"}" value="${esc(W.raw[r.k] ?? "")}" aria-label="${r.nm} 원점수">
         ${chip}${pick}${note}</div>`; }).join("");
     const ready = ["국","수","영","한국사","탐1","탐2"].every(k => G[k] && G[k].g);
     el.innerHTML = `${bar(2)}<h2>가채점 원점수를 넣어 주세요</h2><p class="sub">입력하면 예상 등급이 바로 나와요. 컷과 2점 이내면 '컷 근처'로 표시하고 한 등급 낮은 경우도 함께 따져요.</p>
@@ -649,12 +649,38 @@ function wizResult(el){
   const GRP = [["나쁠 때도 안정", x => x.lo.grade === "안정"], ["나쁠 때도 적정 이상", x => x.lo.grade === "적정"], ["잘 나오면 가능 (소신·도전)", x => ["소신","위험"].includes(x.lo.grade)]];
   const jsHtml = GRP.map(([name, f], gi) => { const xs = js.filter(f); if (!xs.length) return "";
     return `<details class="ures grp" ${gi === 0 || (gi === 1 && !js.some(GRP[0][1])) ? "open" : ""}><summary><span>${name}</span><span class="cnt">${xs.length}개 학과</span></summary><div class="body">${xs.map(item).join("")}</div></details>`; }).join("");
+  const RT = W.rt || "line";
+  // 정시 · 학원 예상 합격선 (국+수+탐1+탐2 원점수 합, 300점)
+  const L = DATA.lines, ORGS = Object.keys(L.sources);
+  const rawOK = ["국","수","탐1","탐2"].every(k => W.raw[k] !== "" && W.raw[k] != null && !isNaN(+W.raw[k]));
+  const mySum = rawOK ? ["국","수","탐1","탐2"].reduce((a, k) => a + +W.raw[k], 0) : null;
+  let lineHtml;
+  if (mySum == null) lineHtml = `<div class="wcard"><div class="uname">탐구 원점수를 넣으면 비교할 수 있어요</div><div class="why">학원 예상 합격선은 국어+수학+탐구 2과목 원점수 합(300점 만점) 기준이에요. '점수 수정'에서 탐구1·탐구2 원점수를 넣어 주세요.</div></div>`;
+  else {
+    const rows = L.lines.map(x => { const v = ORGS.filter(o => x[o] != null).map(o => x[o]); const hi = Math.max(...v), lo = Math.min(...v);
+      const st = mySum >= hi ? ["p-ok","예상선 이상"] : mySum >= lo ? ["p-info","기관마다 갈림"] : mySum >= lo - 3 ? ["p-warn","근접"] : ["p-mute","예상선 아래"];
+      return {x, hi, lo, st, gap: mySum - hi}; });
+    const CAT = [["의약","의대·치대·한의대·약대"],["자연","자연·첨단"],["인문","인문"]];
+    const show = r => W.lineAll || r.st[1] !== "예상선 아래";
+    const groups = CAT.map(([c, nm], gi) => { const xs = rows.filter(r => r.x.cat === c).sort((a, b) => b.hi - a.hi); const vis = xs.filter(show), ok = xs.filter(r => r.st[0] === "p-ok").length;
+      if (!xs.length) return "";
+      return `<details class="ures grp" ${gi === 0 || vis.length ? "open" : ""}><summary><span>${nm}</span><span class="cnt">이상 ${ok} · 표시 ${vis.length}/${xs.length}</span></summary><div class="body">
+        ${vis.map(r => `<div class="it"><span class="pill ${r.st[0]}" style="text-align:center">${r.st[1]}</span><div><div class="uname">${esc(r.x.univ)} ${esc(r.x.dept)}</div><div class="why">${ORGS.filter(o => r.x[o] != null).map(o => `${o} ${r.x[o]}점`).join(" · ")} · 높은 예상선보다 ${r.gap >= 0 ? r.gap + "점 높음" : -r.gap + "점 낮음"}</div></div></div>`).join("") || `<div class="why">표시할 학과가 없어요.</div>`}</div></details>`; }).join("");
+    lineHtml = `<div class="wcard"><div class="uname">내 국·수·탐 원점수 합 <b style="font-size:1.4rem;color:var(--blue)">${mySum}</b> / 300</div>
+        <div class="why">종로학원·대성학원이 가채점으로 낸 학과별 예상 합격선과 비교해요. 같은 학과도 기관마다 최대 9점까지 달라서 두 값을 함께 보여 줘요.</div>
+        <div class="kv">${L.floors.map(f => `<span class="pill ${mySum >= f.종로 ? "p-ok" : "p-mute"}">${esc(f.label)} ${f.종로}</span>`).join("")}</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${groups}</div>
+      <button class="linkbtn" id="lineAll">${W.lineAll ? "예상선 아래 학과 숨기기" : "예상선 아래 학과도 보기"}</button>
+      <p class="muted"><span class="pill p-warn">${esc(L.status)}</span> 원점수 합 단순 비교라 영어·한국사, 선택과목 차이, 대학별 반영비율·변환표준점수가 빠져 있어요. 성적 발표(12.11) 후에는 표준점수·백분위로 다시 판단하세요.
+        출처: ${ORGS.map(o => `<a href="${esc(L.sources[o].url)}" target="_blank" rel="noopener">${esc(L.sources[o].name)}</a>`).join(" · ")}</p>`;
+  }
   el.innerHTML = `${bar(3)}<h2>갈 수 있는 대학</h2><div class="kv">${sumChips}</div>
-    <div class="seg" role="tablist"><button data-rt="susi" aria-pressed="${(W.rt||"susi")==="susi"}">수시 · 최저 충족</button><button data-rt="js" aria-pressed="${W.rt==="js"}">정시 · 학과 판정</button></div>
-    <div id="rt-susi" ${W.rt==="js"?"hidden":""}>
+    <div class="seg" role="tablist"><button data-rt="line" aria-pressed="${RT==="line"}">정시 · 예상 합격선</button><button data-rt="susi" aria-pressed="${RT==="susi"}">수시 · 최저 충족</button><button data-rt="js" aria-pressed="${RT==="js"}">정시 · 동국대 입결</button></div>
+    <div id="rt-line" ${RT==="line"?"":"hidden"}>${lineHtml}</div>
+    <div id="rt-susi" ${RT==="susi"?"":"hidden"}>
       <p class="sub" style="margin:0 0 10px">이미 지원한 수시 전형의 최저를 맞췄는지 확인하는 용도예요. 20개 대학 ${univ.length}곳에서 충족·아슬아슬한 전형이 있어요.</p>
       <div style="display:flex;flex-direction:column;gap:10px">${susiHtml || `<div class="wcard empty">최저를 맞춘 전형이 없어요. 등급을 다시 확인해 보세요.</div>`}</div></div>
-    <div id="rt-js" ${W.rt==="js"?"":"hidden"}>
+    <div id="rt-js" ${RT==="js"?"":"hidden"}>
       <div class="wcard"><div class="uname">${hasPct ? "입력한 예상 백분위로 판정했어요" : "등급만으로 판정해 범위가 넓어요"}</div>
         <div class="why">${hasPct ? "" : "등급별 백분위 구간(상위 4·11·23·40·60·77·89·96%)으로 가장 나쁠 때~좋을 때를 잡았어요. 입시기관 가채점 서비스의 예상 백분위를 넣으면 정확해져요."}</div>
         <div class="row">${["국","수","탐1","탐2"].map(k => `<label>${k} 백분위<input data-pct="${k}" type="number" inputmode="numeric" min="0" max="100" value="${esc(W.pct[k] ?? "")}" placeholder="선택"></label>`).join("")}</div></div>
@@ -664,6 +690,7 @@ function wizResult(el){
     <p class="muted">합격을 보장하지 않아요. 지원 전 대학 모집요강을 꼭 다시 확인하세요.</p>
     <div class="wbar"><button class="ghost" id="wBack">점수 수정</button><button class="primary" id="wClassic2">전체 계산기로 자세히</button></div>`;
   el.querySelectorAll("[data-rt]").forEach(b => b.onclick = () => { W.rt = b.dataset.rt; persistUI(); wizRender(); });
+  const la = el.querySelector("#lineAll"); if (la) la.onclick = () => { W.lineAll = !W.lineAll; persistUI(); wizRender(); };
   el.querySelectorAll("[data-pct]").forEach(inp => inp.onchange = e => { W.pct[inp.dataset.pct] = e.target.value; persistUI(); wizRender(); });
   el.querySelector("#wBack").onclick = () => { W.step = 2; persistUI(); wizRender(); scrollTo(0,0); };
   el.querySelector("#wClassic2").onclick = () => { wizShow(false); location.hash = "susi"; };

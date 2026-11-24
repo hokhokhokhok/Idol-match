@@ -24,6 +24,6 @@ res = list(csv.DictReader(open(ROOT / "data/parsed/results/dongguk.csv", encodin
 ev = [{"start": e.start, "end": e.end, "title": e.title, "tracks": list(e.tracks), "note": e.note} for e in timeline.EVENTS]
 ins = yaml.safe_load(open(ROOT / "data/insights/seed.yaml", encoding="utf-8"))
 out = {"susi": susi, "jeongsi": js, "results": res, "timeline": ev, "timeline_source": timeline.SOURCE,
-       "rules": getattr(timeline, "RULES", []), "insights": ins, "briefing": briefing.load(), "cuts": briefing.cuts()}
+       "rules": getattr(timeline, "RULES", []), "insights": ins, "briefing": briefing.load(), "cuts": briefing.cuts(), "lines": briefing.lines()}
 Path(sys.argv[1]).write_text("window.DATA=" + json.dumps(out, ensure_ascii=False, default=ser) + ";", encoding="utf-8")
 print(len(susi), len(js), len(res), len(ev), len(ins))
