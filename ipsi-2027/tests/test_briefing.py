@@ -18,3 +18,12 @@ def test_cuts_monotonic_and_marked():
             assert all(a > b for a, b in zip(cut, cut[1:])), name
     assert c["eng"][0] == 90 and c["hist"][0] == 40
     assert len(c["pct_band"]) == 9
+
+
+def test_expect_lines():
+    d = briefing.lines()
+    assert set(d["sources"]) == {"종로", "대성"}
+    names = {(x["univ"], x["dept"]) for x in d["lines"]}
+    assert ("서울대", "의예") in names and len(d["lines"]) >= 50
+    snu = next(x for x in d["lines"] if x["univ"] == "서울대" and x["dept"] == "의예")
+    assert snu["종로"] == 298 and snu["대성"] == 296          # 기사 원문 수치
