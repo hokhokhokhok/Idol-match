@@ -650,29 +650,63 @@ function wizResult(el){
   const jsHtml = GRP.map(([name, f], gi) => { const xs = js.filter(f); if (!xs.length) return "";
     return `<details class="ures grp" ${gi === 0 || (gi === 1 && !js.some(GRP[0][1])) ? "open" : ""}><summary><span>${name}</span><span class="cnt">${xs.length}개 학과</span></summary><div class="body">${xs.map(item).join("")}</div></details>`; }).join("");
   const RT = W.rt || "line";
-  // 정시 · 학원 예상 합격선 (국+수+탐1+탐2 원점수 합, 300점)
+  // 정시 · 학원 예상 합격선 (국+수+탐1+탐2 원점수 합, 300점) — 여러 기관 중앙값·범위로 판정
   const L = DATA.lines, ORGS = Object.keys(L.sources);
   const rawOK = ["국","수","탐1","탐2"].every(k => W.raw[k] !== "" && W.raw[k] != null && !isNaN(+W.raw[k]));
   const mySum = rawOK ? ["국","수","탐1","탐2"].reduce((a, k) => a + +W.raw[k], 0) : null;
+  const sci2 = typeOf(W.i1) === "과탐" && typeOf(W.i2) === "과탐", soc2 = typeOf(W.i1) === "사탐" && typeOf(W.i2) === "사탐", anySoc = !sci2;
+  const engG = (G["영"] || {}).g || 1;
   let lineHtml;
   if (mySum == null) lineHtml = `<div class="wcard"><div class="uname">탐구 원점수를 넣으면 비교할 수 있어요</div><div class="why">학원 예상 합격선은 국어+수학+탐구 2과목 원점수 합(300점 만점) 기준이에요. '점수 수정'에서 탐구1·탐구2 원점수를 넣어 주세요.</div></div>`;
   else {
-    const rows = L.lines.map(x => { const v = ORGS.filter(o => x[o] != null).map(o => x[o]); const hi = Math.max(...v), lo = Math.min(...v);
-      const st = mySum >= hi ? ["p-ok","예상선 이상"] : mySum >= lo ? ["p-info","기관마다 갈림"] : mySum >= lo - 3 ? ["p-warn","근접"] : ["p-mute","예상선 아래"];
-      return {x, hi, lo, st, gap: mySum - hi}; });
-    const CAT = [["의약","의대·치대·한의대·약대"],["자연","자연·첨단"],["인문","인문"]];
-    const show = r => W.lineAll || r.st[1] !== "예상선 아래";
-    const groups = CAT.map(([c, nm], gi) => { const xs = rows.filter(r => r.x.cat === c).sort((a, b) => b.hi - a.hi); const vis = xs.filter(show), ok = xs.filter(r => r.st[0] === "p-ok").length;
+    const med = a => { const v = [...a].sort((x, y) => x - y), m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+    const rows = L.lines.map(x => {
+      const v = ORGS.filter(o => x[o] != null).map(o => x[o]), hi = Math.max(...v), lo = Math.min(...v), md = med(v);
+      const bad = [];
+      if (x.req && x.req.math && !x.req.math.includes(W.math)) bad.push(`수학 ${x.req.math.join("·")} 응시 필요`);
+      if (x.req && x.req.inq === "과탐" && !sci2) bad.push("과학탐구 2과목 응시 필요");
+      let st;
+      if (bad.length) st = ["p-bad", "지원 조건 안 맞음", 9];
+      else if (mySum >= hi + 1) st = ["p-ok", "안정", 0];
+      else if (mySum >= md) st = ["p-info", "적정", 1];
+      else if (mySum >= lo) st = ["p-warn", "소신", 2];
+      else if (mySum >= lo - 2) st = ["p-mute", "도전", 3];
+      else st = ["p-mute", "예상선 아래", 4];
+      const tags = [];
+      if (hi >= 295 && !bad.length) tags.push("1문제로 갈리는 구간");
+      if (x.bonus && anySoc && !bad.length) tags.push("사탐 응시 시 불리: " + x.bonus);
+      if (x.req && !bad.length) tags.push(`지원 조건 충족 (${x.req.status})`);
+      return {x, v, hi, lo, md, st, tags, bad, n: v.length};
+    });
+    const cnt = k => rows.filter(r => r.st[1] === k).length;
+    const CAT = [["의약","의대·치대·한의대·약대·수의대"],["자연","자연·첨단"],["인문","인문"]];
+    const openCat = c => soc2 ? c === "인문" : sci2 ? c !== "인문" : true;
+    const far = r => r.st[2] === 0 && mySum - r.md > 8;           // 내 점수보다 8점 넘게 낮은 안정권은 접어 둠
+    const shown = r => (r.st[2] <= 3 && (!far(r) || W.lineAll)) || (W.lineAll && r.st[2] === 4);
+    const farN = rows.filter(far).length;
+    const warn = [];
+    if (engG >= 2) warn.push(`영어 ${engG}등급이에요. 배치표는 영어를 뺀 점수라, 영어 감점이 큰 대학(예: 고려대 등급당 감점)에서는 실제보다 낙관적으로 보일 수 있어요.`);
+    if (W.math === "확률과 통계") warn.push("확률과 통계 응시예요. 자연·의약 예상선은 미적분·기하 응시자가 대부분이고, 표준점수 최고점도 확통이 2점 낮게 추정돼요(137 vs 139).");
+    if (anySoc) warn.push("사회탐구를 응시했어요. 자연·의약 학과는 과탐 가산점을 주는 곳이 많아 불리할 수 있어요.");
+    const itm = r => `<div class="it"><span class="pill ${r.st[0]}" style="text-align:center">${r.st[1]}</span><div>
+        <div class="uname">${esc(r.x.univ)} ${esc(r.x.dept)}</div>
+        <div class="why">${ORGS.filter(o => r.x[o] != null).map(o => `${o} ${r.x[o]}`).join(" · ")}${r.n > 1 ? ` · 중앙값 ${r.md}` : " · 1개 기관"}${r.bad.length ? " · " + esc(r.bad.join(", ")) : ` · 내 합 ${mySum >= r.md ? "+" : ""}${Math.round((mySum - r.md) * 10) / 10}`}</div>
+        ${r.tags.length ? `<div class="why" style="color:var(--warn-ink)">${r.tags.map(esc).join(" · ")}</div>` : ""}</div></div>`;
+    const groups = CAT.map(([c, nm]) => { const xs = rows.filter(r => r.x.cat === c && r.st[2] < 9).sort((a, b) => b.md - a.md || a.x.univ.localeCompare(b.x.univ)); const vis = xs.filter(shown);
       if (!xs.length) return "";
-      return `<details class="ures grp" ${gi === 0 || vis.length ? "open" : ""}><summary><span>${nm}</span><span class="cnt">이상 ${ok} · 표시 ${vis.length}/${xs.length}</span></summary><div class="body">
-        ${vis.map(r => `<div class="it"><span class="pill ${r.st[0]}" style="text-align:center">${r.st[1]}</span><div><div class="uname">${esc(r.x.univ)} ${esc(r.x.dept)}</div><div class="why">${ORGS.filter(o => r.x[o] != null).map(o => `${o} ${r.x[o]}점`).join(" · ")} · 높은 예상선보다 ${r.gap >= 0 ? r.gap + "점 높음" : -r.gap + "점 낮음"}</div></div></div>`).join("") || `<div class="why">표시할 학과가 없어요.</div>`}</div></details>`; }).join("");
+      return `<details class="ures grp" ${openCat(c) && vis.length ? "open" : ""}><summary><span>${nm}</span><span class="cnt">${vis.length}/${xs.length}개 학과</span></summary><div class="body">${vis.map(itm).join("") || `<div class="why">예상선 근처 학과가 없어요.</div>`}</div></details>`; }).join("");
+    const blocked = rows.filter(r => r.st[2] === 9 && mySum >= r.lo - 2);
     lineHtml = `<div class="wcard"><div class="uname">내 국·수·탐 원점수 합 <b style="font-size:1.4rem;color:var(--blue)">${mySum}</b> / 300</div>
-        <div class="why">종로학원·대성학원이 가채점으로 낸 학과별 예상 합격선과 비교해요. 같은 학과도 기관마다 최대 9점까지 달라서 두 값을 함께 보여 줘요.</div>
-        <div class="kv">${L.floors.map(f => `<span class="pill ${mySum >= f.종로 ? "p-ok" : "p-mute"}">${esc(f.label)} ${f.종로}</span>`).join("")}</div></div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${groups}</div>
-      <button class="linkbtn" id="lineAll">${W.lineAll ? "예상선 아래 학과 숨기기" : "예상선 아래 학과도 보기"}</button>
-      <p class="muted"><span class="pill p-warn">${esc(L.status)}</span> 원점수 합 단순 비교라 영어·한국사, 선택과목 차이, 대학별 반영비율·변환표준점수가 빠져 있어요. 성적 발표(12.11) 후에는 표준점수·백분위로 다시 판단하세요.
-        출처: ${ORGS.map(o => `<a href="${esc(L.sources[o].url)}" target="_blank" rel="noopener">${esc(L.sources[o].name)}</a>`).join(" · ")}</p>`;
+        <div class="kv"><span class="pill p-ok">안정 ${cnt("안정")}</span><span class="pill p-info">적정 ${cnt("적정")}</span><span class="pill p-warn">소신 ${cnt("소신")}</span><span class="pill p-mute">도전 ${cnt("도전")}</span></div>
+        <div class="why">입시기관 ${ORGS.length}곳(${ORGS.join("·")})의 예상 합격선을 모아 판정해요. 안정 = 모든 기관 예상선보다 1점 이상 높음, 적정 = 기관 중앙값 이상, 소신 = 일부 기관 예상선만 넘음, 도전 = 가장 낮은 예상선보다 1~2점 낮음.</div>
+        <div class="kv">${L.floors.map(f => { const v = ORGS.filter(o => f[o] != null).map(o => f[o]); return `<span class="pill ${mySum >= Math.max(...v) ? "p-ok" : mySum >= Math.min(...v) ? "p-warn" : "p-mute"}">${esc(f.label)} ${Math.min(...v) === Math.max(...v) ? v[0] : Math.min(...v) + "~" + Math.max(...v)}</span>`; }).join("")}</div></div>
+      ${warn.length ? `<div class="wcard" style="margin-top:10px;background:var(--warn-bg)">${warn.map(w => `<div class="why" style="color:var(--warn-ink)">⚠ ${esc(w)}</div>`).join("")}</div>` : ""}
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${groups}
+        ${blocked.length ? `<details class="ures grp"><summary><span>지원 조건 때문에 제외</span><span class="cnt">${blocked.length}개 학과</span></summary><div class="body">${blocked.map(itm).join("")}</div></details>` : ""}</div>
+      <button class="linkbtn" id="lineAll">${W.lineAll ? "내 점수대만 보기" : `전체 학과 보기 (안정권 ${farN}개 · 예상선 아래 학과 포함)`}</button>
+      <div class="wcard" style="margin-top:6px"><div class="uname">상위권이 꼭 같이 봐야 할 것</div>${L.notes.map(n => `<div class="why">· ${esc(n)}</div>`).join("")}</div>
+      <p class="muted"><span class="pill p-warn">${esc(L.status)}</span> 성적 발표(12.11) 후에는 표준점수·백분위와 대학별 환산점수로 다시 판단하세요.
+        출처: ${ORGS.map(o => `<a href="${esc(L.sources[o].url)}" target="_blank" rel="noopener">${esc(L.sources[o].name)}</a>`).join(" · ")} · <a href="${esc(L.note_sources.snu)}" target="_blank" rel="noopener">서울대 정시요강</a> · <a href="${esc(L.note_sources.fnnews)}" target="_blank" rel="noopener">수학 선택과목 분석</a></p>`;
   }
   el.innerHTML = `${bar(3)}<h2>갈 수 있는 대학</h2><div class="kv">${sumChips}</div>
     <div class="seg" role="tablist"><button data-rt="line" aria-pressed="${RT==="line"}">정시 · 예상 합격선</button><button data-rt="susi" aria-pressed="${RT==="susi"}">수시 · 최저 충족</button><button data-rt="js" aria-pressed="${RT==="js"}">정시 · 동국대 입결</button></div>
