@@ -147,6 +147,10 @@ details[open] summary::after{content:" ⌄"}
 .ures .body{padding:0 20px 16px;display:flex;flex-direction:column;gap:10px}
 .ures .it{display:grid;grid-template-columns:92px minmax(0,1fr);gap:10px;align-items:start;padding-top:10px;border-top:1px solid var(--line)}
 .linkbtn{background:none;color:var(--blue);padding:4px 0;font-size:.92rem}
+/* 방문자 표시 */
+.stats{font-size:.88rem;color:var(--ink3)}
+.stats::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:8px;vertical-align:1px}
+.stats b{color:var(--ink);font-variant-numeric:tabular-nums}
 body.wizmode .notice,body.wizmode .dday,body.wizmode #toWiz,body.wizmode footer{display:none}
 body.wizmode header.top{padding-block:16px 0}
 .grp summary{font-weight:700}
@@ -192,6 +196,7 @@ footer{font-size:.85rem;color:var(--ink3);padding:8px 4px}
     <h1><small>2027학년도 · 대교협 일정·대학 모집요강 기반</small>인서울 입시 계산기</h1>
     <div class="row" style="gap:8px;flex-wrap:nowrap"><button id="toWiz" class="linkbtn" style="white-space:nowrap">단계별로 보기</button><div class="dday" id="dday"></div></div>
   </header>
+  <div id="stats" class="stats" hidden aria-live="polite"></div>
   <div class="notice"><span><b>지원 전에 꼭 대학 모집요강을 다시 확인하세요.</b> 모집요강을 옮겨 만든 참고용 계산이고 합격을 보장하지 않아요. 입력한 성적은 이 브라우저에만 저장돼요.</span></div>
 
   <section id="wiz" class="wiz" hidden aria-live="polite"></section>
@@ -615,7 +620,7 @@ function wizRender(){
   } else wizResult(el);
 }
 function wizResult(el){
-  syncToS();
+  syncToS(); countCalc();
   const G = wizGrades(), rg = ranges(), inq = {"탐1":S.t1type,"탐2":S.t2type}, ged = S.hist === "검정고시";
   const sumChips = ["국","수","영","탐1","탐2","한국사"].filter(k => G[k] && G[k].g).map(k => `<span class="pill ${G[k].edge ? "p-warn" : "p-info"}">${k} ${G[k].g}${G[k].g2 !== G[k].g ? "~" + G[k].g2 : ""}</span>`).join("");
   // 수시: 대학별 최저 충족
@@ -667,9 +672,43 @@ const t0 = xs => xs[0].t;
 $("#toWiz").onclick = () => { W.step = W.step || 1; wizShow(true); };
 document.addEventListener("click", e => { if (e.target && e.target.id === "wClassic") wizShow(false); });
 
+// ---------- 방문자·계산 횟수 (숫자만 셈. 성적·개인정보는 보내지 않음)
+// 카운터: abacus.jasoncameron.dev (무료·가입 없음). 실패하면 표시만 숨김.
+const CNT = {base: "https://abacus.jasoncameron.dev", ns: "hokhokhokhok-ipsi2027"};
+const GA_ID = "";   // 구글 애널리틱스 측정 ID(G-XXXXXXXXXX)를 넣으면 배포 사이트에서만 작동
+const STAT = {};
+const kstDay = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+const fmtN = n => n == null ? "-" : n.toLocaleString("ko-KR");
+async function cnt(op, key){
+  try { const r = await fetch(`${CNT.base}/${op}/${CNT.ns}/${key}`, {cache: "no-store"}); if (!r.ok) return null;
+        const j = await r.json(); return typeof j.value === "number" ? j.value : null; } catch (e) { return null; }
+}
+function firstTime(store, key){ try { if (store.getItem(key)) return false; store.setItem(key, "1"); return true; } catch (e) { return true; } }
+function drawStats(){
+  if (STAT.today == null && STAT.total == null) return;
+  const el = $("#stats"); el.hidden = false;
+  el.innerHTML = `오늘 <b>${fmtN(STAT.today)}</b>명 · 누적 <b>${fmtN(STAT.total)}</b>명 방문` + (STAT.calc != null ? ` · <b>${fmtN(STAT.calc)}</b>번 계산` : "");
+}
+async function loadStats(){
+  const d = kstDay(), first = firstTime(localStorage, "ipsi-visit-" + d);   // 브라우저당 하루 1번만 셈
+  const op = first ? "hit" : "get";
+  [STAT.today, STAT.total, STAT.calc] = await Promise.all([cnt(op, "visit-" + d), cnt(op, "visit-total"), cnt("get", "calc-total")]);
+  drawStats();
+}
+async function countCalc(){
+  if (!firstTime(sessionStorage, "ipsi-calc")) return;                          // 한 번 방문에 1번만 셈
+  if (window.gtag) window.gtag("event", "calc_complete", {hist: S.hist || ""});   // 수험 구분만, 점수는 보내지 않음
+  const v = await cnt("hit", "calc-total"); if (v != null) { STAT.calc = v; drawStats(); }
+}
+if (GA_ID && /github\.io$/.test(location.hostname)) {
+  const g = document.createElement("script"); g.async = true; g.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID; document.head.appendChild(g);
+  window.dataLayer = window.dataLayer || []; window.gtag = function(){ dataLayer.push(arguments); }; gtag("js", new Date()); gtag("config", GA_ID);
+}
+
 const R = {home:rHome, timeline:rTimeline, susi:rSusi, jeongsi:rJeongsi, adm:rAdm, combo:rCombo, kidnap:rKidnap, insight:rInsight};
 function render(){ dday(); const k = UI.tab || "home"; const el = $("#pane-"+k); if (el && R[k]) R[k](el); }
 show(location.hash.slice(1) || UI.tab || "home");
 if (UI.view === "wiz" || (UI.view !== "classic" && matchMedia("(max-width: 880px)").matches && !location.hash)) wizShow(true);
+loadStats();
 })();
 </script>
