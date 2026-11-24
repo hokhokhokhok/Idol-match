@@ -621,6 +621,7 @@ function wizRender(){
 }
 function wizResult(el){
   syncToS(); countCalc();
+  const MOCK = W.mock || (W.mock = []);
   const G = wizGrades(), rg = ranges(), inq = {"탐1":S.t1type,"탐2":S.t2type}, ged = S.hist === "검정고시";
   const sumChips = ["국","수","영","탐1","탐2","한국사"].filter(k => G[k] && G[k].g).map(k => `<span class="pill ${G[k].edge ? "p-warn" : "p-info"}">${k} ${G[k].g}${G[k].g2 !== G[k].g ? "~" + G[k].g2 : ""}</span>`).join("");
   // 수시: 대학별 최저 충족
@@ -676,6 +677,8 @@ function wizResult(el){
       if (hi >= 295 && !bad.length) tags.push("1문제로 갈리는 구간");
       if (x.bonus && anySoc && !bad.length) tags.push("사탐 응시 시 불리: " + x.bonus);
       if (x.req && !bad.length) tags.push(`지원 조건 충족 (${x.req.status})`);
+      const mk = MOCK.filter(m => m.u && m.res && x.univ.startsWith(m.u.replace(/학교$/, "").replace(/대$/, "")) && (!m.d || x.dept.includes(m.d) || m.d.includes(x.dept)));
+      mk.forEach(m => tags.push(`내 모의지원: ${m.org} ${m.res}`));
       return {x, v, hi, lo, md, st, tags, bad, n: v.length};
     });
     const cnt = k => rows.filter(r => r.st[1] === k).length;
@@ -708,9 +711,19 @@ function wizResult(el){
       <p class="muted"><span class="pill p-warn">${esc(L.status)}</span> 성적 발표(12.11) 후에는 표준점수·백분위와 대학별 환산점수로 다시 판단하세요.
         출처: ${ORGS.map(o => `<a href="${esc(L.sources[o].url)}" target="_blank" rel="noopener">${esc(L.sources[o].name)}</a>`).join(" · ")} · <a href="${esc(L.note_sources.snu)}" target="_blank" rel="noopener">서울대 정시요강</a> · <a href="${esc(L.note_sources.fnnews)}" target="_blank" rel="noopener">수학 선택과목 분석</a></p>`;
   }
+  const ORG_OPTS = ["메가스터디","진학사","대성마이맥","이투스","유웨이","기타"];
+  const mockHtml = `<div class="wcard" style="margin-top:10px" id="mockCard"><div class="uname">내 모의지원 결과 메모</div>
+      <div class="why">메가스터디·진학사 등에서 직접 모의지원해 본 결과를 적어 두세요. 이 브라우저에만 저장되고, 같은 학과가 위 목록에 있으면 결과가 함께 표시돼요.</div>
+      ${MOCK.map((m, i) => `<div class="row" style="align-items:end">
+        <label style="flex:1 1 90px">대학<input data-mk="${i}" data-f="u" value="${esc(m.u)}" placeholder="연세대"></label>
+        <label style="flex:1 1 90px">학과<input data-mk="${i}" data-f="d" value="${esc(m.d)}" placeholder="의예"></label>
+        <label style="flex:1 1 100px">어디서<select data-mk="${i}" data-f="org">${ORG_OPTS.map(o => `<option ${m.org === o ? "selected" : ""}>${o}</option>`).join("")}</select></label>
+        <label style="flex:2 1 140px">결과<input data-mk="${i}" data-f="res" value="${esc(m.res)}" placeholder="예: 4칸 · 최초합 70%"></label>
+        <button data-mkdel="${i}" aria-label="삭제">삭제</button></div>`).join("") || `<div class="why">아직 적은 결과가 없어요.</div>`}
+      <button id="mkAdd">+ 모의지원 결과 추가</button></div>`;
   el.innerHTML = `${bar(3)}<h2>갈 수 있는 대학</h2><div class="kv">${sumChips}</div>
     <div class="seg" role="tablist"><button data-rt="line" aria-pressed="${RT==="line"}">정시 · 예상 합격선</button><button data-rt="susi" aria-pressed="${RT==="susi"}">수시 · 최저 충족</button><button data-rt="js" aria-pressed="${RT==="js"}">정시 · 동국대 입결</button></div>
-    <div id="rt-line" ${RT==="line"?"":"hidden"}>${lineHtml}</div>
+    <div id="rt-line" ${RT==="line"?"":"hidden"}>${lineHtml}${mockHtml}</div>
     <div id="rt-susi" ${RT==="susi"?"":"hidden"}>
       <p class="sub" style="margin:0 0 10px">이미 지원한 수시 전형의 최저를 맞췄는지 확인하는 용도예요. 20개 대학 ${univ.length}곳에서 충족·아슬아슬한 전형이 있어요.</p>
       <div style="display:flex;flex-direction:column;gap:10px">${susiHtml || `<div class="wcard empty">최저를 맞춘 전형이 없어요. 등급을 다시 확인해 보세요.</div>`}</div></div>
@@ -725,6 +738,9 @@ function wizResult(el){
     <div class="wbar"><button class="ghost" id="wBack">점수 수정</button><button class="primary" id="wClassic2">전체 계산기로 자세히</button></div>`;
   el.querySelectorAll("[data-rt]").forEach(b => b.onclick = () => { W.rt = b.dataset.rt; persistUI(); wizRender(); });
   const la = el.querySelector("#lineAll"); if (la) la.onclick = () => { W.lineAll = !W.lineAll; persistUI(); wizRender(); };
+  el.querySelector("#mkAdd").onclick = () => { MOCK.push({u:"", d:"", org:"메가스터디", res:""}); persistUI(); wizRender(); const c = $("#mockCard"); if (c) c.scrollIntoView({block:"center"}); };
+  el.querySelectorAll("[data-mk]").forEach(inp => inp.onchange = e => { MOCK[+inp.dataset.mk][inp.dataset.f] = e.target.value.trim(); persistUI(); wizRender(); const c = $("#mockCard"); if (c) c.scrollIntoView({block:"center"}); });
+  el.querySelectorAll("[data-mkdel]").forEach(b => b.onclick = () => { MOCK.splice(+b.dataset.mkdel, 1); persistUI(); wizRender(); });
   el.querySelectorAll("[data-pct]").forEach(inp => inp.onchange = e => { W.pct[inp.dataset.pct] = e.target.value; persistUI(); wizRender(); });
   el.querySelector("#wBack").onclick = () => { W.step = 2; persistUI(); wizRender(); scrollTo(0,0); };
   el.querySelector("#wClassic2").onclick = () => { wizShow(false); location.hash = "susi"; };
