@@ -152,11 +152,19 @@ function run() {
   const haveTox = fs.existsSync(toxPath);
   const cases = [
     ['000', 'inactive', 'inactive in all three'],
-    ['100', 'agonist', 'agonist mode only'],
-    ['020', 'antagonist', 'antagonist mode only'],
+    ['100', 'agonist', 'active in the agonist-mode assay'],
+    ['020', 'antagonist', 'active in an antagonist-mode assay'],
     ['122', null, 'both modes - the assay cannot separate them'],
     ['344', null, 'inconclusive and cytotoxic only'],
-    ['999', null, 'not tested']
+    ['999', null, 'not tested'],
+    /* Position carries the mode: 743053 is the agonist screen, 743054 and
+     * 743063 are the two antagonist screens. An "active agonist" outcome in
+     * an antagonist-mode well is a signal rise in a co-treatment plate, not
+     * agonism, and reading it as agonism gave formononetin an "agonist"
+     * label although it was INACTIVE in the agonist screen - which then
+     * dragged fisetin to "agonist" from similarity 0.39. */
+    ['010', null, 'agonist flag in an antagonist-mode well only'],
+    ['012', 'antagonist', 'antagonist-mode active; the off-mode flag does not cancel it']
   ];
   let readOk = true;
   for (const [code, want, why] of cases) {
@@ -245,6 +253,138 @@ function run() {
     }
   } else {
     console.log('  note  no tox21_ar.json in this build, skipping');
+  }
+
+  /* --- an off-mode agonist flag must not pass for agonism ------------ */
+  const offMode = PR.readTox21('010');
+  if (offMode && offMode.offModeAgonist && offMode.verdict === null) {
+    pass++;
+    console.log(`  ok    ${'off-mode flag is not a verdict'.padEnd(30)} 010 -> no call`);
+  } else {
+    fail++;
+    console.log('  FAIL  an antagonist-mode agonist flag must not read as agonism');
+  }
+
+  /* --- the measured read-across pool --------------------------------- */
+  console.log('\n  measured read-across pool');
+  if (haveTox) {
+    const toxTable = JSON.parse(fs.readFileSync(toxPath, 'utf8'));
+    const added = PR.registerMeasured(toxTable);
+    const pool = PR.functionPool();
+    /* a hand label always wins over a measured one */
+    let shadowed = 0;
+    for (const name of Object.keys(PR.FUNCTION_CLASS)) {
+      if (pool.filter(e => e.n === name).length !== 1) shadowed++;
+    }
+    if (added >= 10 && pool.length === lib.length + added && !shadowed) {
+      pass++;
+      console.log(`  ok    ${'measured neighbours join the pool'.padEnd(30)} ${lib.length} + ${added} = ${pool.length}`);
+    } else {
+      fail++;
+      console.log(`  FAIL  pool is ${pool.length} from ${lib.length} + ${added}, ${shadowed} duplicated`);
+    }
+
+    /* every measured entry must rest on at least two informative assays */
+    const thin = pool.filter(e => e.measured && e.assays < 2);
+    if (!thin.length) {
+      pass++;
+      console.log(`  ok    ${'no single-assay labels vote'.padEnd(30)} daidzein (code 313) excluded`);
+    } else {
+      fail++;
+      console.log(`  FAIL  ${thin.length} entries vote on one assay: ${thin.map(e => e.n).join(', ')}`);
+    }
+
+    /* and the curated score must not have been bought with them */
+    const withPool = (function () {
+      let correct = 0;
+      for (const entry of lib) {
+        const mol = AR.parseSmiles(byName[entry.n]);
+        let dock = null;
+        if (scene) {
+          const stored = scene.poses[structureKey(mol)];
+          if (stored && stored.placed) {
+            dock = { placed: true, ile899: (stored.c || []).indexOf('ILE899') >= 0 };
+          }
+        }
+        const call = PR.callFunction(AR.packFingerprint(AR.morganFingerprint(mol, 2)), {
+          exclude: entry.n, dock: dock, motifs: AR.detectMotifs(mol)
+        });
+        if (call.label === entry.c) correct++;
+      }
+      return correct;
+    })();
+    console.log(`        curated LOO with the pool  ${withPool}/${n}`);
+    if (withPool >= MIN_CORRECT) {
+      pass++;
+      console.log(`  ok    ${'coverage costs no accuracy'.padEnd(30)} ${withPool}/${n} >= ${MIN_CORRECT}`);
+    } else {
+      fail++;
+      console.log(`  FAIL  the measured pool cost accuracy: ${withPool}/${n}`);
+    }
+  }
+
+  /* --- the graded call, and why it declines -------------------------- */
+  console.log('\n  graded antagonist call');
+  const graded = [
+    ['Fisetin', 'antagonist', ['predicted', 'possible'],
+     'measured antagonist flavonoids sit at 0.36-0.38'],
+    ['Phenylethyl resorcinol', 'antagonist', ['predicted', 'possible'],
+     'same space, further out'],
+    ['Quercetin', 'antagonist', ['predicted', 'possible'], 'genistein at 0.49'],
+    ['Bicalutamide', 'antagonist', ['measured', 'predicted'], 'the obvious case'],
+    ['Dihydrotestosterone', 'agonist', ['measured', 'predicted'], 'must not drift']
+  ];
+  let gradedBad = 0;
+  for (const [name, wantLabel, wantTiers, why] of graded) {
+    const smiles = byName[name];
+    if (!smiles) { gradedBad++; console.log(`  FAIL  ${name} is not in the dictionary`); continue; }
+    const mol = AR.parseSmiles(smiles);
+    let dock = null;
+    if (scene) {
+      const stored = scene.poses[structureKey(mol)];
+      if (stored && stored.placed) {
+        dock = { placed: true, ile899: (stored.c || []).indexOf('ILE899') >= 0 };
+      }
+    }
+    const tox21 = haveTox
+      ? (JSON.parse(fs.readFileSync(toxPath, 'utf8')).calls[AR.structureIdOf(mol)] || null)
+      : null;
+    const call = PR.callFunction(AR.packFingerprint(AR.morganFingerprint(mol, 2)),
+      { dock: dock, motifs: AR.detectMotifs(mol), tox21: tox21 });
+    const ok = call.label === wantLabel && wantTiers.indexOf(call.tier) >= 0;
+    if (!ok) {
+      gradedBad++;
+      console.log(`  FAIL  ${name}: ${call.tier}/${call.label}, wanted ${wantLabel} ` +
+                  `in [${wantTiers.join('|')}] — ${why}`);
+    } else {
+      console.log(`        ${name.padEnd(24)} ${call.tier}/${call.label}  ` +
+                  `nearest ${call.nearest.toFixed(2)}`);
+    }
+  }
+  if (gradedBad) fail += gradedBad;
+  else {
+    pass++;
+    console.log(`  ok    ${'graded calls land in the right tier'.padEnd(30)} ${graded.length} compounds`);
+  }
+
+  /* anything the engine will not call must say why, and a possible call
+   * must say what stopped it from being a plain one */
+  let silent = 0, checked = 0;
+  for (const [ko, en, smi] of PR.INGREDIENTS) {
+    let mol;
+    try { mol = AR.parseSmiles(smi); } catch (err) { continue; }
+    const call = PR.callFunction(AR.packFingerprint(AR.morganFingerprint(mol, 2)), {});
+    if (call.tier !== 'unknown' && call.tier !== 'possible') continue;
+    checked++;
+    if (!call.reason || call.reason.length < 10) {
+      silent++;
+      if (silent < 4) console.log(`  FAIL  ${en} is ${call.tier} with no reason given`);
+    }
+  }
+  if (silent) fail += silent;
+  else {
+    pass++;
+    console.log(`  ok    ${'every hedge states its reason'.padEnd(30)} ${checked} compounds checked`);
   }
 
   /* --- resistance mutants: reported, never voted on ------------------

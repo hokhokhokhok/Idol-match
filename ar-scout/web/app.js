@@ -2,6 +2,8 @@
  * AR / LY / PR namespaces, which build.py produces from the module exports. */
 'use strict';
 
+var measuredRegistered = false;
+
 var AR = require('./armodel.js');
 var LY = require('./layout.js');
 var LY3 = require('./layout3d.js');
@@ -627,7 +629,7 @@ function renderSingle(result, title, subtitle) {
 
   var domainWord = { 'in': '적용영역 내', edge: '적용영역 경계', out: '적용영역 밖' }[result.domain];
   var fc = result.functionCall;
-  var fcLabel = PR.CLASS_LABELS[fc.label] || fc.label;
+  var fcLabel = PR.tierPhrase(fc.tier, fc.label);
   var fcClass = (fc.label === 'antagonist' || fc.label === 'unknown') ? ' warnink' : '';
 
   var tox = result.functionCall.tox21;
@@ -686,8 +688,53 @@ function renderSingle(result, title, subtitle) {
   out.push('<div class="kv">');
   out.push('<div><span class="k">Ki 환산</span><span class="v num">' +
            fx(result.kiNM, result.kiNM < 10 ? 2 : 0) + ' nM</span></div>');
+  /* the support fraction is a read-across weight; on a measured call there
+     is no read-across and printing 0.00 next to a measurement reads as a
+     confidence of zero, which is the opposite of the truth */
   out.push('<div><span class="k">기능 추정</span><span class="v' + fcClass + '">' +
-           esc(fcLabel) + '<span class="sub">근거 ' + fx(fc.support, 2) + '</span></span></div>');
+           esc(fcLabel) +
+           (fc.tier === 'measured'
+             ? (fc.thin ? '<span class="sub">유효 어세이 1개</span>' : '')
+             : '<span class="sub">근거 ' + fx(fc.support, 2) + '</span>') +
+           '</span></div>');
+  var tierInfo = PR.TIER_LABELS[fc.tier];
+  if (tierInfo) {
+    var tierNote = tierInfo.note;
+    if (fc.tier === 'measured' && fc.label === 'inactive') {
+      tierNote = 'Tox21 세 어세이 모두 비활성';
+    } else if (fc.tier === 'measured' && fc.thin) {
+      tierNote += ' — 단 유효 판정이 어세이 1개뿐이므로 약하게 보세요';
+    }
+    out.push('<div><span class="k">판정 등급</span><span class="v" ' +
+             'style="font-weight:500;font-size:13px;color:var(--ink-2)">' +
+             esc(tierInfo.word + ' — ' + tierNote) + '</span></div>');
+  }
+  if (fc.reason) {
+    out.push('<div><span class="k">' +
+             (fc.tier === 'unknown' ? '판단 불가 이유' : '단정하지 않는 이유') +
+             '</span><span class="v" style="font-weight:500;font-size:13px;' +
+             'color:var(--ink-2)">' + esc(fc.reason) + '</span></div>');
+  }
+  /* Say outright what the reference set calls these, whatever the engine
+   * decided. Someone asking "do the references treat this as an
+   * antagonist?" should not have to reverse-engineer it from a verdict. */
+  if (fc.neighbours && fc.neighbours.length && fc.tier !== 'measured') {
+    var nAnt = fc.refAntagonists ? fc.refAntagonists.length : 0;
+    var refLine;
+    if (nAnt === fc.neighbours.length) {
+      refLine = '최근접 레퍼런스 ' + nAnt + '종이 모두 길항제입니다 (' +
+                fc.refAntagonists.slice(0, 3).join(', ') +
+                (nAnt > 3 ? ' 외' : '') + ')';
+    } else if (nAnt) {
+      refLine = '최근접 ' + fc.neighbours.length + '종 중 ' + nAnt +
+                '종이 길항제입니다 (' + fc.refAntagonists.slice(0, 3).join(', ') + ')';
+    } else {
+      refLine = '최근접 레퍼런스에 길항제가 없습니다';
+    }
+    out.push('<div><span class="k">레퍼런스가 보는 바</span><span class="v" ' +
+             'style="font-weight:500;font-size:13px;color:var(--ink-2)">' +
+             esc(refLine) + '</span></div>');
+  }
   if (fc.evidence && fc.evidence.length) {
     out.push('<div><span class="k">판정 근거</span><span class="v" ' +
              'style="font-weight:500;font-size:13px;color:var(--ink-2)">' +
@@ -777,8 +824,10 @@ function renderSingle(result, title, subtitle) {
              '<th class="num">유사도</th></tr></thead><tbody>');
     for (var f = 0; f < fc.neighbours.length; f++) {
       var fn = fc.neighbours[f];
-      out.push('<tr><td>' + esc(fn.n) + '</td><td' +
-               (fn.c === 'antagonist' ? ' class="warnink"' : '') + '>' +
+      out.push('<tr><td>' + esc(fn.n) +
+               (fn.measured ? ' <span class="hint">Tox21 실측 라벨</span>' :
+                              ' <span class="hint">큐레이션 라벨</span>') +
+               '</td><td' + (fn.c === 'antagonist' ? ' class="warnink"' : '') + '>' +
                esc(PR.CLASS_LABELS[fn.c] || fn.c) + '</td><td class="num">' +
                fx(fn.sim, 3) + '</td></tr>');
     }
@@ -854,6 +903,15 @@ function runSingle(rawQuery) {
       }
     }
   } catch (err) { dock = null; }
+
+  /* The Tox21-decisive compounds join the read-across pool. Registered
+   * here, once, because predict.js is bundled before the table is. */
+  try {
+    if (typeof TOX21 !== 'undefined' && TOX21 && !measuredRegistered) {
+      PR.registerMeasured(TOX21);
+      measuredRegistered = true;
+    }
+  } catch (err) { /* the pool is optional */ }
 
   var tox21 = null;
   try {
@@ -941,7 +999,7 @@ function runBatch(text) {
       batchRows.push({
         name: items[i].name, smiles: smi, pKi: r.pKi, ci: r.ci,
         domain: r.domain, verdict: r.pocket.verdict,
-        fnLabel: PR.CLASS_LABELS[r.functionCall.label] || r.functionCall.label,
+        fnLabel: PR.tierPhrase(r.functionCall.tier, r.functionCall.label),
         fnKey: r.functionCall.label, fnSupport: r.functionCall.support,
         mw: r.desc.mw, clogp: r.desc.clogp, occupancy: r.occupancy
       });
@@ -1214,6 +1272,49 @@ function renderModelCard() {
   out.push('<p>증거를 합쳐 판정하며, 어떤 것이 쓰였는지는 결과의 ' +
            '「판정 근거」 줄에 표시됩니다. <b>Tox21 실측이 있으면 그것이 우선</b>이고, ' +
            '없을 때만 아래 세 가지를 조합합니다.</p>');
+  out.push('<h5>판정 등급 — 언제 「길항제」라고 쓰는가</h5>');
+  out.push('<p>등급은 증거의 종류가 아니라 <b>얼마나 단정할 수 있는지</b>를 ' +
+           '나타내며, 기준은 아래가 전부입니다. 단정하지 못할 때는 왜 못하는지 ' +
+           '결과 화면에 문장으로 적습니다.</p>');
+  out.push('<table><thead><tr><th>등급</th><th>표기</th><th>기준</th></tr></thead><tbody>');
+  out.push('<tr><td><b>실측</b></td><td>길항제 (실측)</td>' +
+           '<td>Tox21에서 <b>길항제 모드 어세이</b>만 활성. 어세이 1개만 유효하면 ' +
+           '그렇게 밝힙니다.</td></tr>');
+  out.push('<tr><td><b>예측</b></td><td>길항제 (예측)</td>' +
+           '<td>최근접 레퍼런스 유사도 <b>0.35 이상</b>이고 한쪽 근거가 ' +
+           '<b>50% 이상</b>.</td></tr>');
+  out.push('<tr><td><b>가능성</b></td><td>길항제 가능성</td>' +
+           '<td>근거 방향은 길항 쪽이지만 유사도가 0.35 미만(0.20 이상). ' +
+           '또는 유사도가 낮아도 스테로이드 부피 치환기·Ile899 접촉 같은 ' +
+           '구조 신호가 있을 때.</td></tr>');
+  out.push('<tr><td><b>판단 불가</b></td><td>판단 불가</td>' +
+           '<td>유사도가 <b>0.15 미만</b>이거나 증거가 갈림. 이유를 명시합니다.</td></tr>');
+  out.push('</tbody></table>');
+  out.push('<p>0.15라는 바닥에는 근거가 있습니다. 라벨 38종을 유사도 구간별로 ' +
+           'leave-one-out 해보면 0.5 이상에서 87%, 0.35–0.5에서 64%, ' +
+           '0.15–0.35에서 100%(n=4)인데, <b>0.15 미만 구간에는 표본이 아예 ' +
+           '없습니다</b> — 라벨된 물질은 모두 서로 가까워서요. 그 아래는 성능이 ' +
+           '낮은 구간이 아니라 <b>한 번도 검증된 적 없는 구간</b>입니다. ' +
+           '게다가 레퍼런스 38종 중 17종이 길항제라서, 모든 것에서 먼 분자는 ' +
+           '구조가 아니라 <b>레퍼런스 구성 편향</b> 때문에 길항제 만장일치를 ' +
+           '받습니다. 피세틴이 정확히 그랬습니다 — 이웃 5종 전부 길항제, ' +
+           '유사도는 모두 0.09대.</p>');
+  out.push('<p><b>그래서 폴리페놀 공간에 실측 이웃을 넣었습니다.</b> ' +
+           'Tox21에서 한쪽 모드만 활성으로 확정된 물질 중 손으로 라벨하지 않은 ' +
+           '16종(제니스테인·아피제닌·레스베라트롤·부틸파라벤 등)을 read-across ' +
+           '이웃으로 씁니다. 라벨이 측정값이고, 큐레이션된 38종(약물·농약)이 ' +
+           '한마디도 못 하는 공간을 메우기 때문입니다. 넣어도 큐레이션 38종 ' +
+           '성적은 32/38 그대로이므로 <b>정확도가 아니라 적용 범위를 산 것</b>입니다. ' +
+           '어세이 1개만 유효한 라벨(예: 다이드제인, 코드 313)은 이웃 투표에서 ' +
+           '제외합니다 — 피세틴의 최강 이웃이던 유사도 0.46짜리였습니다.</p>');
+  out.push('<p><b>Tox21은 어세이의 모드를 구분해 읽습니다.</b> 코드 세 자리는 ' +
+           'AID 743053(작용제 모드), 743054·743063(길항제 모드) 순서입니다. ' +
+           '길항제 모드 웰에서 나온 「작용제 활성」은 기준 작용제와 함께 넣은 ' +
+           '플레이트에서 신호가 올라갔다는 뜻이고, 그 어세이가 답하는 질문이 ' +
+           '아닙니다. 모드를 무시하고 합치면 포르모노네틴처럼 <b>작용제 모드에서 ' +
+           '비활성인데도 「작용제」 라벨</b>이 붙고, 그게 유사도 0.39에서 ' +
+           '피세틴까지 끌고 갑니다. 제니스테인·레스베라트롤은 반대로 진짜 길항 ' +
+           '활성이 off-mode 플래그에 상쇄돼 사라졌습니다.</p>');
   out.push('<ul>');
   out.push('<li><b>Tox21 리포터 어세이 실측</b> — 약 7,800종이 작용제·길항제 모드로 ' +
            '실제 시험된 결과입니다. 사전 205종 중 151종이 여기 들어 있고 98종은 ' +

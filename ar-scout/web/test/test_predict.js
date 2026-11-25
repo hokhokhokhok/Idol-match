@@ -91,7 +91,11 @@ function run() {
     ['파라벤', 'matches five parabens equally'],
     ['메틸', 'a fragment'],
     ['프탈레이트', 'matches several phthalates'],
-    ['스테론', 'a fragment of many steroids']
+    ['스테론', 'a fragment of many steroids'],
+    /* the single-edit pass must not reach these either */
+    ['레조르시놀', 'the tail of the resorcinols'],
+    ['에스트로', 'starts estrone, estradiol and estriol'],
+    ['벤조페논', 'matches several benzophenones']
   ];
   let wrongHits = 0;
   for (const [q, why] of mustNotResolve) {
@@ -134,7 +138,14 @@ function run() {
     ['비칼루타마이드', 'Bicalutamide'], ['비칼루타미드', 'Bicalutamide'],
     ['플루타마이드', 'Flutamide'], ['플루타미드', 'Flutamide'],
     ['엔잘루타마이드', 'Enzalutamide'], ['엔잘루타미드', 'Enzalutamide'],
-    ['니코틴아미드', 'Niacinamide'], ['하이드록시플루타미드', 'Hydroxyflutamide']
+    ['니코틴아미드', 'Niacinamide'], ['하이드록시플루타미드', 'Hydroxyflutamide'],
+    /* one wrong syllable, resolved by the single-edit pass. Chasing these
+     * with a rule each was losing: 케/퀘, -놀락톤/-노락톤, and the next one
+     * nobody has typed yet. */
+    ['케르세틴', 'Quercetin'], ['퀘르세틴', 'Quercetin'],
+    ['스피로놀락톤', 'Spironolactone'], ['스피로노락톤', 'Spironolactone'],
+    ['페닐에틸레조르시놀', 'Phenylethyl resorcinol'],
+    ['Phenylethyl resorcinol', 'Phenylethyl resorcinol']
   ];
   let missed = 0;
   for (const [q, want] of mustResolve) {

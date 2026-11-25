@@ -304,7 +304,10 @@ var INGREDIENTS = [
   ["팔미트산", "Palmitic acid", "CCCCCCCCCCCCCCCC(=O)O"],
   ["스테아르산", "Stearic acid", "CCCCCCCCCCCCCCCCCC(=O)O"],
   ["라우르산", "Lauric acid", "CCCCCCCCCCCC(=O)O", ["라우릭애씨드"]],
-  ["미리스트산", "Myristic acid", "CCCCCCCCCCCCCC(=O)O"]
+  ["미리스트산", "Myristic acid", "CCCCCCCCCCCCCC(=O)O"],
+  ["페닐에틸레조르시놀", "Phenylethyl resorcinol",
+   "CC(c1ccccc1)c1ccc(O)cc1O",
+   ["페닐에틸레조시놀", "Symwhite 377", "4-(1-페닐에틸)-1,3-벤젠디올"]]
 ];
 /* INGREDIENTS:END */
 
@@ -400,19 +403,42 @@ var TOX21_LABEL_KO = {
  * ketoconazole and triclosan land there. And a compound can genuinely read
  * active in both modes (spironolactone does); the antagonist call is
  * reported then, because that is the safety-relevant one. */
+/* Which mode each code position was run in, matching assets/tox21_ar.json:
+ * AID 743053 is the agonist-mode screen, 743054 and 743063 the two
+ * antagonist-mode screens. The position is not cosmetic. An "active
+ * agonist" outcome in the agonist-mode assay is agonism. The same two words
+ * in an antagonist-mode co-treatment well mean only that the compound
+ * raised the signal in a well built to measure a drop - suggestive, but not
+ * what that assay answers.
+ *
+ * Pooling them regardless of mode is what this code used to do, and it
+ * produced confidently wrong labels: formononetin was INACTIVE in the
+ * agonist screen and still came out "agonist" on the strength of one
+ * antagonist-mode well, then sat at similarity 0.39 from fisetin and
+ * dragged it to "agonist" as well. Genistein and resveratrol lost real
+ * antagonist calls the same way, their antagonist-mode activity cancelled
+ * by an off-mode agonist flag. */
+var TOX21_MODES = ['agonist', 'antagonist', 'antagonist'];
+
 function readTox21(code) {
   if (!code || code.length < 3) return null;
   var calls = [];
   for (var i = 0; i < 3; i++) calls.push(TOX21_CODE[code.charAt(i)] || 'not tested');
-  var agonist = false, antagonist = false, cytotoxic = false, inconclusive = false;
-  var tested = 0;
+  var agonist = false, antagonist = false, offModeAgonist = false;
+  var cytotoxic = false, inconclusive = false, tested = 0, informative = 0;
   for (var j = 0; j < calls.length; j++) {
     if (calls[j] === 'not tested') continue;
     tested++;
-    if (calls[j] === 'active agonist') agonist = true;
-    else if (calls[j] === 'active antagonist') antagonist = true;
-    else if (calls[j] === 'cytotoxic') cytotoxic = true;
+    var mode = TOX21_MODES[j] || 'antagonist';
+    if (calls[j] === 'active agonist') {
+      if (mode === 'agonist') { agonist = true; informative++; }
+      else offModeAgonist = true;
+    } else if (calls[j] === 'active antagonist') {
+      if (mode === 'antagonist') { antagonist = true; informative++; }
+      else offModeAgonist = true;   /* a drop in the agonist screen: odd, ignore */
+    } else if (calls[j] === 'cytotoxic') cytotoxic = true;
     else if (calls[j] === 'inconclusive') inconclusive = true;
+    else if (calls[j] === 'inactive') informative++;
   }
   if (!tested) return null;
 
@@ -438,8 +464,74 @@ function readTox21(code) {
   }
   return {
     calls: calls, verdict: verdict, cytotoxic: cytotoxic,
-    inconclusive: inconclusive, mixed: agonist && antagonist
+    inconclusive: inconclusive, mixed: agonist && antagonist,
+    offModeAgonist: offModeAgonist, informative: informative
   };
+}
+
+/* --- how far read-across may be trusted, measured ----------------------
+ *
+ * Leave-one-out over the 38 curated compounds, binned by the similarity of
+ * the nearest reference:
+ *
+ *     nearest      n   correct
+ *     0.15-0.25    3     100%
+ *     0.25-0.35    1     100%
+ *     0.35-0.50   11      64%
+ *     0.50-1.00   23      87%
+ *     below 0.15   0        -
+ *
+ * The last row is the important one. No curated compound sits below 0.15,
+ * so a vote cast down there is not a weak call, it is an untested one. And
+ * it is actively misleading, because 17 of the 38 references are
+ * antagonists: a compound far from everything collects a unanimous
+ * antagonist vote out of class imbalance alone. Fisetin did exactly that -
+ * five antagonist neighbours, every similarity near 0.09 - which is why
+ * "판단 불가" now has to say which of these cases it is. */
+var SIM_CALL = 0.35;      /* assert a class */
+var SIM_POSSIBLE = 0.20;  /* enough to raise a possibility, not to assert */
+var SIM_FLOOR = 0.15;     /* below this, read-across has never been tested */
+
+/* Compounds the Tox21 screen called unambiguously but that nobody curated
+ * a label for. They are measurements, so they belong in the read-across
+ * pool - and they are the only thing in it that lives in polyphenol space,
+ * where the curated set (drugs and pesticides) has nothing to say. Adding
+ * them leaves the curated leave-one-out score unchanged at 31/38, so they
+ * buy coverage rather than accuracy, exactly as the Tox21 verdicts do. */
+var measuredPool = null;
+
+function registerMeasured(toxTable) {
+  measuredPool = [];
+  if (!toxTable || !toxTable.calls) return 0;
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var en = INGREDIENTS[i][1];
+    if (FUNCTION_CLASS[en]) continue;          /* a hand label wins */
+    var mol;
+    try { mol = AR.parseSmiles(INGREDIENTS[i][2]); } catch (err) { continue; }
+    var code = toxTable.calls[AR.structureIdOf(mol)];
+    if (!code) continue;
+    var read = readTox21(code);
+    if (!read || !read.verdict || read.verdict === 'inactive') continue;
+    var informative = read.informative;
+    /* A verdict resting on one assay out of three, with the other two
+     * inconclusive, is not enough to let a compound vote on its
+     * neighbours. Daidzein is the case that forced this: code 313, a lone
+     * "active agonist" between two inconclusive wells, and at similarity
+     * 0.46 it was the single strongest neighbour fisetin had. It is still
+     * shown as a measured record for the compound itself; it just does not
+     * get to carry the vote for anything else. */
+    if (informative < 2) continue;
+    measuredPool.push({
+      n: en, c: read.verdict, measured: true, assays: informative,
+      fp: AR.packFingerprint(AR.morganFingerprint(mol, 2))
+    });
+  }
+  return measuredPool.length;
+}
+
+function functionPool() {
+  var pool = ensureFunctionLibrary();
+  return measuredPool && measuredPool.length ? pool.concat(measuredPool) : pool;
 }
 
 var functionLibrary = null;
@@ -470,14 +562,25 @@ function ensureFunctionLibrary() {
  * pocket in the agonist conformation and is touched by almost anything. */
 function callFunction(fp, options) {
   options = options || {};
-  var lib = ensureFunctionLibrary();
+  var pool = functionPool();
   var neighbours = [];
-  for (var i = 0; i < lib.length; i++) {
-    if (options.exclude && lib[i].n === options.exclude) continue;
-    neighbours.push({ n: lib[i].n, c: lib[i].c, sim: AR.tanimotoPacked(fp, lib[i].fp) });
+  for (var i = 0; i < pool.length; i++) {
+    if (options.exclude && pool[i].n === options.exclude) continue;
+    neighbours.push({ n: pool[i].n, c: pool[i].c, measured: !!pool[i].measured,
+                      sim: AR.tanimotoPacked(fp, pool[i].fp) });
   }
   neighbours.sort(function (a, b) { return b.sim - a.sim; });
   var top = neighbours.slice(0, 5);
+  var nearest = top.length ? top[0].sim : 0;
+
+  /* What the reference set itself says, stated whether or not the engine
+   * ends up willing to call it. The user asking "do the references treat
+   * this as an antagonist?" should not have to infer it from a verdict. */
+  var refCount = {}, refAnt = [];
+  for (var r = 0; r < top.length; r++) {
+    refCount[top[r].c] = (refCount[top[r].c] || 0) + 1;
+    if (top[r].c === 'antagonist') refAnt.push(top[r].n);
+  }
 
   var weights = {}, total = 0;
   for (var k = 0; k < top.length; k++) {
@@ -490,31 +593,54 @@ function callFunction(fp, options) {
   var motifs = options.motifs || null;
   var evidence = [];
 
+  function result(label, tier, reason) {
+    var share = total > 1e-12 ? ((weights[label] || 0) / total) : 0;
+    return {
+      label: label, tier: tier, reason: reason || null,
+      support: share, nearest: nearest, neighbours: top,
+      evidence: evidence, weights: weights,
+      refCount: refCount, refAntagonists: refAnt,
+      measured: tier === 'measured',
+      tox21: options.tox21 ? readTox21(options.tox21) : null
+    };
+  }
+
   /* A measured result ends the argument. */
   var tox = options.tox21 ? readTox21(options.tox21) : null;
   if (tox && tox.verdict) {
-    var measuredNote = 'Tox21 리포터 어세이 실측';
-    if (tox.cytotoxic) measuredNote += ' (일부 어세이는 세포독성으로 판정 보류)';
-    return {
-      label: tox.verdict, support: 1, nearest: 0, neighbours: [],
-      evidence: [measuredNote], weights: {}, measured: true, tox21: tox
-    };
+    var informative = tox.informative;
+    var note = 'Tox21 리포터 어세이 실측';
+    if (informative < 2) {
+      note += ' — 단 1개 어세이만 유효 판정 (나머지는 보류/세포독성)';
+    }
+    if (tox.cytotoxic) note += ' (일부 어세이는 세포독성으로 판정 보류)';
+    evidence.push(note);
+    weights = {}; total = 0;
+    var out = result(tox.verdict, 'measured', null);
+    out.thin = informative < 2;
+    return out;
   }
+
   if (total > 1e-12) {
-    evidence.push('유사 레퍼런스 ' + top.length + '종');
+    var measuredNear = 0;
+    for (var m = 0; m < top.length; m++) if (top[m].measured) measuredNear++;
+    evidence.push('유사 레퍼런스 ' + top.length + '종 (최근접 ' + nearest.toFixed(2) +
+                  (measuredNear ? ', 실측 라벨 ' + measuredNear + '종' : '') + ')');
   }
 
   /* Steroidal antiandrogens sit right next to the androgens by 2D
    * similarity, so read-across alone calls them agonists. What separates
    * them is a bulky 17-alpha or spiro substituent where an androgen has a
    * small 17 group. */
+  var structural = null;
   if (motifs && motifs.steroidBulky) {
     var motifWeight = 0.45 * (total > 1e-12 ? total : 1);
     weights.antagonist = (weights.antagonist || 0) + motifWeight;
     total += motifWeight;
-    evidence.push('스테로이드 골격에 부피 큰 치환기' +
-                  (motifs.steroidSpiro ? ' (스피로 고리)' :
-                   (motifs.steroidEster ? ' (에스터)' : ' (나이트릴)')));
+    structural = '스테로이드 골격에 부피 큰 치환기' +
+                 (motifs.steroidSpiro ? ' (스피로 고리)' :
+                  (motifs.steroidEster ? ' (에스터)' : ' (나이트릴)'));
+    evidence.push(structural);
   }
   if (dock && dock.placed) {
     /* an independent structural vote, weighted like a close neighbour */
@@ -522,6 +648,7 @@ function callFunction(fp, options) {
     if (dock.ile899) {
       weights.antagonist = (weights.antagonist || 0) + dockWeight;
       total += dockWeight;
+      structural = structural || '도킹 포즈가 helix-12 말단(Ile899)에 접촉';
       evidence.push('도킹 포즈가 helix-12 말단(Ile899)에 접촉');
     } else {
       weights.agonist = (weights.agonist || 0) + dockWeight * 0.5;
@@ -544,18 +671,57 @@ function callFunction(fp, options) {
                     (tox.cytotoxic ? ' (세포독성)' : '') + ' — 아래는 예측입니다');
     }
   }
-  var nearest = top.length ? top[0].sim : 0;
-  var confident = nearest >= 0.35 || (dock && dock.placed && nearest >= 0.2);
-  return {
-    label: (confident && best) ? best : 'unknown',
-    support: total > 1e-12 ? bestWeight / total : 0,
-    nearest: nearest,
-    neighbours: top,
-    evidence: evidence,
-    weights: weights,
-    measured: false,
-    tox21: tox
-  };
+
+  /* --- the decision, with the criteria written out -------------------- */
+
+  if (!top.length || total <= 1e-12) {
+    return result('unknown', 'unknown', '비교할 레퍼런스가 없습니다.');
+  }
+
+  /* Below the floor the only honest answer is that the method has not been
+   * tested here. Saying so, and saying that the antagonist-heavy reference
+   * set makes a unanimous antagonist vote meaningless at this distance, is
+   * more use than a verdict. */
+  if (nearest < SIM_FLOOR) {
+    var why = '최근접 레퍼런스 유사도가 ' + nearest.toFixed(2) +
+              '뿐입니다. 라벨된 38종은 모두 0.16 이상에서 서로를 맞히므로 ' +
+              '이 거리는 이 도구가 검증된 적 없는 범위입니다.';
+    if (refAnt.length >= 3) {
+      why += ' 최근접 ' + top.length + '종 중 ' + refAnt.length +
+             '종이 길항제이지만, 레퍼런스 38종 중 17종이 길항제라서 ' +
+             '이 거리에서는 만장일치가 구조 유사성이 아니라 ' +
+             '레퍼런스 구성 편향에서 나옵니다.';
+    }
+    if (structural) {
+      why += ' 다만 구조 신호가 하나 있습니다: ' + structural + '.';
+      return result('antagonist', 'possible', why);
+    }
+    return result('unknown', 'unknown', why);
+  }
+
+  var share = bestWeight / total;
+
+  /* A structural flag on its own is enough to raise the possibility even
+   * when read-across is thin, because it is what the flag was added for. */
+  if (nearest >= SIM_CALL && best && share >= 0.5) {
+    return result(best, 'predicted', null);
+  }
+  if (best === 'antagonist' && (structural || nearest >= SIM_POSSIBLE)) {
+    return result('antagonist', 'possible',
+      '길항제 쪽 근거가 우세하지만(' + (100 * share).toFixed(0) + '%) ' +
+      (nearest < SIM_CALL
+        ? '최근접 유사도가 ' + nearest.toFixed(2) + '로 단정 기준(' +
+          SIM_CALL.toFixed(2) + ')에 못 미칩니다.'
+        : '증거가 갈립니다.'));
+  }
+  if (best && nearest >= SIM_POSSIBLE) {
+    return result(best, 'possible',
+      (100 * share).toFixed(0) + '%로 우세하지만 최근접 유사도 ' +
+      nearest.toFixed(2) + '는 단정 기준(' + SIM_CALL.toFixed(2) + ') 미만입니다.');
+  }
+  return result('unknown', 'unknown',
+    '최근접 유사도 ' + nearest.toFixed(2) + '에서 증거가 갈립니다 (' +
+    (100 * share).toFixed(0) + '% 우세).');
 }
 
 /* ---------------------------------------------------------- pocket layout */
@@ -599,6 +765,26 @@ var H12_RESIDUES = ['Thr877', 'Met895', 'Ile899'];
 /* --------------------------------------------------------- library state */
 
 /* experimental class labels used by the reference library */
+/* How sure the functional call is, in words, with the rule next to it so
+ * the label and the criterion can never drift apart. */
+var TIER_LABELS = {
+  measured:  { word: '실측',        note: 'Tox21 리포터 어세이에서 한쪽 모드만 활성' },
+  predicted: { word: '예측',        note: '최근접 레퍼런스 유사도 0.35 이상, 한쪽 근거가 50% 이상' },
+  possible:  { word: '가능성',      note: '근거 방향은 한쪽이지만 유사도가 0.35 미만' },
+  unknown:   { word: '판단 불가',   note: '검증된 유사도 범위를 벗어났거나 근거가 갈림' }
+};
+
+function tierPhrase(tier, label) {
+  var t = TIER_LABELS[tier];
+  var cls = CLASS_LABELS[label] || label;
+  if (!t) return cls;
+  if (tier === 'unknown') return t.word;
+  if (tier === 'possible') return cls + ' 가능성';
+  /* CLASS_LABELS.inactive already carries "(실측)"; do not say it twice */
+  if (cls.indexOf('(' + t.word + ')') >= 0) return cls;
+  return cls + ' (' + t.word + ')';
+}
+
 var CLASS_LABELS = {
   agonist: '작용제',
   antagonist: '길항제',
@@ -945,6 +1131,7 @@ function normalizeName(value) {
    * so collapsing the variants is better than chasing aliases one at a time.
    * "비칼루타마이드" missing entirely is how this was found. */
   v = v.replace(/마이드/g, '미드');
+  v = v.replace(/퀘/g, '케').replace(/놀락톤/g, '노락톤');
   v = v.replace(/하이드록시/g, '히드록시').replace(/하이드로/g, '히드로');
   v = v.replace(/카르복/g, '카복').replace(/술폰/g, '설폰').replace(/술페이트/g, '설페이트');
   v = v.replace(/alpha/g, 'a').replace(/beta/g, 'b').replace(/gamma/g, 'g');
@@ -988,6 +1175,51 @@ function bigramScore(a, b) {
  * of the name it matched. Both were tuned so that every real alias in the
  * dictionary still resolves by exact match, and the generic fragments that
  * used to mis-resolve now fall through to suggestions. */
+/* One wrong syllable should not look like an unknown compound.
+ *
+ * The transliteration variants are endless - 비칼루타마이드/미드,
+ * 케르세틴/퀘르세틴, 스피로놀락톤/노락톤 - and patching them one rule at a
+ * time was losing. So after the exact and prefix passes fail, allow a
+ * single edit, but only where it cannot invent a match: the query must be
+ * long, and exactly one dictionary name may be within that one edit. Two
+ * candidates means ambiguity and the query falls through to suggestions,
+ * which is the behaviour the generic-fragment guard already enforces. */
+var FUZZY_MIN_CHARS = 5;
+
+function editDistanceAtMost1(a, b) {
+  if (a === b) return true;
+  var la = a.length, lb = b.length;
+  if (Math.abs(la - lb) > 1) return false;
+  var i = 0, j = 0, edits = 0;
+  while (i < la && j < lb) {
+    if (a.charAt(i) === b.charAt(j)) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (la === lb) { i++; j++; }
+    else if (la > lb) { i++; }
+    else { j++; }
+  }
+  if (i < la || j < lb) edits++;
+  return edits <= 1;
+}
+
+function fuzzyUnique(q) {
+  if (q.length < FUZZY_MIN_CHARS) return null;
+  var hit = null;
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var names = entryNames(INGREDIENTS[i]);
+    var matched = false;
+    for (var j = 0; j < names.length; j++) {
+      var n = normalizeName(names[j]);
+      if (n.length < FUZZY_MIN_CHARS) continue;
+      if (editDistanceAtMost1(q, n)) { matched = true; break; }
+    }
+    if (!matched) continue;
+    if (hit && hit !== INGREDIENTS[i]) return null;   /* ambiguous */
+    hit = INGREDIENTS[i];
+  }
+  return hit ? asResult(hit) : null;
+}
+
 var PARTIAL_MIN_CHARS = 4;
 var PARTIAL_MIN_COVER = 0.7;
 
@@ -1032,7 +1264,7 @@ function lookupName(query) {
       hits.push({ entry: INGREDIENTS[i], cover: bestCover });
     }
   }
-  if (!hits.length) return null;
+  if (!hits.length) return fuzzyUnique(q);
 
   /* A query that begins several names is ambiguous however well it covers
    * one of them: "estro" starts estrone, estradiol and estriol, and
@@ -1108,8 +1340,16 @@ module.exports = {
   resetLibrary: resetLibrary,
   REFERENCE_DEFAULT: REFERENCE_DEFAULT,
   CLASS_LABELS: CLASS_LABELS,
+  TIER_LABELS: TIER_LABELS,
+  tierPhrase: tierPhrase,
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
+  TOX21_MODES: TOX21_MODES,
+  registerMeasured: registerMeasured,
+  functionPool: functionPool,
+  SIM_CALL: SIM_CALL,
+  SIM_POSSIBLE: SIM_POSSIBLE,
+  SIM_FLOOR: SIM_FLOOR,
   describeShift: describeShift,
   readTox21: readTox21,
   TOX21_CODE: TOX21_CODE,
