@@ -5007,18 +5007,33 @@ function renderSingle(result, title, subtitle) {
            (p.measured
              ? '<b>2AM9 도킹 포즈에서 실제로 측정된 접촉</b>입니다. '
              : '도킹 포즈가 없어 <b>구조 규칙으로 추정</b>한 접촉입니다. ') +
-           '파랑 = 접촉 · 빨강 = helix-12 충돌 · 회색 = 미접촉<br>' +
+           '파랑 = 접촉 · 빨강 = helix-12 접촉 · 회색 = 미접촉<br>' +
            '분자 부피 ' + fx(result.volume, 0) + ' &Aring;&sup3; / 공동 ' + PR.POCKET_VOLUME + ' &Aring;&sup3;</p>');
 
   out.push('<h4 class="sect">접촉 잔기</h4>');
   out.push('<table><thead><tr><th>잔기</th><th>역할</th><th>상태</th></tr></thead><tbody>');
   for (var i = 0; i < p.residues.length; i++) {
     var r = p.residues[i];
-    var state = r.clash ? 'H12 충돌' : (r.contact ? '접촉 가능' : '미접촉');
+    /* "H12 충돌" used to sit in this column, which was a lie about what is
+       measured: nothing here computes steric overlap. Both states come from
+       the same 4.5 A cutoff, and the red one adds only that the residue is
+       on helix-12 in a pose that also reached Ile899. */
+    var state = r.clash ? '접촉 (helix-12)'
+                        : (r.contact ? (p.measured ? '접촉' : '접촉 예상') : '미접촉');
     out.push('<tr' + (r.clash ? ' class="clash"' : '') + '><td>' + esc(r.id) + '</td><td>' +
              esc(r.role) + '</td><td>' + esc(state) + '</td></tr>');
   }
   out.push('</tbody></table>');
+  out.push('<p class="hint" style="margin:8px 0 0">' +
+           '두 상태의 차이는 <b>세기가 아니라 위치</b>입니다. 접촉 판정은 양쪽 다 ' +
+           '중원자 간 <b>4.5 Å 이내</b>로 같고, 빨강은 그 잔기가 ' +
+           '<b>helix-12에 있고</b>(Thr877·Met895·Ile899) 이 포즈가 ' +
+           '<b>Ile899까지 닿았다</b>는 뜻입니다. 입체 충돌을 계산한 값이 ' +
+           '아닙니다 — 겹침이나 거리 위반을 재는 단계는 없습니다. ' +
+           'Trp741·Phe876도 내성 변이 잔기지만 helix-12 소속이 아니라서 ' +
+           '파랑입니다. 같은 물질이 Thr877에 똑같이 닿아도 포즈가 Ile899에 ' +
+           '못 닿으면 Thr877은 파랑으로 바뀝니다 — Thr877 자체에 대해 ' +
+           '새로 측정된 것은 없기 때문입니다.</p>');
 
   out.push('<h4 class="sect">2D 구조식</h4>');
   out.push('<div class="figwrap">' + svgStructure(result.mol) + '</div>');
@@ -5643,8 +5658,15 @@ function renderModelCard() {
            '계산에 반영하지 않으므로 거울상 이성질체는 동일하게 평가됩니다. ' +
            'estradiol처럼 스테로이드 코어를 가져도 A-ring이 방향족이면 AR에는 약한데, ' +
            '이 차이도 충분히 반영되지 않습니다.</li>');
-  out.push('<li><b>작용/길항 판정은 규칙 기반 추정입니다.</b> helix-12 충돌 여부를 ' +
-           '구조 모티프로 유추한 것이며, 실제 전사활성 측정이 아닙니다.</li>');
+  out.push('<li><b>helix-12 접촉은 접촉일 뿐 충돌이 아닙니다.</b> 접촉 표의 빨간 ' +
+           '칸은 중원자 간 4.5 Å 이내라는 같은 기준에, 그 잔기가 helix-12에 ' +
+           '있고 포즈가 Ile899까지 닿았다는 조건을 더한 것입니다. ' +
+           '<b>입체 충돌(겹침·거리 위반)을 계산하는 단계는 이 도구에 없습니다.</b> ' +
+           '그리고 2AM9는 작용제 결합 형태라, 실제로 helix-12를 밀어내는 ' +
+           '길항제는 이 구조에 제대로 들어가지도 못합니다(엔잘루타미드 배치 실패).</li>');
+  out.push('<li><b>포즈가 없으면 작용/길항은 규칙 기반 추정입니다.</b> ' +
+           'helix-12 접촉 여부를 구조 모티프로 유추한 것이며, ' +
+           '실제 전사활성 측정이 아닙니다.</li>');
   out.push('<li><b>레퍼런스가 적습니다.</b> 28종뿐이라 유사 레퍼런스가 없는 골격 ' +
            '(예: RU-59063)은 과소평가됩니다. 적용영역 태그가 <code>out</code>이면 ' +
            '수치보다 태그를 먼저 보세요.</li>');

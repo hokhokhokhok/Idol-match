@@ -204,6 +204,59 @@ function run() {
     console.log(`  ok    ${'no two compounds share a name'.padEnd(30)} ${PR.INGREDIENTS.length} entries`);
   }
 
+  /* --- what the red "helix-12" marking actually means -----------------
+   *
+   * It used to read "H12 충돌", which claimed a steric clash. Nothing here
+   * computes overlap: both states come from the same 4.5 A cutoff, and the
+   * red one only adds that the residue is on helix-12 in a pose that also
+   * reached Ile899. The proof is that DHT touches Thr877 and Met895 exactly
+   * as bicalutamide does and must NOT be marked, because it stops short of
+   * Ile899. If that ever stops holding, the label is lying again. */
+  console.log('\n  helix-12 marking');
+  const scenePath = require('path').join(__dirname, '..', 'assets', 'pocket_scene.json');
+  if (require('fs').existsSync(scenePath)) {
+    const scene = JSON.parse(require('fs').readFileSync(scenePath, 'utf8'));
+    const key = (mol) => {
+      const d = AR.computeDescriptors(mol), f = AR.morganFingerprint(mol, 2);
+      let bits = '';
+      for (let i = 0; i < f.length; i++) if (f[i]) bits += i + ',';
+      return d.formula + '|' + bits;
+    };
+    const look = (name) => {
+      const e = PR.INGREDIENTS.find(x => x[1] === name);
+      const mol = AR.parseSmiles(e[2]);
+      const st = scene.poses[key(mol)];
+      const dock = st && st.placed
+        ? { placed: true, ile899: (st.c || []).indexOf('ILE899') >= 0,
+            contacts: st.c || [], hbonds: st.hb || [] } : null;
+      const p2 = PR.predict(e[2], { dock: dock }).pocket;
+      const at = (id) => p2.residues.filter(r => r.id === id)[0];
+      return { p: p2, at: at };
+    };
+    const bic = look('Bicalutamide'), dht = look('Dihydrotestosterone');
+    const checks = [
+      [bic.at('Ile899').contact, true, 'bicalutamide reaches Ile899'],
+      [bic.at('Thr877').clash, true, 'so its Thr877 is marked'],
+      [dht.at('Thr877').contact, true, 'DHT touches Thr877 just the same'],
+      [dht.at('Thr877').clash, false, 'but is not marked, having missed Ile899'],
+      [bic.at('Trp741').contact, true, 'Trp741 is contacted'],
+      [bic.at('Trp741').clash, false, 'and never marked - it is not on helix-12'],
+      [bic.at('Phe876').clash, false, 'nor is Phe876, resistance site though it is']
+    ];
+    let bad = 0;
+    for (const [got, want, why] of checks) {
+      if (got !== want) { bad++; console.log(`  FAIL  ${why}: got ${got}`); }
+    }
+    if (bad) fail += bad;
+    else {
+      pass++;
+      console.log(`  ok    ${'red means helix-12, not a clash'.padEnd(30)} ${checks.length} assertions`);
+      console.log('        DHT contacts Thr877/Met895 like bicalutamide; only Ile899 differs');
+    }
+  } else {
+    console.log('  note  no pocket_scene.json in this build, skipping');
+  }
+
   console.log(`\n  predict: ${pass} passed, ${fail} failed`);
   return fail;
 }
