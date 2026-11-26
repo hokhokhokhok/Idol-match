@@ -5866,7 +5866,9 @@ function renderSingle(result, title, subtitle) {
            esc(fcLabel) +
            (fc.tier === 'measured'
              ? (fc.thin ? '<span class="sub">유효 어세이 1개</span>' : '')
-             : '<span class="sub">근거 ' + fx(fc.support, 2) + '</span>') +
+             : (fc.tier === 'blocked' || fc.tier === 'curated'
+               ? ''    /* a read-across weight means nothing for either */
+               : '<span class="sub">근거 ' + fx(fc.support, 2) + '</span>')) +
            '</span></div>');
   var tierInfo = PR.TIER_LABELS[fc.tier];
   if (tierInfo) {
@@ -6876,10 +6878,20 @@ function applyPreset(which) {
 
 function presetCards() {
   var ext = extendedLibrary();
+  /* Head-to-head, measured: the same 28 observed pKis predicted with the
+     compound itself removed from whichever library is active. The extended
+     set wins on both axes, and the coverage gap is the bigger one - out of
+     domain falls from 129 of 206 to 101. Put the numbers on the cards so
+     the choice is made on evidence rather than on which one is default. */
   var rows = [
-    ['curated', '엄선 28종', '문헌 경쟁결합 실측값. 스테로이드·비스테로이드·화장품 원료가 고르게 들어 있습니다.'],
+    ['curated', '엄선 28종',
+     '문헌 경쟁결합 실측값, 손으로 고른 것. 같은 28종 자기제외 예측에서 ' +
+     'MAE 0.84 · RMSE 1.16, 사전 206종 중 적용영역 밖이 129종입니다.'],
     ['extended', '확장 ' + (ext ? ext.length : 0) + '종',
-     'ChEMBL AR 데이터를 병합한 것. 비스테로이드 의약화학 계열이 두터워집니다.']
+     'ChEMBL AR 데이터 병합. 같은 시험에서 MAE 0.77 · RMSE 1.09로 더 낫고, ' +
+     '적용영역 밖이 101종으로 줄어듭니다. 다만 2,349종의 종·어세이 출처는 ' +
+     '확인하지 않았습니다 — 28종에서 확인했던 랫·마우스 혼재가 여기에도 ' +
+     '그대로 있을 것입니다.']
   ];
   var out = ['<div class="presets">'];
   for (var i = 0; i < rows.length; i++) {
@@ -7128,9 +7140,19 @@ function renderModelCard() {
   out.push('<li><b>레퍼런스가 적습니다.</b> 28종뿐이라 유사 레퍼런스가 없는 골격 ' +
            '(예: RU-59063)은 과소평가됩니다. 적용영역 태그가 <code>out</code>이면 ' +
            '수치보다 태그를 먼저 보세요.</li>');
-  out.push('<li><b>레퍼런스를 바꾸면 답도 바뀝니다.</b> 확장 라이브러리는 ' +
-           'ChEMBL AR 데이터라 비스테로이드 의약화학 계열에 치우쳐 있습니다. ' +
-           '기본 28종을 덮어쓰지 않고 합쳐서 쓰는 이유입니다.</li>');
+  out.push('<li><b>레퍼런스를 바꾸면 답도 바뀝니다.</b> 확장 2,349종은 ' +
+           '같은 28종 자기제외 시험에서 MAE 0.84→0.77로 낫고 적용영역 밖을 ' +
+           '129→101종으로 줄입니다. 기본값을 조용히 바꾸지 않은 이유는 ' +
+           '이미 보신 모든 숫자가 함께 바뀌기 때문이고, 확장 쪽은 종·어세이 ' +
+           '출처를 확인하지 않았기 때문입니다. 「레퍼런스」 탭에서 ' +
+           '한 번에 바꿀 수 있습니다.</li>');
+  out.push('<li><b>pKi 레퍼런스의 출처를 되짚었습니다.</b> 28종 뒤의 ChEMBL ' +
+           'AR 활성은 사람 273건, 랫 44건, 마우스 11건입니다. ' +
+           '<b>7종은 사람 AR 기록이 없고 4종은 추적되지 않습니다</b> — ' +
+           'DHT가 그중 하나입니다. 빈클로졸린은 프로안티안드로겐이라 ' +
+           'AR에 붙는 것은 대사체 M1·M2이지 빈클로졸린이 아닙니다. ' +
+           '교차검증 MAE는 <b>랫 전립선 세포질 결합과 사람 LBD 어세이를 ' +
+           '같은 열에 섞은 채</b> 계산된 값입니다.</li>');
   out.push('<li><b>금속 함유·고분자·혼합물은 범위 밖입니다.</b> 징크피리치온처럼 ' +
            '금속 배위 화합물은 기술자 자체가 신뢰할 수 없습니다.</li>');
   out.push('</ul>');
