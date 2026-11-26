@@ -60,6 +60,63 @@ def main():
         if aliases:
             row.append(aliases)
         ing_rows.append(row)
+    # --- the dictionary also carries the adipocyte panel's compounds, so that
+    # "로지글리타존" or "troglitazone" resolves to a structure. Korean spellings
+    # are given for the ones a Korean user is likely to type; the rest are
+    # searchable by their English name, which is what ChEMBL knows them as.
+    KO = {
+        "ROSIGLITAZONE": "로지글리타존", "PIOGLITAZONE": "피오글리타존",
+        "TROGLITAZONE": "트로글리타존", "LOBEGLITAZONE": "로베글리타존",
+        "FARGLITAZAR": "파글리타자르", "CIGLITAZONE": "시글리타존",
+        "DEXAMETHASONE": "덱사메타손", "HYDROCORTISONE": "하이드로코르티손",
+        "CORTISOL": "코르티솔", "PREDNISOLONE": "프레드니솔론",
+        "BETAMETHASONE": "베타메타손", "TRIAMCINOLONE": "트리암시놀론",
+        "FLUTICASONE": "플루티카손", "MOMETASONE": "모메타손",
+        "CLOBETASOL PROPIONATE": "클로베타솔 프로피오네이트",
+        "QUERCETIN": "쿠에르세틴", "KAEMPFEROL": "캠페롤",
+        "RESVERATROL": "레스베라트롤", "BERBERINE": "베르베린",
+        "CURCUMIN": "커큐민", "CAPSAICIN": "캡사이신",
+        "EPIGALLOCATECHIN GALLATE": "에피갈로카테킨 갈레이트",
+        "NOBILETIN": "노빌레틴", "TELMISARTAN": "텔미사르탄",
+        "INDOMETHACIN": "인도메타신", "ROSUVASTATIN": "로수바스타틴",
+        "GENISTEIN": "제니스테인", "DAIDZEIN": "다이드제인",
+        "BISPHENOL A": "비스페놀 A",
+    }
+    extra = []
+    seen_smiles = {r[2] for r in ing_rows}
+    seen_names = {r[1].upper() for r in ing_rows}
+
+    def add_extra(name, smiles):
+        if not name or not smiles or smiles in seen_smiles:
+            return
+        up = name.upper()
+        if up in seen_names or up.startswith("CHEMBL"):
+            return
+        seen_smiles.add(smiles)
+        seen_names.add(up)
+        ko = KO.get(up, name)
+        extra.append([ko, name, smiles])
+
+    for panel_file in ("panel_pparg.json", "panel_gr.json"):
+        path = ASSETS / panel_file
+        if not path.exists():
+            continue
+        pdata = json.loads(path.read_text())
+        for idx, nm in (pdata.get("nm") or {}).items():
+            try:
+                add_extra(nm, pdata["rows"][int(idx)][0])
+            except (IndexError, ValueError):
+                pass
+    adipo_path = ASSETS / "adipo_pheno.json"
+    if adipo_path.exists():
+        for rec in json.loads(adipo_path.read_text())["records"].values():
+            if rec.get("s"):
+                add_extra(rec["n"].title(), rec["s"])
+
+    ing_rows = ing_rows + extra
+    print("dictionary: %d ER names + %d adipocyte-panel names"
+          % (len(ing_rows) - len(extra), len(extra)), file=sys.stderr)
+
     ing_body = "var INGREDIENTS = " + json.dumps(
         ing_rows, ensure_ascii=False, indent=1) + ";"
 

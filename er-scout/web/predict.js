@@ -547,6 +547,1781 @@ var INGREDIENTS = [
   "티볼론",
   "TIBOLONE",
   "C#C[C@]1(O)CC[C@H]2[C@@H]3[C@H](C)CC4=C(CCC(=O)C4)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Efatutazone",
+  "Efatutazone",
+  "Cc1cc(Oc2ccc3nc(COc4ccc(CC5SC(=O)NC5=O)cc4)n(C)c3c2)cc(C)c1N"
+ ],
+ [
+  "Gw7845",
+  "Gw7845",
+  "COC(=O)c1ccccc1N[C@@H](Cc1ccc(OCCc2nc(-c3ccccc3)oc2C)cc1)C(=O)O"
+ ],
+ [
+  "파글리타자르",
+  "Farglitazar",
+  "Cc1oc(-c2ccccc2)nc1CCOc1ccc(C[C@H](Nc2ccccc2C(=O)c2ccccc2)C(=O)O)cc1"
+ ],
+ [
+  "Ly-510929",
+  "Ly-510929",
+  "Cc1oc(-c2cccs2)nc1CCOc1ccc(C[C@](C)(Oc2ccccc2)C(=O)O)cc1"
+ ],
+ [
+  "Imiglitazar",
+  "Imiglitazar",
+  "Cc1oc(-c2ccccc2)nc1COc1ccc(CO/N=C(\\CCC(=O)O)c2ccccc2)cc1"
+ ],
+ [
+  "Mk-0533",
+  "Mk-0533",
+  "CC[C@@H](Oc1cccc(-n2c(C)c(C(=O)c3ccc(OC)cc3)c3ccc(OC(F)(F)F)cc32)c1)C(=O)O"
+ ],
+ [
+  "로베글리타존",
+  "Lobeglitazone",
+  "COc1ccc(Oc2cc(N(C)CCOc3ccc(CC4SC(=O)NC4=O)cc3)ncn2)cc1"
+ ],
+ [
+  "Int131",
+  "Int131",
+  "O=S(=O)(Nc1cc(Cl)c(Oc2cnc3ccccc3c2)c(Cl)c1)c1ccc(Cl)cc1Cl"
+ ],
+ [
+  "Aleglitazar",
+  "Aleglitazar",
+  "CO[C@@H](Cc1ccc(OCCc2nc(-c3ccccc3)oc2C)c2ccsc12)C(=O)O"
+ ],
+ [
+  "Irx-4204",
+  "Irx-4204",
+  "CC(/C=C/[C@@H]1C[C@]1(C)c1ccc2c(c1)C(C)(C)CCC2(C)C)=C\\C(=O)O"
+ ],
+ [
+  "Brl-48482",
+  "Brl-48482",
+  "CN(CCOc1ccc(CC2SC(=O)NC2=O)cc1)c1nc2ccccc2o1"
+ ],
+ [
+  "Rivoglitazone",
+  "Rivoglitazone",
+  "COc1ccc2nc(COc3ccc(CC4SC(=O)NC4=O)cc3)n(C)c2c1"
+ ],
+ [
+  "Namodenoson",
+  "Namodenoson",
+  "CNC(=O)[C@H]1O[C@@H](n2cnc3c(NCc4cccc(I)c4)nc(Cl)nc32)[C@H](O)[C@@H]1O"
+ ],
+ [
+  "Reglitazar",
+  "Reglitazar",
+  "Cc1oc(-c2ccccc2)nc1CCOc1ccc(CC2C(=O)NOC2=O)cc1"
+ ],
+ [
+  "로지글리타존",
+  "Rosiglitazone",
+  "CN(CCOc1ccc(CC2SC(=O)NC2=O)cc1)c1ccccn1"
+ ],
+ [
+  "L-796449",
+  "L-796449",
+  "CCCc1c(OCCCSc2ccc(CC(=O)O)cc2Cl)ccc2c(-c3ccccc3)coc12"
+ ],
+ [
+  "Muraglitazar",
+  "Muraglitazar",
+  "COc1ccc(OC(=O)N(CC(=O)O)Cc2ccc(OCCc3nc(-c4ccccc4)oc3C)cc2)cc1"
+ ],
+ [
+  "Tetrac",
+  "Tetrac",
+  "O=C(O)Cc1cc(I)c(Oc2cc(I)c(O)c(I)c2)c(I)c1"
+ ],
+ [
+  "L-165461",
+  "L-165461",
+  "CCCc1c(OCCCSc2ccc(CC(=O)O)cc2Cl)ccc2c(CC)noc12"
+ ],
+ [
+  "Naveglitazar",
+  "Naveglitazar",
+  "CO[C@@H](Cc1ccc(OCCCOc2ccc(Oc3ccccc3)cc2)cc1)C(=O)O"
+ ],
+ [
+  "Chlorocyclinone C",
+  "Chlorocyclinone C",
+  "COC(=O)c1cc2c(c(O)c1C(C)OC(=O)CO)C(=O)c1c(O)cc3cc(C)c(Cl)c(OC)c3c1C2=O"
+ ],
+ [
+  "Chlorocyclinone B",
+  "Chlorocyclinone B",
+  "COC(=O)c1cc2c(c(O)c1C(C)OC(C)=O)C(=O)c1c(O)cc3cc(C)c(Cl)c(OC)c3c1C2=O"
+ ],
+ [
+  "Atx08-001",
+  "Atx08-001",
+  "CCCCCS(=O)(=O)NC(=O)c1ccc2nc(C)n(Cc3ccc(Cl)cc3Cl)c2c1"
+ ],
+ [
+  "Chlorocyclinone A",
+  "Chlorocyclinone A",
+  "CCc1c(C(=O)OC)cc2c(c1O)C(=O)c1c(O)cc3cc(C)c(Cl)c(OC)c3c1C2=O"
+ ],
+ [
+  "Tiratricol",
+  "Tiratricol",
+  "O=C(O)Cc1cc(I)c(Oc2ccc(O)c(I)c2)c(I)c1"
+ ],
+ [
+  "Bavachinin",
+  "Bavachinin",
+  "COc1cc2oc(-c3ccc(O)cc3)cc(=O)c2cc1CC=C(C)C"
+ ],
+ [
+  "Chlorocyclinone D",
+  "Chlorocyclinone D",
+  "COc1c(Cl)c(C)cc2cc(O)c3c(c12)C(=O)c1cc2c(c(O)c1C3=O)C(C)OC2=O"
+ ],
+ [
+  "Amorfrutin A",
+  "Amorfrutin A",
+  "COc1cc(CCc2ccccc2)c(C(=O)O)c(O)c1CC=C(C)C"
+ ],
+ [
+  "Delta9-Tetrahydrocannabinolic Acid A",
+  "Delta9-Tetrahydrocannabinolic Acid A",
+  "CCCCCc1cc2c(c(O)c1C(=O)O)[C@@H]1C=C(C)CC[C@H]1C(C)(C)O2"
+ ],
+ [
+  "Tesaglitazar",
+  "Tesaglitazar",
+  "CCO[C@@H](Cc1ccc(OCCc2ccc(OS(C)(=O)=O)cc2)cc1)C(=O)O"
+ ],
+ [
+  "트로글리타존",
+  "Troglitazone",
+  "Cc1c(C)c2c(c(C)c1O)CCC(C)(COc1ccc(CC3SC(=O)NC3=O)cc1)O2"
+ ],
+ [
+  "Chelerythrine",
+  "Chelerythrine",
+  "COc1ccc2c(c[n+](C)c3c4cc5c(cc4ccc23)OCO5)c1OC"
+ ],
+ [
+  "Ragaglitazar",
+  "Ragaglitazar",
+  "CCO[C@@H](Cc1ccc(OCCN2c3ccccc3Oc3ccccc32)cc1)C(=O)O"
+ ],
+ [
+  "피오글리타존",
+  "Pioglitazone",
+  "CCc1ccc(CCOc2ccc(CC3SC(=O)NC3=O)cc2)nc1"
+ ],
+ [
+  "Bavachinin A",
+  "Bavachinin A",
+  "COc1cc2c(cc1CC=C(C)C)C(=O)C[C@@H](c1ccc(O)cc1)O2"
+ ],
+ [
+  "Sulindac Sulfide",
+  "Sulindac Sulfide",
+  "CSc1ccc(/C=C2/C(C)=C(CC(=O)O)c3cc(F)ccc32)cc1"
+ ],
+ [
+  "Ploglitazone",
+  "Ploglitazone",
+  "CCc1ccc(CCOc2ccc(CC3SC(=O)NC3=O)cc2)cc1"
+ ],
+ [
+  "Magnolol",
+  "Magnolol",
+  "C=CCc1ccc(O)c(-c2cc(CC=C)ccc2O)c1"
+ ],
+ [
+  "Nitroleic Acid",
+  "Nitroleic Acid",
+  "CCCCCCCC/C=C(\\CCCCCCCC(=O)O)[N+](=O)[O-]"
+ ],
+ [
+  "Gsk-9578",
+  "Gsk-9578",
+  "CCCCCCCN(CCc1ccc(SC(C)(C)C(=O)O)cc1)C(=O)Nc1ccc(F)cc1F"
+ ],
+ [
+  "Gw7647",
+  "Gw7647",
+  "CC(C)(Sc1ccc(CCN(CCCCC2CCCCC2)C(=O)NC2CCCCC2)cc1)C(=O)O"
+ ],
+ [
+  "Englitazone",
+  "Englitazone",
+  "O=C1NC(=O)C(Cc2ccc3c(c2)CC[C@H](Cc2ccccc2)O3)S1"
+ ],
+ [
+  "Indeglitazar",
+  "Indeglitazar",
+  "COc1ccc(S(=O)(=O)n2cc(CCC(=O)O)c3cc(OC)ccc32)cc1"
+ ],
+ [
+  "Seimatopolide A",
+  "Seimatopolide A",
+  "CCCCCCCCC[C@H]1C[C@@H](O)[C@H](O)/C=C/[C@H](O)CC(=O)O1"
+ ],
+ [
+  "Glyburide",
+  "Glyburide",
+  "COc1ccc(Cl)cc1C(=O)NCCc1ccc(S(=O)(=O)NC(=O)NC2CCCCC2)cc1"
+ ],
+ [
+  "Leriglitazone",
+  "Leriglitazone",
+  "CC(O)c1ccc(CCOc2ccc(CC3SC(=O)NC3=O)cc2)nc1"
+ ],
+ [
+  "Lanifibranor",
+  "Lanifibranor",
+  "O=C(O)CCCc1cc2cc(Cl)ccc2n1S(=O)(=O)c1ccc2ncsc2c1"
+ ],
+ [
+  "Balaglitazone",
+  "Balaglitazone",
+  "Cn1c(COc2ccc(CC3SC(=O)NC3=O)cc2)nc2ccccc2c1=O"
+ ],
+ [
+  "Pemafibrate",
+  "Pemafibrate",
+  "CC[C@@H](Oc1cccc(CN(CCCOc2ccc(OC)cc2)c2nc3ccccc3o2)c1)C(=O)O"
+ ],
+ [
+  "Metaglidasen",
+  "Metaglidasen",
+  "O=C(O)C(Oc1cccc(C(F)(F)F)c1)c1ccc(Cl)cc1"
+ ],
+ [
+  "Reverse Triiodothyronine",
+  "Reverse Triiodothyronine",
+  "N[C@@H](Cc1ccc(Oc2cc(I)c(O)c(I)c2)c(I)c1)C(=O)O"
+ ],
+ [
+  "Arachidonic Acid",
+  "Arachidonic Acid",
+  "CCCCC/C=C\\C/C=C\\C/C=C\\C/C=C\\CCCC(=O)O"
+ ],
+ [
+  "Cxa-10",
+  "Cxa-10",
+  "CCCCCCCC/C(=C\\CCCCCCCC(=O)O)[N+](=O)[O-]"
+ ],
+ [
+  "Icosapent",
+  "Icosapent",
+  "CC/C=C\\C/C=C\\C/C=C\\C/C=C\\C/C=C\\CCCC(=O)O"
+ ],
+ [
+  "Elafibranor",
+  "Elafibranor",
+  "CSc1ccc(C(=O)/C=C/c2cc(C)c(OC(C)(C)C(=O)O)c(C)c2)cc1"
+ ],
+ [
+  "Liothyronine",
+  "Liothyronine",
+  "N[C@@H](Cc1cc(I)c(Oc2ccc(O)c(I)c2)c(I)c1)C(=O)O"
+ ],
+ [
+  "Amorphastilbol",
+  "Amorphastilbol",
+  "CC(C)=CCC/C(C)=C/Cc1c(O)cc(/C=C/c2ccccc2)cc1O"
+ ],
+ [
+  "Gamolenic Acid",
+  "Gamolenic Acid",
+  "CCCCC/C=C\\C/C=C\\C/C=C\\CCCCC(=O)O"
+ ],
+ [
+  "Levothyroxine",
+  "Levothyroxine",
+  "N[C@@H](Cc1cc(I)c(Oc2cc(I)c(O)c(I)c2)c(I)c1)C(=O)O"
+ ],
+ [
+  "Dihomo-Gamma-Linolenic Acid",
+  "Dihomo-Gamma-Linolenic Acid",
+  "CCCCC/C=C\\C/C=C\\C/C=C\\CCCCCCC(=O)O"
+ ],
+ [
+  "Zafirlukast",
+  "Zafirlukast",
+  "COc1cc(C(=O)NS(=O)(=O)c2ccccc2C)ccc1Cc1cn(C)c2ccc(NC(=O)OC3CCCC3)cc12"
+ ],
+ [
+  "Gardenin B",
+  "Gardenin B",
+  "COc1ccc(-c2cc(=O)c3c(O)c(OC)c(OC)c(OC)c3o2)cc1"
+ ],
+ [
+  "Tanshinone Iia",
+  "Tanshinone Iia",
+  "Cc1coc2c1C(=O)C(=O)c1c-2ccc2c1CCCC2(C)C"
+ ],
+ [
+  "Odoratin",
+  "Odoratin",
+  "COc1ccc(-c2coc3cc(O)c(OC)cc3c2=O)cc1O"
+ ],
+ [
+  "Falcarindiol",
+  "Falcarindiol",
+  "C=C[C@@H](O)C#CC#C[C@@H](O)/C=C\\CCCCCCC"
+ ],
+ [
+  "텔미사르탄",
+  "Telmisartan",
+  "CCCc1nc2c(C)cc(-c3nc4ccccc4n3C)cc2n1Cc1ccc(-c2ccccc2C(=O)O)cc1"
+ ],
+ [
+  "Linolenic Acid",
+  "Linolenic Acid",
+  "CC/C=C\\C/C=C\\C/C=C\\CCCCCCCC(=O)O"
+ ],
+ [
+  "Isorhamnetin",
+  "Isorhamnetin",
+  "COc1cc(-c2oc3cc(O)cc(O)c3c(=O)c2O)ccc1O"
+ ],
+ [
+  "Mitoglitazone",
+  "Mitoglitazone",
+  "CCc1ccc(C(=O)COc2ccc(CC3SC(=O)NC3=O)cc2)nc1"
+ ],
+ [
+  "Oleic Acid",
+  "Oleic Acid",
+  "CCCCCCCC/C=C\\CCCCCCCC(=O)O"
+ ],
+ [
+  "Candesartan Cilexetil",
+  "Candesartan Cilexetil",
+  "CCOc1nc2cccc(C(=O)OC(C)OC(=O)OC3CCCCC3)c2n1Cc1ccc(-c2ccccc2-c2nn[nH]n2)cc1"
+ ],
+ [
+  "Gw501516",
+  "Gw501516",
+  "Cc1cc(SCc2sc(-c3ccc(C(F)(F)F)cc3)nc2C)ccc1OCC(=O)O"
+ ],
+ [
+  "Halofenate",
+  "Halofenate",
+  "CC(=O)NCCOC(=O)C(Oc1cccc(C(F)(F)F)c1)c1ccc(Cl)cc1"
+ ],
+ [
+  "Fenofibrate",
+  "Fenofibrate",
+  "CC(C)OC(=O)C(C)(C)Oc1ccc(C(=O)c2ccc(Cl)cc2)cc1"
+ ],
+ [
+  "Xanthomicrol",
+  "Xanthomicrol",
+  "COc1c(OC)c(O)c2c(=O)cc(-c3ccc(O)cc3)oc2c1OC"
+ ],
+ [
+  "Jnj-54119936",
+  "Jnj-54119936",
+  "COc1nc2ccc([C@@](O)(c3ccccc3)C3CCN(C(C)=O)CC3)cc2c(Cl)c1Cc1ccc(-n2cccn2)cc1"
+ ],
+ [
+  "Galangin",
+  "Galangin",
+  "O=c1c(O)c(-c2ccccc2)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Psammaplin A",
+  "Psammaplin A",
+  "O=C(NCCSSCCNC(=O)/C(Cc1ccc(O)c(Br)c1)=N/O)/C(Cc1ccc(O)c(Br)c1)=N/O"
+ ],
+ [
+  "Linoleic Acid",
+  "Linoleic Acid",
+  "CCCCC/C=C\\C/C=C\\CCCCCCCC(=O)O"
+ ],
+ [
+  "Ly-518674",
+  "Ly-518674",
+  "Cc1ccc(Cn2nc(CCCc3ccc(OC(C)(C)C(=O)O)cc3)nc2O)cc1"
+ ],
+ [
+  "Palmitoleic Acid",
+  "Palmitoleic Acid",
+  "CCCCCC/C=C\\CCCCCCCC(=O)O"
+ ],
+ [
+  "Mli-2",
+  "Mli-2",
+  "C[C@@H]1CN(c2cc(-c3n[nH]c4ccc(OC5(C)CC5)cc34)ncn2)C[C@H](C)O1"
+ ],
+ [
+  "시글리타존",
+  "Ciglitazone",
+  "CC1(COc2ccc(CC3SC(=O)NC3=O)cc2)CCCCC1"
+ ],
+ [
+  "Mbx-102 Acid Form",
+  "Mbx-102 Acid Form",
+  "O=C(O)[C@H](Oc1cccc(C(F)(F)F)c1)c1ccc(Cl)cc1"
+ ],
+ [
+  "Carbacyclin",
+  "Carbacyclin",
+  "CCCCC[C@H](O)/C=C/[C@@H]1[C@H]2C/C(=C\\CCCC(=O)O)C[C@H]2C[C@H]1O"
+ ],
+ [
+  "Arhalofenate",
+  "Arhalofenate",
+  "CC(=O)NCCOC(=O)[C@H](Oc1cccc(C(F)(F)F)c1)c1ccc(Cl)cc1"
+ ],
+ [
+  "Gw590735",
+  "Gw590735",
+  "Cc1nc(-c2ccc(C(F)(F)F)cc2)sc1C(=O)NCc1ccc(OC(C)(C)C(=O)O)cc1"
+ ],
+ [
+  "Ajugacumbin A Chlorohydrin",
+  "Ajugacumbin A Chlorohydrin",
+  "C/C=C(\\C)C(=O)OC[C@@]12[C@@H](OC(C)=O)C[C@@H](C)[C@](C)(CCC3=CC(=O)OC3)[C@H]1CCC[C@]2(O)CCl"
+ ],
+ [
+  "Ajuganipponin B",
+  "Ajuganipponin B",
+  "C/C=C(\\C)C(=O)O[C@@H](C[C@@]1(C)[C@H](C)C[C@H](OC(C)=O)[C@]2(COC(C)=O)[C@@H]1CCC[C@]21CO1)C1=CC(=O)OC1"
+ ],
+ [
+  "Seimatopolide B",
+  "Seimatopolide B",
+  "CCCCCCCCC[C@H]1CC[C@H](O)/C=C/[C@H](O)CC(=O)O1"
+ ],
+ [
+  "Ajuganipponin A",
+  "Ajuganipponin A",
+  "C/C=C(\\C)C(=O)O[C@@H](C[C@@]1(C)[C@H](C)C[C@H](OC(C)=O)[C@]2(COC(C)=O)[C@@H]1[C@H](OC(C)=O)CC[C@]21CO1)C1=CC(=O)OC1"
+ ],
+ [
+  "Ajugarin I",
+  "Ajugarin I",
+  "CC(=O)OC[C@@]12[C@@H](OC(C)=O)C[C@@H](C)[C@](C)(CCC3=CC(=O)OC3)[C@H]1CCC[C@]21CO1"
+ ],
+ [
+  "Ajugalide C",
+  "Ajugalide C",
+  "CC(=O)OC[C@@]12[C@@H](OC(C)=O)C[C@@H](C)[C@](C)(C[C@H](O)C3=CC(=O)OC3)[C@H]1CCC[C@]21CO1"
+ ],
+ [
+  "Cannabigerol",
+  "Cannabigerol",
+  "CCCCCc1cc(O)c(C/C=C(\\C)CCC=C(C)C)c(O)c1"
+ ],
+ [
+  "Saurufuran A",
+  "Saurufuran A",
+  "C/C(=C/CC/C(C)=C/CC/C(C)=C/Cc1occc1C)C(=O)O"
+ ],
+ [
+  "Anacardic Acid",
+  "Anacardic Acid",
+  "CCCCCCCCCCCCCCCc1cccc(O)c1C(=O)O"
+ ],
+ [
+  "Ajugacumbin A",
+  "Ajugacumbin A",
+  "C/C=C(\\C)C(=O)OC[C@@]12[C@@H](OC(C)=O)C[C@@H](C)[C@](C)(CCC3=CC(=O)OC3)[C@H]1CCC[C@]21CO1"
+ ],
+ [
+  "Piperitol",
+  "Piperitol",
+  "COc1cc([C@@H]2OC[C@@H]3[C@H]2CO[C@H]3c2ccc3c(c2)OCO3)ccc1O"
+ ],
+ [
+  "Chrysin",
+  "Chrysin",
+  "O=c1cc(-c2ccccc2)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Myristic Acid",
+  "Myristic Acid",
+  "CCCCCCCCCCCCCC(=O)O"
+ ],
+ [
+  "Sulindac",
+  "Sulindac",
+  "CC1=C(CC(=O)O)c2cc(F)ccc2/C1=C\\c1ccc([S+](C)[O-])cc1"
+ ],
+ [
+  "Decanoic Acid",
+  "Decanoic Acid",
+  "CCCCCCCCCC(=O)O"
+ ],
+ [
+  "쿠에르세틴",
+  "Quercetin",
+  "O=c1c(O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Pseudobaptogenin",
+  "Pseudobaptogenin",
+  "O=c1c(-c2ccc3c(c2)OCO3)coc2cc(O)ccc12"
+ ],
+ [
+  "Tirotundin",
+  "Tirotundin",
+  "C=C1C(=O)O[C@@H]2C[C@H](C)[C@@]3(O)CC[C@@](C)(C[C@@H](OC(=O)C(C)C)[C@@H]12)O3"
+ ],
+ [
+  "E-Guggulsterone",
+  "E-Guggulsterone",
+  "C/C=C1/C(=O)C[C@H]2[C@@H]3CCC4=CC(=O)CC[C@]4(C)[C@H]3CC[C@]12C"
+ ],
+ [
+  "Pirinixic Acid",
+  "Pirinixic Acid",
+  "Cc1cccc(Nc2cc(Cl)nc(SCC(=O)O)n2)c1C"
+ ],
+ [
+  "Erucic Acid",
+  "Erucic Acid",
+  "CCCCCCCC/C=C\\CCCCCCCCCCCC(=O)O"
+ ],
+ [
+  "Behenic Acid",
+  "Behenic Acid",
+  "CCCCCCCCCCCCCCCCCCCCCC(=O)O"
+ ],
+ [
+  "Arachidic Acid",
+  "Arachidic Acid",
+  "CCCCCCCCCCCCCCCCCCCC(=O)O"
+ ],
+ [
+  "Stearic Acid",
+  "Stearic Acid",
+  "CCCCCCCCCCCCCCCCCC(=O)O"
+ ],
+ [
+  "Palmitic Acid",
+  "Palmitic Acid",
+  "CCCCCCCCCCCCCCCC(=O)O"
+ ],
+ [
+  "Dodecanoate",
+  "Dodecanoate",
+  "CCCCCCCCCCCC(=O)O"
+ ],
+ [
+  "Plantagineoside B",
+  "Plantagineoside B",
+  "OC[C@H]1O[C@@H](Oc2ccc(CCCC[C@H](O)CCc3ccc(O[C@@H]4O[C@H](CO)[C@@H](O)[C@H](O)[C@H]4O)c(O)c3)cc2O)[C@H](O)[C@@H](O)[C@@H]1O"
+ ],
+ [
+  "Methyleugenol",
+  "Methyleugenol",
+  "C=CCc1ccc(OC)c(OC)c1"
+ ],
+ [
+  "Pluviatilol",
+  "Pluviatilol",
+  "COc1cc([C@H]2OC[C@@H]3[C@H]2CO[C@H]3c2ccc3c(c2)OCO3)ccc1O"
+ ],
+ [
+  "인도메타신",
+  "Indomethacin",
+  "COc1ccc2c(c1)c(CC(=O)O)c(C)n2C(=O)c1ccc(Cl)cc1"
+ ],
+ [
+  "Flidersiachromone",
+  "Flidersiachromone",
+  "O=c1cc(CCc2ccccc2)oc2ccccc12"
+ ],
+ [
+  "Tagitinin A",
+  "Tagitinin A",
+  "C=C1C(=O)O[C@@H]2C[C@H](C)[C@@]3(O)C[C@H](O)[C@@](C)(C[C@@H](OC(=O)C(C)C)[C@@H]12)O3"
+ ],
+ [
+  "Pinoresinol",
+  "Pinoresinol",
+  "COc1cc([C@H]2OC[C@H]3[C@@H]2CO[C@H]3c2ccc(O)c(OC)c2)ccc1O"
+ ],
+ [
+  "Bezafibrate",
+  "Bezafibrate",
+  "CC(C)(Oc1ccc(CCNC(=O)c2ccc(Cl)cc2)cc1)C(=O)O"
+ ],
+ [
+  "Gemfibrozil",
+  "Gemfibrozil",
+  "Cc1ccc(C)c(OCCCC(C)(C)C(=O)O)c1"
+ ],
+ [
+  "Fenofibric Acid",
+  "Fenofibric Acid",
+  "CC(C)(Oc1ccc(C(=O)c2ccc(Cl)cc2)cc1)C(=O)O"
+ ],
+ [
+  "플루티카손",
+  "Fluticasone",
+  "C[C@@H]1C[C@H]2[C@@H]3C[C@H](F)C4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@]2(C)[C@@]1(O)C(=O)SCF"
+ ],
+ [
+  "Azd-5423",
+  "Azd-5423",
+  "COc1cccc([C@@H](Oc2ccc3c(cnn3-c3ccc(F)cc3)c2)[C@H](C)NC(=O)C(F)(F)F)c1"
+ ],
+ [
+  "Fluticasone Furoate",
+  "Fluticasone Furoate",
+  "C[C@@H]1C[C@H]2[C@@H]3C[C@H](F)C4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@]2(C)[C@@]1(OC(=O)c1ccco1)C(=O)SCF"
+ ],
+ [
+  "Fluticasone Propionate",
+  "Fluticasone Propionate",
+  "CCC(=O)O[C@]1(C(=O)SCF)[C@H](C)C[C@H]2[C@@H]3C[C@H](F)C4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@@]21C"
+ ],
+ [
+  "Mometasone Furoate",
+  "Mometasone Furoate",
+  "C[C@@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(Cl)[C@@H](O)C[C@]2(C)[C@@]1(OC(=O)c1ccco1)C(=O)CCl"
+ ],
+ [
+  "Velsecorat",
+  "Velsecorat",
+  "C[C@H](NC(=O)C(C)(F)F)[C@H](Oc1ccc2c(cnn2-c2cccc(C(=O)N[C@@H]3CCOC3)c2)c1)c1ccc2c(c1)OCCO2"
+ ],
+ [
+  "클로베타솔 프로피오네이트",
+  "Clobetasol Propionate",
+  "CCC(=O)O[C@]1(C(=O)CCl)[C@@H](C)C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@@]21C"
+ ],
+ [
+  "Halcinonide",
+  "Halcinonide",
+  "CC1(C)O[C@@H]2C[C@H]3[C@@H]4CCC5=CC(=O)CC[C@]5(C)[C@@]4(F)[C@@H](O)C[C@]3(C)[C@]2(C(=O)CCl)O1"
+ ],
+ [
+  "Mifepristone",
+  "Mifepristone",
+  "CC#C[C@]1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CCC4=C3[C@@H](c3ccc(N(C)C)cc3)C[C@@]21C"
+ ],
+ [
+  "Desoximetasone",
+  "Desoximetasone",
+  "C[C@@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@]2(C)[C@H]1C(=O)CO"
+ ],
+ [
+  "Budesonide",
+  "Budesonide",
+  "CCCC1O[C@@H]2C[C@H]3[C@@H]4CCC5=CC(=O)C=C[C@]5(C)[C@H]4[C@@H](O)C[C@]3(C)[C@]2(C(=O)CO)O1"
+ ],
+ [
+  "Desisobutyrylciclesonide",
+  "Desisobutyrylciclesonide",
+  "C[C@]12C=CC(=O)C=C1CC[C@@H]1[C@@H]2[C@@H](O)C[C@@]2(C)[C@H]1C[C@H]1O[C@@H](C3CCCCC3)O[C@]12C(=O)CO"
+ ],
+ [
+  "Fluocinolone Acetonide",
+  "Fluocinolone Acetonide",
+  "CC1(C)O[C@@H]2C[C@H]3[C@@H]4C[C@H](F)C5=CC(=O)C=C[C@]5(C)[C@@]4(F)[C@@H](O)C[C@]3(C)[C@]2(C(=O)CO)O1"
+ ],
+ [
+  "Fluorometholone",
+  "Fluorometholone",
+  "CC(=O)[C@@]1(O)CC[C@H]2[C@@H]3C[C@H](C)C4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@@]21C"
+ ],
+ [
+  "Triamcinolone Acetonide",
+  "Triamcinolone Acetonide",
+  "CC1(C)O[C@@H]2C[C@H]3[C@@H]4CCC5=CC(=O)C=C[C@]5(C)[C@@]4(F)[C@@H](O)C[C@]3(C)[C@]2(C(=O)CO)O1"
+ ],
+ [
+  "덱사메타손",
+  "Dexamethasone",
+  "C[C@@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@]2(C)[C@@]1(O)C(=O)CO"
+ ],
+ [
+  "Flurandrenolide",
+  "Flurandrenolide",
+  "CC1(C)O[C@@H]2C[C@H]3[C@@H]4C[C@H](F)C5=CC(=O)CC[C@]5(C)[C@H]4[C@@H](O)C[C@]3(C)[C@]2(C(=O)CO)O1"
+ ],
+ [
+  "Nenocorilant",
+  "Nenocorilant",
+  "Cn1ncc(S(=O)(=O)N2CCC3=Cc4c(cnn4-c4ccc(F)cc4)C[C@]3(C(=O)c3cc(C(F)(F)F)ccn3)C2)n1"
+ ],
+ [
+  "Fluocinonide",
+  "Fluocinonide",
+  "CC(=O)OCC(=O)[C@@]12OC(C)(C)O[C@@H]1C[C@H]1[C@@H]3C[C@H](F)C4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@@]12C"
+ ],
+ [
+  "Flunisolide",
+  "Flunisolide",
+  "CC1(C)O[C@@H]2C[C@H]3[C@@H]4C[C@H](F)C5=CC(=O)C=C[C@]5(C)[C@H]4[C@@H](O)C[C@]3(C)[C@]2(C(=O)CO)O1"
+ ],
+ [
+  "Diflorasone Diacetate",
+  "Diflorasone Diacetate",
+  "CC(=O)OCC(=O)[C@@]1(OC(C)=O)[C@@H](C)C[C@H]2[C@@H]3C[C@H](F)C4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@@]21C"
+ ],
+ [
+  "Dagrocorat",
+  "Dagrocorat",
+  "Cc1ncccc1NC(=O)c1ccc2c(c1)CC[C@@H]1C[C@@](O)(C(F)(F)F)CC[C@@]21Cc1ccccc1"
+ ],
+ [
+  "베타메타손",
+  "Betamethasone",
+  "C[C@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@]2(C)[C@@]1(O)C(=O)CO"
+ ],
+ [
+  "Betamethasone Phosphoric Acid",
+  "Betamethasone Phosphoric Acid",
+  "C[C@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@]2(C)[C@@]1(O)C(=O)COP(=O)(O)O"
+ ],
+ [
+  "Beclomethasone",
+  "Beclomethasone",
+  "C[C@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(Cl)[C@@H](O)C[C@]2(C)[C@@]1(O)C(=O)CO"
+ ],
+ [
+  "Ciclesonide",
+  "Ciclesonide",
+  "CC(C)C(=O)OCC(=O)[C@@]12O[C@H](C3CCCCC3)O[C@@H]1C[C@H]1[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@H]3[C@@H](O)C[C@@]12C"
+ ],
+ [
+  "Cort 108297",
+  "Cort 108297",
+  "CCOC[C@]12Cc3cnn(-c4ccc(F)cc4)c3C=C1CCN(S(=O)(=O)c1ccc(C(F)(F)F)cc1)C2"
+ ],
+ [
+  "Methylprednisolone",
+  "Methylprednisolone",
+  "C[C@H]1C[C@@H]2[C@H]([C@@H](O)C[C@@]3(C)[C@H]2CC[C@]3(O)C(=O)CO)[C@@]2(C)C=CC(=O)C=C12"
+ ],
+ [
+  "프레드니솔론",
+  "Prednisolone",
+  "C[C@]12C=CC(=O)C=C1CC[C@@H]1[C@@H]2[C@@H](O)C[C@@]2(C)[C@H]1CC[C@]2(O)C(=O)CO"
+ ],
+ [
+  "Metribolone",
+  "Metribolone",
+  "C[C@]1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CCC4=C3C=C[C@@]21C"
+ ],
+ [
+  "Mizacorat",
+  "Mizacorat",
+  "CC(C)[C@H](NC(=O)C(C)(F)F)[C@H](Oc1ccc2c(cnn2-c2ccc(=O)n(C)c2)c1)c1ccccc1"
+ ],
+ [
+  "Medroxyprogesterone Acetate",
+  "Medroxyprogesterone Acetate",
+  "CC(=O)O[C@]1(C(C)=O)CC[C@H]2[C@@H]3C[C@H](C)C4=CC(=O)CC[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Dazucorilant",
+  "Dazucorilant",
+  "O=C(c1ccccn1)[C@]12Cc3cnn(-c4ccc(F)cc4)c3C=C1CCN(S(=O)(=O)c1ccc(C(F)(F)F)cc1)C2"
+ ],
+ [
+  "Exicorilant",
+  "Exicorilant",
+  "Cn1ncc(S(=O)(=O)N2CC[C@H]3Cc4c(cnn4-c4ccc(F)cc4)C[C@]3(C(=O)c3cc(C(F)(F)F)ccn3)C2)n1"
+ ],
+ [
+  "Megestrol Acetate",
+  "Megestrol Acetate",
+  "CC(=O)O[C@]1(C(C)=O)CC[C@H]2[C@@H]3C=C(C)C4=CC(=O)CC[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Fludrocortisone Acetate",
+  "Fludrocortisone Acetate",
+  "CC(=O)OCC(=O)[C@@]1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@]4(C)[C@@]3(F)[C@@H](O)C[C@@]21C"
+ ],
+ [
+  "Al-43",
+  "Al-43",
+  "C=CCC1Oc2cccc(OC)c2-c2ccc3c(c21)C(C)=CC(C)(C)N3"
+ ],
+ [
+  "Podofilox",
+  "Podofilox",
+  "COc1cc([C@@H]2c3cc4c(cc3[C@H](O)[C@H]3COC(=O)[C@H]23)OCO4)cc(OC)c1OC"
+ ],
+ [
+  "하이드로코르티손",
+  "Hydrocortisone",
+  "C[C@]12CCC(=O)C=C1CC[C@@H]1[C@@H]2[C@@H](O)C[C@@]2(C)[C@H]1CC[C@]2(O)C(=O)CO"
+ ],
+ [
+  "Relacorilant",
+  "Relacorilant",
+  "Cn1cc(S(=O)(=O)N2CCC3=Cc4c(cnn4-c4ccc(F)cc4)C[C@]3(C(=O)c3cc(C(F)(F)F)ccn3)C2)cn1"
+ ],
+ [
+  "Chlormadinone Acetate",
+  "Chlormadinone Acetate",
+  "CC(=O)O[C@]1(C(C)=O)CC[C@H]2[C@@H]3C=C(Cl)C4=CC(=O)CC[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Onapristone",
+  "Onapristone",
+  "CN(C)c1ccc([C@H]2C[C@]3(C)[C@@H](CC[C@]3(O)CCCO)[C@@H]3CCC4=CC(=O)CCC4=C32)cc1"
+ ],
+ [
+  "Progesterone",
+  "Progesterone",
+  "CC(=O)[C@H]1CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@]4(C)[C@H]3CC[C@]12C"
+ ],
+ [
+  "Hydroxyprogesterone",
+  "Hydroxyprogesterone",
+  "CC(=O)[C@@]1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "트리암시놀론",
+  "Triamcinolone",
+  "C[C@]12C=CC(=O)C=C1CC[C@H]1[C@@H]3C[C@@H](O)[C@](O)(C(=O)CO)[C@@]3(C)C[C@H](O)[C@@]12F"
+ ],
+ [
+  "3-[(4-Methoxyphenyl)Phenylmethyl]Indole",
+  "3-[(4-Methoxyphenyl)Phenylmethyl]Indole",
+  "COc1ccc(C(c2ccccc2)c2c[nH]c3ccccc23)cc1"
+ ],
+ [
+  "1-(2,3-Dichlorophenyl)-2,2,2-Trifluoro-1-(1-(4-Fluorophenyl)-1H-Indazol-5-Yl)Ethanol (Enantiomeric Mix)",
+  "1-(2,3-Dichlorophenyl)-2,2,2-Trifluoro-1-(1-(4-Fluorophenyl)-1H-Indazol-5-Yl)Ethanol (Enantiomeric Mix)",
+  "OC(c1ccc2c(cnn2-c2ccc(F)cc2)c1)(c1cccc(Cl)c1Cl)C(F)(F)F"
+ ],
+ [
+  "Bi 653048",
+  "Bi 653048",
+  "CCS(=O)(=O)c1cc2cc(C[C@](O)(CC(C)(C)c3ccc(F)cc3C(N)=O)C(F)(F)F)[nH]c2cn1"
+ ],
+ [
+  "Fosdagrocorat",
+  "Fosdagrocorat",
+  "Cc1ncccc1NC(=O)c1ccc2c(c1)CC[C@@H]1C[C@@](OP(=O)(O)O)(C(F)(F)F)CC[C@@]21Cc1ccccc1"
+ ],
+ [
+  "Norgestrel",
+  "Norgestrel",
+  "C#CC1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@@H]4[C@H]3CC[C@@]21CC"
+ ],
+ [
+  "Asoprisnil",
+  "Asoprisnil",
+  "COC[C@]1(OC)CC[C@H]2[C@@H]3CCC4=CC(=O)CCC4=C3[C@@H](c3ccc(/C=N/O)cc3)C[C@@]21C"
+ ],
+ [
+  "1-(3-Chloro-4-Fluorophenyl)-2,2,2-Trifluoro-1-(1-(4-Fluorophenyl)-1H-Indazol-5-Yl)Ethanol (Enantiomeric Mix)",
+  "1-(3-Chloro-4-Fluorophenyl)-2,2,2-Trifluoro-1-(1-(4-Fluorophenyl)-1H-Indazol-5-Yl)Ethanol (Enantiomeric Mix)",
+  "OC(c1ccc(F)c(Cl)c1)(c1ccc2c(cnn2-c2ccc(F)cc2)c1)C(F)(F)F"
+ ],
+ [
+  "Ethisterone",
+  "Ethisterone",
+  "C#C[C@]1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Cyproterone Acetate",
+  "Cyproterone Acetate",
+  "CC(=O)O[C@]1(C(C)=O)CC[C@H]2[C@@H]3C=C(Cl)C4=CC(=O)[C@@H]5C[C@@H]5[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "2,2,2-Trifluoro-1-(4-Fluorophenyl)-1-(1-(4-Fluorophenyl)-1H-Indazol-5-Yl)Ethanol (Diastereomeric Mix)",
+  "2,2,2-Trifluoro-1-(4-Fluorophenyl)-1-(1-(4-Fluorophenyl)-1H-Indazol-5-Yl)Ethanol (Diastereomeric Mix)",
+  "OC(c1ccc(F)cc1)(c1ccc2c(cnn2-c2ccc(F)cc2)c1)C(F)(F)F"
+ ],
+ [
+  "Norethindrone",
+  "Norethindrone",
+  "C#C[C@]1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@@H]4[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Norethindrone Acetate",
+  "Norethindrone Acetate",
+  "C#C[C@]1(OC(C)=O)CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@@H]4[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Prednisone",
+  "Prednisone",
+  "C[C@]12C=CC(=O)C=C1CC[C@@H]1[C@@H]2C(=O)C[C@@]2(C)[C@H]1CC[C@]2(O)C(=O)CO"
+ ],
+ [
+  "Stanolone",
+  "Stanolone",
+  "C[C@]12CCC(=O)C[C@@H]1CC[C@@H]1[C@@H]2CC[C@]2(C)[C@@H](O)CC[C@@H]12"
+ ],
+ [
+  "Oxdex",
+  "Oxdex",
+  "C[C@@H]1C[C@H]2[C@@H]3CCC4=CC(=O)C=C[C@]4(C)[C@@]3(F)[C@@H](O)C[C@]2(C)[C@@]1(O)C(N)=O"
+ ],
+ [
+  "Endiandrin A",
+  "Endiandrin A",
+  "COc1cc([C@@H]2[C@@H](C)[C@H](C)[C@H]2c2ccc(O)c(OC)c2)ccc1O"
+ ],
+ [
+  "Lxr-623",
+  "Lxr-623",
+  "Fc1ccc(-c2c3cccc(C(F)(F)F)c3nn2Cc2ccc(F)cc2Cl)cc1"
+ ],
+ [
+  "Brilanestrant",
+  "Brilanestrant",
+  "CC/C(=C(/c1ccc(/C=C/C(=O)O)cc1)c1ccc2[nH]ncc2c1)c1ccc(F)cc1Cl"
+ ],
+ [
+  "Guggulsterone",
+  "Guggulsterone",
+  "C/C=C1\\C(=O)C[C@H]2[C@@H]3CCC4=CC(=O)CC[C@]4(C)[C@H]3CC[C@]12C"
+ ],
+ [
+  "Methyltestosterone",
+  "Methyltestosterone",
+  "C[C@]12CCC(=O)C=C1CC[C@@H]1[C@@H]2CC[C@@]2(C)[C@H]1CC[C@]2(C)O"
+ ],
+ [
+  "Cortisone",
+  "Cortisone",
+  "C[C@]12CCC(=O)C=C1CC[C@@H]1[C@@H]2C(=O)C[C@@]2(C)[C@H]1CC[C@]2(O)C(=O)CO"
+ ],
+ [
+  "Epierenone",
+  "Epierenone",
+  "COC(=O)[C@@H]1CC2=CC(=O)CC[C@]2(C)C2C1C1CC[C@@]3(CCC(=O)O3)[C@@]1(C)[C@H]1O[C@@H]21"
+ ],
+ [
+  "Spironolactone",
+  "Spironolactone",
+  "CC(=O)S[C@@H]1CC2=CC(=O)CC[C@]2(C)[C@H]2CC[C@@]3(C)[C@@H](CC[C@@]34CCC(=O)O4)[C@H]12"
+ ],
+ [
+  "Testosterone",
+  "Testosterone",
+  "C[C@]12CC[C@H]3[C@@H](CCC4=CC(=O)CC[C@@]43C)[C@@H]1CC[C@@H]2O"
+ ],
+ [
+  "Clotrimazole",
+  "Clotrimazole",
+  "Clc1ccccc1C(c1ccccc1)(c1ccccc1)n1ccnc1"
+ ],
+ [
+  "Balcinrenone",
+  "Balcinrenone",
+  "CNC(=O)C[C@H]1COc2cc(F)ccc2N1C(=O)c1ccc2c(c1)NC(=O)CO2"
+ ],
+ [
+  "Cortisone Acetate",
+  "Cortisone Acetate",
+  "CC(=O)OCC(=O)[C@@]1(O)CC[C@H]2[C@@H]3CCC4=CC(=O)CC[C@]4(C)[C@H]3C(=O)C[C@@]21C"
+ ],
+ [
+  "Danazol",
+  "Danazol",
+  "C#C[C@]1(O)CC[C@H]2[C@@H]3CCC4=Cc5oncc5C[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Estradiol Benzoate",
+  "Estradiol Benzoate",
+  "C[C@]12CC[C@@H]3c4ccc(OC(=O)c5ccccc5)cc4CC[C@H]3[C@@H]1CC[C@@H]2O"
+ ],
+ [
+  "Lgd-2941",
+  "Lgd-2941",
+  "C[C@@H]1CC[C@H]([C@@H](O)C(F)(F)F)N1c1ccc2[nH]c(=O)cc(C(F)(F)F)c2c1"
+ ],
+ [
+  "Azd-9496",
+  "Azd-9496",
+  "C[C@@H]1Cc2c([nH]c3ccccc23)[C@@H](c2c(F)cc(/C=C/C(=O)O)cc2F)N1CC(C)(C)F"
+ ],
+ [
+  "Pregnenolone Carbonitrile",
+  "Pregnenolone Carbonitrile",
+  "CC(=O)[C@H]1[C@H](C#N)C[C@H]2[C@@H]3CC=C4C[C@@H](O)CC[C@]4(C)[C@H]3CC[C@@]21C"
+ ],
+ [
+  "Turofexorate Isopropyl",
+  "Turofexorate Isopropyl",
+  "CC(C)OC(=O)C1=CN(C(=O)c2ccc(F)c(F)c2)CC(C)(C)c2c1[nH]c1ccccc21"
+ ],
+ [
+  "1-Naphthylisothiocyanate",
+  "1-Naphthylisothiocyanate",
+  "S=C=Nc1cccc2ccccc12"
+ ],
+ [
+  "Di-O-Methylendiandrin A",
+  "Di-O-Methylendiandrin A",
+  "COc1ccc([C@@H]2[C@@H](C)[C@H](C)[C@H]2c2ccc(OC)c(OC)c2)cc1OC"
+ ],
+ [
+  "Eplerenone",
+  "Eplerenone",
+  "COC(=O)[C@@H]1CC2=CC(=O)CC[C@]2(C)[C@@]23O[C@@H]2C[C@@]2(C)[C@@H](CC[C@@]24CCC(=O)O4)[C@H]13"
+ ],
+ [
+  "Baicalein",
+  "Baicalein",
+  "O=c1cc(-c2ccccc2)oc2cc(O)c(O)c(O)c12"
+ ],
+ [
+  "Enzalutamide",
+  "Enzalutamide",
+  "CNC(=O)c1ccc(N2C(=S)N(c3ccc(C#N)c(C(F)(F)F)c3)C(=O)C2(C)C)cc1F"
+ ],
+ [
+  "Nectandrin B",
+  "Nectandrin B",
+  "COc1cc([C@H]2O[C@@H](c3ccc(O)c(OC)c3)[C@H](C)[C@@H]2C)ccc1O"
+ ],
+ [
+  "Di-O-Acetylendiandrin A",
+  "Di-O-Acetylendiandrin A",
+  "COc1cc([C@@H]2[C@@H](C)[C@H](C)[C@H]2c2ccc(OC(C)=O)c(OC)c2)ccc1OC(C)=O"
+ ],
+ [
+  "(-)-Dihydroguaiareticacid",
+  "(-)-Dihydroguaiareticacid",
+  "COc1cc(C[C@@H](C)[C@H](C)Cc2ccc(O)c(OC)c2)ccc1O"
+ ],
+ [
+  "Sundaicumone B",
+  "Sundaicumone B",
+  "CCCC(CC(=O)O)C1=C2O[C@H](C(C)(C)O)C[C@@]23C[C@H](CC=C(C)C)C(C)(C)[C@@](C(=O)C(C)CC)(C1=O)C3=O"
+ ],
+ [
+  "Elliptecine",
+  "Elliptecine",
+  "Cc1c2ccncc2c(C)c2c1[nH]c1ccccc12"
+ ],
+ [
+  "노빌레틴",
+  "Nobiletin",
+  "COc1ccc(-c2cc(=O)c3c(OC)c(OC)c(OC)c(OC)c3o2)cc1OC"
+ ],
+ [
+  "Nuzhenide",
+  "Nuzhenide",
+  "C/C=C1\\C(CC(=O)OC[C@H]2O[C@@H](OCCc3ccc(O)cc3)[C@H](O)[C@@H](O)[C@@H]2O)C(C(=O)OC)=CO[C@H]1O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Excelside B",
+  "Excelside B",
+  "C/C=C1/C(O[C@@H]2O[C@H](CO[C@@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3O)[C@@H](O)[C@H](O)[C@H]2O)OC=C(C(=O)OC)[C@H]1CC(=O)OCCc1ccc(O)cc1"
+ ],
+ [
+  "Excelside A",
+  "Excelside A",
+  "C/C=C1/C(O[C@@H]2O[C@H](CO[C@@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3O)[C@@H](O)[C@H](O)[C@H]2O)OC=C(C(=O)OC)[C@H]1CC(=O)OC"
+ ],
+ [
+  "Oleoside Dimethyl Ester",
+  "Oleoside Dimethyl Ester",
+  "C/C=C1\\[C@H](O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)OC=C(C(=O)OC)[C@H]1CC(=O)OC"
+ ],
+ [
+  "Ligstroside",
+  "Ligstroside",
+  "C/C=C1/[C@H](O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)OC=C(C(=O)OC)[C@H]1CC(=O)OCCc1ccc(O)cc1"
+ ],
+ [
+  "Astragalin",
+  "Astragalin",
+  "O=c1c(O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)c(-c2ccc(O)cc2)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Isoquercetin",
+  "Isoquercetin",
+  "O=c1c(O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)c(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Rutin",
+  "Rutin",
+  "C[C@@H]1O[C@@H](OC[C@H]2O[C@@H](Oc3c(-c4ccc(O)c(O)c4)oc4cc(O)cc(O)c4c3=O)[C@H](O)[C@@H](O)[C@@H]2O)[C@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Narcissin",
+  "Narcissin",
+  "COc1cc(-c2oc3cc(O)cc(O)c3c(=O)c2O[C@@H]2O[C@H](CO[C@@H]3O[C@@H](C)[C@H](O)[C@@H](O)[C@H]3O)[C@@H](O)[C@H](O)[C@H]2O)ccc1O"
+ ],
+ [
+  "Camellianoside",
+  "Camellianoside",
+  "COc1cc(-c2oc3cc(O)cc(O)c3c(=O)c2O[C@@H]2O[C@H](CO[C@@H]3O[C@@H](C)[C@H](O)[C@@H](O[C@@H]4OC[C@@H](O)[C@H](O)[C@H]4O)[C@H]3O)[C@@H](O)[C@H](O)[C@H]2O)ccc1O"
+ ],
+ [
+  "Zidovudine",
+  "Zidovudine",
+  "Cc1cn([C@H]2C[C@H](N=[N+]=[N-])[C@@H](CO)O2)c(=O)[nH]c1=O"
+ ],
+ [
+  "Acerogenin E",
+  "Acerogenin E",
+  "O=C1CCCCc2ccc(O)c(c2)-c2cc(ccc2O)CC1"
+ ],
+ [
+  "Oregonoyl A",
+  "Oregonoyl A",
+  "O=C(CCc1ccc(O)c(O)c1)C[C@H](CCc1ccc(O)c(O)c1)O[C@@H]1OC[C@@H](O)[C@H](O)[C@H]1OC(=O)/C=C/c1ccc(O)cc1"
+ ],
+ [
+  "Oregonoyl B",
+  "Oregonoyl B",
+  "COc1cc(/C=C/C(=O)O[C@H]2[C@H](O[C@@H](CCc3ccc(O)c(O)c3)CC(=O)CCc3ccc(O)c(O)c3)OC[C@@H](O)[C@@H]2O)ccc1O"
+ ],
+ [
+  "Epigalocatechin Gallate",
+  "Epigalocatechin Gallate",
+  "O=C(O[C@@H]1Cc2c(O)cc(O)cc2O[C@@H]1c1cc(O)c(O)c(O)c1)c1cc(O)c(O)c(O)c1"
+ ],
+ [
+  "Gentiopicroside",
+  "Gentiopicroside",
+  "C=C[C@@H]1C2=CCOC(=O)C2=CO[C@H]1O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Metformin",
+  "Metformin",
+  "CN(C)C(=N)NC(=N)N"
+ ],
+ [
+  "Methylcaffeate",
+  "Methylcaffeate",
+  "COC(=O)/C=C/c1ccc(O)c(O)c1"
+ ],
+ [
+  "Ferulate",
+  "Ferulate",
+  "COc1cc(/C=C/C(=O)O)ccc1O"
+ ],
+ [
+  "Chlorogenic Acid",
+  "Chlorogenic Acid",
+  "O=C(/C=C/c1ccc(O)c(O)c1)O[C@@H]1C[C@](O)(C(=O)O)C[C@@H](O)[C@H]1O"
+ ],
+ [
+  "Prunin",
+  "Prunin",
+  "O=C1C[C@@H](c2ccc(O)cc2)Oc2cc(O[C@@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3O)cc(O)c21"
+ ],
+ [
+  "Nicotifloroside",
+  "Nicotifloroside",
+  "C[C@@H]1O[C@@H](OC[C@H]2O[C@@H](Oc3c(-c4ccc(O)cc4)oc4cc(O)cc(O)c4c3=O)[C@H](O)[C@@H](O)[C@@H]2O)[C@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Afzelin",
+  "Afzelin",
+  "C[C@@H]1O[C@@H](Oc2c(-c3ccc(O)cc3)oc3cc(O)cc(O)c3c2=O)[C@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Uridine",
+  "Uridine",
+  "O=c1ccn([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)c(=O)[nH]1"
+ ],
+ [
+  "Norepinephrine",
+  "Norepinephrine",
+  "NC[C@H](O)c1ccc(O)c(O)c1"
+ ],
+ [
+  "Butyl Ganoderate A",
+  "Butyl Ganoderate A",
+  "CCCCOC(=O)C(C)CC(=O)C[C@@H](C)[C@H]1C[C@H](O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Butyl Ganoderate B",
+  "Butyl Ganoderate B",
+  "CCCCOC(=O)[C@H](C)CC(=O)C[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Butyl Lucidenate N",
+  "Butyl Lucidenate N",
+  "CCCCOC(=O)CC[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Butyl Lucidenate A",
+  "Butyl Lucidenate A",
+  "CCCCOC(=O)CC[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Ganoderic Acid A",
+  "Ganoderic Acid A",
+  "C[C@H](CC(=O)C[C@@H](C)[C@H]1C[C@H](O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1C[C@@H]3O)C(=O)O"
+ ],
+ [
+  "Ganoderic Acid B",
+  "Ganoderic Acid B",
+  "CC(CC(=O)C[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1C[C@@H]3O)C(=O)O"
+ ],
+ [
+  "Methyl Ganoderate B",
+  "Methyl Ganoderate B",
+  "COC(=O)C(C)CC(=O)C[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Lucidenic Acid N",
+  "Lucidenic Acid N",
+  "C[C@H](CCC(=O)O)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Nigrasin I",
+  "Nigrasin I",
+  "C=CC(C)(C)c1c(O)cc(O)c2c(=O)c(CC=C(C)C)c(-c3ccc(O)cc3O)oc12"
+ ],
+ [
+  "Nigrasin H",
+  "Nigrasin H",
+  "CC(C)=CCc1c(-c2ccc(O)cc2O)oc2c3c(cc(O)c2c1=O)O[C@H](C)C3(C)C"
+ ],
+ [
+  "Pentamethylquercetin",
+  "Pentamethylquercetin",
+  "COc1cc(OC)c2c(=O)c(OC)c(-c3ccc(OC)c(OC)c3)oc2c1"
+ ],
+ [
+  "Tetramethylkaempferol",
+  "Tetramethylkaempferol",
+  "COc1ccc(-c2oc3cc(OC)cc(OC)c3c(=O)c2OC)cc1"
+ ],
+ [
+  "Retusin",
+  "Retusin",
+  "COc1cc(O)c2c(=O)c(OC)c(-c3ccc(OC)c(OC)c3)oc2c1"
+ ],
+ [
+  "Ayanin",
+  "Ayanin",
+  "COc1cc(O)c2c(=O)c(OC)c(-c3ccc(OC)c(O)c3)oc2c1"
+ ],
+ [
+  "Ombuine",
+  "Ombuine",
+  "COc1cc(O)c2c(=O)c(O)c(-c3ccc(OC)c(O)c3)oc2c1"
+ ],
+ [
+  "Rhamnetin",
+  "Rhamnetin",
+  "COc1cc(O)c2c(=O)c(O)c(-c3ccc(O)c(O)c3)oc2c1"
+ ],
+ [
+  "Gossypetin",
+  "Gossypetin",
+  "O=c1c(O)c(-c2ccc(O)c(O)c2)oc2c(O)c(O)cc(O)c12"
+ ],
+ [
+  "Myricetin",
+  "Myricetin",
+  "O=c1c(O)c(-c2cc(O)c(O)c(O)c2)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Fisetin",
+  "Fisetin",
+  "O=c1c(O)c(-c2ccc(O)c(O)c2)oc2cc(O)ccc12"
+ ],
+ [
+  "Flavonol",
+  "Flavonol",
+  "O=c1c(O)c(-c2ccccc2)oc2ccccc12"
+ ],
+ [
+  "Tetramethylluteolin",
+  "Tetramethylluteolin",
+  "COc1cc(OC)c2c(=O)cc(-c3ccc(OC)c(OC)c3)oc2c1"
+ ],
+ [
+  "Trimethylapigenin",
+  "Trimethylapigenin",
+  "COc1ccc(-c2cc(=O)c3c(OC)cc(OC)cc3o2)cc1"
+ ],
+ [
+  "Chrysin Dimethyl Ether",
+  "Chrysin Dimethyl Ether",
+  "COc1cc(OC)c2c(=O)cc(-c3ccccc3)oc2c1"
+ ],
+ [
+  "Apigenin Dimethylether",
+  "Apigenin Dimethylether",
+  "COc1ccc(-c2cc(=O)c3c(O)cc(OC)cc3o2)cc1"
+ ],
+ [
+  "Techtochrysin",
+  "Techtochrysin",
+  "COc1cc(O)c2c(=O)cc(-c3ccccc3)oc2c1"
+ ],
+ [
+  "Wogonin",
+  "Wogonin",
+  "COc1c(O)cc(O)c2c(=O)cc(-c3ccccc3)oc12"
+ ],
+ [
+  "Luteolin",
+  "Luteolin",
+  "O=c1cc(-c2ccc(O)c(O)c2)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "4,7-Dimethoxyflavone",
+  "4,7-Dimethoxyflavone",
+  "COc1ccc(-c2cc(=O)c3ccc(OC)cc3o2)cc1"
+ ],
+ [
+  "7-Hydroxyflavone",
+  "7-Hydroxyflavone",
+  "O=c1cc(-c2ccccc2)oc2cc(O)ccc12"
+ ],
+ [
+  "Flavone",
+  "Flavone",
+  "O=c1cc(-c2ccccc2)oc2ccccc12"
+ ],
+ [
+  "Butein",
+  "Butein",
+  "O=C(/C=C/c1ccc(O)c(O)c1)c1ccc(O)cc1O"
+ ],
+ [
+  "Isoliquiritigenin",
+  "Isoliquiritigenin",
+  "O=C(/C=C/c1ccc(O)cc1)c1ccc(O)cc1O"
+ ],
+ [
+  "Biochanin",
+  "Biochanin",
+  "COc1ccc(-c2coc3cc(O)cc(O)c3c2=O)cc1"
+ ],
+ [
+  "Epigallocatechin",
+  "Epigallocatechin",
+  "Oc1cc(O)c2c(c1)O[C@H](c1cc(O)c(O)c(O)c1)[C@H](O)C2"
+ ],
+ [
+  "Cianidanol",
+  "Cianidanol",
+  "Oc1cc(O)c2c(c1)O[C@H](c1ccc(O)c(O)c1)[C@@H](O)C2"
+ ],
+ [
+  "Eriodictyol",
+  "Eriodictyol",
+  "O=C1C[C@@H](c2ccc(O)c(O)c2)Oc2cc(O)cc(O)c21"
+ ],
+ [
+  "Flavanone",
+  "Flavanone",
+  "O=C1CC(c2ccccc2)Oc2ccccc21"
+ ],
+ [
+  "Oleoyl Formononetin",
+  "Oleoyl Formononetin",
+  "CCCCCCCC/C=C\\CCCCCCCC(=O)Oc1ccc2c(=O)c(-c3ccc(OC)cc3)coc2c1"
+ ],
+ [
+  "Notabilisin A",
+  "Notabilisin A",
+  "COc1c(-c2ccc(O)c(O)c2C/C=C(\\C)CCC=C(C)C)oc2cc(O)cc(O)c2c1=O"
+ ],
+ [
+  "Notabilisin B",
+  "Notabilisin B",
+  "CC(C)=CCC/C(C)=C/CC/C(C)=C/C[C@@]1(c2cccc(O)c2O)Oc2cc(O)cc(O)c2C(=O)[C@@H]1O"
+ ],
+ [
+  "Notabilisin C",
+  "Notabilisin C",
+  "CC(C)=CCC/C(C)=C/Cc1c(-c2oc3c(CC=C(C)C)c(O)cc(O)c3c(=O)c2O)ccc(O)c1O"
+ ],
+ [
+  "Chalcomoracin",
+  "Chalcomoracin",
+  "CC(C)=CCc1c(O)ccc(C(=O)[C@H]2[C@@H](c3c(O)cc(-c4cc5ccc(O)cc5o4)cc3O)C=C(C)C[C@@H]2c2ccc(O)cc2O)c1O"
+ ],
+ [
+  "Kuwanon J",
+  "Kuwanon J",
+  "CC(C)=CCc1c(O)cc(C(=O)[C@H]2[C@@H](c3c(O)ccc(C(=O)/C=C/c4ccc(O)cc4O)c3O)C=C(C)C[C@@H]2c2ccc(O)cc2O)cc1O"
+ ],
+ [
+  "Undulatoside A",
+  "Undulatoside A",
+  "Cc1cc(=O)c2c(O)cc(O[C@@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3O)cc2o1"
+ ],
+ [
+  "Cnidimol C",
+  "Cnidimol C",
+  "O=c1cc(CO)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Monnieriside A",
+  "Monnieriside A",
+  "O=c1cc(CO[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)oc2cc(O)cc(O)c12"
+ ],
+ [
+  "Saikochromoside A",
+  "Saikochromoside A",
+  "COc1cc(O)c2c(=O)cc(CO[C@@H]3O[C@H](CO)[C@@H](O)[C@H](O)[C@H]3O)oc2c1"
+ ],
+ [
+  "Cnidimoside A",
+  "Cnidimoside A",
+  "C/C(=C/Cc1c(O)cc2oc(C)cc(=O)c2c1O)CO[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Cnidimoside B",
+  "Cnidimoside B",
+  "COc1cc2oc(C)cc(=O)c2c(O)c1C/C=C(/C)CO[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Cnidimol D",
+  "Cnidimol D",
+  "C/C(=C/Cc1c(O)cc2oc(CO)cc(=O)c2c1O)CO"
+ ],
+ [
+  "Hydroxycnidimoside A",
+  "Hydroxycnidimoside A",
+  "C/C(=C/Cc1c(O)cc2oc(CO)cc(=O)c2c1O)CO[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Monnieriside B",
+  "Monnieriside B",
+  "C/C(=C/Cc1c(O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)cc2oc(CO)cc(=O)c2c1O)CO"
+ ],
+ [
+  "Monnieriside C",
+  "Monnieriside C",
+  "C=C(C)C(Cc1c(O)cc2oc(C)cc(=O)c2c1O)O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Monnieriside D",
+  "Monnieriside D",
+  "C=C(C)C(Cc1c(O)cc2oc(CO)cc(=O)c2c1O)O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Monnieriside E",
+  "Monnieriside E",
+  "C=C(C)C(O)Cc1c(O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)cc2oc(CO)cc(=O)c2c1O"
+ ],
+ [
+  "Umtatin",
+  "Umtatin",
+  "C=C(C)C1Cc2c(cc3oc(CO)cc(=O)c3c2O)O1"
+ ],
+ [
+  "Monnieriside F",
+  "Monnieriside F",
+  "C=C(C)C1Cc2c(cc3oc(CO[C@@H]4O[C@H](CO)[C@@H](O)[C@H](O)[C@H]4O)cc(=O)c3c2O)O1"
+ ],
+ [
+  "Monnieriside G",
+  "Monnieriside G",
+  "Cc1cc(=O)c2c(O)c3c(cc2o1)OC(C(C)(C)O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O)C3"
+ ],
+ [
+  "Bexarotene",
+  "Bexarotene",
+  "C=C(c1ccc(C(=O)O)cc1)c1cc2c(cc1C)C(C)(C)CCC2(C)C"
+ ],
+ [
+  "Acadesine",
+  "Acadesine",
+  "NC(=O)c1ncn([C@@H]2O[C@H](CO)[C@@H](O)[C@H]2O)c1N"
+ ],
+ [
+  "Isobutylmethylxanthine",
+  "Isobutylmethylxanthine",
+  "CC(C)Cn1c(=O)n(C)c(=O)c2nc[nH]c21"
+ ],
+ [
+  "Ib-Meca",
+  "Ib-Meca",
+  "CNC(=O)[C@H]1O[C@@H](n2cnc3c(NCc4cccc(I)c4)ncnc32)[C@H](O)[C@@H]1O"
+ ],
+ [
+  "Neca",
+  "Neca",
+  "CCNC(=O)[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1O"
+ ],
+ [
+  "Cgs-21680",
+  "Cgs-21680",
+  "CCNC(=O)[C@H]1O[C@@H](n2cnc3c(N)nc(NCCc4ccc(CCC(=O)O)cc4)nc32)[C@H](O)[C@@H]1O"
+ ],
+ [
+  "Aspirin",
+  "Aspirin",
+  "CC(=O)Oc1ccccc1C(=O)O"
+ ],
+ [
+  "Isoliensinine",
+  "Isoliensinine",
+  "COc1ccc(C[C@@H]2c3cc(Oc4cc(C[C@@H]5c6cc(O)c(OC)cc6CCN5C)ccc4O)c(OC)cc3CCN2C)cc1"
+ ],
+ [
+  "Methyl Lucidenate F",
+  "Methyl Lucidenate F",
+  "COC(=O)CC[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1CC3=O"
+ ],
+ [
+  "Methyl Lucidenate E2",
+  "Methyl Lucidenate E2",
+  "COC(=O)CC[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)[C@@H](OC(C)=O)[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1CC3=O"
+ ],
+ [
+  "Methyl Lucidenate P",
+  "Methyl Lucidenate P",
+  "COC(=O)CC[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)[C@@H](OC(C)=O)[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Methyl Lucidenate A",
+  "Methyl Lucidenate A",
+  "COC(=O)CC[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Methyl Ganoderate H",
+  "Methyl Ganoderate H",
+  "COC(=O)C(C)CC(=O)C[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)[C@@H](OC(C)=O)[C@]12C)[C@@]1(C)CC[C@H](O)C(C)(C)[C@@H]1CC3=O"
+ ],
+ [
+  "Ganolucidic Acid A",
+  "Ganolucidic Acid A",
+  "CC(CC(=O)C[C@@H](C)[C@H]1C[C@H](O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1CC3)C(=O)O"
+ ],
+ [
+  "Methyl Ganoderate E",
+  "Methyl Ganoderate E",
+  "COC(=O)C(C)CC(=O)C[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1CC3=O"
+ ],
+ [
+  "Ganoderic Acid E",
+  "Ganoderic Acid E",
+  "C[C@H](CC(=O)C[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1CC3=O)C(=O)O"
+ ],
+ [
+  "Methyl Ganoderate D",
+  "Methyl Ganoderate D",
+  "COC(=O)C(C)CC(=O)C[C@@H](C)[C@H]1CC(=O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Methyl Ganoderate A",
+  "Methyl Ganoderate A",
+  "COC(=O)C(C)CC(=O)C[C@@H](C)[C@H]1C[C@H](O)[C@@]2(C)C3=C(C(=O)C[C@]12C)[C@@]1(C)CCC(=O)C(C)(C)[C@@H]1C[C@@H]3O"
+ ],
+ [
+  "Scutellarin",
+  "Scutellarin",
+  "O=C(O)[C@H]1O[C@@H](Oc2cc3oc(-c4ccc(O)cc4)cc(=O)c3c(O)c2O)[C@H](O)[C@@H](O)[C@@H]1O"
+ ],
+ [
+  "Oregonin",
+  "Oregonin",
+  "O=C(CCc1ccc(O)c(O)c1)C[C@H](CCc1ccc(O)c(O)c1)O[C@@H]1OC[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Hirsutanonol",
+  "Hirsutanonol",
+  "O=C(CCc1ccc(O)c(O)c1)C[C@@H](O)CCc1ccc(O)c(O)c1"
+ ],
+ [
+  "Alnuside B",
+  "Alnuside B",
+  "O=C(CCc1ccc(O)cc1)C[C@H](CCc1ccc(O)c(O)c1)O[C@@H]1OC[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "Platyphyllone",
+  "Platyphyllone",
+  "O=C(CCc1ccc(O)cc1)C[C@@H](O)CCc1ccc(O)cc1"
+ ],
+ [
+  "Dehydrohirsutanonol",
+  "Dehydrohirsutanonol",
+  "O=C(/C=C/CCc1ccc(O)c(O)c1)CCc1ccc(O)c(O)c1"
+ ],
+ [
+  "Platyphyllenone",
+  "Platyphyllenone",
+  "O=C(/C=C/CCc1ccc(O)cc1)CCc1ccc(O)cc1"
+ ],
+ [
+  "Aceroside Vii",
+  "Aceroside Vii",
+  "OC[C@@H]1[C@@H](O)[C@H](O[C@H](CCCCc2ccc(O)cc2)CCc2ccc(O)cc2)O[C@H](CO)[C@H]1O"
+ ],
+ [
+  "(+)-Hannokinol",
+  "(+)-Hannokinol",
+  "Oc1ccc(CC[C@@H](O)C[C@H](O)CCc2ccc(O)cc2)cc1"
+ ],
+ [
+  "(S)-(+)-Sydonol",
+  "(S)-(+)-Sydonol",
+  "CC(C)CCC[C@](C)(O)c1ccc(CO)cc1O"
+ ],
+ [
+  "Caffeic Acid Phenethyl Ester",
+  "Caffeic Acid Phenethyl Ester",
+  "O=C(/C=C/c1ccc(O)c(O)c1)OCCc1ccccc1"
+ ],
+ [
+  "Geranyl Caffeate",
+  "Geranyl Caffeate",
+  "CC(C)=CCC/C(C)=C/COC(=O)/C=C/c1ccc(O)c(O)c1"
+ ],
+ [
+  "Chenodiol",
+  "Chenodiol",
+  "C[C@H](CCC(=O)O)[C@H]1CC[C@H]2[C@@H]3[C@H](O)C[C@@H]4C[C@H](O)CC[C@]4(C)[C@H]3CC[C@]12C"
+ ],
+ [
+  "Rotenoisin A",
+  "Rotenoisin A",
+  "C=C(C)[C@H]1Cc2c(ccc3c2O[C@@H]2COc4cc(OC)c(OC)cc4[C@@H]2[C@@]32CO2)O1"
+ ],
+ [
+  "Avasimibe",
+  "Avasimibe",
+  "CC(C)c1cc(C(C)C)c(CC(=O)NS(=O)(=O)Oc2c(C(C)C)cccc2C(C)C)c(C(C)C)c1"
+ ],
+ [
+  "Cl-976",
+  "Cl-976",
+  "CCCCCCCCCCC(C)(C)C(=O)Nc1c(OC)cc(OC)cc1OC"
+ ],
+ [
+  "Stavudine",
+  "Stavudine",
+  "Cc1cn([C@H]2C=C[C@@H](CO)O2)c(=O)[nH]c1=O"
+ ],
+ [
+  "Zalcitabine",
+  "Zalcitabine",
+  "Nc1ccn([C@H]2CC[C@@H](CO)O2)c(=O)n1"
+ ],
+ [
+  "Cudraflavone C",
+  "Cudraflavone C",
+  "CC(C)=CCc1c(O)cc2oc(-c3ccc(O)cc3O)c(CC=C(C)C)c(=O)c2c1O"
+ ],
+ [
+  "Sanggenol H",
+  "Sanggenol H",
+  "CC(C)=CCC/C(C)=C/CC/C(C)=C/C[C@@]12Oc3cc(O)cc(O)c3C(=O)[C@]1(O)Oc1cc(O)ccc12"
+ ],
+ [
+  "Nigrasin G",
+  "Nigrasin G",
+  "C=C(C)C(O)CC/C(C)=C/CC/C(C)=C/C[C@@]12Oc3cc(O)cc(O)c3C(=O)[C@]1(O)Oc1cc(O)ccc12"
+ ],
+ [
+  "Nigrasin E",
+  "Nigrasin E",
+  "C=C(C)[C@H]1Cc2c(cc(O)c3c2O[C@]2(CC=C(C)C)c4ccc(O)cc4O[C@]2(O)C3=O)O1"
+ ],
+ [
+  "Nigrasin C",
+  "Nigrasin C",
+  "CC(C)=CC[C@]12Oc3cc4c(c(O)c3C(=O)[C@@]1(O)Oc1cc(O)ccc12)C[C@@H](C(C)(C)O)O4"
+ ],
+ [
+  "Nigrasin A",
+  "Nigrasin A",
+  "CC(C)=CC[C@]12Oc3cc4c(c(O)c3C(=O)[C@@]1(O)Oc1cc(O)ccc12)C[C@@H](O)C(C)(C)O4"
+ ],
+ [
+  "Broussonin B",
+  "Broussonin B",
+  "COc1cc(O)ccc1CCCc1ccc(O)cc1"
+ ],
+ [
+  "Rotenoisin B",
+  "Rotenoisin B",
+  "C=C(C)[C@H]1Cc2c(ccc3c2O[C@@H]2COc4cc(OC)c(OC)cc4[C@@H]2[C@]32C[C@H]3O[C@@]3(O)[C@H](O)O2)O1"
+ ],
+ [
+  "Idescarpin",
+  "Idescarpin",
+  "O=C1CCC=CC1(O)C(=O)OCc1cccc(O)c1O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@H]1O"
+ ],
+ [
+  "(+)-Epitaxifolin",
+  "(+)-Epitaxifolin",
+  "O=C1c2c(O)cc(O)cc2O[C@@H](c2ccc(O)c(O)c2)[C@H]1O"
+ ],
+ [
+  "N-Trans-Feruloyl Tyramine",
+  "N-Trans-Feruloyl Tyramine",
+  "COc1cc(/C=C/C(=O)NCCc2ccc(O)cc2)ccc1O"
+ ],
+ [
+  "N-P-Coumaroyl Tyramine",
+  "N-P-Coumaroyl Tyramine",
+  "O=C(/C=C/c1ccc(O)cc1)NCCc1ccc(O)cc1"
+ ],
+ [
+  "Liriodenine",
+  "Liriodenine",
+  "O=C1c2ccccc2-c2c3c(cc4ccnc1c24)OCO3"
+ ],
+ [
+  "(+)-Epiloliolide",
+  "(+)-Epiloliolide",
+  "CC1(C)C[C@@H](O)C[C@@]2(C)OC(=O)C=C12"
+ ],
+ [
+  "Blumenol A",
+  "Blumenol A",
+  "CC1=CC(=O)CC(C)(C)[C@@]1(O)/C=C/[C@@H](C)O"
+ ],
+ [
+  "Lovastatin",
+  "Lovastatin",
+  "CC[C@H](C)C(=O)O[C@H]1C[C@@H](C)C=C2C=C[C@H](C)[C@H](CC[C@@H]3C[C@@H](O)CC(=O)O3)[C@H]21"
+ ],
+ [
+  "Genipin",
+  "Genipin",
+  "COC(=O)C1=CO[C@@H](O)[C@@H]2C(CO)=CC[C@H]12"
+ ],
+ [
+  "Celastrol",
+  "Celastrol",
+  "CC1=C(O)C(=O)C=C2C1=CC=C1[C@@]2(C)CC[C@@]2(C)[C@@H]3C[C@](C)(C(=O)O)CC[C@]3(C)CC[C@]12C"
+ ],
+ [
+  "Mycophenolic Acid",
+  "Mycophenolic Acid",
+  "COc1c(C)c2c(c(O)c1C/C=C(\\C)CCC(=O)O)C(=O)OC2"
+ ],
+ [
+  "Terrein",
+  "Terrein",
+  "C/C=C/C1=CC(=O)[C@@H](O)[C@@H]1O"
+ ],
+ [
+  "Euphodendriane A",
+  "Euphodendriane A",
+  "CC1=C[C@@H]2[C@H](C1=O)[C@H](O)C(C)=C[C@H]1[C@@H]3C(C)(C)[C@]3(OC(=O)C(C)C)[C@H](OC(=O)c3ccccc3)[C@@H](C)[C@]21O"
+ ],
+ [
+  "Euphorbiaproliferin E",
+  "Euphorbiaproliferin E",
+  "CC(=O)O[C@@H]1[C@@H]2[C@@H](OC(C)=O)[C@@]34CO[C@@](C)([C@H](OC(=O)c5ccccc5)[C@@]2(O)C[C@@H]1C)[C@@H]3[C@@H]1[C@@H](C[C@]1(C)OC(C)=O)[C@@H](OC(=O)c1ccccc1)C4=O"
+ ],
+ [
+  "Euphorbiaproliferin D",
+  "Euphorbiaproliferin D",
+  "CCC(=O)O[C@@H]1[C@@H]2[C@@H](OC(C)=O)[C@@]34CO[C@@](C)([C@H](OC(=O)c5ccccc5)[C@@]2(OC(C)=O)C[C@@H]1C)[C@@H]3[C@@H](C(C)(C)OC(C)=O)C=CC4=O"
+ ],
+ [
+  "Berkeleyacetal A",
+  "Berkeleyacetal A",
+  "COC(=O)[C@]12C(=O)[C@H](C)O[C@@H]3OC(=O)[C@](C)(C[C@H]4C(C)=C5CC(=O)OC(C)(C)C5=CC[C@@]41C)[C@@H]32"
  ]
 ];
 /* INGREDIENTS:END */
@@ -1637,8 +3412,34 @@ function validateFunction() {
   };
 }
 
+/* The independent check: compounds whose only label is a Tox21 verdict, each
+ * predicted with its own screen result withheld and itself removed from the
+ * pool. Unlike validateFunction this was never used to set a threshold. */
+function validateHoldout() {
+  var pool = functionPool();
+  var rows = [], hit = 0, miss = 0, abstain = 0;
+  for (var i = 0; i < pool.length; i++) {
+    if (!pool[i].measured) continue;
+    var entry = null;
+    for (var j = 0; j < INGREDIENTS.length; j++) {
+      if (INGREDIENTS[j][1] === pool[i].n) { entry = INGREDIENTS[j]; break; }
+    }
+    if (!entry) continue;
+    var r;
+    try { r = predict(entry[2], { exclude: pool[i].n }); } catch (err) { continue; }
+    var call = r.functionCall.label;
+    if (call === 'unknown') abstain++;
+    else if (call === pool[i].c) hit++;
+    else miss++;
+    rows.push({ n: pool[i].n, truth: pool[i].c, call: call,
+                tier: r.functionCall.tier, ok: call === pool[i].c });
+  }
+  return { rows: rows, n: rows.length, hit: hit, miss: miss, abstain: abstain };
+}
+
 var PR = {
   predict: predict,
+  validateHoldout: validateHoldout,
   lookupName: lookupName,
   suggestNames: suggestNames,
   normalizeName: normalizeName,

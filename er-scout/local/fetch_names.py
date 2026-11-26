@@ -27,7 +27,8 @@ def get(url):
 
 
 def main():
-    lib = json.loads((HERE.parent / "web/assets/chembl_er.json").read_text())
+    src = sys.argv[1] if len(sys.argv) > 1 else "chembl_er.json"
+    lib = json.loads((HERE.parent / ("web/assets/" + src)).read_text())
     ids = [e["n"] for e in lib]
     cache_path = HERE / "cache/names.json"
     names = json.loads(cache_path.read_text()) if cache_path.exists() else {}

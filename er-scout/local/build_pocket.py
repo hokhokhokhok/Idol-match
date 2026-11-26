@@ -1,45 +1,33 @@
 #!/usr/bin/env python3
-"""Build the ERalpha binding-site scene from crystal structures.
+"""Build a receptor binding-site scene from crystal structures.
 
-1GWR (wild-type ERalpha LBD + 17beta-estradiol + coactivator NR box, 2.4 A)
-is the frame. Every other complex is superposed onto it by the Calpha atoms
-of the residues the two share, so the ligands end up in one coordinate system
-and can be drawn in the same pocket. The poses are therefore crystal poses,
-not docked ones: nothing here is computed from a scoring function.
+One complex is the frame; every other is superposed onto it by the Calpha
+atoms of the residues the two share, so the ligands end up in one coordinate
+system and can be drawn in the same pocket. The poses are therefore crystal
+poses, not docked ones: nothing here is computed from a scoring function.
 
-Usage: python3 build_pocket.py <pdb_dir> [out.json]
+Each receptor is a config file, because what separates the ligand classes is
+receptor-specific:
+
+  ERalpha  helix 12 moves 11 A when an antagonist binds, so the scene is
+           classified by where helix 12 ends up (mode "h12_displacement").
+  PPARgamma  helix 12 barely moves; what separates a full agonist from a
+           partial one is whether the ligand hydrogen-bonds the Tyr473 /
+           His323 / His449 / Ser289 cluster that holds helix 12 in place
+           (mode "anchor_hbond").
+
+Usage: python3 build_pocket.py <pdb_dir> [config.json] [out.json]
+  default config: local/pocket_er.json
 """
-import json, math, pathlib, sys
+import json, pathlib, sys
 import numpy as np
 
-REF = "1GWR"
-REF_LIG = "EST"
+HERE = pathlib.Path(__file__).resolve().parent
 
-# (pdb, ligand code, label). The receptor conformation is not asserted here,
-# it is measured below from where helix 12 ends up.
-COMPLEXES = [
-    ("1GWR", "EST", "17b-Estradiol"),
-    ("1X7R", "GEN", "Genistein"),
-    ("1L2I", "ETC", "THC (tetrahydrochrysene-2,8-diol)"),
-    ("2P15", "EZT", "17a-(trifluoromethylphenyl-vinyl)estradiol"),
-    ("2B1V", "458", "Bicyclo[3.3.1]nonene phenol agonist"),
-    ("3OS8", "KN0", "Benzyl-trifluoromethyl-indazole resorcinol"),
-    ("1XP1", "AIH", "Benzoxathiin SERM (dimethylpyrrolidinyl)"),
-    ("1SJ0", "E4D", "Benzoxathiin SERM (piperidinyl)"),
-    ("3ERT", "OHT", "4-Hydroxytamoxifen"),
-    ("1ERR", "RAL", "Raloxifene"),
-]
-
-H12 = list(range(536, 545))        # helix 12; moves when an antagonist binds
-H12_SHIFT_CUT = 3.0               # A, Calpha RMSD over H12 against the agonist frame
-
-# Residues the UI always shows even when estradiol does not touch them:
-# Asp351 is the carboxylate the SERM side chain pairs with, and 536-544 is
-# helix 12, which an antagonist pushes out of the AF-2 groove.
-FORCED = [351, 347, 383, 536, 537, 538, 539, 540, 541, 542, 543, 544]
 POCKET_CUT = 5.0      # A, residue kept in the scene
 CONTACT_CUT = 4.0     # A, ligand touches residue
 HBOND_CUT = 3.4       # A, N/O to N/O
+
 
 COVALENT = {"C": 0.77, "N": 0.75, "O": 0.73, "S": 1.02, "P": 1.06,
             "F": 0.71, "CL": 0.99, "BR": 1.14, "I": 1.33, "H": 0.37}
@@ -125,23 +113,36 @@ def residue_label(res, seq):
 
 def main():
     pdbdir = pathlib.Path(sys.argv[1])
-    out_path = (pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else
-                pathlib.Path(__file__).resolve().parent.parent / "web/assets/pocket_scene.json")
+    cfg_path = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "pocket_er.json"
+    cfg = json.loads(cfg_path.read_text())
+    out_path = (pathlib.Path(sys.argv[3]) if len(sys.argv) > 3
+                else HERE.parent / "web/assets" / cfg["out"])
 
-    ref_atoms = parse(pdbdir / (REF + ".pdb"))
+    ref_pdb = cfg["ref"]
+    ref_lig = cfg["ref_ligand"]
+    forced = cfg.get("forced", [])
+    mode = cfg.get("mode", "h12_displacement")
+    h12 = cfg.get("h12", [])
+    h12_cut = cfg.get("h12_cut", 3.0)
+    anchors = [a.upper() for a in cfg.get("anchor_hbond", [])]
+    pocket_cut = cfg.get("pocket_cut", POCKET_CUT)
+
+    ref_atoms = parse(pdbdir / (ref_pdb + ".pdb"))
     ref_ca = calphas(ref_atoms)
     ref_prot = protein(ref_atoms)
-    ref_lig_groups = ligand(ref_atoms, REF_LIG, "A")
-    ref_lig = list(ref_lig_groups.values())[0]
-    ref_lig_xyz = np.array([a["xyz"] for a in ref_lig])
+    ref_lig_groups = ligand(ref_atoms, ref_lig, "A")
+    if not ref_lig_groups:
+        raise SystemExit("no %s in %s chain A" % (ref_lig, ref_pdb))
+    ref_ligand_atoms = list(ref_lig_groups.values())[0]
+    ref_lig_xyz = np.array([a["xyz"] for a in ref_ligand_atoms])
 
     # ---- pocket residues: near the reference ligand, plus the forced list
     keep = {}
     for a in ref_prot:
         d = np.linalg.norm(ref_lig_xyz - a["xyz"], axis=1).min()
-        if d <= POCKET_CUT:
+        if d <= pocket_cut:
             keep.setdefault(a["seq"], a["res"])
-    for seq in FORCED:
+    for seq in forced:
         hit = [a for a in ref_prot if a["seq"] == seq]
         if hit:
             keep.setdefault(seq, hit[0]["res"])
@@ -149,8 +150,6 @@ def main():
     pocket = []
     for seq in sorted(keep):
         ats = [a for a in ref_prot if a["seq"] == seq]
-        # backbone N/CA/C/O carries no information for a contact map and
-        # crowds the picture; the side chain plus CA is what lines the cavity
         ats = [a for a in ats if a["name"] not in ("N", "C")] or ats
         pocket.append({
             "id": residue_label(keep[seq], seq).upper(),
@@ -165,30 +164,28 @@ def main():
 
     # ---- poses
     poses = []
-    for pdb, code, label in COMPLEXES:
+    for entry in cfg["complexes"]:
+        pdb, code, label = entry["pdb"], entry["lig"], entry.get("n")
         path = pdbdir / (pdb + ".pdb")
         if not path.exists():
             print("missing %s" % pdb, file=sys.stderr)
             continue
         atoms = parse(path)
-        R, t = None, None
-        rmsd = None
-        core_n = None
-        if pdb == REF:
-            R, t, rmsd = np.eye(3), np.zeros(3), 0.0
-            core_n = len(ref_ca)
+        rmsd, core_n = None, None
+        if pdb == ref_pdb:
+            R, t, rmsd, core_n = np.eye(3), np.zeros(3), 0.0, len(ref_ca)
         else:
             ca = calphas(atoms)
-            shared = [s for s in sorted(set(ca) & set(ref_ca)) if s not in H12]
+            shared = [x for x in sorted(set(ca) & set(ref_ca)) if x not in h12]
             if len(shared) < 60:
                 print("%s: only %d shared CA, skipped" % (pdb, len(shared)), file=sys.stderr)
                 continue
-            # Helix 12 and the loop before it swing by more than 10 A between
-            # the agonist and antagonist forms. Fitting on everything spreads
-            # that error over the pocket, so the fit is refined on the core:
-            # pairs further than 2 A are dropped and the fit repeated.
-            P = np.array([ca[s] for s in shared])
-            Q = np.array([ref_ca[s] for s in shared])
+            # A moving helix would spread its error over the pocket, so the
+            # fit is refined on the core: pairs further than 2 A are dropped
+            # and the fit repeated.
+            P = np.array([ca[x] for x in shared])
+            Q = np.array([ref_ca[x] for x in shared])
+            R, t = kabsch(P, Q)
             for _ in range(4):
                 R, t = kabsch(P, Q)
                 d = np.linalg.norm((R @ P.T).T + t - Q, axis=1)
@@ -198,11 +195,11 @@ def main():
                 P, Q = P[keep_i], Q[keep_i]
             rmsd = float(np.sqrt((np.linalg.norm((R @ P.T).T + t - Q, axis=1) ** 2).mean()))
             core_n = len(P)
+
         groups = ligand(atoms, code)
         if not groups:
             print("%s: no %s" % (pdb, code), file=sys.stderr)
             continue
-        # the copy that lands in the reference pocket
         best, bestd = None, 1e9
         for key, ats in groups.items():
             xyz = (R @ np.array([a["xyz"] for a in ats]).T).T + t
@@ -216,63 +213,61 @@ def main():
             continue
 
         placed = [dict(a, xyz=x) for a, x in zip(ats, xyz)]
-
-        # Where did helix 12 end up? In the agonist form it caps the pocket;
-        # an antagonist's side chain pushes it into the AF-2 groove instead.
-        ca_all = calphas(atoms)
-        h12_pairs = [(ca_all[s], ref_ca[s]) for s in H12 if s in ca_all and s in ref_ca]
-        if len(h12_pairs) >= 4:
-            m = np.array([(R @ p[0]) + t for p in h12_pairs])
-            q = np.array([p[1] for p in h12_pairs])
-            h12_rmsd = float(np.sqrt(((m - q) ** 2).sum(1).mean()))
-            conf = "agonist" if h12_rmsd <= H12_SHIFT_CUT else "antagonist"
-        else:
-            h12_rmsd, conf = None, "unknown"
-        # contacts against the reference pocket residues
         contacts, hbonds = [], []
-        for p in pocket:
-            pxyz = np.array([[c[0], c[1], c[2]] for c in p["a"]])
+        for pr in pocket:
+            pxyz = np.array([[c[0], c[1], c[2]] for c in pr["a"]])
             dm = np.linalg.norm(pxyz[:, None, :] - xyz[None, :, :], axis=2)
             if dm.min() <= CONTACT_CUT:
-                contacts.append(p["id"])
-            polar_res = [i for i, c in enumerate(p["a"]) if c[3] in ("N", "O")]
+                contacts.append(pr["id"])
+            polar_res = [i for i, c in enumerate(pr["a"]) if c[3] in ("N", "O")]
             polar_lig = [j for j, a in enumerate(placed) if a["el"] in ("N", "O")]
             if polar_res and polar_lig and dm[np.ix_(polar_res, polar_lig)].min() <= HBOND_CUT:
-                hbonds.append(p["id"])
+                hbonds.append(pr["id"])
+
+        # ---- which class of ligand is this, measured rather than asserted
+        h12_rmsd, conf = None, "unknown"
+        if mode == "h12_displacement":
+            ca_all = calphas(atoms)
+            pairs = [(ca_all[x], ref_ca[x]) for x in h12 if x in ca_all and x in ref_ca]
+            if len(pairs) >= 4:
+                m = np.array([(R @ pr[0]) + t for pr in pairs])
+                q = np.array([pr[1] for pr in pairs])
+                h12_rmsd = float(np.sqrt(((m - q) ** 2).sum(1).mean()))
+                conf = cfg["classes"][0] if h12_rmsd <= h12_cut else cfg["classes"][1]
+        elif mode == "anchor_hbond":
+            held = [a for a in anchors if a in [h.upper() for h in hbonds]]
+            conf = cfg["classes"][0] if held else cfg["classes"][1]
+            h12_rmsd = len(held)
 
         poses.append({
-            "lig": code,
-            "pdb": pdb,
-            "res": None,
-            "n": label,
-            "conf": conf,
+            "lig": code, "pdb": pdb, "n": label, "conf": conf,
             "h12": None if h12_rmsd is None else round(h12_rmsd, 2),
             "rmsd": None if rmsd is None else round(rmsd, 2),
-            "placed": True,
-            "crystal": True,
+            "placed": True, "crystal": True,
             "a": [[round(float(a["xyz"][0]), 2), round(float(a["xyz"][1]), 2),
                    round(float(a["xyz"][2]), 2), a["el"].capitalize()] for a in placed],
             "b": bonds_of(placed),
-            "c": contacts,
-            "hb": hbonds,
+            "c": contacts, "hb": hbonds,
         })
-        print("%-5s %-4s core %3s CA, RMSD %-5s | H12 %-5s %-10s | atoms %2d contacts %2d hb %s"
+        print("%-5s %-4s core %3s CA, RMSD %-5s | %-7s %-14s | atoms %2d contacts %2d hb %s"
               % (pdb, code, core_n, round(rmsd, 2),
                  "-" if h12_rmsd is None else h12_rmsd, conf,
                  len(placed), len(contacts), ",".join(hbonds)), file=sys.stderr)
 
-    # the reference ligand itself, drawn as a faint overlay behind whatever
-    # pose is on screen
-    ref_pose = next((p for p in poses if p["pdb"] == REF), None)
+    ref_pose = next((p for p in poses if p["pdb"] == ref_pdb), None)
     scene = {
-        "pdb": REF,
-        "note": "ERalpha LBD + 17beta-estradiol + coactivator NR box, 2.4 A, agonist conformation",
-        "crystal": {"a": ref_pose["a"], "b": ref_pose["b"], "lig": REF_LIG,
+        "pdb": ref_pdb,
+        "receptor": cfg.get("receptor", ""),
+        "note": cfg.get("note", ""),
+        "mode": mode,
+        "classes": cfg.get("classes", []),
+        "crystal": {"a": ref_pose["a"], "b": ref_pose["b"], "lig": ref_lig,
                     "n": ref_pose["n"]} if ref_pose else None,
         "pocket": pocket,
         "poses": poses,
     }
-    out_path.write_text(json.dumps(scene, separators=(",", ":")), encoding="utf8")
+    out_path.write_text(json.dumps(scene, ensure_ascii=False, separators=(",", ":")),
+                        encoding="utf8")
     print("-> %s (%d poses, %.0f KB)" % (out_path, len(poses),
                                          out_path.stat().st_size / 1024), file=sys.stderr)
 

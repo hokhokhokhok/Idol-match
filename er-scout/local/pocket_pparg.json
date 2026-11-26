@@ -1,0 +1,76 @@
+{
+  "receptor": "PPARgamma",
+  "out": "pocket_scene_pparg.json",
+  "ref": "2PRG",
+  "ref_ligand": "BRL",
+  "note": "PPARgamma LBD + rosiglitazone, 2.3 A. The class is what is measured: whether the ligand hydrogen-bonds Tyr473, the helix-12 tyrosine that the full agonists hold. A covalent ligand can engage it too, so the label says af2-engaged rather than agonist.",
+  "mode": "anchor_hbond",
+  "classes": [
+    "af2-engaged",
+    "beta-sheet"
+  ],
+  "anchor_hbond": [
+    "TYR473"
+  ],
+  "forced": [
+    285,
+    288,
+    289,
+    323,
+    327,
+    341,
+    342,
+    364,
+    449,
+    453,
+    469,
+    473
+  ],
+  "complexes": [
+    {
+      "pdb": "2PRG",
+      "lig": "BRL",
+      "n": "Rosiglitazone"
+    },
+    {
+      "pdb": "4EMA",
+      "lig": "BRL",
+      "n": "Rosiglitazone (4EMA)"
+    },
+    {
+      "pdb": "2Q5S",
+      "lig": "NZA",
+      "n": "MRL-24 (부분작용제)"
+    },
+    {
+      "pdb": "2Q59",
+      "lig": "240",
+      "n": "Indole partial agonist"
+    },
+    {
+      "pdb": "3B3K",
+      "lig": "LRG",
+      "n": "LT175-type ligand"
+    },
+    {
+      "pdb": "5Y2O",
+      "lig": "8N6",
+      "n": "8N6 ligand"
+    },
+    {
+      "pdb": "3B0R",
+      "lig": "GW9",
+      "n": "GW9662 계열 (Cys285 공유결합 길항제로 알려짐)"
+    },
+    {
+      "pdb": "2HFP",
+      "lig": "NSI",
+      "n": "Nitro-fatty acid / NSI ligand"
+    },
+    {
+      "pdb": "1ZEO",
+      "lig": "C01",
+      "n": "C01 ligand"
+    }
+  ]
+}

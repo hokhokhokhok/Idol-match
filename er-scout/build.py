@@ -7,7 +7,12 @@ not a preference - the page is meant to be openable from a file, from an
 artifact link, or from a phone with no network, and a structure typed into it
 must not leave it.
 
-Usage: python3 build.py [out.html]
+Usage: python3 build.py [out.html] [--no-font]
+
+--no-font leaves the typeface out and falls back to whatever Korean font the
+reader's machine has. It costs nothing but the look and takes the bundle from
+about 5 MB to under 2.5 MB, which is what an email attachment limit tends to
+allow.
 """
 import base64, json, pathlib, sys
 
@@ -15,24 +20,42 @@ HERE = pathlib.Path(__file__).resolve().parent
 WEB = HERE / "web"
 ASSETS = WEB / "assets"
 
-MODULES = ["molmodel.js", "ermotifs.js", "layout.js", "layout3d.js", "predict.js"]
+MODULES = ["molmodel.js", "ermotifs.js", "layout.js", "layout3d.js",
+           "predict.js", "panel.js"]
 # name in the bundle -> asset file. The engine reads these as globals.
 DATA = [
     ("EXTLIB", "er_reference.json"),
     ("SCENE", "pocket_scene.json"),
     ("TOX21", "tox21_er.json"),
+    # the adipocyte-signalling panel
+    ("PANEL_PPARG", "panel_pparg.json"),
+    ("TOX21_PPARG", "tox21_pparg.json"),
+    ("SCENE_PPARG", "pocket_scene_pparg.json"),
+    ("PANEL_GR", "panel_gr.json"),
+    ("TOX21_GR", "tox21_gr.json"),
+    ("ADIPO", "adipo_pheno.json"),
 ]
 FONT = "Pretendard-Variable.woff2"
 
 
 def main():
-    out_path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "index.html"
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    no_font = "--no-font" in sys.argv
+    out_path = pathlib.Path(args[0]) if args else HERE / "index.html"
 
-    font_b64 = base64.b64encode((ASSETS / FONT).read_bytes()).decode()
     css = (WEB / "styles.css").read_text(encoding="utf8")
     if "__FONT_BASE64__" not in css:
         raise SystemExit("styles.css has no __FONT_BASE64__ placeholder")
-    css = css.replace("__FONT_BASE64__", font_b64)
+    if no_font:
+        font_b64 = ""
+        start = css.index("@font-face")
+        end = css.index("}", css.index("__FONT_BASE64__")) + 1
+        css = (css[:start] +
+               "/* The typeface is left out of this build; the page falls back to\n"
+               "   the reader's own Korean system font. */\n" + css[end:])
+    else:
+        font_b64 = base64.b64encode((ASSETS / FONT).read_bytes()).decode()
+        css = css.replace("__FONT_BASE64__", font_b64)
     body = (WEB / "body.html").read_text(encoding="utf8")
 
     parts = ['<!doctype html>', '<html lang="ko">', '<head>',

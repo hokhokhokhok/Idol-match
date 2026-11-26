@@ -613,6 +613,136 @@ function svgPocket(pocket, occupancy) {
          parts.join('') + '</svg>';
 }
 
+/* ------------------------------------------------ adipocyte signalling */
+
+/* A second panel, for the question "does this touch fat". It is kept visually
+ * and verbally separate from the ER result because it answers a different
+ * question with different evidence, and because the part people most want -
+ * which depot - is the part this bundle does not measure. */
+
+var LEVEL_STYLE = {
+  'measured-up':   ['warn', '실측 · 분화 촉진 쪽'],
+  'measured-down': ['ok', '실측 · 분화 억제 쪽'],
+  'possible-up':   ['warn', '가능성 · 분화 촉진 쪽'],
+  'mixed':         ['', '보고 엇갈림'],
+  'none':          ['', '근거 없음']
+};
+
+var KIND_WORD = { measured: '실측', crystal: '결정구조', predicted: '예측',
+                  weak: '약한 신호', context: '배경지식', none: '' };
+
+function panelRow(p) {
+  if (!p) return '';
+  var tox = p.tox21, read = p.read;
+  var state, cls = '';
+  if (tox && tox.unconfirmed) {
+    state = (tox.unconfirmed === 'agonist' ? '작용제' : '길항제') +
+            ' 모드 신호 (농도 미기록)';
+  } else if (tox && tox.verdict === 'agonist') {
+    state = '작용제 활성 (실측)'; cls = ' class="warnink"';
+  } else if (tox && tox.verdict === 'antagonist') {
+    state = '길항제 활성 (실측)';
+  } else if (tox && tox.verdict === 'inactive') {
+    state = '비활성 (실측)';
+  } else if (read && read.nearest >= 0.999) {
+    /* the compound is in the panel library itself: this is a lookup of a
+       measured value, not a prediction, and calling it one would be a lie */
+    state = 'ChEMBL 실측 pKi ' + fx(read.pKi, 1) + ' (라이브러리 수록)';
+  } else if (read && read.asserted) {
+    state = 'pKi ' + fx(read.pKi, 1) + ' 추정 (유사도 ' + fx(read.nearest, 2) + ')';
+  } else if (read && read.usable) {
+    state = '유사 레퍼런스 부족 (최근접 ' + fx(read.nearest, 2) + ')';
+  } else {
+    state = '판단 불가';
+  }
+  var extra = [];
+  if (tox && tox.ac50 !== null && tox.ac50 !== undefined) {
+    extra.push('AC50 ' + fx(tox.ac50, tox.ac50 < 1 ? 3 : 1) + ' µM');
+  }
+  if (p.pose) {
+    extra.push('결정구조 ' + p.pose.pdb + ' · ' +
+               (p.pose.conf === 'af2-engaged' ? 'Tyr473 수소결합' : 'β-sheet 결합'));
+  }
+  if (read && read.neighbours && read.neighbours.length && read.asserted &&
+      read.neighbours[0].named) {
+    extra.push('최근접 ' + read.neighbours[0].n);
+  }
+  return '<tr><td style="width:40%">' + esc(p.ko) + '</td><td' + cls +
+         ' style="font-weight:700">' + esc(state) +
+         (extra.length
+           ? '<div style="font-weight:400;font-size:12.5px;color:var(--ink-3);' +
+             'margin-top:2px">' + esc(extra.join(' · ')) + '</div>'
+           : '') +
+         '</td></tr>';
+}
+
+function adipoSection(result) {
+  if (typeof PANEL === 'undefined') return '';
+  var a;
+  try { a = PANEL.evaluate(result.mol, result); } catch (err) { return ''; }
+  if (!a) return '';
+  var style = LEVEL_STYLE[a.summary.level] || LEVEL_STYLE.none;
+  var out = [];
+  out.push('<h4 class="sect">지방세포 신호 패널</h4>');
+  out.push('<div class="panel" style="margin:0 0 16px;padding:18px">');
+  out.push('<div style="font-size:16px;font-weight:700;letter-spacing:-0.02em;margin-bottom:4px"' +
+           (style[0] === 'warn' ? ' class="warnink"' : '') + '>' +
+           esc(a.summary.headline) + '</div>');
+  out.push('<p class="hint" style="margin:0 0 14px">' + esc(style[1]) + '</p>');
+
+  out.push('<table><tbody>');
+  out.push(panelRow(a.pparg));
+  out.push(panelRow(a.gr));
+  var erFc = result.functionCall;
+  out.push('<tr><td>ERα (저장 부위 분포)</td><td style="font-weight:700">' +
+           esc(PR.tierPhrase(erFc.tier, erFc.label)) + '</td></tr>');
+  if (a.pheno) {
+    out.push('<tr><td>지방세포 분화 실측 (3T3-L1 등)</td><td style="font-weight:700">' +
+             '촉진 ' + a.pheno.induces + '건 / 억제 ' + a.pheno.inhibits + '건' +
+             (a.pheno.uM !== null
+               ? '<div style="font-weight:400;font-size:12.5px;color:var(--ink-3);' +
+                 'margin-top:2px">최저 보고 농도 ' + a.pheno.uM + ' µM</div>'
+               : '') + '</td></tr>');
+  } else {
+    out.push('<tr><td>지방세포 분화 실측 (3T3-L1 등)</td>' +
+             '<td style="color:var(--ink-3)">기록 없음</td></tr>');
+  }
+  out.push('</tbody></table>');
+
+  out.push('<h4 class="sect" style="margin-top:16px">판단 근거</h4>');
+  out.push('<ul style="margin:0;padding-left:18px">');
+  for (var i = 0; i < a.summary.reasons.length; i++) {
+    var r = a.summary.reasons[i];
+    var tag = KIND_WORD[r.kind] || '';
+    out.push('<li style="font-size:13.5px;line-height:1.5;color:var(--ink-2);margin-bottom:5px">' +
+             (tag ? '<b>[' + esc(tag) + ']</b> ' : '') + esc(r.text) + '</li>');
+  }
+  out.push('</ul>');
+
+  out.push('<details style="margin-top:14px"><summary style="cursor:pointer;' +
+           'font-size:13.5px;font-weight:600;color:var(--ink-2)">' +
+           '피하지방으로 읽을 때 주의할 것</summary>' +
+           '<div style="font-size:13.5px;line-height:1.6;color:var(--ink-2);margin-top:8px">' +
+           '<p style="margin:0 0 8px"><b>이 패널이 측정한 것</b>은 수용체 활성(ChEMBL·Tox21)과 ' +
+           '배양 지방전구세포의 분화·지질축적 실측치입니다. <b>지방이 피하로 가는지 ' +
+           '내장으로 가는지는 이 번들에 들어 있지 않습니다.</b> 아래는 결과가 아니라 ' +
+           '해석을 돕는 배경지식입니다.</p>' +
+           '<p style="margin:0 0 8px">PPARγ는 지방세포 분화의 마스터 조절자이고, ' +
+           '전장작용제(TZD 계열)는 임상에서 피하지방을 늘리고 내장지방을 줄이는 쪽으로 ' +
+           '보고됩니다. 글루코코르티코이드 수용체는 배양에서는 분화를 돕지만 사람에서는 ' +
+           '중심성·내장지방 증가와 연결됩니다. 에스트로겐 신호는 배양 지방세포 분화를 ' +
+           '오히려 억제하면서도 개체 수준에서는 저장을 피하(둔부·대퇴) 쪽으로 미는, ' +
+           '방향이 엇갈리는 축입니다. 즉 <b>"분화를 켜는가"와 "어디에 쌓는가"는 서로 다른 ' +
+           '질문이고, 이 도구는 앞의 것만 데이터로 답합니다.</b></p>' +
+           '<p style="margin:0">배양 세포에서 µM 농도로 나온 결과가 사람에서 같은 일을 ' +
+           '한다는 보장은 없습니다. 노출 경로·농도·대사가 전부 빠져 있고, ' +
+           'PPARγ를 켜는 물질 상당수는 내분비계 교란물질 또는 의약품으로 관리되는 ' +
+           '대상입니다. <b>이 패널은 위해성 선별용이며, 체형을 바꾸려는 목적의 ' +
+           '사용 근거가 될 수 없습니다.</b></p></div></details>');
+  out.push('</div>');
+  return out.join('');
+}
+
 /* ------------------------------------------------------ single result */
 
 function tile(label, value) {
@@ -756,6 +886,8 @@ function renderSingle(result, title, subtitle) {
            '<span class="tag ' + esc(result.domain) + '">' + esc(domainWord) + '</span>' +
            '<span class="sub">유사도 ' + fx(result.nearestSim, 2) + '</span></span></div>');
   out.push('</div></div>');
+
+  out.push(adipoSection(result));
 
   out.push('<h4 class="sect">포켓 접촉도</h4>');
   out.push('<div class="figwrap">' + svgPocket(p, result.occupancy) + '</div>');
@@ -985,6 +1117,24 @@ function parseBatchText(text) {
   return out;
 }
 
+/* The panel's own words, shortened for a table cell. A measured phenotype
+ * says so, because that is a different kind of claim from a receptor read. */
+var BATCH_ADIPO = {
+  'measured-up': '분화 촉진 (실측)',
+  'measured-down': '분화 억제 (실측)',
+  'possible-up': '촉진 가능성',
+  'mixed': '보고 엇갈림',
+  'none': '—'
+};
+
+function batchAdipoWord(row) {
+  var word = BATCH_ADIPO[row.adipoLevel || 'none'] || '—';
+  if (row.adipoPheno) {
+    word += ' ' + row.adipoPheno.induces + '/' + row.adipoPheno.inhibits;
+  }
+  return word;
+}
+
 function runBatch(text) {
   showError('batch-err', '');
   var host = $('batch-out');
@@ -1006,12 +1156,18 @@ function runBatch(text) {
     if (hit && !/[=#\[\]()0-9]/.test(smi)) smi = hit.s;
     try {
       var r = PR.predict(smi);
+      var adipo = null;
+      try {
+        if (typeof PANEL !== 'undefined') adipo = PANEL.evaluate(r.mol, r);
+      } catch (errPanel) { adipo = null; }
       batchRows.push({
         name: items[i].name, smiles: smi, pKi: r.pKi, ci: r.ci,
         domain: r.domain, verdict: r.pocket.verdict,
         fnLabel: PR.tierPhrase(r.functionCall.tier, r.functionCall.label),
         fnKey: r.functionCall.label, fnSupport: r.functionCall.support,
-        mw: r.desc.mw, clogp: r.desc.clogp, occupancy: r.occupancy
+        mw: r.desc.mw, clogp: r.desc.clogp, occupancy: r.occupancy,
+        adipoLevel: adipo ? adipo.summary.level : null,
+        adipoPheno: adipo ? adipo.pheno : null
       });
     } catch (err) {
       failures.push(items[i].name + ' (' + err.message + ')');
@@ -1027,6 +1183,7 @@ function runBatch(text) {
   out.push('<div class="tscroll"><table><thead><tr><th class="num">#</th><th>물질</th>' +
            '<th class="num">pKi</th><th class="barcell">분포</th>' +
            '<th class="num col-sec">MW</th><th>기능 추정</th>' +
+           '<th>지방 신호</th>' +
            '<th class="col-sec">구조 판정</th>' +
            '</tr></thead><tbody>');
   for (var k = 0; k < batchRows.length; k++) {
@@ -1041,6 +1198,8 @@ function runBatch(text) {
              '<td class="num col-sec">' + fx(row.mw, 1) + '</td>' +
              '<td' + (row.fnKey === 'antagonist' ? ' class="warnink"' : '') + '>' +
              esc(row.fnLabel) + '</td>' +
+             '<td' + (/-up$/.test(row.adipoLevel || '') ? ' class="warnink"' : '') + '>' +
+             esc(batchAdipoWord(row)) + '</td>' +
              '<td class="col-sec">' + esc(row.verdict) + '</td></tr>');
   }
   out.push('</tbody></table></div>');
@@ -1069,13 +1228,17 @@ function runBatch(text) {
 
 function batchTsv() {
   var head = ['name', 'smiles', 'pKi', 'ci', 'domain', 'function', 'fn_support',
-              'structural_verdict', 'mw', 'clogp', 'occupancy'];
+              'structural_verdict', 'mw', 'clogp', 'occupancy',
+              'adipo_signal', 'adipo_assays_up', 'adipo_assays_down'];
   var lines = [head.join('\t')];
   for (var i = 0; i < batchRows.length; i++) {
     var r = batchRows[i];
     lines.push([r.name, r.smiles, fx(r.pKi, 2), fx(r.ci, 1), r.domain,
                 r.fnKey, fx(r.fnSupport, 2), r.verdict,
-                fx(r.mw, 2), fx(r.clogp, 2), fx(r.occupancy, 0)].join('\t'));
+                fx(r.mw, 2), fx(r.clogp, 2), fx(r.occupancy, 0),
+                r.adipoLevel || 'none',
+                r.adipoPheno ? r.adipoPheno.induces : '',
+                r.adipoPheno ? r.adipoPheno.inhibits : ''].join('\t'));
   }
   return lines.join('\n');
 }
@@ -1245,9 +1408,10 @@ function renderModelCard() {
   if (!host) return;
   modelCardDone = true;
 
-  var cv, fv;
+  var cv, fv, ho;
   try { cv = PR.crossValidate(); } catch (err) { cv = null; }
   try { fv = PR.validateFunction(); } catch (err) { fv = null; }
+  try { ho = PR.validateHoldout(); } catch (err) { ho = null; }
   var out = [];
 
   out.push('<h5>용도</h5>');
@@ -1333,12 +1497,22 @@ function renderModelCard() {
                '「부분작용제」로 라벨돼 있고, 이 도구는 그 구분을 하지 못합니다.</p>');
     }
     out.push('<p><b>이 수치는 적합도이지 외부 검증이 아닙니다.</b> 아래 곁사슬 규칙과 ' +
-             '유사도 문턱값을 바로 이 ' + fv.n + '종으로 정했기 때문입니다. ' +
-             '독립 검증은 Tox21로만 라벨된 물질(손으로 라벨하지 않은 것) ' +
-             '14종을 자기 어세이 결과를 가리고 맞혀보는 것인데, 거기서는 ' +
-             '<b>13/14</b>였습니다. 유일한 실패는 벤조페논-3으로, Tox21은 약한 ' +
-             '작용제(양쪽 작용제 웰 활성, AC50 34 µM)라고 하는데 이 도구는 ' +
-             '길항제 가능성으로 봤습니다.</p>');
+             '유사도 문턱값을 바로 이 ' + fv.n + '종으로 정했기 때문입니다.</p>');
+    if (ho && ho.n) {
+      out.push('<p><b>독립 검증</b>: 손으로 라벨하지 않고 Tox21 실측만 있는 ' + ho.n +
+               '종을, 자기 어세이 결과를 가리고 구조만으로 맞혀봅니다. ' +
+               '<b>' + ho.hit + '/' + ho.n + ' 적중</b>, 오답 ' + ho.miss +
+               '종, 판단 보류 ' + ho.abstain + '종' +
+               (ho.rows.filter(function (r) { return !r.ok && r.call !== 'unknown'; })
+                  .length
+                 ? ' (오답: ' + ho.rows.filter(function (r) {
+                     return !r.ok && r.call !== 'unknown'; })
+                     .map(function (r) { return esc(r.n); }).slice(0, 5).join(', ') + ')'
+                 : '') +
+               '. 이 문턱값들은 이 집합을 보고 정한 것이 아니므로, 레퍼런스에 없는 ' +
+               '신규 원료에서 기대할 수 있는 성능은 위쪽 95%가 아니라 이 숫자에 ' +
+               '가깝습니다.</p>');
+    }
   }
 
   out.push('<h5>작용제와 길항제를 가르는 것 — 곁사슬</h5>');
@@ -1400,12 +1574,62 @@ function renderModelCard() {
            '작용제이고 어디서 길항제인지)은 이 모델의 범위 밖입니다.</li>');
   out.push('</ul>');
 
+  out.push('<h5>지방세포 신호 패널 — 무엇을 어디까지 말하는가</h5>');
+  out.push('<p>ERα 하나로는 "지방이 늘어나는가"에 답할 수 없습니다. 지방세포 분화의 ' +
+           '마스터 조절자는 <b>PPARγ</b>이고, 글루코코르티코이드 수용체(GR)는 ' +
+           '모든 3T3-L1 분화 칵테일에 들어가는 다른 한 축입니다. 그래서 같은 ' +
+           'read-across를 그 두 수용체에도 돌리고, 가장 직접적인 증거인 ' +
+           '<b>지방세포 분화·지질축적 실측치</b>를 옆에 놓습니다.</p>');
+  out.push('<table><thead><tr><th>자료</th><th class="num">규모</th><th>성격</th>' +
+           '</tr></thead><tbody>');
+  out.push('<tr><td>ChEMBL PPARγ (CHEMBL235)</td><td class="num">' +
+           (typeof PANEL_PPARG !== 'undefined' ? PANEL_PPARG.rows.length : 0) +
+           '종</td><td>실측 pKi, read-across용</td></tr>');
+  out.push('<tr><td>ChEMBL GR (CHEMBL2034)</td><td class="num">' +
+           (typeof PANEL_GR !== 'undefined' ? PANEL_GR.rows.length : 0) +
+           '종</td><td>실측 pKi, read-across용</td></tr>');
+  out.push('<tr><td>Tox21 PPARγ / GR 어세이</td><td class="num">' +
+           (typeof TOX21_PPARG !== 'undefined'
+             ? Object.keys(TOX21_PPARG.calls).length : 0) +
+           '종</td><td>작용·길항 모드 실측</td></tr>');
+  out.push('<tr><td>지방세포 분화·지질축적 어세이</td><td class="num">' +
+           (typeof ADIPO !== 'undefined' ? Object.keys(ADIPO.records).length : 0) +
+           '종</td><td>표현형 실측 (3T3-L1 등, ChEMBL)</td></tr>');
+  out.push('<tr><td>PPARγ LBD 결정구조</td><td class="num">' +
+           (typeof SCENE_PPARG !== 'undefined' ? SCENE_PPARG.poses.length : 0) +
+           '종</td><td>Tyr473 수소결합 여부 측정</td></tr>');
+  out.push('</tbody></table>');
+  out.push('<p>PPARγ 결정구조의 분류는 <b>측정한 그대로</b>입니다: 리간드가 helix-12의 ' +
+           'Tyr473과 수소결합하는지 여부. 로지글리타존·파글리타자르 같은 전장작용제는 ' +
+           'Ser289·His323·His449·Tyr473 네 자리를 모두 잡고, 부분작용제 MRL-24는 ' +
+           'Tyr473을 잡지 않고 β-sheet 쪽에 앉습니다. 다만 공유결합 길항제인 ' +
+           'GW9662 계열도 Tyr473에 닿기 때문에, 라벨을 "작용제"가 아니라 ' +
+           '"AF-2 결합"이라고 씁니다 — 측정한 것이 그것이기 때문입니다.</p>');
+  out.push('<p>이 두 패널에는 ER 쪽과 달리 <b>파마코포어 규칙 층이 없습니다.</b> ' +
+           'read-across 숫자 하나뿐이므로 유사도가 0.35 미만이면 수치를 ' +
+           '주장하지 않습니다. 또 PPARγ·GR 어세이는 방향당 웰이 하나뿐이라, ' +
+           '<b>농도(AC50)가 기록되지 않은 활성 신호는 판정에 쓰지 않습니다</b> — ' +
+           '에스트라디올과 비스페놀 A가 두 수용체의 길항제 웰에서 농도 없이 ' +
+           '"활성"으로 나오는데, 이는 신호가 떨어지는 것을 보는 어세이에서 ' +
+           '세포독성·간섭 물질이 내는 전형적인 모습입니다.</p>');
+  out.push('<p><b>이 번들은 지방이 피하로 가는지 내장으로 가는지를 측정하지 ' +
+           '않습니다.</b> 수용체 활성과 배양세포 분화까지가 데이터이고, 부위 분포는 ' +
+           '임상·동물 문헌에서 온 배경지식으로 결과 화면에 따로 표시됩니다. ' +
+           '분화를 켜는 것과 어디에 쌓이는지는 서로 다른 질문이며, 농도·노출·대사가 ' +
+           '전부 빠져 있습니다. 체형을 바꿀 목적의 사용 근거로 쓸 수 없습니다.</p>');
+
   out.push('<h5>데이터 출처</h5>');
   out.push('<ul>');
   out.push('<li>ChEMBL CHEMBL206 (사람 ERα) 활성 데이터 — 라이브러리 pKi</li>');
   out.push('<li>Tox21 / PubChem BioAssay AID 743077 · 743079 · 743078 · 743091</li>');
   out.push('<li>PDB 1GWR · 1X7R · 1L2I · 2P15 · 2B1V · 3OS8 · 1XP1 · 1SJ0 · ' +
-           '3ERT · 1ERR — 포켓과 리간드 포즈</li>');
+           '3ERT · 1ERR — ERα 포켓과 리간드 포즈</li>');
+  out.push('<li>ChEMBL CHEMBL235 (PPARγ) · CHEMBL2034 (GR) 활성 데이터</li>');
+  out.push('<li>Tox21 / PubChem BioAssay AID 743140 · 743199 (PPARγ), ' +
+           '720719 · 720725 (GR)</li>');
+  out.push('<li>ChEMBL 지방세포 분화·지질축적 어세이 (3T3-L1, ST-13 등)</li>');
+  out.push('<li>PDB 2PRG · 4EMA · 2Q5S · 2Q59 · 3B3K · 5Y2O · 3B0R · 2HFP · ' +
+           '1ZEO — PPARγ 포켓과 리간드 포즈</li>');
   out.push('<li>구조식·이름 — ChEMBL 및 PubChem 조회 결과</li>');
   out.push('</ul>');
 
@@ -1435,6 +1659,31 @@ function init() {
       PR.compilePoses();
     }
   } catch (err) { /* the scene is optional */ }
+
+  /* the adipocyte-signalling panel: two more receptors and the measured
+   * phenotype. Their libraries are compiled lazily, on the first query that
+   * needs them, because that is about 7000 fingerprints. */
+  try {
+    if (typeof PANEL !== 'undefined') {
+      PANEL.registerPanel('pparg', {
+        label: 'PPARγ', ko: 'PPARγ (지방세포 분화 스위치)', target: 'CHEMBL235',
+        role: 'adipogenesis',
+        lib: typeof PANEL_PPARG !== 'undefined' ? PANEL_PPARG : null,
+        tox: typeof TOX21_PPARG !== 'undefined' ? TOX21_PPARG : null,
+        scene: typeof SCENE_PPARG !== 'undefined' ? SCENE_PPARG : null,
+        modes: ['agonist', 'antagonist']
+      });
+      PANEL.registerPanel('gr', {
+        label: 'GR', ko: 'GR (글루코코르티코이드 수용체)', target: 'CHEMBL2034',
+        role: 'cofactor',
+        lib: typeof PANEL_GR !== 'undefined' ? PANEL_GR : null,
+        tox: typeof TOX21_GR !== 'undefined' ? TOX21_GR : null,
+        modes: ['agonist', 'antagonist']
+      });
+      if (typeof ADIPO !== 'undefined') PANEL.registerPheno(ADIPO);
+      PANEL.compileScenePoses(PANEL.panels.pparg, null);
+    }
+  } catch (err) { /* the panel is optional */ }
 
   /* name suggestions */
   var dl = $('names');

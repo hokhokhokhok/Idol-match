@@ -1,0 +1,24 @@
+{
+  "receptor": "ERalpha",
+  "out": "pocket_scene.json",
+  "ref": "1GWR",
+  "ref_ligand": "EST",
+  "note": "ERalpha LBD + 17beta-estradiol + coactivator NR box, 2.4 A, agonist conformation",
+  "mode": "h12_displacement",
+  "classes": ["agonist", "antagonist"],
+  "h12": [536, 537, 538, 539, 540, 541, 542, 543, 544],
+  "h12_cut": 3.0,
+  "forced": [351, 347, 383, 536, 537, 538, 539, 540, 541, 542, 543, 544],
+  "complexes": [
+    {"pdb": "1GWR", "lig": "EST", "n": "17b-Estradiol"},
+    {"pdb": "1X7R", "lig": "GEN", "n": "Genistein"},
+    {"pdb": "1L2I", "lig": "ETC", "n": "THC (tetrahydrochrysene-2,8-diol)"},
+    {"pdb": "2P15", "lig": "EZT", "n": "17a-(trifluoromethylphenyl-vinyl)estradiol"},
+    {"pdb": "2B1V", "lig": "458", "n": "Bicyclo[3.3.1]nonene phenol agonist"},
+    {"pdb": "3OS8", "lig": "KN0", "n": "Benzyl-trifluoromethyl-indazole resorcinol"},
+    {"pdb": "1XP1", "lig": "AIH", "n": "Benzoxathiin SERM (dimethylpyrrolidinyl)"},
+    {"pdb": "1SJ0", "lig": "E4D", "n": "Benzoxathiin SERM (piperidinyl)"},
+    {"pdb": "3ERT", "lig": "OHT", "n": "4-Hydroxytamoxifen"},
+    {"pdb": "1ERR", "lig": "RAL", "n": "Raloxifene"}
+  ]
+}

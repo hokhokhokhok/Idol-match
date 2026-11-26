@@ -13,7 +13,7 @@ Each compound becomes one character per assay, in that order. The table is
 keyed by the engine's structure hash, so a compound the user types as a SMILES
 finds its screen result without a name having to match.
 
-Usage: python3 build_tox21.py <csv_dir>
+Usage: python3 build_tox21.py <csv_dir> [er|pparg|gr]
 """
 import csv, json, pathlib, subprocess, sys, time, urllib.parse, urllib.request
 
@@ -21,12 +21,36 @@ HERE = pathlib.Path(__file__).resolve().parent
 ASSETS = HERE.parent / "web/assets"
 UA = "er-scout-dataset-builder/1.0 (research tool; single-file HTML app)"
 
-ASSAYS = [
-    ("743077", "agonist", "ERa-BLA", "작용제 요약 (대조 스크린 반영)"),
-    ("743079", "agonist", "BG1", "작용제, BG1 세포주"),
-    ("743078", "antagonist", "ERa-BLA", "길항제 요약 (대조 스크린 반영)"),
-    ("743091", "antagonist", "BG1", "길항제 요약, BG1 세포주"),
-]
+PANELS = {
+    "er": {
+        "out": "tox21_er.json",
+        "source": "Tox21 / PubChem BioAssay, ER-alpha agonist and antagonist screens",
+        "assays": [
+            ("743077", "agonist", "ERa-BLA", "작용제 요약 (대조 스크린 반영)"),
+            ("743079", "agonist", "BG1", "작용제, BG1 세포주"),
+            ("743078", "antagonist", "ERa-BLA", "길항제 요약 (대조 스크린 반영)"),
+            ("743091", "antagonist", "BG1", "길항제 요약, BG1 세포주"),
+        ],
+    },
+    "pparg": {
+        "out": "tox21_pparg.json",
+        "source": "Tox21 / PubChem BioAssay, PPAR-gamma agonist and antagonist screens",
+        "assays": [
+            ("743140", "agonist", "PPARg-BLA", "작용제 요약 (대조 스크린 반영)"),
+            ("743199", "antagonist", "PPARg-BLA", "길항제 요약 (대조 스크린 반영)"),
+        ],
+    },
+    "gr": {
+        "out": "tox21_gr.json",
+        "source": "Tox21 / PubChem BioAssay, glucocorticoid receptor agonist and antagonist screens",
+        "assays": [
+            ("720719", "agonist", "GR-BLA", "작용제 요약 (대조 스크린 반영)"),
+            ("720725", "antagonist", "GR-BLA", "길항제 요약 (대조 스크린 반영)"),
+        ],
+    },
+}
+PANEL = sys.argv[2] if len(sys.argv) > 2 else "er"
+ASSAYS = PANELS[PANEL]["assays"]
 # one character per assay position
 CODES = {"0": "inactive", "1": "active agonist", "2": "active antagonist",
          "3": "inconclusive", "4": "cytotoxic", "9": "not tested"}
@@ -141,13 +165,13 @@ def main():
                 potency[h] = [round(best[0], 4), best[1]]
 
     out = {
-        "source": "Tox21 / PubChem BioAssay, ER-alpha agonist and antagonist screens",
+        "source": PANELS[PANEL]["source"],
         "assays": [{"aid": a, "mode": m, "line": l, "note": n} for a, m, l, n in ASSAYS],
         "codes": CODES,
         "calls": calls,
         "potency": potency,
     }
-    dest = ASSETS / "tox21_er.json"
+    dest = ASSETS / PANELS[PANEL]["out"]
     dest.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")),
                     encoding="utf8")
     act = sum(1 for c in calls.values() if "1" in c or "2" in c)

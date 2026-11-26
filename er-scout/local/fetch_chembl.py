@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""Pull measured ERalpha activities from ChEMBL and aggregate one row per molecule.
+"""Pull measured activities for one receptor from ChEMBL, one row per molecule.
 
-Target CHEMBL206 is human estrogen receptor alpha. Only exact-relation values
-with a pChEMBL number survive; everything else (">", "<", flagged data) is
-dropped rather than guessed at. One molecule can carry several assays, so the
-median is taken and the spread kept, which is what the note column reports.
+Only exact-relation values with a pChEMBL number survive; everything else
+(">", "<", flagged data) is dropped rather than guessed at. One molecule can
+carry several assays, so the median is taken and the spread kept, which is
+what the note column reports.
 
-Output: assets/chembl_er.json  [{"n","s","p","c","note"}]
+Usage: python3 fetch_chembl.py [target_chembl_id] [out_name]
+  defaults: CHEMBL206 (human ERalpha) -> assets/chembl_er.json
+
+  CHEMBL206   estrogen receptor alpha
+  CHEMBL235   peroxisome proliferator-activated receptor gamma
+  CHEMBL2034  glucocorticoid receptor
 """
 import json, pathlib, statistics, sys, time, urllib.parse, urllib.request
 
 BASE = "https://www.ebi.ac.uk/chembl/api/data/activity.json"
-TARGET = "CHEMBL206"
+TARGET = sys.argv[1] if len(sys.argv) > 1 else "CHEMBL206"
+OUT = sys.argv[2] if len(sys.argv) > 2 else "chembl_er.json"
 TYPES = {"Ki", "IC50", "EC50", "Kd"}
 UA = "er-scout-dataset-builder/1.0 (research tool; single-file HTML app)"
 PAGE = 1000
@@ -90,7 +96,7 @@ def main():
         out.append({"n": mid, "s": rec["smiles"], "p": p, "c": band, "note": note})
 
     out.sort(key=lambda e: -e["p"])
-    dest = pathlib.Path(__file__).resolve().parent.parent / "web/assets/chembl_er.json"
+    dest = pathlib.Path(__file__).resolve().parent.parent / ("web/assets/" + OUT)
     dest.write_text(json.dumps(out, separators=(",", ":")), encoding="utf8")
     print("molecules: %d -> %s" % (len(out), dest), file=sys.stderr)
 
