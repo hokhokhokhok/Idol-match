@@ -460,80 +460,107 @@ function run() {
     console.log(`  ok    ${'every hedge states its reason'.padEnd(30)} ${checked} compounds checked`);
   }
 
-  /* --- resistance mutants: reported, never voted on ------------------
+  /* --- resistance mutants: the retraction, pinned --------------------
    *
-   * The shift is real evidence (antagonists average -2.86 kcal/mol on
-   * min(delta), agonists +0.71) but measured redundant, so it must stay out
-   * of callFunction. If someone wires it back in as a vote, this fails. */
-  console.log('\n  resistance-mutant shifts');
-  const mutPath = path.join(__dirname, '..', 'assets', 'mutant_shifts.json');
-  if (fs.existsSync(mutPath)) {
-    const mut = JSON.parse(fs.readFileSync(mutPath, 'utf8'));
-    let covered = 0, separates = { agonist: [], antagonist: [] };
-    for (const entry of lib) {
-      const rec = mut.shifts[AR.structureIdOf(AR.parseSmiles(byName[entry.n]))];
-      if (!rec || !isFinite(rec.d_t877a) || !isFinite(rec.d_w741l)) continue;
-      covered++;
-      if (separates[entry.c]) separates[entry.c].push(Math.min(rec.d_t877a, rec.d_w741l));
+   * The claim was a 3.5 kcal/mol separation between antagonists and
+   * agonists when the same ligand is docked into T877A and W741L. It was
+   * measured across three different crystals, which cannot isolate a
+   * mutation, and the repository had already shown that the structure
+   * moves the ranking more than the ligand does and that each receptor
+   * favours its own co-crystal ligand - bicalutamide's headline rescue was
+   * measured in 1Z95, whose co-crystal ligand is R-bicalutamide.
+   *
+   * Re-run against the same 2AM9 crystal with the side chain cut out in
+   * silico, the separation collapses, and what survives tracks scaffold
+   * rather than function. These assertions exist so the claim cannot come
+   * back without the controlled numbers being re-examined. */
+  console.log('\n  resistance mutants (retracted)');
+  const ctrlPath = path.join(__dirname, '..', '..', 'local',
+                             'insilico_mutant_scores.json');
+  if (fs.existsSync(ctrlPath)) {
+    const ctrl = JSON.parse(fs.readFileSync(ctrlPath, 'utf8'));
+    const got = [];
+    for (const [name, v] of Object.entries(ctrl)) {
+      if (v.wt == null || v.w741a == null || v.t877a == null) continue;
+      const mol = AR.parseSmiles(byName[name]);
+      got.push({ name: name, cls: v.cls,
+                 dT: v.t877a - v.wt, dW: v.w741a - v.wt,
+                 dL: v.w741l == null ? null : v.w741l - v.wt,
+                 steroid: !!AR.detectMotifs(mol).steroid });
     }
-    const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
-    const ag = mean(separates.agonist), an = mean(separates.antagonist);
-    console.log(`        coverage ${covered}/${n};  mean min(delta): ` +
-                `agonist ${ag >= 0 ? '+' : ''}${ag.toFixed(2)}, ` +
-                `antagonist ${an >= 0 ? '+' : ''}${an.toFixed(2)}`);
-    if (covered >= n - 2 && an < ag - 2.0) {
+    const mean = xs => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
+    const sep = (key, pick) =>
+      mean(got.filter(pick).map(r => r[key])) -
+      mean(got.filter(r => !pick(r)).map(r => r[key]));
+    const fnT = sep('dT', r => r.cls === 'agonist');
+    const fnW = sep('dW', r => r.cls === 'agonist');
+    const scW = sep('dW', r => r.steroid);
+    console.log(`        n = ${got.length};  function gap: T877A ${fnT.toFixed(2)}, ` +
+                `W741A ${fnW.toFixed(2)};  scaffold gap W741A ${scW.toFixed(2)}`);
+
+    if (Math.abs(fnT) < 1.5 && Math.abs(fnW) < 1.5) {
       pass++;
-      console.log(`  ok    ${'the shift does separate'.padEnd(30)} gap ${(ag - an).toFixed(2)} kcal/mol`);
+      console.log(`  ok    ${'controlled separation is small'.padEnd(30)} ` +
+                  `nothing like the retracted 3.5`);
     } else {
       fail++;
-      console.log(`  FAIL  weak separation: covered ${covered}, gap ${(ag - an).toFixed(2)}`);
+      console.log(`  FAIL  controlled gaps are ${fnT.toFixed(2)}/${fnW.toFixed(2)} — ` +
+                  're-examine before reinstating any claim');
     }
 
-    /* but it must change nothing: same call with and without it */
-    let swayed = 0;
-    for (const entry of lib) {
-      const mol = AR.parseSmiles(byName[entry.n]);
-      const fp = AR.packFingerprint(AR.morganFingerprint(mol, 2));
-      const rec = mut.shifts[AR.structureIdOf(mol)] || {};
-      const opts = { exclude: entry.n, motifs: AR.detectMotifs(mol) };
-      const a = PR.callFunction(fp, opts);
-      const b = PR.callFunction(fp, Object.assign({
-        shift: { t877a: rec.d_t877a, w741l: rec.d_w741l } }, opts));
-      if (a.label !== b.label) swayed++;
-    }
-    if (swayed === 0) {
+    /* scaffold beats function: that is what makes it uninterpretable */
+    if (Math.abs(scW) > Math.abs(fnW)) {
       pass++;
-      console.log(`  ok    ${'and does not vote'.padEnd(30)} passing it changes 0/${n} calls`);
+      console.log(`  ok    ${'scaffold explains it better'.padEnd(30)} ` +
+                  `${scW.toFixed(2)} vs ${fnW.toFixed(2)}`);
     } else {
       fail++;
-      console.log(`  FAIL  the shift swayed ${swayed} calls — it must be evidence only`);
+      console.log(`  FAIL  function now beats scaffold (${fnW.toFixed(2)} vs ${scW.toFixed(2)})`);
     }
 
-    /* the reading handed to the page must match the sign convention */
-    const readings = [
-      ['Bicalutamide', '길항제'], ['Cyproterone acetate', '길항제'],
-      ['Dihydrotestosterone', null]
-    ];
-    let readOkM = true;
-    for (const [name, want] of readings) {
-      const rec = mut.shifts[AR.structureIdOf(AR.parseSmiles(byName[name]))];
-      const d = PR.describeShift({ t877a: rec.d_t877a, w741l: rec.d_w741l });
-      if (!d) { readOkM = false; console.log(`  FAIL  ${name}: no reading`); continue; }
-      if (want && d.reading.indexOf(want) < 0) {
-        readOkM = false;
-        console.log(`  FAIL  ${name} (${d.t877a}/${d.w741l}) reads "${d.reading}"`);
+    /* the decisive one: steroidal antagonists side with steroidal agonists */
+    const sa = mean(got.filter(r => r.steroid && r.cls === 'antagonist').map(r => r.dW));
+    const sg = mean(got.filter(r => r.steroid && r.cls === 'agonist').map(r => r.dW));
+    const na = mean(got.filter(r => !r.steroid && r.cls === 'antagonist').map(r => r.dW));
+    console.log(`        steroidal antagonists ${sa.toFixed(2)}, steroidal agonists ` +
+                `${sg.toFixed(2)}, non-steroidal antagonists ${na.toFixed(2)}`);
+    if (Math.abs(sa - sg) < Math.abs(sa - na)) {
+      pass++;
+      console.log(`  ok    ${'they track shape, not function'.padEnd(30)} ` +
+                  'cyproterone sits with the androgens');
+    } else {
+      fail++;
+      console.log('  FAIL  steroidal antagonists now behave like antagonists — recheck');
+    }
+
+    /* The sharpest single fact. "W741L turns bicalutamide into an agonist"
+       is the best known resistance result in this receptor, and it was the
+       headline evidence for the retracted claim. Controlled, it reverses
+       sign: the -3.5 came from re-docking bicalutamide into 1Z95, whose
+       co-crystal ligand is R-bicalutamide. */
+    const bic = got.filter(r => r.name === 'Bicalutamide')[0];
+    if (bic && bic.dL != null) {
+      if (bic.dL > -0.5) {
+        pass++;
+        console.log(`  ok    ${'bicalutamide is not rescued'.padEnd(30)} ` +
+                    `ΔW741L ${bic.dL >= 0 ? '+' : ''}${bic.dL.toFixed(2)} (was -3.5 across crystals)`);
+      } else {
+        fail++;
+        console.log(`  FAIL  bicalutamide ΔW741L is ${bic.dL.toFixed(2)} — ` +
+                    'if a rescue is real here, the retraction needs revisiting');
       }
     }
-    if (PR.describeShift(null) !== null || PR.describeShift({ t877a: 1 }) !== null) {
-      readOkM = false;
-      console.log('  FAIL  a missing shift must give no reading at all');
-    }
-    if (readOkM) {
-      pass++;
-      console.log(`  ok    ${'readings follow the signs'.padEnd(30)} and absent data reads as nothing`);
-    } else fail++;
   } else {
-    console.log('  note  no mutant_shifts.json in this build, skipping');
+    console.log('  note  no controlled mutant run in this checkout, skipping');
+  }
+
+  /* and the interpretation must stay withdrawn */
+  if (typeof PR.describeShift === 'undefined') {
+    pass++;
+    console.log(`  ok    ${'no per-compound reading is offered'.padEnd(30)} describeShift is gone`);
+  } else {
+    fail++;
+    console.log('  FAIL  describeShift is back — the reading it gives is not supported');
   }
 
   /* a potency label must never be reported as a function */

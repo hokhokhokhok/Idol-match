@@ -657,30 +657,6 @@ function renderSingle(result, title, subtitle) {
     out.push('</div>');
   }
 
-  var ms = result.mutantShift;
-  if (ms) {
-    out.push('<div class="measured">');
-    out.push('<div class="mhead">실측 — 내성 변이체 재도킹</div>');
-    out.push('<table style="margin-top:6px"><tbody>');
-    var rows = [['T877A (2OZ7)', ms.t877a, 'Thr877 &rarr; Ala'],
-                ['W741L (1Z95)', ms.w741l, 'Trp741 &rarr; Leu']];
-    for (var mi = 0; mi < rows.length; mi++) {
-      var dv = rows[mi][1];
-      out.push('<tr><td style="width:46%">' + esc(rows[mi][0]) + ' <span class="hint">' +
-               rows[mi][2] + '</span></td><td' + (dv < -1.5 ? ' class="warnink"' : '') +
-               ' style="font-weight:700">' + (dv >= 0 ? '+' : '') + fx(dv, 1) +
-               ' kcal/mol</td></tr>');
-    }
-    out.push('</tbody></table>');
-    out.push('<p class="hint" style="margin:8px 0 0">' + esc(ms.reading) + '</p>');
-    out.push('<p class="hint" style="margin:6px 0 0">음수는 변이체에서 결합이 더 좋아졌다는 ' +
-             '뜻입니다. 길항제를 작용제로 바꾸는 임상 내성 변이를 같은 도킹으로 재현한 값이며, ' +
-             '<b>아래 판정에는 들어가지 않습니다</b> — 38종 라벨 집합에서 넣어도 ' +
-             '32/38이 그대로였고 사전 204종 중 판정이 바뀐 것이 하나도 없어, ' +
-             '다른 신호와 완전히 겹치는 것으로 측정됐습니다.</p>');
-    out.push('</div>');
-  }
-
   out.push('<div class="headline">');
   out.push('<div class="pk num">' + fx(result.pKi, 2) +
            '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>');
@@ -1478,19 +1454,9 @@ function runSingle(rawQuery) {
     }
   } catch (err) { tox21 = null; }
 
-  var shift = null;
-  try {
-    if (typeof MUTANT !== 'undefined' && MUTANT && MUTANT.shifts) {
-      var rec = MUTANT.shifts[AR.structureIdOf(AR.parseSmiles(smiles))];
-      if (rec && isFinite(rec.d_t877a) && isFinite(rec.d_w741l)) {
-        shift = { t877a: rec.d_t877a, w741l: rec.d_w741l };
-      }
-    }
-  } catch (err) { shift = null; }
-
   var result;
   try {
-    result = PR.predict(smiles, { dock: dock, tox21: tox21, shift: shift });
+    result = PR.predict(smiles, { dock: dock, tox21: tox21 });
   } catch (err) {
     host.innerHTML = '';
     var tips = PR.suggestNames(query, 5);
@@ -1907,17 +1873,36 @@ function renderModelCard() {
            '안드로겐이 작은 17번 치환기를 갖는 자리에 스피로 고리·에스터·나이트릴 같은 ' +
            '부피 큰 기가 있으면 길항 쪽으로 투표합니다.</li>');
   out.push('</ul>');
-  out.push('<p><b>판정에 쓰지 <i>않는</i> 증거 — 내성 변이체 Δ.</b> ' +
-           '같은 물질을 야생형(2AM9)과 T877A(2OZ7)·W741L(1Z95) 변이체에 각각 ' +
-           '도킹한 차이를 203종에 대해 측정해, 데이터가 있으면 단건 화면에 ' +
-           '표시합니다. 분리 자체는 실재합니다 — min(Δ) 평균이 길항제 −2.86, ' +
-           '작용제 +0.71로 3.6 kcal/mol 벌어집니다. ' +
-           '<b>그런데 네 번째 투표로 넣어도 38종 성능은 32/38 그대로였고, ' +
-           '사전 204종 중 판정이 바뀐 물질이 0건이었습니다</b> — 위의 부피 모티프와 ' +
-           'Ile899 접촉이 이미 같은 정보를 담고 있어 완전히 중복입니다. ' +
-           '답을 한 번도 바꾸지 않는 투표는 근거가 많아 보이는 착시만 주므로 ' +
-           '판정에서 뺐습니다. 반례도 하나 있습니다: 하이드록시플루타마이드는 ' +
-           'T877A가 바로 그 물질의 알려진 내성 변이인데도 구제되지 않습니다(+0.7).</p>');
+  out.push('<h5>철회한 주장 — 내성 변이체 Δ</h5>');
+  out.push('<p>한때 이 도구는 야생형(2AM9)과 T877A(2OZ7)·W741L(1Z95)에 같은 ' +
+           '물질을 도킹한 차이를 단건 화면에 보여주며 <i>"길항제 −2.86 대 ' +
+           '작용제 +0.71, 3.6 kcal/mol 분리"</i>라고 적었습니다. ' +
+           '<b>그 주장은 철회했고 패널도 제거했습니다.</b> 두 가지가 따로따로 ' +
+           '무너뜨렸습니다.</p>');
+  out.push('<p><b>첫째, 서로 다른 세 결정을 비교한 값이었습니다.</b> ' +
+           '이 도구는 「어느 구조를 고르느냐가 리간드보다 순위를 더 많이 ' +
+           '좌우한다」와 「1Z95는 자기 공결정 리간드를 22종 중 1위로 올린다」를 ' +
+           '이미 측정해 두고 있었습니다. 1Z95의 공결정 리간드가 바로 ' +
+           'R-비칼루타마이드인데, 비칼루타마이드의 ΔW741L = −3.5를 대표 증거로 ' +
+           '썼습니다. 자기도킹 편향입니다. 같은 2AM9 결정에서 곁사슬만 ' +
+           'in-silico로 잘라내 다시 재니(나머지 249개 잔기 바이트 단위 동일) ' +
+           '분리폭이 <b>3.14 → 0.55 kcal/mol</b>로, W741 쪽은 ' +
+           '<b>4.45 → 0.52(W741A) / 0.28(W741L)</b>로 주저앉았습니다. ' +
+           '<b>가장 결정적인 것은 비칼루타마이드입니다.</b> AR에서 가장 유명한 ' +
+           '내성 사실이 「W741L이 비칼루타마이드를 작용제로 바꾼다」인데, ' +
+           '그 ΔW741L이 <b>−3.5에서 +0.4로 부호가 뒤집힙니다</b>. −3.5는 ' +
+           'W741L의 효과가 아니라 비칼루타마이드를 자기 공결정 구조에 ' +
+           '되도킹한 값이었습니다. 스피로놀락톤 −3.10→−0.50, ' +
+           '테스토스테론 +2.40→+0.20.</p>');
+  out.push('<p><b>둘째, 남은 0.5마저 기능이 아니라 골격입니다.</b> ' +
+           '같은 값을 스테로이드 여부로 가르면 분리폭이 <b>1.09</b>로 ' +
+           '작용/길항(0.58)보다 큽니다. 그리고 스테로이드 <b>길항제</b>(+0.83)가 ' +
+           '스테로이드 <b>작용제</b>(+0.52) 쪽에 붙고 비스테로이드 길항제' +
+           '(−0.55)와 반대입니다. Δ가 길항성을 잰다면 사이프로테론과 ' +
+           '스피로놀락톤이 음수여야 합니다. 포켓이 넓어지면 꽉 맞던 단단한 ' +
+           '스테로이드가 접촉을 조금 잃을 뿐입니다 — 모양을 재고 있었습니다.</p>');
+  out.push('<p>측정값은 저장소에 남겨 두되 해석은 거뒀습니다. ' +
+           '여기 적어 두는 이유는, 이 주장이 한동안 화면에 있었기 때문입니다.</p>');
   out.push('<p><b>성능 (leave-one-out, n = 38):</b> read-across만 27/38(71%), ' +
            '여기에 도킹 신호를 더하면 30/38(79%), 부피 모티프까지 더하면 ' +
            '<b>32/38(84%)</b>입니다. 가중치는 손으로 정했지만 넓은 범위에서 ' +

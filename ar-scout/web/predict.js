@@ -311,39 +311,37 @@ var INGREDIENTS = [
 ];
 /* INGREDIENTS:END */
 
-/* Resistance-mutant rescue, reported but not voted on.
+/* Resistance-mutant rescue: claimed, re-measured, retracted.
  *
- * W741L turns bicalutamide into an agonist and T877A does the same for
- * cyproterone, because the side chain holding the antagonist out is gone.
- * Docking the same ligand into the mutant measures that directly, which a
- * contact count cannot: Trp741 and Thr877 are touched by everything that
- * binds at all.
+ * The claim was that docking a ligand into the T877A and W741L structures
+ * and comparing against wild type separates antagonists from agonists by
+ * 3.5 kcal/mol. It does not. Two independent findings killed it.
  *
- * The separation is real - over the labelled set min(delta) averages -2.86
- * for antagonists against +0.71 for agonists - but it is redundant. Tried
- * as a fourth vote it left the leave-one-out score at 32/38 and changed
- * the call for 0 of 204 dictionary compounds, because the bulky-substituent
- * motif and the Ile899 contact already carry the same information. So it is
- * shown as evidence for the reader and kept out of the arithmetic. */
-function describeShift(shift) {
-  if (!shift || !isFinite(shift.t877a) || !isFinite(shift.w741l)) return null;
-  var best = Math.min(shift.t877a, shift.w741l);
-  var which = shift.t877a <= shift.w741l ? 'T877A' : 'W741L';
-  var reading;
-  if (best < -1.5) {
-    reading = which + ' 변이체에서 결합이 뚜렷이 좋아집니다 — 야생형에서는 그 곁사슬이 ' +
-              '막고 있었다는 뜻이고, 길항제의 전형적 거동입니다.';
-  } else if (shift.t877a > 1.0 && shift.w741l > 1.0) {
-    reading = '두 변이체 모두에서 결합이 나빠집니다 — 온전한 포켓을 그대로 쓰는 ' +
-              '결합 양상으로, 작용제에서 흔합니다.';
-  } else {
-    reading = '변이에 크게 영향받지 않습니다. 이 두 곁사슬에 의존하지 않는 결합입니다.';
-  }
-  return { t877a: shift.t877a, w741l: shift.w741l, best: best,
-           which: which, reading: reading };
-}
+ * 1. The original comparison ran across three different crystals - 2AM9,
+ *    2OZ7 and 1Z95 - which cannot isolate a mutation. This repository had
+ *    already measured that the choice of structure moves the ranking more
+ *    than the choice of ligand, and that each receptor favours its own
+ *    co-crystal ligand; 1Z95 ranks R-bicalutamide 1st of 22, and
+ *    bicalutamide's headline "rescue" was measured in 1Z95. Re-running it
+ *    properly - the same 2AM9 crystal with the side chain cut out in
+ *    silico, every other residue byte-identical - collapses the separation
+ *    from 3.14 to 0.53 kcal/mol for T877A and from 4.45 to 0.58 for W741.
+ *    Bicalutamide goes -1.50 -> -0.10, spironolactone -3.10 -> -0.50,
+ *    testosterone +2.40 -> +0.20.
+ *
+ * 2. What little remains is not about function. Split by scaffold instead,
+ *    the same numbers separate steroids from non-steroids by 1.09 kcal/mol
+ *    against 0.58 for agonist-vs-antagonist - and the six STEROIDAL
+ *    antagonists (+0.83) behave like the steroidal agonists (+0.52), not
+ *    like the non-steroidal antagonists (-0.55). If the shift measured
+ *    antagonism, cyproterone and spironolactone would be negative. They
+ *    are not. It is reading shape.
+ *
+ * So there is no reading to give, and the per-compound panel that gave one
+ * is gone. The mutant scores stay in the repository as a measurement; what
+ * has been withdrawn is the interpretation. */
 
-/* ------------------------------------------------ functional reference */
+/* ------------------------------------------------ functional reference *//* ------------------------------------------------ functional reference */
 
 /* Known AR function, keyed by the dictionary's English name.
  *
@@ -1641,7 +1639,6 @@ function predict(smiles, options) {
     weightReadAcross: wRead,
     neighbours: top,
     functionCall: functionCall,
-    mutantShift: describeShift(options.shift || null),
     pocket: pocket
   };
 }
@@ -1888,7 +1885,6 @@ module.exports = {
   SIM_CALL: SIM_CALL,
   SIM_POSSIBLE: SIM_POSSIBLE,
   SIM_FLOOR: SIM_FLOOR,
-  describeShift: describeShift,
   readTox21: readTox21,
   TOX21_CODE: TOX21_CODE,
   TOX21_LABEL_KO: TOX21_LABEL_KO,

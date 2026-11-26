@@ -130,11 +130,11 @@ def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
         raw = tox_path.read_text(encoding="utf-8").strip()
         tox_src = "/* ---- %s ---- */\nvar TOX21 = %s;\n" % (tox_path.name, raw)
 
-    mut_path = HERE / MUTANT
+    # The mutant shifts are no longer bundled. The interpretation they
+    # carried was retracted after a controlled re-run, nothing in the page
+    # reads them any more, and shipping 21 KB of numbers with no meaning
+    # attached invites someone to attach one.
     mut_src = ""
-    if mut_path.exists():
-        raw = mut_path.read_text(encoding="utf-8").strip()
-        mut_src = "/* ---- %s ---- */\nvar MUTANT = %s;\n" % (mut_path.name, raw)
 
     prov_path = HERE / PROV
     prov_src = ""
