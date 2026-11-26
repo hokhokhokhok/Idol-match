@@ -41,9 +41,33 @@ function registerPanel(key, def) {
     tox: def.tox || null,
     scene: def.scene || null,
     modes: def.modes || ['agonist', 'antagonist'],
+    /* an enzyme panel: a ChEMBL potency here is inhibition, not agonism */
+    enzyme: !!def.enzyme,
     compiled: null
   };
   return panels[key];
+}
+
+/* The five Tox21 screens travel as one table: a key list plus one string per
+ * receptor, aligned to it. This turns a receptor's column back into the
+ * lookup the panels expect. */
+function sliceTox(merged, key) {
+  if (!merged || !merged.calls || !merged.calls[key]) return null;
+  var col = merged.calls[key], keys = merged.keys, calls = {};
+  for (var i = 0; i < keys.length; i++) {
+    if (col[i]) calls[keys[i]] = col[i];
+  }
+  var meta = (merged.panels && merged.panels[key]) || {};
+  var potency = (merged.potency && merged.potency[key]) || {};
+  var any = false;
+  for (var k in potency) {
+    if (Object.prototype.hasOwnProperty.call(potency, k)) { any = true; break; }
+  }
+  return { calls: calls, potency: potency, assays: meta.assays || [],
+           source: meta.source || '', codes: meta.codes || {},
+           /* the aromatase summary screen reports no concentrations at all,
+            * so demanding one there would throw away every result it has */
+           potencyRecorded: any };
 }
 
 function registerPheno(table) {
@@ -120,35 +144,45 @@ function readAcross(panel, fp, exclude) {
 function readPanelTox(panel, code, potency) {
   if (!code) return null;
   var CODE = { '0': 'inactive', '1': 'active agonist', '2': 'active antagonist',
-               '3': 'inconclusive', '4': 'cytotoxic', '9': 'not tested' };
+               '3': 'inconclusive', '4': 'cytotoxic', '5': 'active inhibitor',
+               '9': 'not tested' };
   var calls = [], i;
   for (i = 0; i < panel.modes.length && i < code.length; i++) {
     calls.push(CODE[code.charAt(i)] || 'not tested');
   }
-  var agonist = false, antagonist = false, cytotoxic = false, tested = 0;
+  var agonist = false, antagonist = false, inhibitor = false;
+  var cytotoxic = false, tested = 0;
   for (i = 0; i < calls.length; i++) {
     if (calls[i] === 'not tested') continue;
     tested++;
     if (calls[i] === 'active agonist' && panel.modes[i] === 'agonist') agonist = true;
     else if (calls[i] === 'active antagonist' && panel.modes[i] === 'antagonist') {
       antagonist = true;
+    } else if (calls[i] === 'active inhibitor' && panel.modes[i] === 'inhibitor') {
+      inhibitor = true;
     } else if (calls[i] === 'cytotoxic') cytotoxic = true;
   }
   if (!tested) return null;
   var ac50 = potency && isFinite(potency[0]) ? potency[0] : null;
   var confirmed = ac50 !== null;
+  /* A screen that records no concentrations anywhere cannot be held to the
+   * AC50 rule; its calls are kept but marked as having no potency behind
+   * them. The aromatase summary screen is the one in that position. */
+  var noPotencyScreen = panel.tox && panel.tox.potencyRecorded === false;
   var verdict = null, unconfirmed = null;
-  if (agonist) {
-    if (confirmed) verdict = 'agonist'; else unconfirmed = 'agonist';
-  } else if (antagonist) {
-    if (confirmed) verdict = 'antagonist'; else unconfirmed = 'antagonist';
+  var active = agonist ? 'agonist' : (antagonist ? 'antagonist' :
+                                      (inhibitor ? 'inhibitor' : null));
+  if (active) {
+    if (confirmed || noPotencyScreen) verdict = active;
+    else unconfirmed = active;
   } else if (calls.every(function (c) { return c === 'inactive' || c === 'not tested'; })) {
     verdict = 'inactive';
   }
   return {
     calls: calls, verdict: verdict, unconfirmed: unconfirmed, cytotoxic: cytotoxic,
     ac50: ac50, ac50mode: potency && potency[1] ? potency[1] : null,
-    weak: !!(ac50 !== null && ac50 > 10)
+    weak: !!(ac50 !== null && ac50 > 10),
+    noPotencyScreen: !!noPotencyScreen
   };
 }
 
@@ -204,6 +238,194 @@ function phenotypeFor(structureId) {
   if (!rec) return null;
   return { name: rec.n, induces: rec.i || 0, inhibits: rec.x || 0,
            uM: rec.uM === undefined ? null : rec.uM };
+}
+
+/* ------------------------------------------------- depot orientation */
+
+/* Which depot the fat ends up in is the question this bundle has the least
+ * data for, and pretending otherwise would be the easiest way to mislead.
+ * The position is worth stating plainly:
+ *
+ *   ChEMBL holds 0 assays described as a visceral adipocyte differentiation
+ *   readout, and 62 described on human subcutaneous preadipocytes - every
+ *   one of them a cytotoxicity or antiproliferative measurement, not a
+ *   differentiation one. There is no depot-specific phenotype set to load.
+ *
+ * So the depot reading is a mechanism-level inference, assembled from
+ * receptor results this bundle DOES measure plus the direction each receptor
+ * is known to push storage in people and animals. Every line of it is
+ * labelled as inference, and the axes are listed here with their direction
+ * so the reasoning can be argued with rather than taken on faith.
+ */
+var DEPOT_AXES = [
+  { panel: 'pparg', when: 'agonist', depot: 'sc',
+    text: 'PPARγ 전장작용제 — TZD 계열은 임상에서 피하지방을 늘리고 내장지방을 줄입니다. ' +
+          '지방세포 분화를 켜는 쪽이므로 총량도 늘어납니다.' },
+  { panel: 'pparg', when: 'antagonist', depot: 'none',
+    text: 'PPARγ 길항 — 분화를 막는 쪽이며, 부위를 가리지는 않습니다.' },
+  { panel: 'er', when: 'agonist', depot: 'sc',
+    text: 'ERα 작용제 — 에스트로겐 신호는 저장 부위를 둔부·대퇴 피하 쪽으로 미는 것으로 ' +
+          '알려져 있습니다. 다만 배양 지방세포에서는 분화를 오히려 억제합니다.' },
+  { panel: 'er', when: 'antagonist', depot: 'visceral',
+    text: 'ERα 길항제 — 에스트로겐 신호를 끄는 쪽이며, 폐경·항에스트로겐 상황에서 ' +
+          '지방이 내장 쪽으로 옮겨가는 것과 같은 방향입니다.' },
+  { panel: 'ar', when: 'agonist', depot: 'visceral',
+    text: '안드로겐 수용체 작용제 — 안드로겐 신호는 피하지방을 줄이고 복부·내장 쪽 ' +
+          '축적을 늘리는 방향입니다.' },
+  { panel: 'ar', when: 'antagonist', depot: 'sc',
+    text: '안드로겐 수용체 길항제 — 안드로겐의 피하지방 억제를 푸는 방향입니다.' },
+  { panel: 'gr', when: 'agonist', depot: 'visceral',
+    text: '글루코코르티코이드 수용체 작용제 — 배양에서는 분화를 돕지만, 사람에서는 ' +
+          '중심성·내장지방 증가와 연결됩니다 (쿠싱형 체지방 분포).' },
+  { panel: 'hsd1', when: 'inhibitor', depot: 'sc',
+    text: '11β-HSD1 저해 — 이 효소는 내장지방에서 활성이 높아 조직 안에서 코르티솔을 ' +
+          '되살립니다. 막으면 내장 쪽이 선택적으로 줄어, 상대적으로 피하 비중이 올라갑니다. ' +
+          '다만 이 축은 HSD1만 봅니다 — 감초 성분처럼 HSD2까지 막는 물질은 전신 ' +
+          '코르티솔 작용이 오히려 늘어 반대 방향일 수 있습니다.' },
+  { panel: 'arom', when: 'inhibitor', depot: 'visceral',
+    text: '아로마테이즈 저해 — 피하지방은 말초에서 안드로겐을 에스트로겐으로 바꾸는 ' +
+          '주 장소입니다. 막으면 국소 에스트로겐이 줄어 피하 쪽에 불리하게 작용합니다.' }
+];
+
+/* A reporter assay is not selective. The Tox21 androgen-receptor construct
+ * answers to glucocorticoids as well, so dexamethasone comes back an "AR
+ * agonist" at 2 nM; estradiol scores there at 1.1 uM, a thousand times
+ * weaker than its own ER call. Counting those as androgen signalling would
+ * have had this panel announce that estradiol pushes fat toward the viscera.
+ *
+ * The rule: find the compound's strongest measured concentration across the
+ * panels, and treat anything more than 100-fold weaker as cross-reactivity.
+ * It is still shown - it was measured - but it does not vote on the depot. */
+var CROSS_FACTOR = 100;
+
+function strongestAc50(results) {
+  var best = null;
+  for (var key in results) {
+    if (!Object.prototype.hasOwnProperty.call(results, key)) continue;
+    var t = results[key] && results[key].tox21;
+    if (!t || !t.verdict || t.verdict === 'inactive') continue;
+    if (t.ac50 === null || t.ac50 === undefined) continue;
+    if (best === null || t.ac50 < best) best = t.ac50;
+  }
+  return best;
+}
+
+/* What a panel result says in one word, for matching against the axes. */
+function axisReading(res) {
+  if (!res) return null;
+  var tox = res.tox21;
+  if (tox && tox.verdict && tox.verdict !== 'inactive') {
+    return { action: tox.verdict, source: 'tox21',
+             grade: tox.weak || tox.noPotencyScreen ? 'measured-weak' : 'measured',
+             detail: tox.ac50 !== null && tox.ac50 !== undefined
+               ? 'AC50 ' + tox.ac50 + ' µM'
+               : (tox.noPotencyScreen ? '농도 미기록 스크린' : '') };
+  }
+  if (tox && tox.verdict === 'inactive') return null;
+  var read = res.read;
+  if (read && read.asserted && read.pKi >= 6) {
+    /* an enzyme panel's potency is inhibition; a receptor panel's is binding,
+     * which does not say which direction the receptor is pushed */
+    return { action: res.enzyme ? 'inhibitor' : 'binder', source: 'readacross',
+             grade: read.nearest >= 0.999 ? 'measured' : 'predicted',
+             detail: 'pKi ' + read.pKi.toFixed(1) +
+                     (read.nearest >= 0.999 ? ' (수록된 실측치)'
+                                            : ' · 유사도 ' + read.nearest.toFixed(2)) };
+  }
+  return null;
+}
+
+function depotOrientation(results, erResult) {
+  var sc = [], visceral = [], unresolved = [], crossed = [], substrates = [];
+  var strongest = strongestAc50(results);
+  for (var i = 0; i < DEPOT_AXES.length; i++) {
+    var axis = DEPOT_AXES[i];
+    var reading, res = null;
+    if (axis.panel === 'er') {
+      var fc = erResult && erResult.functionCall;
+      if (!fc || fc.label !== axis.when) continue;
+      /* "가능성" is not enough to move a depot claim: it is the tier the
+       * engine uses when it cannot assert the function at all */
+      if (fc.tier !== 'measured' && fc.tier !== 'crystal' && fc.tier !== 'predicted') {
+        continue;
+      }
+      reading = { action: fc.label, detail: '',
+                  grade: (fc.tier === 'measured' || fc.tier === 'crystal')
+                    ? 'measured' : 'predicted' };
+    } else {
+      res = results[axis.panel];
+      reading = axisReading(res);
+      if (!reading || reading.action !== axis.when) continue;
+      /* An enzyme's ChEMBL potency cannot tell an inhibitor from a
+       * substrate: testosterone sits in the aromatase set at pKi 6.8 because
+       * it is what the enzyme works on, and read as an inhibitor it had this
+       * panel reporting that testosterone pushes fat away from the
+       * subcutaneous depot for the wrong reason. Where the compound is a
+       * measured agonist of the receptor whose hormones feed the enzyme, the
+       * read-across number is shown but does not vote; a direct inhibition
+       * screen still does. */
+      if (axis.panel === 'arom' && reading.source === 'readacross') {
+        var arTox = results.ar && results.ar.tox21;
+        var erAgonist = erResult && erResult.functionCall &&
+                        erResult.functionCall.label === 'agonist' &&
+                        (erResult.functionCall.tier === 'measured' ||
+                         erResult.functionCall.tier === 'crystal');
+        if ((arTox && arTox.verdict === 'agonist') || erAgonist) {
+          substrates.push({ panel: axis.panel, text: axis.text,
+                            detail: reading.detail });
+          continue;
+        }
+      }
+      var ac = res && res.tox21 ? res.tox21.ac50 : null;
+      if (strongest !== null && ac !== null && ac !== undefined &&
+          ac > strongest * CROSS_FACTOR) {
+        crossed.push({ panel: axis.panel, text: axis.text, ac50: ac,
+                       ratio: Math.round(ac / strongest) });
+        continue;
+      }
+    }
+    var row = { panel: axis.panel, action: axis.when, depot: axis.depot,
+                text: axis.text, grade: reading.grade, detail: reading.detail };
+    if (axis.depot === 'sc') sc.push(row);
+    else if (axis.depot === 'visceral') visceral.push(row);
+    else unresolved.push(row);
+  }
+
+  /* A steroid that lights up both the GR and the AR construct is one
+   * measurement seen twice, not two findings. */
+  var grActive = results.gr && results.gr.tox21 && results.gr.tox21.verdict === 'agonist';
+  var arActive = results.ar && results.ar.tox21 && results.ar.tox21.verdict === 'agonist';
+  if (grActive && arActive) {
+    for (var v = visceral.length - 1; v >= 0; v--) {
+      if (visceral[v].panel === 'ar') {
+        crossed.push({ panel: 'ar', text: visceral[v].text,
+                       ac50: results.ar.tox21.ac50, ratio: null, withGr: true });
+        visceral.splice(v, 1);
+      }
+    }
+  }
+
+  /* A compound that binds an enzyme panel strongly but has no direction
+   * anywhere is worth saying out loud rather than scoring as zero. */
+  var headline, lean;
+  if (!sc.length && !visceral.length) {
+    lean = 'none';
+    headline = '부위 지향을 말할 근거가 없습니다';
+  } else if (sc.length && !visceral.length) {
+    lean = 'sc';
+    headline = '피하 쪽으로 기우는 프로필입니다 (' + sc.length + '개 축)';
+  } else if (visceral.length && !sc.length) {
+    lean = 'visceral';
+    headline = '내장 쪽으로 기우는 프로필입니다 (' + visceral.length + '개 축)';
+  } else {
+    lean = 'mixed';
+    headline = '축마다 방향이 엇갈립니다 (피하 ' + sc.length + ' · 내장 ' +
+               visceral.length + ')';
+  }
+  var strongSc = sc.filter(function (r) { return r.grade === 'measured'; }).length;
+  return { lean: lean, headline: headline, sc: sc, visceral: visceral,
+           unresolved: unresolved, crossed: crossed, substrates: substrates,
+           measuredSc: strongSc };
 }
 
 /* ------------------------------------------------- the combined reading */
@@ -319,20 +541,29 @@ function evaluate(mol, erResult, options) {
   options = options || {};
   var fp = MOL.packFingerprint(MOL.morganFingerprint(mol, 2));
   var id = MOL.structureIdOf(mol);
-  var ppar = evaluatePanel('pparg', fp, id, options);
-  var gr = evaluatePanel('gr', fp, id, options);
+  var results = {};
+  for (var key in panels) {
+    if (!Object.prototype.hasOwnProperty.call(panels, key)) continue;
+    results[key] = evaluatePanel(key, fp, id, options);
+    if (results[key]) results[key].enzyme = panels[key].enzyme;
+  }
   var pheno = phenotypeFor(id);
   return {
     structureId: id,
-    pparg: ppar,
-    gr: gr,
+    panels: results,
+    pparg: results.pparg || null,
+    gr: results.gr || null,
     pheno: pheno,
-    summary: summarise(erResult, ppar, gr, pheno)
+    summary: summarise(erResult, results.pparg || null, results.gr || null, pheno),
+    depot: depotOrientation(results, erResult)
   };
 }
 
 var PANEL = {
   registerPanel: registerPanel,
+  sliceTox: sliceTox,
+  depotOrientation: depotOrientation,
+  DEPOT_AXES: DEPOT_AXES,
   registerPheno: registerPheno,
   compileScenePoses: compileScenePoses,
   evaluate: evaluate,

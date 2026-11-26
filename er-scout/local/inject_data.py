@@ -81,7 +81,35 @@ def main():
         "INDOMETHACIN": "인도메타신", "ROSUVASTATIN": "로수바스타틴",
         "GENISTEIN": "제니스테인", "DAIDZEIN": "다이드제인",
         "BISPHENOL A": "비스페놀 A",
+        # the depot axes: androgens, cortisol handling, aromatase
+        "TESTOSTERONE": "테스토스테론", "DIHYDROTESTOSTERONE": "디하이드로테스토스테론",
+        "METRIBOLONE": "메트리볼론", "NANDROLONE": "난드롤론",
+        "OXANDROLONE": "옥산드롤론", "STANOZOLOL": "스타노졸롤",
+        "FLUOXYMESTERONE": "플루옥시메스테론", "DANAZOL": "다나졸",
+        "BICALUTAMIDE": "비칼루타미드", "ENZALUTAMIDE": "엔잘루타미드",
+        "FLUTAMIDE": "플루타미드", "NILUTAMIDE": "닐루타미드",
+        "SPIRONOLACTONE": "스피로노락톤", "CYPROTERONE ACETATE": "시프로테론 아세테이트",
+        "CORTISONE": "코르티손", "CORTICOSTERONE": "코르티코스테론",
+        "MIFEPRISTONE": "미페프리스톤", "BUDESONIDE": "부데소니드",
+        "GLYCYRRHIZIN": "글리시리진", "GLYCYRRHETINIC ACID": "글리시레틴산",
+        "CARBENOXOLONE": "카르베녹솔론",
+        "LETROZOLE": "레트로졸", "ANASTROZOLE": "아나스트로졸",
+        "EXEMESTANE": "엑세메스탄", "CLOTRIMAZOLE": "클로트리마졸",
+        "KETOCONAZOLE": "케토코나졸", "AMINOGLUTETHIMIDE": "아미노글루테티미드",
+        "FORMESTANE": "포르메스탄", "FADROZOLE": "파드로졸",
     }
+
+    # A few compounds every depot question runs into. They are in the panel
+    # libraries but ChEMBL has no preferred name on the row, so they would be
+    # unsearchable; the structures come from the ER resolver cache.
+    CORE = [
+        ("테스토스테론", "Testosterone",
+         "CC12CCC3C(CCC4=CC(=O)CCC34C)C1CCC2O"),
+        ("디하이드로테스토스테론", "Dihydrotestosterone",
+         "CC12CCC3C(CCC4CC(=O)CCC34C)C1CCC2O"),
+        ("코르티솔", "Cortisol",
+         "CC12CCC(=O)C=C1CCC1C2C(O)CC2(C)C1CCC2(O)C(=O)CO"),
+    ]
     extra = []
     seen_smiles = {r[2] for r in ing_rows}
     seen_names = {r[1].upper() for r in ing_rows}
@@ -97,7 +125,14 @@ def main():
         ko = KO.get(up, name)
         extra.append([ko, name, smiles])
 
-    for panel_file in ("panel_pparg.json", "panel_gr.json"):
+    for ko_name, en_name, smi in CORE:
+        if smi not in seen_smiles and en_name.upper() not in seen_names:
+            seen_smiles.add(smi)
+            seen_names.add(en_name.upper())
+            extra.append([ko_name, en_name, smi])
+
+    for panel_file in ("panel_pparg.json", "panel_gr.json", "panel_ar.json",
+                       "panel_hsd1.json", "panel_arom.json"):
         path = ASSETS / panel_file
         if not path.exists():
             continue

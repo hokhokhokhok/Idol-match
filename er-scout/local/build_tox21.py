@@ -40,6 +40,21 @@ PANELS = {
             ("743199", "antagonist", "PPARg-BLA", "길항제 요약 (대조 스크린 반영)"),
         ],
     },
+    "ar": {
+        "out": "tox21_ar.json",
+        "source": "Tox21 / PubChem BioAssay, androgen receptor agonist and antagonist screens",
+        "assays": [
+            ("743053", "agonist", "AR-BLA", "작용제 요약 (대조 스크린 반영)"),
+            ("743063", "antagonist", "AR-BLA", "길항제 요약 (대조 스크린 반영)"),
+        ],
+    },
+    "arom": {
+        "out": "tox21_arom.json",
+        "source": "Tox21 / PubChem BioAssay, aromatase (CYP19A1) inhibition screen",
+        "assays": [
+            ("743139", "inhibitor", "MCF-7 aromatase", "저해제 요약 (대조 스크린 반영)"),
+        ],
+    },
     "gr": {
         "out": "tox21_gr.json",
         "source": "Tox21 / PubChem BioAssay, glucocorticoid receptor agonist and antagonist screens",
@@ -53,7 +68,8 @@ PANEL = sys.argv[2] if len(sys.argv) > 2 else "er"
 ASSAYS = PANELS[PANEL]["assays"]
 # one character per assay position
 CODES = {"0": "inactive", "1": "active agonist", "2": "active antagonist",
-         "3": "inconclusive", "4": "cytotoxic", "9": "not tested"}
+         "3": "inconclusive", "4": "cytotoxic", "5": "active inhibitor",
+         "9": "not tested"}
 CHUNK = 180
 
 
@@ -138,7 +154,7 @@ def main():
                 continue
             o = rec["outcome"].lower()
             if o == "active":
-                code += "1" if mode == "agonist" else "2"
+                code += "1" if mode == "agonist" else ("5" if mode == "inhibitor" else "2")
                 if rec["uM"]:
                     try:
                         val = float(rec["uM"])

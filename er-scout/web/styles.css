@@ -319,6 +319,7 @@ label.filebtn input { display: none; }
 .kv .v { font-size: 14.5px; font-weight: 600; text-align: right; letter-spacing: -0.02em; }
 .kv .v .sub { font-size: 12.5px; font-weight: 500; color: var(--ink-3); margin-left: 5px; }
 .warnink { color: var(--red); }
+.okink { color: var(--green); }
 
 .tag {
   display: inline-block;

@@ -17,6 +17,9 @@ ASSETS = HERE.parent / "web/assets"
 PANELS = [
     ("chembl_pparg.json", "panel_pparg.json", "CHEMBL235", "PPARγ"),
     ("chembl_gr.json", "panel_gr.json", "CHEMBL2034", "GR"),
+    ("chembl_ar.json", "panel_ar.json", "CHEMBL1871", "AR"),
+    ("chembl_hsd1.json", "panel_hsd1.json", "CHEMBL4235", "11β-HSD1"),
+    ("chembl_arom.json", "panel_arom.json", "CHEMBL1978", "Aromatase"),
 ]
 
 

@@ -3,8 +3,8 @@
 에스트로겐 수용체 알파(ERα) 결합 가능성을 1차 선별하는 단일 HTML 도구.
 AR Scout와 같은 구조로, 수용체만 안드로겐에서 에스트로겐으로 바뀌었습니다.
 
-`python3 build.py` → `index.html` (약 5 MB, 외부 요청 없음)
-`python3 build.py out.html --no-font` → 글꼴 제외 2.3 MB (메일 첨부용)
+`python3 build.py` → `index.html` (약 5.5 MB, 외부 요청 없음)
+`python3 build.py out.html --no-font` → 글꼴 제외 2.7 MB (메일 첨부용)
 
 ## 무엇이 실측이고 무엇이 예측인가
 
@@ -28,6 +28,9 @@ ERα 하나로는 "지방이 늘어나는가"에 답할 수 없어서, 같은 re
 |---|---|---|
 | PPARγ (분화 마스터 조절자) | ChEMBL CHEMBL235 + Tox21 743140·743199 + PDB 9종 | 4,231종 / 8,135종 |
 | GR (분화 칵테일의 다른 축) | ChEMBL CHEMBL2034 + Tox21 720719·720725 | 3,039종 / 7,845종 |
+| AR (부위 분포) | ChEMBL CHEMBL1871 + Tox21 743053·743063 | 2,950종 |
+| 11β-HSD1 (내장 국소 코르티솔) | ChEMBL CHEMBL4235 | 3,377종 |
+| 아로마테이즈 (피하 국소 에스트로겐) | ChEMBL CHEMBL1978 + Tox21 743139 | 2,975종 |
 | 지방세포 분화·지질축적 | ChEMBL 어세이(3T3-L1, ST-13 등) 703건 | 867종 (촉진 337 / 억제 501 / 양쪽 29) |
 
 PPARγ 결정구조의 분류는 측정한 그대로입니다: 리간드가 helix-12의 Tyr473과
@@ -35,9 +38,33 @@ PPARγ 결정구조의 분류는 측정한 그대로입니다: 리간드가 heli
 잡고, 부분작용제 MRL-24는 Tyr473을 잡지 않습니다. 공유결합 길항제 GW9662도
 Tyr473에 닿기 때문에 라벨을 "작용제"가 아니라 "AF-2 결합"이라고 씁니다.
 
-**이 번들은 지방이 피하로 가는지 내장으로 가는지 측정하지 않습니다.** 수용체 활성과
-배양세포 분화까지가 데이터이고, 부위 분포(에스트로겐은 피하 쪽, 글루코코르티코이드는
-내장 쪽, TZD는 피하 쪽)는 문헌 배경지식으로 결과 화면에 따로 표시됩니다.
+### 부위 지향 (피하 대 내장)
+
+**부위별 실측 데이터는 존재하지 않습니다.** ChEMBL 기준으로 내장 지방세포 분화
+어세이 0건, 사람 피하 전지방세포 어세이 62건은 전부 세포독성·증식 측정입니다.
+그래서 부위 판정은 측정한 수용체 결과에 "각 수용체가 저장 부위를 미는 방향"을
+곱한 추론이고, 결과 화면에서 해석 층으로 분리해 표시합니다.
+
+| 축 | 판정 | 방향 | 자료 |
+|---|---|---|---|
+| PPARγ | 작용제 | 피하 | ChEMBL 4,231 + Tox21 |
+| ERα | 작용제 / 길항제 | 피하 / 내장 | 본체 엔진 |
+| AR | 작용제 / 길항제 | 내장 / 피하 | ChEMBL 2,950 + Tox21 743053·743063 |
+| GR | 작용제 | 내장 | ChEMBL 3,039 + Tox21 |
+| 11β-HSD1 | 저해 | 피하(상대적) | ChEMBL 3,377 |
+| 아로마테이즈 | 저해 | 내장 | ChEMBL 2,975 + Tox21 743139 |
+
+안전장치 셋:
+- **교차반응** — Tox21 AR 리포터는 글루코코르티코이드에도 반응합니다(덱사메타손이
+  2 nM에서 "AR 작용제"). GR·AR 동시 활성이면 AR 축을 세지 않고, 가장 강한 활성보다
+  100배 이상 약한 신호도 제외합니다(에스트라디올의 AR 1.1 µM).
+- **기질 대 저해제** — 효소 데이터는 둘을 구분하지 못합니다. 테스토스테론은
+  아로마테이즈 데이터셋에 pKi 6.8로 있지만 기질입니다. 안드로겐/에스트로겐
+  작용제로 측정된 물질은 아로마테이즈 read-across를 축으로 쓰지 않습니다.
+- **등급** — ER 기능 판정이 「가능성」이면 부위 축으로 올리지 않습니다.
+
+검증 예: 로지글리타존 → 피하 쪽, 덱사메타손 → 내장 쪽(AR은 교차로 제외),
+글리시리진 → 피하 쪽(11β-HSD1 저해), 레트로졸 → 내장 쪽, 글리세린 → 근거 없음.
 
 PPARγ·GR 어세이는 방향당 웰이 하나뿐이라 **농도(AC50)가 기록되지 않은 활성 신호는
 판정에 쓰지 않습니다** — 에스트라디올과 비스페놀 A가 두 수용체의 길항제 웰에서
@@ -82,7 +109,8 @@ local/
   pocket_er.json         ERα 설정 (helix-12 변위로 작용/길항 분류)
   pocket_pparg.json      PPARγ 설정 (Tyr473 수소결합 여부로 분류)
   fetch_adipo.py         ChEMBL 지방세포 분화·지질축적 어세이 → adipo_pheno.json
-  pack_panels.py         PPARγ·GR 라이브러리를 번들용으로 압축
+  pack_panels.py         보조 수용체 라이브러리 5종을 번들용으로 압축
+  merge_tox21.py         Tox21 테이블 5종을 키 하나로 합침 (1,022 KB → 443 KB)
   pocket_volume.py       공동 부피 측정 (격자 + 둘러싸임 판정)
   build_tox21.py         PubChem 어세이 → tox21_er.json
   inject_data.py         predict.js의 생성 블록 채우기 + 포즈에 구조 해시 부여
@@ -106,6 +134,7 @@ python3 local/fetch_chembl.py CHEMBL235 chembl_pparg.json
 python3 local/fetch_chembl.py CHEMBL2034 chembl_gr.json
 python3 local/fetch_adipo.py
 python3 local/pack_panels.py
+python3 local/merge_tox21.py
 python3 local/inject_data.py
 python3 build.py && node local/validate.js
 ```

@@ -9,6 +9,22 @@ var MAX_BATCH = 400;
 
 function $(id) { return document.getElementById(id); }
 
+/* The ER engine predates the merged Tox21 table and wants a table of its
+ * own: {calls, potency, assays}. This is that slice, built once. */
+var erTox = null;
+function erTox21() {
+  if (erTox !== null) return erTox;
+  erTox = false;
+  try {
+    if (typeof TOX21 !== 'undefined' && TOX21) {
+      erTox = TOX21.calls && TOX21.calls.er && typeof PANEL !== 'undefined'
+        ? PANEL.sliceTox(TOX21, 'er')
+        : TOX21;                       /* an older, single-receptor bundle */
+    }
+  } catch (err) { erTox = false; }
+  return erTox;
+}
+
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -691,8 +707,10 @@ function adipoSection(result) {
   out.push('<p class="hint" style="margin:0 0 14px">' + esc(style[1]) + '</p>');
 
   out.push('<table><tbody>');
-  out.push(panelRow(a.pparg));
-  out.push(panelRow(a.gr));
+  var order = ['pparg', 'gr', 'ar', 'hsd1', 'arom'];
+  for (var oi = 0; oi < order.length; oi++) {
+    out.push(panelRow(a.panels ? a.panels[order[oi]] : null));
+  }
   var erFc = result.functionCall;
   out.push('<tr><td>ERα (저장 부위 분포)</td><td style="font-weight:700">' +
            esc(PR.tierPhrase(erFc.tier, erFc.label)) + '</td></tr>');
@@ -718,6 +736,59 @@ function adipoSection(result) {
              (tag ? '<b>[' + esc(tag) + ']</b> ' : '') + esc(r.text) + '</li>');
   }
   out.push('</ul>');
+
+  if (a.depot) {
+    var dl = a.depot;
+    out.push('<h4 class="sect" style="margin-top:18px">부위 지향 — 피하 대 내장 ' +
+             '<span class="hint" style="font-weight:500">(해석 층, 측정값 아님)</span></h4>');
+    out.push('<div style="font-size:15px;font-weight:700;letter-spacing:-0.02em;' +
+             'margin-bottom:8px"' + (dl.lean === 'sc' ? ' class="okink"' : '') + '>' +
+             esc(dl.headline) + '</div>');
+    if (dl.sc.length || dl.visceral.length) {
+      out.push('<table><thead><tr><th style="width:84px">방향</th><th>근거</th>' +
+               '</tr></thead><tbody>');
+      var rows = dl.sc.concat(dl.visceral);
+      for (var ri = 0; ri < rows.length; ri++) {
+        var row = rows[ri];
+        var gradeWord = row.grade === 'measured' ? '실측'
+          : (row.grade === 'measured-weak' ? '약한 실측' : '예측');
+        out.push('<tr><td style="font-weight:700"' +
+                 (row.depot === 'sc' ? '' : ' class="warnink"') + '>' +
+                 (row.depot === 'sc' ? '피하 쪽' : '내장 쪽') + '</td>' +
+                 '<td style="font-size:13.5px;line-height:1.5">' + esc(row.text) +
+                 '<div style="font-size:12.5px;color:var(--ink-3);margin-top:2px">[' +
+                 esc(gradeWord) + ']' + (row.detail ? ' ' + esc(row.detail) : '') +
+                 '</div></td></tr>');
+      }
+      out.push('</tbody></table>');
+    }
+    if (dl.substrates && dl.substrates.length) {
+      out.push('<p class="hint" style="margin:10px 0 0">기질일 가능성 때문에 ' +
+               '제외한 신호: 아로마테이즈 결합 ' +
+               esc(dl.substrates[0].detail || '') + ' — 이 효소의 데이터는 ' +
+               '저해제와 기질을 구분하지 못하고, 이 물질은 안드로겐/에스트로겐 ' +
+               '수용체에서 작용제로 측정됐습니다.</p>');
+    }
+    if (dl.crossed && dl.crossed.length) {
+      out.push('<p class="hint" style="margin:10px 0 0">교차반응으로 보아 ' +
+               '제외한 신호: ' +
+               dl.crossed.map(function (c) {
+                 var who = { ar: 'AR', gr: 'GR', pparg: 'PPARγ',
+                             hsd1: '11β-HSD1', arom: '아로마테이즈' }[c.panel] || c.panel;
+                 if (c.withGr) {
+                   return who + ' 작용 (GR과 동시 활성 — 이 리포터 세포주는 두 수용체에 ' +
+                          '모두 반응하므로 구분되지 않습니다)';
+                 }
+                 return who + ' (AC50 ' + fx(c.ac50, c.ac50 < 1 ? 3 : 1) + ' µM, ' +
+                        '가장 강한 활성보다 ' + c.ratio + '배 약함)';
+               }).join(' · ') + '</p>');
+    }
+    out.push('<p class="hint" style="margin:10px 0 0">이 표는 <b>측정된 부위 데이터가 ' +
+             '아닙니다.</b> 위의 수용체 결과에, 각 수용체가 사람·동물에서 저장 부위를 ' +
+             '어느 쪽으로 미는지를 곱한 추론입니다. 부위별 지방세포 실측 자료는 ' +
+             'ChEMBL 기준으로 사실상 없습니다 — 내장 지방세포 분화 어세이 0건, ' +
+             '사람 피하 전지방세포 어세이 62건은 전부 세포독성·증식 측정입니다.</p>');
+  }
 
   out.push('<details style="margin-top:14px"><summary style="cursor:pointer;' +
            'font-size:13.5px;font-weight:600;color:var(--ink-2)">' +
@@ -764,7 +835,8 @@ function renderSingle(result, title, subtitle) {
 
   var tox = result.functionCall.tox21;
   if (tox) {
-    var assays = (typeof TOX21 !== 'undefined' && TOX21 && TOX21.assays) ? TOX21.assays : [];
+    var erTable = erTox21();
+    var assays = (erTable && erTable.assays) ? erTable.assays : [];
     out.push('<div class="measured">');
     out.push('<div class="mhead">실측 — Tox21 ERα 리포터 어세이</div>');
     out.push('<table style="margin-top:6px"><tbody>');
@@ -1056,18 +1128,19 @@ function runSingle(rawQuery) {
   /* The Tox21-decisive compounds join the read-across pool. Registered
    * here, once, because predict.js is bundled before the table is. */
   try {
-    if (typeof TOX21 !== 'undefined' && TOX21 && !measuredRegistered) {
-      PR.registerMeasured(TOX21);
+    if (erTox21() && !measuredRegistered) {
+      PR.registerMeasured(erTox21());
       measuredRegistered = true;
     }
   } catch (err) { /* the pool is optional */ }
 
   var tox21 = null, tox21Potency = null;
   try {
-    if (typeof TOX21 !== 'undefined' && TOX21 && TOX21.calls) {
+    var erTable2 = erTox21();
+    if (erTable2 && erTable2.calls) {
       var sid = MOL.structureIdOf(MOL.parseSmiles(smiles));
-      tox21 = TOX21.calls[sid] || null;
-      tox21Potency = (TOX21.potency && TOX21.potency[sid]) || null;
+      tox21 = erTable2.calls[sid] || null;
+      tox21Potency = (erTable2.potency && erTable2.potency[sid]) || null;
     }
   } catch (err) { tox21 = null; }
 
@@ -1127,6 +1200,18 @@ var BATCH_ADIPO = {
   'none': '—'
 };
 
+var BATCH_DEPOT = { sc: '피하 쪽', visceral: '내장 쪽', mixed: '엇갈림', none: '—' };
+
+function batchDepotWord(row) {
+  var word = BATCH_DEPOT[row.depotLean || 'none'] || '—';
+  if (row.depotLean === 'sc' || row.depotLean === 'visceral') {
+    word += ' ' + row.depotSc + '/' + row.depotVisc;
+  } else if (row.depotLean === 'mixed') {
+    word += ' ' + row.depotSc + '/' + row.depotVisc;
+  }
+  return word;
+}
+
 function batchAdipoWord(row) {
   var word = BATCH_ADIPO[row.adipoLevel || 'none'] || '—';
   if (row.adipoPheno) {
@@ -1167,7 +1252,10 @@ function runBatch(text) {
         fnKey: r.functionCall.label, fnSupport: r.functionCall.support,
         mw: r.desc.mw, clogp: r.desc.clogp, occupancy: r.occupancy,
         adipoLevel: adipo ? adipo.summary.level : null,
-        adipoPheno: adipo ? adipo.pheno : null
+        adipoPheno: adipo ? adipo.pheno : null,
+        depotLean: adipo && adipo.depot ? adipo.depot.lean : null,
+        depotSc: adipo && adipo.depot ? adipo.depot.sc.length : 0,
+        depotVisc: adipo && adipo.depot ? adipo.depot.visceral.length : 0
       });
     } catch (err) {
       failures.push(items[i].name + ' (' + err.message + ')');
@@ -1183,7 +1271,7 @@ function runBatch(text) {
   out.push('<div class="tscroll"><table><thead><tr><th class="num">#</th><th>물질</th>' +
            '<th class="num">pKi</th><th class="barcell">분포</th>' +
            '<th class="num col-sec">MW</th><th>기능 추정</th>' +
-           '<th>지방 신호</th>' +
+           '<th>지방 신호</th><th>부위 지향</th>' +
            '<th class="col-sec">구조 판정</th>' +
            '</tr></thead><tbody>');
   for (var k = 0; k < batchRows.length; k++) {
@@ -1200,6 +1288,8 @@ function runBatch(text) {
              esc(row.fnLabel) + '</td>' +
              '<td' + (/-up$/.test(row.adipoLevel || '') ? ' class="warnink"' : '') + '>' +
              esc(batchAdipoWord(row)) + '</td>' +
+             '<td' + (row.depotLean === 'sc' ? ' class="okink"' : '') + '>' +
+             esc(batchDepotWord(row)) + '</td>' +
              '<td class="col-sec">' + esc(row.verdict) + '</td></tr>');
   }
   out.push('</tbody></table></div>');
@@ -1229,7 +1319,8 @@ function runBatch(text) {
 function batchTsv() {
   var head = ['name', 'smiles', 'pKi', 'ci', 'domain', 'function', 'fn_support',
               'structural_verdict', 'mw', 'clogp', 'occupancy',
-              'adipo_signal', 'adipo_assays_up', 'adipo_assays_down'];
+              'adipo_signal', 'adipo_assays_up', 'adipo_assays_down',
+              'depot_lean', 'depot_axes_sc', 'depot_axes_visceral'];
   var lines = [head.join('\t')];
   for (var i = 0; i < batchRows.length; i++) {
     var r = batchRows[i];
@@ -1238,7 +1329,8 @@ function batchTsv() {
                 fx(r.mw, 2), fx(r.clogp, 2), fx(r.occupancy, 0),
                 r.adipoLevel || 'none',
                 r.adipoPheno ? r.adipoPheno.induces : '',
-                r.adipoPheno ? r.adipoPheno.inhibits : ''].join('\t'));
+                r.adipoPheno ? r.adipoPheno.inhibits : '',
+                r.depotLean || 'none', r.depotSc, r.depotVisc].join('\t'));
   }
   return lines.join('\n');
 }
@@ -1618,6 +1710,47 @@ function renderModelCard() {
            '분화를 켜는 것과 어디에 쌓이는지는 서로 다른 질문이며, 농도·노출·대사가 ' +
            '전부 빠져 있습니다. 체형을 바꿀 목적의 사용 근거로 쓸 수 없습니다.</p>');
 
+  out.push('<h5>부위 지향 — 피하 대 내장을 어떻게 다루는가</h5>');
+  out.push('<p>이것이 이 도구에서 <b>데이터가 가장 약한 부분</b>이고, 그래서 결과 ' +
+           '화면에서도 측정값과 분리해 「해석 층」으로 표시합니다. 사실관계부터: ' +
+           'ChEMBL에서 <b>내장 지방세포 분화 어세이는 0건</b>이고, 사람 피하 ' +
+           '전지방세포 어세이 62건은 전부 세포독성·증식 측정이지 분화 측정이 ' +
+           '아닙니다. 부위별 표현형 데이터셋이라 할 것이 없습니다.</p>');
+  out.push('<p>그래서 부위 판정은 <b>측정한 수용체 결과 × 각 수용체가 저장 부위를 ' +
+           '미는 방향</b>으로 조립한 추론입니다. 축은 아래가 전부이고, 틀렸다고 ' +
+           '생각되면 그 줄을 짚어 반박할 수 있게 적어 둡니다.</p>');
+  out.push('<table><thead><tr><th>축</th><th>판정</th><th>방향</th></tr></thead><tbody>');
+  var axisKo = { pparg: 'PPARγ', er: 'ERα', ar: 'AR', gr: 'GR',
+                 hsd1: '11β-HSD1', arom: '아로마테이즈' };
+  var axisAct = { agonist: '작용제', antagonist: '길항제', inhibitor: '저해' };
+  if (typeof PANEL !== 'undefined' && PANEL.DEPOT_AXES) {
+    for (var ax = 0; ax < PANEL.DEPOT_AXES.length; ax++) {
+      var A = PANEL.DEPOT_AXES[ax];
+      if (A.depot === 'none') continue;
+      out.push('<tr><td>' + esc(axisKo[A.panel] || A.panel) + '</td><td>' +
+               esc(axisAct[A.when] || A.when) + '</td><td' +
+               (A.depot === 'sc' ? '' : ' class="warnink"') + '>' +
+               (A.depot === 'sc' ? '피하 쪽' : '내장 쪽') + '</td></tr>');
+    }
+  }
+  out.push('</tbody></table>');
+  out.push('<p>이 추론에는 안전장치가 셋 있습니다. ' +
+           '<b>① 교차반응</b> — Tox21 안드로겐 수용체 리포터는 글루코코르티코이드에도 ' +
+           '반응해서 덱사메타손이 2 nM에서 "AR 작용제"로 나옵니다. GR과 AR이 동시에 ' +
+           '활성이면 AR 축은 세지 않고, 가장 강한 활성보다 100배 이상 약한 신호도 ' +
+           '교차반응으로 보아 뺍니다(에스트라디올의 AR 1.1 µM이 그 경우). ' +
+           '<b>② 기질과 저해제</b> — 효소 데이터는 둘을 구분하지 못합니다. ' +
+           '테스토스테론은 아로마테이즈 데이터셋에 pKi 6.8로 들어 있지만 저해제가 ' +
+           '아니라 기질입니다. 그래서 안드로겐/에스트로겐 작용제로 측정된 물질은 ' +
+           '아로마테이즈 read-across를 축으로 쓰지 않고, 직접적인 저해 스크린 결과만 ' +
+           '인정합니다. <b>③ 등급</b> — ER 기능 판정이 「가능성」 수준이면 부위 축으로 ' +
+           '올리지 않습니다.</p>');
+  out.push('<p>마지막으로, 부위 지향이 「피하 쪽」이라고 나와도 그것은 ' +
+           '<b>수용체 프로필이 그 방향이라는 뜻이지 피하지방이 늘어난다는 뜻이 ' +
+           '아닙니다.</b> 농도·노출 경로·대사·전신 영향이 전부 빠져 있고, 여기서 ' +
+           '피하 쪽으로 분류되는 물질의 상당수는 내분비계 교란물질이거나 처방 ' +
+           '의약품입니다.</p>');
+
   out.push('<h5>데이터 출처</h5>');
   out.push('<ul>');
   out.push('<li>ChEMBL CHEMBL206 (사람 ERα) 활성 데이터 — 라이브러리 pKi</li>');
@@ -1660,26 +1793,38 @@ function init() {
     }
   } catch (err) { /* the scene is optional */ }
 
-  /* the adipocyte-signalling panel: two more receptors and the measured
-   * phenotype. Their libraries are compiled lazily, on the first query that
-   * needs them, because that is about 7000 fingerprints. */
+  /* the adipocyte-signalling panel. The five Tox21 screens arrive as one
+   * merged table; each panel takes its own column. Libraries are compiled
+   * lazily, on the first query that needs them. */
   try {
     if (typeof PANEL !== 'undefined') {
-      PANEL.registerPanel('pparg', {
-        label: 'PPARγ', ko: 'PPARγ (지방세포 분화 스위치)', target: 'CHEMBL235',
-        role: 'adipogenesis',
-        lib: typeof PANEL_PPARG !== 'undefined' ? PANEL_PPARG : null,
-        tox: typeof TOX21_PPARG !== 'undefined' ? TOX21_PPARG : null,
-        scene: typeof SCENE_PPARG !== 'undefined' ? SCENE_PPARG : null,
-        modes: ['agonist', 'antagonist']
-      });
-      PANEL.registerPanel('gr', {
-        label: 'GR', ko: 'GR (글루코코르티코이드 수용체)', target: 'CHEMBL2034',
-        role: 'cofactor',
-        lib: typeof PANEL_GR !== 'undefined' ? PANEL_GR : null,
-        tox: typeof TOX21_GR !== 'undefined' ? TOX21_GR : null,
-        modes: ['agonist', 'antagonist']
-      });
+      var toxAll = typeof TOX21 !== 'undefined' ? TOX21 : null;
+      var defs = [
+        ['pparg', 'PPARγ', 'PPARγ (지방세포 분화 스위치)', 'CHEMBL235',
+         typeof PANEL_PPARG !== 'undefined' ? PANEL_PPARG : null,
+         ['agonist', 'antagonist'], false,
+         typeof SCENE_PPARG !== 'undefined' ? SCENE_PPARG : null],
+        ['gr', 'GR', 'GR (글루코코르티코이드 수용체)', 'CHEMBL2034',
+         typeof PANEL_GR !== 'undefined' ? PANEL_GR : null,
+         ['agonist', 'antagonist'], false, null],
+        ['ar', 'AR', 'AR (안드로겐 수용체)', 'CHEMBL1871',
+         typeof PANEL_AR !== 'undefined' ? PANEL_AR : null,
+         ['agonist', 'antagonist'], false, null],
+        ['hsd1', '11β-HSD1', '11β-HSD1 (조직 내 코르티솔 재생 효소)', 'CHEMBL4235',
+         typeof PANEL_HSD1 !== 'undefined' ? PANEL_HSD1 : null,
+         [], true, null],
+        ['arom', 'Aromatase', '아로마테이즈 (안드로겐 → 에스트로겐 전환)', 'CHEMBL1978',
+         typeof PANEL_AROM !== 'undefined' ? PANEL_AROM : null,
+         ['inhibitor'], true, null]
+      ];
+      for (var di = 0; di < defs.length; di++) {
+        var d = defs[di];
+        PANEL.registerPanel(d[0], {
+          label: d[1], ko: d[2], target: d[3], lib: d[4], modes: d[5],
+          enzyme: d[6], scene: d[7],
+          tox: toxAll ? PANEL.sliceTox(toxAll, d[0]) : null
+        });
+      }
       if (typeof ADIPO !== 'undefined') PANEL.registerPheno(ADIPO);
       PANEL.compileScenePoses(PANEL.panels.pparg, null);
     }

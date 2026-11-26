@@ -26,13 +26,16 @@ MODULES = ["molmodel.js", "ermotifs.js", "layout.js", "layout3d.js",
 DATA = [
     ("EXTLIB", "er_reference.json"),
     ("SCENE", "pocket_scene.json"),
-    ("TOX21", "tox21_er.json"),
+    # one merged Tox21 table for all five receptors; each panel takes its
+    # own column at load time
+    ("TOX21", "tox21.json"),
     # the adipocyte-signalling panel
     ("PANEL_PPARG", "panel_pparg.json"),
-    ("TOX21_PPARG", "tox21_pparg.json"),
     ("SCENE_PPARG", "pocket_scene_pparg.json"),
     ("PANEL_GR", "panel_gr.json"),
-    ("TOX21_GR", "tox21_gr.json"),
+    ("PANEL_AR", "panel_ar.json"),
+    ("PANEL_HSD1", "panel_hsd1.json"),
+    ("PANEL_AROM", "panel_arom.json"),
     ("ADIPO", "adipo_pheno.json"),
 ]
 FONT = "Pretendard-Variable.woff2"
