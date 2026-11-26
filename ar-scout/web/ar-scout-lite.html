@@ -253,7 +253,30 @@ label.filebtn {
   padding: 13px 18px;
 }
 label.filebtn input { display: none; }
-.btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+label.chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  padding: 13px 4px;
+  white-space: nowrap;
+}
+label.chk input { width: 17px; height: 17px; accent-color: var(--blue); cursor: pointer; }
+
+/* ranking table: the band chip and the sortable headers */
+.band { font-weight: 700; font-size: 12px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.band.high { background: rgba(255,59,48,.14); color: var(--red); }
+.band.medium { background: rgba(255,149,0,.16); color: #b26200; }
+.band.low { background: var(--card-sub); color: var(--ink-3); }
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: var(--blue); }
+th.sortable .arrow { opacity: .45; font-size: 10px; margin-left: 3px; }
+tr.flagged td:first-child { box-shadow: inset 3px 0 0 #FF9500; }
+.rankno { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-3); }
 
 .err {
   background: var(--red-wash);
@@ -502,6 +525,7 @@ footer.foot {
   <nav class="tabs" id="tabs">
     <button type="button" data-tab="single" aria-selected="true">단건 조회</button>
     <button type="button" data-tab="batch" aria-selected="false">배치 스크리닝</button>
+    <button type="button" data-tab="rank" aria-selected="false">길항제 순위</button>
     <button type="button" data-tab="library" aria-selected="false">레퍼런스</button>
   </nav>
 
@@ -541,6 +565,23 @@ footer.foot {
       <div id="batch-err"></div>
     </div>
     <div id="batch-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ antagonist ranking -->
+  <section id="tab-rank" class="hidden">
+    <div class="panel">
+      <h2>길항제 순위 — 사전 전체</h2>
+      <p class="hint">사전에 실린 모든 물질을 돌려, 길항제로 판정된 것만 우선순위대로 세웁니다.
+        정렬 기준은 아래에 그대로 적어 두었고, 열 제목을 누르면 다시 정렬됩니다.</p>
+      <div class="btnbar">
+        <button class="go" id="rankrun" type="button">전체 순위 계산</button>
+        <button class="alt" id="rankcopy" type="button">TSV 복사</button>
+        <label class="chk"><input type="checkbox" id="rankall"> 낮음 구간까지 모두 보기</label>
+        <label class="chk"><input type="checkbox" id="ranknew"> 도구가 찾은 것만 (문헌 등재 제외)</label>
+      </div>
+      <div id="rank-err"></div>
+    </div>
+    <div id="rank-out"></div>
   </section>
 
   <!-- ------------------------------------------------ library -->
@@ -3609,6 +3650,148 @@ function callFunction(fp, options) {
     (100 * share).toFixed(0) + '% 우세).');
 }
 
+/* ------------------------------------------- antagonist ranking ------
+ *
+ * Ranking the whole dictionary needs one ordering out of evidence that does
+ * not share a scale: a Tox21 verdict, a read-across tier, a predicted pKi.
+ * Collapsing them into one number would hide exactly the disagreements that
+ * matter, so the order is lexicographic over a priority band and then
+ * potency, and every input stays visible as its own column.
+ *
+ * Two demotions, both from signals the engine already computes, and both
+ * found by looking at what the first draft of this list put on top:
+ *
+ *  - DHEA came out #1. Tox21 calls it an antagonist (inactive in the
+ *    agonist screen, active in both antagonist screens) but the structure
+ *    says agonist: a 3-keto steroid with no bulky substituent, anchored at
+ *    both ends. DHEA is an androgen precursor. This is the documented
+ *    antagonist-mode confound - co-treatment with a strong reference
+ *    agonist means any competitor lowers the signal, and the screen flags
+ *    5 of 5 known partial agonists that way. When the measured call and the
+ *    structural call disagree like this, the compound is not promoted on
+ *    the strength of the assay alone; the conflict is shown instead.
+ *
+ *  - The saturated fatty acids landed in the list at nearest 0.28, trailing
+ *    butylparaben. Their pocket verdict is 결합 가능성 낮음: the structure
+ *    says they do not occupy the cavity at all. Something that does not
+ *    bind cannot be an antagonist, whatever it resembles.
+ */
+var RANK_BANDS = {
+  high:   { word: '우선 확인', note: '실측 또는 예측 등급 + pKi 5.0 이상 + 구조와 모순 없음' },
+  medium: { word: '참고',      note: '가능성 등급이거나, 결합이 약하거나(pKi 4–5), 증거가 엇갈림' },
+  low:    { word: '낮음',      note: '포켓에 결합할 구조가 아니거나 pKi 4.0 미만' }
+};
+
+function rankAntagonists(evidenceFor) {
+  var rows = [];
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var ko = INGREDIENTS[i][0], en = INGREDIENTS[i][1], smi = INGREDIENTS[i][2];
+    var mol;
+    try { mol = AR.parseSmiles(smi); } catch (err) { continue; }
+    var ev = {};
+    try { ev = evidenceFor(smi, mol) || {}; } catch (err) { ev = {}; }
+    var res;
+    try { res = predict(smi, ev); } catch (err) { continue; }
+    var fc = res.functionCall;
+    if (fc.label !== 'antagonist') continue;
+
+    var pocket = res.pocket;
+    var motifs = AR.detectMotifs(mol);
+    /* A compound that is itself one of the 38 curated references matches
+     * itself at similarity 1.00, so calling that a "prediction" would dress
+     * an input up as a finding and put it at the top of the list for a
+     * circular reason. Its label is established pharmacology; say so, and
+     * let the reader filter these out to see what the tool actually
+     * flagged on its own.
+     *
+     * But only when the curated label actually says antagonist. DHEA is in
+     * the reference set as an AGONIST, and a Tox21 antagonist-mode hit was
+     * enough to put it in this list at #2 wearing a "문헌" badge - which
+     * reads as "the literature calls this an antagonist", the exact
+     * opposite of the truth. A curated label pointing the other way is the
+     * strongest disagreement available here, so it demotes. */
+    var curatedLabel = FUNCTION_CLASS[en] || null;
+    var curated = curatedLabel === 'antagonist';
+    var curatedConflict = !!curatedLabel && curatedLabel !== 'antagonist';
+    var flags = [];
+    /* The measured call and the structure point opposite ways.
+     *
+     * A bare steroid counts as a disagreement even when the pocket verdict
+     * stops short of "agonist", because the bulky 17-substituent is the one
+     * thing that separates a steroidal antagonist from an androgen - it is
+     * already the motif the functional call uses for exactly that. Without
+     * it, an antagonist-mode hit on a steroid is far more likely to be
+     * competition than antagonism. This catches DHEA, pregnenolone, estrone
+     * and finasteride, and leaves cyproterone, megestrol and chlormadinone
+     * alone. */
+    var bareSteroid = !!motifs.steroid && !motifs.steroidBulky;
+    var conflict = curatedConflict ||
+                   (fc.tier === 'measured' &&
+                    (pocket.verdictKey === 'agonist' || bareSteroid));
+    if (curatedConflict) {
+      flags.push('이 도구의 기능 레퍼런스는 이 물질을 ' +
+                 (CLASS_LABELS[curatedLabel] || curatedLabel) +
+                 '로 싣고 있습니다 — 어세이의 길항 신호와 정면으로 어긋납니다');
+    } else if (conflict) {
+      flags.push(pocket.verdictKey === 'agonist'
+        ? '실측은 길항, 구조는 작용제 — 길항제 모드는 경쟁만 해도 신호가 ' +
+          '내려가므로 부분작용제가 이렇게 잡힙니다'
+        : '부피 큰 치환기가 없는 스테로이드 — 스테로이드계 길항제를 ' +
+          '안드로겐과 가르는 특징이 없으므로, 길항이 아니라 경쟁일 수 있습니다');
+    }
+    var nonBinder = pocket.verdictKey === 'weak' || res.pKi < 4.0;
+    if (nonBinder) {
+      flags.push('포켓 결합 근거가 약합니다 — 길항 이전에 결합 자체가 의심스럽습니다');
+    }
+    if (res.domain === 'out') {
+      flags.push('적용영역 밖 — pKi 수치는 신뢰하지 마세요');
+    }
+    /* Shown, not demoted. A compound that kills cells lowers the reporter
+       signal and reads as antagonism, so it is worth saying - but
+       bicalutamide itself is cytotoxic in one of the three wells, so using
+       it to demote would bury the canonical antagonist. */
+    var toxRead = ev.tox21 ? readTox21(ev.tox21) : null;
+    if (fc.tier === 'measured' && toxRead && toxRead.cytotoxic) {
+      flags.push('다른 어세이에서 세포독성 — 세포를 죽여도 신호가 내려가므로 ' +
+                 '길항 활성이 과대평가될 수 있습니다');
+    }
+
+    var band;
+    if (nonBinder) band = 'low';
+    else if (curatedConflict) band = 'medium';
+    else if (curated) band = res.pKi < 5.0 ? 'medium' : 'high';
+    else if (fc.tier === 'possible' || conflict || res.pKi < 5.0) band = 'medium';
+    else band = 'high';
+
+    rows.push({
+      ko: ko, en: en, smiles: smi, curated: curated,
+      curatedLabel: curatedLabel,
+      tier: curated ? 'curated' : fc.tier, callTier: fc.tier,
+      pKi: res.pKi, domain: res.domain,
+      nearest: fc.nearest, support: fc.support,
+      pocketVerdict: pocket.verdict, occupancy: res.occupancy,
+      band: band, conflict: conflict, nonBinder: nonBinder,
+      cytotoxic: !!(toxRead && toxRead.cytotoxic),
+      flags: flags, evidence: fc.evidence || [],
+      refAntagonists: fc.refAntagonists || [],
+      mutantShift: res.mutantShift || null
+    });
+  }
+
+  /* Band first, then potency. Evidence quality is already baked into the
+     band, so ordering by tier inside it only pushed a measured pKi 5.0
+     above a predicted pKi 9.0, which is not the order anyone screening
+     ingredients wants. The tier stays visible as its own column. */
+  var bandOrder = { high: 3, medium: 2, low: 1 };
+  rows.sort(function (a, b) {
+    if (bandOrder[b.band] !== bandOrder[a.band]) return bandOrder[b.band] - bandOrder[a.band];
+    if (b.pKi !== a.pKi) return b.pKi - a.pKi;
+    return a.en < b.en ? -1 : 1;
+  });
+  for (var r = 0; r < rows.length; r++) rows[r].rank = r + 1;
+  return rows;
+}
+
 /* ---------------------------------------------------------- pocket layout */
 
 var POCKET_RESIDUES = [
@@ -3653,6 +3836,7 @@ var H12_RESIDUES = ['Thr877', 'Met895', 'Ile899'];
 /* How sure the functional call is, in words, with the rule next to it so
  * the label and the criterion can never drift apart. */
 var TIER_LABELS = {
+  curated:   { word: '문헌',        note: '이 도구의 기능 레퍼런스에 등재된 물질 — 예측이 아니라 입력' },
   measured:  { word: '실측',        note: 'Tox21 리포터 어세이에서 한쪽 모드만 활성' },
   predicted: { word: '예측',        note: '최근접 레퍼런스 유사도 0.35 이상, 한쪽 근거가 50% 이상' },
   possible:  { word: '가능성',      note: '근거 방향은 한쪽이지만 유사도가 0.35 미만' },
@@ -4229,6 +4413,8 @@ var PR = {
   tierPhrase: tierPhrase,
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
+  rankAntagonists: rankAntagonists,
+  RANK_BANDS: RANK_BANDS,
   TOX21_MODES: TOX21_MODES,
   registerMeasured: registerMeasured,
   functionPool: functionPool,
@@ -5119,7 +5305,7 @@ function renderSingle(result, title, subtitle) {
 
 /* ------------------------------------------------------------- tabs */
 
-var TABS = ['single', 'batch', 'library'];
+var TABS = ['single', 'batch', 'rank', 'library'];
 
 function selectTab(name) {
   for (var i = 0; i < TABS.length; i++) {
@@ -5136,6 +5322,224 @@ function selectTab(name) {
     var isSel = btns[j].getAttribute('data-tab') === name;
     btns[j].setAttribute('aria-selected', isSel ? 'true' : 'false');
   }
+}
+
+/* ------------------------------------------------- antagonist ranking */
+
+var rankRows = null;
+var rankSort = { key: 'rank', dir: 1 };
+
+/* The evidence a compound gets is assembled the same way the single-compound
+ * view does it, so the ranking cannot drift from what a lookup shows. */
+function evidenceFor(smiles, mol) {
+  var out = { dock: null, tox21: null };
+  try {
+    var scene = sceneData();
+    if (scene) {
+      var stored = scene.poses[structureKey(mol)];
+      if (stored && stored.placed) {
+        out.dock = { placed: true, affinity: stored.aff,
+                     ile899: (stored.c || []).indexOf('ILE899') >= 0,
+                     contacts: stored.c || [], hbonds: stored.hb || [] };
+      }
+    }
+  } catch (err) { /* no pose */ }
+  try {
+    if (typeof TOX21 !== 'undefined' && TOX21 && TOX21.calls) {
+      out.tox21 = TOX21.calls[AR.structureIdOf(mol)] || null;
+    }
+  } catch (err) { /* no table */ }
+  return out;
+}
+
+function ensureMeasuredPool() {
+  try {
+    if (typeof TOX21 !== 'undefined' && TOX21 && !measuredRegistered) {
+      PR.registerMeasured(TOX21);
+      measuredRegistered = true;
+    }
+  } catch (err) { /* optional */ }
+}
+
+function visibleRankRows() {
+  if (!rankRows) return [];
+  var showAll = $('rankall') && $('rankall').checked;
+  var onlyNew = $('ranknew') && $('ranknew').checked;
+  var rows = rankRows.filter(function (r) {
+    if (!showAll && r.band === 'low') return false;
+    if (onlyNew && r.curated) return false;
+    return true;
+  });
+  var k = rankSort.key, d = rankSort.dir;
+  if (k !== 'rank') {
+    rows.sort(function (a, b) {
+      var x = a[k], y = b[k];
+      if (typeof x === 'string') return d * (x < y ? -1 : (x > y ? 1 : 0));
+      return d * ((x || 0) - (y || 0));
+    });
+  } else if (d < 0) {
+    rows.reverse();
+  }
+  return rows;
+}
+
+function renderRank() {
+  var host = $('rank-out');
+  if (!host || !rankRows) return;
+  var rows = visibleRankRows();
+  var counts = { high: 0, medium: 0, low: 0 };
+  for (var c = 0; c < rankRows.length; c++) counts[rankRows[c].band]++;
+
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>길항제 후보 ' + rankRows.length + '종 / 사전 ' +
+           PR.INGREDIENTS.length + '종</h3>');
+  var curatedN = 0;
+  for (var cu = 0; cu < rankRows.length; cu++) if (rankRows[cu].curated) curatedN++;
+  out.push('<dl class="tiles">');
+  out.push(tile('우선 확인', String(counts.high)));
+  out.push(tile('참고', String(counts.medium)));
+  out.push(tile('낮음', String(counts.low)));
+  out.push(tile('문헌 등재', String(curatedN)));
+  out.push('</dl>');
+  out.push('<p class="hint"><b>문헌 등재 ' + curatedN + '종은 이 도구의 입력이지 ' +
+           '발견이 아닙니다.</b> 기능 레퍼런스에 실린 물질이라 자기 자신과 ' +
+           '유사도 1.00으로 맞으므로, 「예측」이라고 적으면 순환 논리가 됩니다. ' +
+           '위의 「도구가 찾은 것만」을 켜면 나머지 ' +
+           (rankRows.length - curatedN) + '종만 남습니다.</p>');
+
+  out.push('<h4 class="sect">정렬 기준</h4>');
+  out.push('<p class="hint">먼저 <b>구간</b>으로 나누고, 같은 구간 안에서는 ' +
+           '<b>예측 pKi가 높은 순</b>입니다. 증거의 질은 구간에 이미 반영돼 ' +
+           '있으므로, 구간 안에서까지 실측을 예측보다 앞세우면 실측 pKi 5.0이 ' +
+           '예측 pKi 9.0 위로 올라가 버립니다. 증거 등급은 별도 열로 봅니다.</p>');
+  out.push('<table><thead><tr><th>구간</th><th>조건</th></tr></thead><tbody>');
+  var bandKeys = ['high', 'medium', 'low'];
+  // (the evidence-tier legend follows the band legend, below)
+  for (var b = 0; b < bandKeys.length; b++) {
+    var bd = PR.RANK_BANDS[bandKeys[b]];
+    out.push('<tr><td><span class="band ' + bandKeys[b] + '">' + esc(bd.word) +
+             '</span></td><td>' + esc(bd.note) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  out.push('<h4 class="sect">증거 등급</h4>');
+  out.push('<table><thead><tr><th>등급</th><th>뜻</th></tr></thead><tbody>');
+  var tierKeys = ['curated', 'measured', 'predicted', 'possible'];
+  for (var tk = 0; tk < tierKeys.length; tk++) {
+    out.push('<tr><td><b>' + esc(PR.TIER_LABELS[tierKeys[tk]].word) + '</b></td><td>' +
+             esc(PR.TIER_LABELS[tierKeys[tk]].note) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  out.push('<p class="hint" style="margin-top:10px">' +
+           '<b>강등 규칙 두 가지는 이 목록의 첫 초안을 보고 만들었습니다.</b> ' +
+           'DHEA가 1위로 나왔습니다 — Tox21은 길항이라 하지만 구조는 작용제 ' +
+           '(부피 큰 치환기 없는 3-케토 스테로이드)이고, DHEA는 안드로겐 ' +
+           '전구체입니다. 길항제 모드는 기준 작용제와 함께 넣어 신호 감소를 ' +
+           '재므로 <b>경쟁만 해도 잡힙니다</b>(알려진 부분작용제 5종이 5종 모두 ' +
+           '그렇게 나옵니다). 그래서 실측과 구조가 엇갈리면 어세이만 믿고 ' +
+           '올리지 않고 모순을 표시합니다. 포화지방산들도 들어와 있었는데, ' +
+           '포켓 판정이 「결합 가능성 낮음」이었습니다 — 결합하지 않는 것은 ' +
+           '길항제일 수 없습니다. 둘 다 지우지 않고 아래로 내린 뒤 이유를 ' +
+           '적습니다.</p>');
+  out.push('</div>');
+
+  out.push('<div class="panel">');
+  out.push('<h3>순위</h3>');
+  function th(key, label, num) {
+    var arrow = rankSort.key === key ? (rankSort.dir > 0 ? '▲' : '▼') : '⇅';
+    return '<th class="sortable' + (num ? ' num' : '') + '" data-sort="' + key +
+           '">' + esc(label) + '<span class="arrow">' + arrow + '</span></th>';
+  }
+  out.push('<table><thead><tr>');
+  out.push(th('rank', '#'));
+  out.push('<th>물질</th>');
+  out.push('<th>구간</th>');
+  out.push(th('tier', '증거'));
+  out.push(th('pKi', '예측 pKi', true));
+  out.push(th('nearest', '최근접', true));
+  out.push('<th>비고</th>');
+  out.push('</tr></thead><tbody>');
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var note = r.flags.length
+      ? r.flags.map(function (f) { return f.split(' — ')[0]; }).join(' · ')
+      : '';
+    out.push('<tr' + (r.flags.length ? ' class="flagged"' : '') + '>' +
+             '<td class="rankno">' + r.rank + '</td>' +
+             '<td><b>' + esc(r.ko) + '</b><br><span class="hint">' + esc(r.en) +
+             '</span></td>' +
+             '<td><span class="band ' + r.band + '">' +
+             esc(PR.RANK_BANDS[r.band].word) + '</span></td>' +
+             '<td>' + esc(PR.TIER_LABELS[r.tier].word) + '</td>' +
+             '<td class="num">' + fx(r.pKi, 2) +
+             (r.domain === 'out' ? ' <span class="hint">영역밖</span>' : '') + '</td>' +
+             '<td class="num">' + fx(r.nearest, 2) + '</td>' +
+             '<td class="hint">' + esc(note) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  if (!$('rankall') || !$('rankall').checked) {
+    out.push('<p class="hint" style="margin-top:10px">「낮음」 ' + counts.low +
+             '종은 숨겨져 있습니다 — 포켓에 결합할 구조가 아니거나 pKi 4.0 ' +
+             '미만입니다. 위 체크박스로 펼칠 수 있습니다.</p>');
+  }
+  out.push('</div>');
+
+  /* the flagged entries in full, because a truncated caveat is not a caveat */
+  var flagged = rankRows.filter(function (x) { return x.flags.length; });
+  if (flagged.length) {
+    out.push('<div class="panel"><h3>주의가 붙은 ' + flagged.length + '종</h3>');
+    out.push('<ul class="why">');
+    for (var g = 0; g < flagged.length; g++) {
+      for (var h = 0; h < flagged[g].flags.length; h++) {
+        out.push('<li><span class="d">#' + flagged[g].rank + '</span><span><b>' +
+                 esc(flagged[g].ko) + '</b> — ' + esc(flagged[g].flags[h]) +
+                 '</span></li>');
+      }
+    }
+    out.push('</ul></div>');
+  }
+  host.innerHTML = out.join('');
+
+  var heads = host.querySelectorAll('th.sortable');
+  for (var q = 0; q < heads.length; q++) {
+    heads[q].onclick = (function (key) {
+      return function () {
+        if (rankSort.key === key) rankSort.dir = -rankSort.dir;
+        else { rankSort.key = key; rankSort.dir = key === 'rank' ? 1 : -1; }
+        renderRank();
+      };
+    })(heads[q].getAttribute('data-sort'));
+  }
+}
+
+function runRank() {
+  showError('rank-err', '');
+  var host = $('rank-out');
+  if (host) host.innerHTML = '<div class="panel"><p class="hint">' +
+    PR.INGREDIENTS.length + '종을 모두 계산하는 중입니다…</p></div>';
+  ensureMeasuredPool();
+  setTimeout(function () {
+    try {
+      rankRows = PR.rankAntagonists(evidenceFor);
+      renderRank();
+    } catch (err) {
+      if (host) host.innerHTML = '';
+      showError('rank-err', '순위 계산 실패: ' + err.message);
+    }
+  }, 20);
+}
+
+function rankTsv() {
+  var rows = visibleRankRows();
+  var lines = ['순위\t한글명\t영문명\t구간\t증거등급\t예측pKi\t적용영역\t최근접유사도\t포켓판정\t주의\tSMILES'];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    lines.push([r.rank, r.ko, r.en, PR.RANK_BANDS[r.band].word,
+                PR.TIER_LABELS[r.tier].word, r.pKi.toFixed(2), r.domain,
+                r.nearest.toFixed(3), r.pocketVerdict,
+                r.flags.join(' / '), r.smiles].join('\t'));
+  }
+  return lines.join('\n');
 }
 
 /* ------------------------------------------------------- single tab */
@@ -5340,10 +5744,11 @@ function batchTsv() {
   return lines.join('\n');
 }
 
-function copyTsv() {
-  if (!batchRows.length) { showError('batch-err', '복사할 결과가 없습니다.'); return; }
-  var text = batchTsv();
-  var done = function () { showError('batch-err', ''); };
+function copyTsv() { copyText(batchRows.length ? batchTsv() : '', 'batch-err'); }
+
+function copyText(text, errHost) {
+  if (!text) { showError(errHost, '복사할 결과가 없습니다.'); return; }
+  var done = function () { showError(errHost, ''); };
   var fallback = function () {
     try {
       var ta = document.createElement('textarea');
@@ -5354,7 +5759,7 @@ function copyTsv() {
       document.body.removeChild(ta);
       done();
     } catch (err) {
-      showError('batch-err', '클립보드 복사에 실패했습니다. 결과 표를 직접 선택해 복사해 주세요.');
+      showError(errHost, '클립보드 복사에 실패했습니다. 결과 표를 직접 선택해 복사해 주세요.');
     }
   };
   try {
@@ -5736,6 +6141,13 @@ function init() {
     runBatch(SAMPLE_BATCH);
   });
   on('batchcopy', 'click', copyTsv);
+
+  on('rankrun', 'click', function () { runRank(); });
+  on('rankcopy', 'click', function () {
+    copyText(rankRows ? rankTsv() : '', 'rank-err');
+  });
+  on('rankall', 'change', function () { if (rankRows) renderRank(); });
+  on('ranknew', 'change', function () { if (rankRows) renderRank(); });
   on('batchfile', 'change', function (ev) {
     readFile(ev.target, function (text) {
       var ta = $('batchin');

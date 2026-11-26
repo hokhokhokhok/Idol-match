@@ -724,6 +724,148 @@ function callFunction(fp, options) {
     (100 * share).toFixed(0) + '% 우세).');
 }
 
+/* ------------------------------------------- antagonist ranking ------
+ *
+ * Ranking the whole dictionary needs one ordering out of evidence that does
+ * not share a scale: a Tox21 verdict, a read-across tier, a predicted pKi.
+ * Collapsing them into one number would hide exactly the disagreements that
+ * matter, so the order is lexicographic over a priority band and then
+ * potency, and every input stays visible as its own column.
+ *
+ * Two demotions, both from signals the engine already computes, and both
+ * found by looking at what the first draft of this list put on top:
+ *
+ *  - DHEA came out #1. Tox21 calls it an antagonist (inactive in the
+ *    agonist screen, active in both antagonist screens) but the structure
+ *    says agonist: a 3-keto steroid with no bulky substituent, anchored at
+ *    both ends. DHEA is an androgen precursor. This is the documented
+ *    antagonist-mode confound - co-treatment with a strong reference
+ *    agonist means any competitor lowers the signal, and the screen flags
+ *    5 of 5 known partial agonists that way. When the measured call and the
+ *    structural call disagree like this, the compound is not promoted on
+ *    the strength of the assay alone; the conflict is shown instead.
+ *
+ *  - The saturated fatty acids landed in the list at nearest 0.28, trailing
+ *    butylparaben. Their pocket verdict is 결합 가능성 낮음: the structure
+ *    says they do not occupy the cavity at all. Something that does not
+ *    bind cannot be an antagonist, whatever it resembles.
+ */
+var RANK_BANDS = {
+  high:   { word: '우선 확인', note: '실측 또는 예측 등급 + pKi 5.0 이상 + 구조와 모순 없음' },
+  medium: { word: '참고',      note: '가능성 등급이거나, 결합이 약하거나(pKi 4–5), 증거가 엇갈림' },
+  low:    { word: '낮음',      note: '포켓에 결합할 구조가 아니거나 pKi 4.0 미만' }
+};
+
+function rankAntagonists(evidenceFor) {
+  var rows = [];
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var ko = INGREDIENTS[i][0], en = INGREDIENTS[i][1], smi = INGREDIENTS[i][2];
+    var mol;
+    try { mol = AR.parseSmiles(smi); } catch (err) { continue; }
+    var ev = {};
+    try { ev = evidenceFor(smi, mol) || {}; } catch (err) { ev = {}; }
+    var res;
+    try { res = predict(smi, ev); } catch (err) { continue; }
+    var fc = res.functionCall;
+    if (fc.label !== 'antagonist') continue;
+
+    var pocket = res.pocket;
+    var motifs = AR.detectMotifs(mol);
+    /* A compound that is itself one of the 38 curated references matches
+     * itself at similarity 1.00, so calling that a "prediction" would dress
+     * an input up as a finding and put it at the top of the list for a
+     * circular reason. Its label is established pharmacology; say so, and
+     * let the reader filter these out to see what the tool actually
+     * flagged on its own.
+     *
+     * But only when the curated label actually says antagonist. DHEA is in
+     * the reference set as an AGONIST, and a Tox21 antagonist-mode hit was
+     * enough to put it in this list at #2 wearing a "문헌" badge - which
+     * reads as "the literature calls this an antagonist", the exact
+     * opposite of the truth. A curated label pointing the other way is the
+     * strongest disagreement available here, so it demotes. */
+    var curatedLabel = FUNCTION_CLASS[en] || null;
+    var curated = curatedLabel === 'antagonist';
+    var curatedConflict = !!curatedLabel && curatedLabel !== 'antagonist';
+    var flags = [];
+    /* The measured call and the structure point opposite ways.
+     *
+     * A bare steroid counts as a disagreement even when the pocket verdict
+     * stops short of "agonist", because the bulky 17-substituent is the one
+     * thing that separates a steroidal antagonist from an androgen - it is
+     * already the motif the functional call uses for exactly that. Without
+     * it, an antagonist-mode hit on a steroid is far more likely to be
+     * competition than antagonism. This catches DHEA, pregnenolone, estrone
+     * and finasteride, and leaves cyproterone, megestrol and chlormadinone
+     * alone. */
+    var bareSteroid = !!motifs.steroid && !motifs.steroidBulky;
+    var conflict = curatedConflict ||
+                   (fc.tier === 'measured' &&
+                    (pocket.verdictKey === 'agonist' || bareSteroid));
+    if (curatedConflict) {
+      flags.push('이 도구의 기능 레퍼런스는 이 물질을 ' +
+                 (CLASS_LABELS[curatedLabel] || curatedLabel) +
+                 '로 싣고 있습니다 — 어세이의 길항 신호와 정면으로 어긋납니다');
+    } else if (conflict) {
+      flags.push(pocket.verdictKey === 'agonist'
+        ? '실측은 길항, 구조는 작용제 — 길항제 모드는 경쟁만 해도 신호가 ' +
+          '내려가므로 부분작용제가 이렇게 잡힙니다'
+        : '부피 큰 치환기가 없는 스테로이드 — 스테로이드계 길항제를 ' +
+          '안드로겐과 가르는 특징이 없으므로, 길항이 아니라 경쟁일 수 있습니다');
+    }
+    var nonBinder = pocket.verdictKey === 'weak' || res.pKi < 4.0;
+    if (nonBinder) {
+      flags.push('포켓 결합 근거가 약합니다 — 길항 이전에 결합 자체가 의심스럽습니다');
+    }
+    if (res.domain === 'out') {
+      flags.push('적용영역 밖 — pKi 수치는 신뢰하지 마세요');
+    }
+    /* Shown, not demoted. A compound that kills cells lowers the reporter
+       signal and reads as antagonism, so it is worth saying - but
+       bicalutamide itself is cytotoxic in one of the three wells, so using
+       it to demote would bury the canonical antagonist. */
+    var toxRead = ev.tox21 ? readTox21(ev.tox21) : null;
+    if (fc.tier === 'measured' && toxRead && toxRead.cytotoxic) {
+      flags.push('다른 어세이에서 세포독성 — 세포를 죽여도 신호가 내려가므로 ' +
+                 '길항 활성이 과대평가될 수 있습니다');
+    }
+
+    var band;
+    if (nonBinder) band = 'low';
+    else if (curatedConflict) band = 'medium';
+    else if (curated) band = res.pKi < 5.0 ? 'medium' : 'high';
+    else if (fc.tier === 'possible' || conflict || res.pKi < 5.0) band = 'medium';
+    else band = 'high';
+
+    rows.push({
+      ko: ko, en: en, smiles: smi, curated: curated,
+      curatedLabel: curatedLabel,
+      tier: curated ? 'curated' : fc.tier, callTier: fc.tier,
+      pKi: res.pKi, domain: res.domain,
+      nearest: fc.nearest, support: fc.support,
+      pocketVerdict: pocket.verdict, occupancy: res.occupancy,
+      band: band, conflict: conflict, nonBinder: nonBinder,
+      cytotoxic: !!(toxRead && toxRead.cytotoxic),
+      flags: flags, evidence: fc.evidence || [],
+      refAntagonists: fc.refAntagonists || [],
+      mutantShift: res.mutantShift || null
+    });
+  }
+
+  /* Band first, then potency. Evidence quality is already baked into the
+     band, so ordering by tier inside it only pushed a measured pKi 5.0
+     above a predicted pKi 9.0, which is not the order anyone screening
+     ingredients wants. The tier stays visible as its own column. */
+  var bandOrder = { high: 3, medium: 2, low: 1 };
+  rows.sort(function (a, b) {
+    if (bandOrder[b.band] !== bandOrder[a.band]) return bandOrder[b.band] - bandOrder[a.band];
+    if (b.pKi !== a.pKi) return b.pKi - a.pKi;
+    return a.en < b.en ? -1 : 1;
+  });
+  for (var r = 0; r < rows.length; r++) rows[r].rank = r + 1;
+  return rows;
+}
+
 /* ---------------------------------------------------------- pocket layout */
 
 var POCKET_RESIDUES = [
@@ -768,6 +910,7 @@ var H12_RESIDUES = ['Thr877', 'Met895', 'Ile899'];
 /* How sure the functional call is, in words, with the rule next to it so
  * the label and the criterion can never drift apart. */
 var TIER_LABELS = {
+  curated:   { word: '문헌',        note: '이 도구의 기능 레퍼런스에 등재된 물질 — 예측이 아니라 입력' },
   measured:  { word: '실측',        note: 'Tox21 리포터 어세이에서 한쪽 모드만 활성' },
   predicted: { word: '예측',        note: '최근접 레퍼런스 유사도 0.35 이상, 한쪽 근거가 50% 이상' },
   possible:  { word: '가능성',      note: '근거 방향은 한쪽이지만 유사도가 0.35 미만' },
@@ -1344,6 +1487,8 @@ module.exports = {
   tierPhrase: tierPhrase,
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
+  rankAntagonists: rankAntagonists,
+  RANK_BANDS: RANK_BANDS,
   TOX21_MODES: TOX21_MODES,
   registerMeasured: registerMeasured,
   functionPool: functionPool,

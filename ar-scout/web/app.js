@@ -864,7 +864,7 @@ function renderSingle(result, title, subtitle) {
 
 /* ------------------------------------------------------------- tabs */
 
-var TABS = ['single', 'batch', 'library'];
+var TABS = ['single', 'batch', 'rank', 'library'];
 
 function selectTab(name) {
   for (var i = 0; i < TABS.length; i++) {
@@ -881,6 +881,224 @@ function selectTab(name) {
     var isSel = btns[j].getAttribute('data-tab') === name;
     btns[j].setAttribute('aria-selected', isSel ? 'true' : 'false');
   }
+}
+
+/* ------------------------------------------------- antagonist ranking */
+
+var rankRows = null;
+var rankSort = { key: 'rank', dir: 1 };
+
+/* The evidence a compound gets is assembled the same way the single-compound
+ * view does it, so the ranking cannot drift from what a lookup shows. */
+function evidenceFor(smiles, mol) {
+  var out = { dock: null, tox21: null };
+  try {
+    var scene = sceneData();
+    if (scene) {
+      var stored = scene.poses[structureKey(mol)];
+      if (stored && stored.placed) {
+        out.dock = { placed: true, affinity: stored.aff,
+                     ile899: (stored.c || []).indexOf('ILE899') >= 0,
+                     contacts: stored.c || [], hbonds: stored.hb || [] };
+      }
+    }
+  } catch (err) { /* no pose */ }
+  try {
+    if (typeof TOX21 !== 'undefined' && TOX21 && TOX21.calls) {
+      out.tox21 = TOX21.calls[AR.structureIdOf(mol)] || null;
+    }
+  } catch (err) { /* no table */ }
+  return out;
+}
+
+function ensureMeasuredPool() {
+  try {
+    if (typeof TOX21 !== 'undefined' && TOX21 && !measuredRegistered) {
+      PR.registerMeasured(TOX21);
+      measuredRegistered = true;
+    }
+  } catch (err) { /* optional */ }
+}
+
+function visibleRankRows() {
+  if (!rankRows) return [];
+  var showAll = $('rankall') && $('rankall').checked;
+  var onlyNew = $('ranknew') && $('ranknew').checked;
+  var rows = rankRows.filter(function (r) {
+    if (!showAll && r.band === 'low') return false;
+    if (onlyNew && r.curated) return false;
+    return true;
+  });
+  var k = rankSort.key, d = rankSort.dir;
+  if (k !== 'rank') {
+    rows.sort(function (a, b) {
+      var x = a[k], y = b[k];
+      if (typeof x === 'string') return d * (x < y ? -1 : (x > y ? 1 : 0));
+      return d * ((x || 0) - (y || 0));
+    });
+  } else if (d < 0) {
+    rows.reverse();
+  }
+  return rows;
+}
+
+function renderRank() {
+  var host = $('rank-out');
+  if (!host || !rankRows) return;
+  var rows = visibleRankRows();
+  var counts = { high: 0, medium: 0, low: 0 };
+  for (var c = 0; c < rankRows.length; c++) counts[rankRows[c].band]++;
+
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>길항제 후보 ' + rankRows.length + '종 / 사전 ' +
+           PR.INGREDIENTS.length + '종</h3>');
+  var curatedN = 0;
+  for (var cu = 0; cu < rankRows.length; cu++) if (rankRows[cu].curated) curatedN++;
+  out.push('<dl class="tiles">');
+  out.push(tile('우선 확인', String(counts.high)));
+  out.push(tile('참고', String(counts.medium)));
+  out.push(tile('낮음', String(counts.low)));
+  out.push(tile('문헌 등재', String(curatedN)));
+  out.push('</dl>');
+  out.push('<p class="hint"><b>문헌 등재 ' + curatedN + '종은 이 도구의 입력이지 ' +
+           '발견이 아닙니다.</b> 기능 레퍼런스에 실린 물질이라 자기 자신과 ' +
+           '유사도 1.00으로 맞으므로, 「예측」이라고 적으면 순환 논리가 됩니다. ' +
+           '위의 「도구가 찾은 것만」을 켜면 나머지 ' +
+           (rankRows.length - curatedN) + '종만 남습니다.</p>');
+
+  out.push('<h4 class="sect">정렬 기준</h4>');
+  out.push('<p class="hint">먼저 <b>구간</b>으로 나누고, 같은 구간 안에서는 ' +
+           '<b>예측 pKi가 높은 순</b>입니다. 증거의 질은 구간에 이미 반영돼 ' +
+           '있으므로, 구간 안에서까지 실측을 예측보다 앞세우면 실측 pKi 5.0이 ' +
+           '예측 pKi 9.0 위로 올라가 버립니다. 증거 등급은 별도 열로 봅니다.</p>');
+  out.push('<table><thead><tr><th>구간</th><th>조건</th></tr></thead><tbody>');
+  var bandKeys = ['high', 'medium', 'low'];
+  // (the evidence-tier legend follows the band legend, below)
+  for (var b = 0; b < bandKeys.length; b++) {
+    var bd = PR.RANK_BANDS[bandKeys[b]];
+    out.push('<tr><td><span class="band ' + bandKeys[b] + '">' + esc(bd.word) +
+             '</span></td><td>' + esc(bd.note) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  out.push('<h4 class="sect">증거 등급</h4>');
+  out.push('<table><thead><tr><th>등급</th><th>뜻</th></tr></thead><tbody>');
+  var tierKeys = ['curated', 'measured', 'predicted', 'possible'];
+  for (var tk = 0; tk < tierKeys.length; tk++) {
+    out.push('<tr><td><b>' + esc(PR.TIER_LABELS[tierKeys[tk]].word) + '</b></td><td>' +
+             esc(PR.TIER_LABELS[tierKeys[tk]].note) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  out.push('<p class="hint" style="margin-top:10px">' +
+           '<b>강등 규칙 두 가지는 이 목록의 첫 초안을 보고 만들었습니다.</b> ' +
+           'DHEA가 1위로 나왔습니다 — Tox21은 길항이라 하지만 구조는 작용제 ' +
+           '(부피 큰 치환기 없는 3-케토 스테로이드)이고, DHEA는 안드로겐 ' +
+           '전구체입니다. 길항제 모드는 기준 작용제와 함께 넣어 신호 감소를 ' +
+           '재므로 <b>경쟁만 해도 잡힙니다</b>(알려진 부분작용제 5종이 5종 모두 ' +
+           '그렇게 나옵니다). 그래서 실측과 구조가 엇갈리면 어세이만 믿고 ' +
+           '올리지 않고 모순을 표시합니다. 포화지방산들도 들어와 있었는데, ' +
+           '포켓 판정이 「결합 가능성 낮음」이었습니다 — 결합하지 않는 것은 ' +
+           '길항제일 수 없습니다. 둘 다 지우지 않고 아래로 내린 뒤 이유를 ' +
+           '적습니다.</p>');
+  out.push('</div>');
+
+  out.push('<div class="panel">');
+  out.push('<h3>순위</h3>');
+  function th(key, label, num) {
+    var arrow = rankSort.key === key ? (rankSort.dir > 0 ? '▲' : '▼') : '⇅';
+    return '<th class="sortable' + (num ? ' num' : '') + '" data-sort="' + key +
+           '">' + esc(label) + '<span class="arrow">' + arrow + '</span></th>';
+  }
+  out.push('<table><thead><tr>');
+  out.push(th('rank', '#'));
+  out.push('<th>물질</th>');
+  out.push('<th>구간</th>');
+  out.push(th('tier', '증거'));
+  out.push(th('pKi', '예측 pKi', true));
+  out.push(th('nearest', '최근접', true));
+  out.push('<th>비고</th>');
+  out.push('</tr></thead><tbody>');
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var note = r.flags.length
+      ? r.flags.map(function (f) { return f.split(' — ')[0]; }).join(' · ')
+      : '';
+    out.push('<tr' + (r.flags.length ? ' class="flagged"' : '') + '>' +
+             '<td class="rankno">' + r.rank + '</td>' +
+             '<td><b>' + esc(r.ko) + '</b><br><span class="hint">' + esc(r.en) +
+             '</span></td>' +
+             '<td><span class="band ' + r.band + '">' +
+             esc(PR.RANK_BANDS[r.band].word) + '</span></td>' +
+             '<td>' + esc(PR.TIER_LABELS[r.tier].word) + '</td>' +
+             '<td class="num">' + fx(r.pKi, 2) +
+             (r.domain === 'out' ? ' <span class="hint">영역밖</span>' : '') + '</td>' +
+             '<td class="num">' + fx(r.nearest, 2) + '</td>' +
+             '<td class="hint">' + esc(note) + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  if (!$('rankall') || !$('rankall').checked) {
+    out.push('<p class="hint" style="margin-top:10px">「낮음」 ' + counts.low +
+             '종은 숨겨져 있습니다 — 포켓에 결합할 구조가 아니거나 pKi 4.0 ' +
+             '미만입니다. 위 체크박스로 펼칠 수 있습니다.</p>');
+  }
+  out.push('</div>');
+
+  /* the flagged entries in full, because a truncated caveat is not a caveat */
+  var flagged = rankRows.filter(function (x) { return x.flags.length; });
+  if (flagged.length) {
+    out.push('<div class="panel"><h3>주의가 붙은 ' + flagged.length + '종</h3>');
+    out.push('<ul class="why">');
+    for (var g = 0; g < flagged.length; g++) {
+      for (var h = 0; h < flagged[g].flags.length; h++) {
+        out.push('<li><span class="d">#' + flagged[g].rank + '</span><span><b>' +
+                 esc(flagged[g].ko) + '</b> — ' + esc(flagged[g].flags[h]) +
+                 '</span></li>');
+      }
+    }
+    out.push('</ul></div>');
+  }
+  host.innerHTML = out.join('');
+
+  var heads = host.querySelectorAll('th.sortable');
+  for (var q = 0; q < heads.length; q++) {
+    heads[q].onclick = (function (key) {
+      return function () {
+        if (rankSort.key === key) rankSort.dir = -rankSort.dir;
+        else { rankSort.key = key; rankSort.dir = key === 'rank' ? 1 : -1; }
+        renderRank();
+      };
+    })(heads[q].getAttribute('data-sort'));
+  }
+}
+
+function runRank() {
+  showError('rank-err', '');
+  var host = $('rank-out');
+  if (host) host.innerHTML = '<div class="panel"><p class="hint">' +
+    PR.INGREDIENTS.length + '종을 모두 계산하는 중입니다…</p></div>';
+  ensureMeasuredPool();
+  setTimeout(function () {
+    try {
+      rankRows = PR.rankAntagonists(evidenceFor);
+      renderRank();
+    } catch (err) {
+      if (host) host.innerHTML = '';
+      showError('rank-err', '순위 계산 실패: ' + err.message);
+    }
+  }, 20);
+}
+
+function rankTsv() {
+  var rows = visibleRankRows();
+  var lines = ['순위\t한글명\t영문명\t구간\t증거등급\t예측pKi\t적용영역\t최근접유사도\t포켓판정\t주의\tSMILES'];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    lines.push([r.rank, r.ko, r.en, PR.RANK_BANDS[r.band].word,
+                PR.TIER_LABELS[r.tier].word, r.pKi.toFixed(2), r.domain,
+                r.nearest.toFixed(3), r.pocketVerdict,
+                r.flags.join(' / '), r.smiles].join('\t'));
+  }
+  return lines.join('\n');
 }
 
 /* ------------------------------------------------------- single tab */
@@ -1085,10 +1303,11 @@ function batchTsv() {
   return lines.join('\n');
 }
 
-function copyTsv() {
-  if (!batchRows.length) { showError('batch-err', '복사할 결과가 없습니다.'); return; }
-  var text = batchTsv();
-  var done = function () { showError('batch-err', ''); };
+function copyTsv() { copyText(batchRows.length ? batchTsv() : '', 'batch-err'); }
+
+function copyText(text, errHost) {
+  if (!text) { showError(errHost, '복사할 결과가 없습니다.'); return; }
+  var done = function () { showError(errHost, ''); };
   var fallback = function () {
     try {
       var ta = document.createElement('textarea');
@@ -1099,7 +1318,7 @@ function copyTsv() {
       document.body.removeChild(ta);
       done();
     } catch (err) {
-      showError('batch-err', '클립보드 복사에 실패했습니다. 결과 표를 직접 선택해 복사해 주세요.');
+      showError(errHost, '클립보드 복사에 실패했습니다. 결과 표를 직접 선택해 복사해 주세요.');
     }
   };
   try {
@@ -1481,6 +1700,13 @@ function init() {
     runBatch(SAMPLE_BATCH);
   });
   on('batchcopy', 'click', copyTsv);
+
+  on('rankrun', 'click', function () { runRank(); });
+  on('rankcopy', 'click', function () {
+    copyText(rankRows ? rankTsv() : '', 'rank-err');
+  });
+  on('rankall', 'change', function () { if (rankRows) renderRank(); });
+  on('ranknew', 'change', function () { if (rankRows) renderRank(); });
   on('batchfile', 'change', function (ev) {
     readFile(ev.target, function (text) {
       var ta = $('batchin');

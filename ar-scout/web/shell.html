@@ -261,7 +261,30 @@ label.filebtn {
   padding: 13px 18px;
 }
 label.filebtn input { display: none; }
-.btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+label.chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  padding: 13px 4px;
+  white-space: nowrap;
+}
+label.chk input { width: 17px; height: 17px; accent-color: var(--blue); cursor: pointer; }
+
+/* ranking table: the band chip and the sortable headers */
+.band { font-weight: 700; font-size: 12px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.band.high { background: rgba(255,59,48,.14); color: var(--red); }
+.band.medium { background: rgba(255,149,0,.16); color: #b26200; }
+.band.low { background: var(--card-sub); color: var(--ink-3); }
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: var(--blue); }
+th.sortable .arrow { opacity: .45; font-size: 10px; margin-left: 3px; }
+tr.flagged td:first-child { box-shadow: inset 3px 0 0 #FF9500; }
+.rankno { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-3); }
 
 .err {
   background: var(--red-wash);
@@ -510,6 +533,7 @@ footer.foot {
   <nav class="tabs" id="tabs">
     <button type="button" data-tab="single" aria-selected="true">단건 조회</button>
     <button type="button" data-tab="batch" aria-selected="false">배치 스크리닝</button>
+    <button type="button" data-tab="rank" aria-selected="false">길항제 순위</button>
     <button type="button" data-tab="library" aria-selected="false">레퍼런스</button>
   </nav>
 
@@ -549,6 +573,23 @@ footer.foot {
       <div id="batch-err"></div>
     </div>
     <div id="batch-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ antagonist ranking -->
+  <section id="tab-rank" class="hidden">
+    <div class="panel">
+      <h2>길항제 순위 — 사전 전체</h2>
+      <p class="hint">사전에 실린 모든 물질을 돌려, 길항제로 판정된 것만 우선순위대로 세웁니다.
+        정렬 기준은 아래에 그대로 적어 두었고, 열 제목을 누르면 다시 정렬됩니다.</p>
+      <div class="btnbar">
+        <button class="go" id="rankrun" type="button">전체 순위 계산</button>
+        <button class="alt" id="rankcopy" type="button">TSV 복사</button>
+        <label class="chk"><input type="checkbox" id="rankall"> 낮음 구간까지 모두 보기</label>
+        <label class="chk"><input type="checkbox" id="ranknew"> 도구가 찾은 것만 (문헌 등재 제외)</label>
+      </div>
+      <div id="rank-err"></div>
+    </div>
+    <div id="rank-out"></div>
   </section>
 
   <!-- ------------------------------------------------ library -->
