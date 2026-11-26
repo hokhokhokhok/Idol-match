@@ -495,10 +495,91 @@ var SIM_FLOOR = 0.15;     /* below this, read-across has never been tested */
 /* Compounds the Tox21 screen called unambiguously but that nobody curated
  * a label for. They are measurements, so they belong in the read-across
  * pool - and they are the only thing in it that lives in polyphenol space,
- * where the curated set (drugs and pesticides) has nothing to say. Adding
- * them leaves the curated leave-one-out score unchanged at 31/38, so they
- * buy coverage rather than accuracy, exactly as the Tox21 verdicts do. */
+ * where the curated set (drugs and pesticides) has nothing to say.
+ *
+ * The first version of this admitted anything with an unambiguous code and
+ * was never read by a human. That put hydrocortisone, prednisolone and
+ * corticosterone into the pool as "measured AR AGONISTS", voting on other
+ * compounds. They are glucocorticoids. One of the three screens is run in
+ * MDA-kb2, whose reporter is MMTV-luc, and the MMTV promoter is a direct
+ * GR response element in a line that expresses GR - so a GR agonist lights
+ * it up without touching AR at all. The measurement is real; the label on
+ * it was not.
+ *
+ * What a reporter number cannot tell you is which receptor produced it.
+ * That takes pharmacology, so the exclusions are written out by hand with
+ * a reason each, rather than inferred from the assay code. */
+var POOL_EXCLUSIONS = {
+  'Hydrocortisone':  'GR 작용제 — MMTV-luc은 GR 반응 프로모터라 AR 없이도 켜집니다',
+  'Prednisolone':    'GR 작용제 — 위와 같음',
+  'Corticosterone':  'GR 작용제 — 위와 같음',
+  'Dexamethasone':   'GR 작용제 — 위와 같음',
+  'Hydrocortisone acetate': 'GR 작용제 — 위와 같음',
+  'Finasteride':     '5α-환원효소 억제제입니다. AR 리간드가 아니라 DHT 생성을 막습니다',
+  'Dutasteride':     '5α-환원효소 억제제 — 위와 같음',
+  'Pregnenolone':    '스테로이드 전구체 — 길항제 모드 신호는 경쟁으로 설명됩니다',
+  'DHEA':            '안드로겐 전구체 — 레퍼런스 라벨도 작용제입니다',
+  'Retinol':         'RAR 리간드이고 다른 웰에서 세포독성입니다',
+  'Retinal':         'RAR 리간드 — 위와 같음',
+  'Retinyl acetate': 'RAR 리간드 — 위와 같음',
+  'Retinyl palmitate': 'RAR 리간드 — 위와 같음',
+  'Retinyl propionate': 'RAR 리간드 — 위와 같음'
+};
+
+/* Kept, but these carry a caveat worth stating when they are the reason for
+ * a call: their dominant pharmacology is ER, not AR. MMTV is not an
+ * oestrogen-response element, so unlike the glucocorticoids they have no
+ * direct route to the reporter, and weak AR competition is a real reading -
+ * it is just not their day job. */
+var POOL_CAVEATS = {
+  'Estrone': 'ER 리간드 — AR 경쟁은 약합니다',
+  'Estriol': 'ER 리간드 — AR 경쟁은 약합니다',
+  'Estradiol': 'ER 리간드 — AR 경쟁은 약합니다',
+  'Genistein': '파이토에스트로겐 — ER 활성이 더 강합니다',
+  'Apigenin': '파이토에스트로겐 — ER 활성이 더 강합니다',
+  'Resveratrol': '파이토에스트로겐 — ER 활성이 더 강합니다'
+};
+
 var measuredPool = null;
+var excludedIds = null;
+
+/* Keyed by structure, so the exclusion follows the molecule however its
+ * SMILES was written and whatever the caller happens to know its name to
+ * be. Built once, lazily, from the dictionary. */
+var curatedIds = null;
+
+/* The hand-curated functional label, reachable from a structure. It is the
+ * most authoritative thing here - established pharmacology rather than one
+ * reporter well - so it outranks both the assay and the read-across, and it
+ * outranks a mechanism block: DHEA is on the exclusion list because its
+ * antagonist-mode signal is competition, but the reference set already
+ * knows it is an agonist, and refusing to say so would be throwing away the
+ * better answer. */
+function curatedStructureIds() {
+  if (curatedIds) return curatedIds;
+  curatedIds = {};
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var cls = FUNCTION_CLASS[INGREDIENTS[i][1]];
+    if (!cls) continue;
+    try {
+      curatedIds[AR.structureIdOf(AR.parseSmiles(INGREDIENTS[i][2]))] = cls;
+    } catch (err) { /* unparsable, so unreachable anyway */ }
+  }
+  return curatedIds;
+}
+
+function excludedStructureIds() {
+  if (excludedIds) return excludedIds;
+  excludedIds = {};
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var reason = POOL_EXCLUSIONS[INGREDIENTS[i][1]];
+    if (!reason) continue;
+    try {
+      excludedIds[AR.structureIdOf(AR.parseSmiles(INGREDIENTS[i][2]))] = reason;
+    } catch (err) { /* a structure that will not parse cannot be excluded */ }
+  }
+  return excludedIds;
+}
 
 function registerMeasured(toxTable) {
   measuredPool = [];
@@ -512,6 +593,11 @@ function registerMeasured(toxTable) {
     if (!code) continue;
     var read = readTox21(code);
     if (!read || !read.verdict || read.verdict === 'inactive') continue;
+    /* another receptor explains this reporter better than AR does */
+    if (POOL_EXCLUSIONS[en]) continue;
+    /* a compound that kills cells lowers the signal; that is not antagonism
+       and it must not be allowed to teach the read-across */
+    if (read.cytotoxic && read.verdict === 'antagonist') continue;
     var informative = read.informative;
     /* A verdict resting on one assay out of three, with the other two
      * inconclusive, is not enough to let a compound vote on its
@@ -523,6 +609,7 @@ function registerMeasured(toxTable) {
     if (informative < 2) continue;
     measuredPool.push({
       n: en, c: read.verdict, measured: true, assays: informative,
+      caveat: POOL_CAVEATS[en] || null,
       fp: AR.packFingerprint(AR.morganFingerprint(mol, 2))
     });
   }
@@ -605,8 +692,39 @@ function callFunction(fp, options) {
     };
   }
 
-  /* A measured result ends the argument. */
+  /* A measured result ends the argument - unless another receptor explains
+   * the reporter better than AR does. Excluding these from the read-across
+   * pool was only half the fix: hydrocortisone still headlined its own page
+   * as "AR 작용제 (실측)" on the strength of an MMTV-luc well that GR drives
+   * directly. The assay rows are still shown; the verdict is withheld and
+   * the reason is given. */
+  var blockedReason = options.structureId
+    ? (excludedStructureIds()[options.structureId] || null) : null;
   var tox = options.tox21 ? readTox21(options.tox21) : null;
+  /* Never when a compound is being held out: leave-one-out exists to ask
+   * what the engine says about a molecule it has not been told about, and
+   * answering from the curated label would score 38/38 for free. */
+  var curatedHere = (options.structureId && !options.exclude)
+    ? (curatedStructureIds()[options.structureId] || null) : null;
+  if (curatedHere) {
+    evidence.push('기능 레퍼런스에 등재된 물질 — 예측이 아니라 입력입니다');
+    if (tox) evidence.push('Tox21 실측도 있습니다 (표 참조)');
+    var curatedOut = result(curatedHere, 'curated', null);
+    curatedOut.tox21 = tox;
+    return curatedOut;
+  }
+  if (blockedReason) {
+    /* Falling through to read-across was the first attempt and it was worse:
+     * hydrocortisone came back "길항제 가능성" because a glucocorticoid looks
+     * like a steroid. When the one measurement is known to be confounded and
+     * the structural route is known to mislead for this scaffold, the honest
+     * output is no call, with the reason and the assay rows still shown. */
+    if (tox) tox.blocked = blockedReason;
+    evidence.push('AR 판정을 내리지 않습니다 — ' + blockedReason);
+    var blockedOut = result('unknown', 'blocked', blockedReason);
+    blockedOut.tox21 = tox;
+    return blockedOut;
+  }
   if (tox && tox.verdict) {
     var informative = tox.informative;
     var note = 'Tox21 리포터 어세이 실측';
@@ -723,6 +841,35 @@ function callFunction(fp, options) {
     '최근접 유사도 ' + nearest.toFixed(2) + '에서 증거가 갈립니다 (' +
     (100 * share).toFixed(0) + '% 우세).');
 }
+
+/* ------------------------------------------- reference provenance ----
+ *
+ * The 28 affinities were carried with no record of assay, species or
+ * source and an MAE was quoted against them as if they were one scale.
+ * Asking ChEMBL directly: 273 of the AR activities behind these compounds
+ * are human, 44 are rat and 11 mouse, 7 references have no human AR record
+ * at all, and 4 could not be traced to an AR activity in ChEMBL - including
+ * dihydrotestosterone, the single most important reference in the library.
+ *
+ * The numbers are not thereby wrong. What is wrong is quoting a 0.5 log
+ * MAE against them without saying that rat prostate-cytosol binding and
+ * human LBD assays are pooled in the same column, so the grade travels
+ * with every reference the UI shows. */
+var PROV_GRADE_KO = {
+  human: { word: '사람 AR', note: 'ChEMBL AR 활성이 전부 사람입니다' },
+  mixed: { word: '종 혼재', note: '사람 데이터가 주이지만 랫·마우스가 섞여 있습니다' },
+  nonhuman: { word: '비사람', note: '사람 AR 기록이 없습니다 — 랫·마우스 데이터뿐입니다' },
+  untraceable: { word: '추적 불가', note: 'ChEMBL에서 이 물질의 AR 활성을 찾지 못했습니다' }
+};
+
+/* Not a provenance problem but found in the same pass: a reference that is
+ * not an AR ligand at all. */
+var REFERENCE_NOTES = {
+  'Vinclozolin': '프로안티안드로겐입니다. AR에 결합하는 것은 빈클로졸린이 아니라 ' +
+                 '대사체 M1·M2이므로, 이 pKi를 직접 결합값으로 읽으면 안 됩니다.',
+  'Dihydrotestosterone': '이 라이브러리의 기준점인데 ChEMBL에서 출처를 ' +
+                 '되짚지 못했습니다. 값 자체는 교과서적이지만 추적은 안 됩니다.'
+};
 
 /* --------------------------------------------- affinity ranking ------
  *
@@ -1133,6 +1280,7 @@ var H12_RESIDUES = ['Thr877', 'Met895', 'Ile899'];
 /* How sure the functional call is, in words, with the rule next to it so
  * the label and the criterion can never drift apart. */
 var TIER_LABELS = {
+  blocked:   { word: '판정 보류',   note: 'AR 외의 수용체가 이 신호를 더 잘 설명합니다 — 아래 이유 참조' },
   curated:   { word: '문헌',        note: '이 도구의 기능 레퍼런스에 등재된 물질 — 예측이 아니라 입력' },
   measured:  { word: '실측',        note: 'Tox21 리포터 어세이에서 한쪽 모드만 활성' },
   predicted: { word: '예측',        note: '최근접 레퍼런스 유사도 0.35 이상, 한쪽 근거가 50% 이상' },
@@ -1144,7 +1292,7 @@ function tierPhrase(tier, label) {
   var t = TIER_LABELS[tier];
   var cls = CLASS_LABELS[label] || label;
   if (!t) return cls;
-  if (tier === 'unknown') return t.word;
+  if (tier === 'unknown' || tier === 'blocked') return t.word;
   if (tier === 'possible') return cls + ' 가능성';
   /* CLASS_LABELS.inactive already carries "(실측)"; do not say it twice */
   if (cls.indexOf('(' + t.word + ')') >= 0) return cls;
@@ -1290,7 +1438,20 @@ function mapContacts(desc, motifs, dock) {
       for (var hi = 0; hi < H12_RESIDUES.length; hi++) {
         if (contact[H12_RESIDUES[hi]]) clash[H12_RESIDUES[hi]] = true;
       }
-      notes.push('도킹 포즈가 helix-12 말단(Ile899)에 닿음 — AF-2 교란 가능');
+      /* Worth stating what this can and cannot mean. 2AM9 is the agonist
+     * conformation: helix-12 is already folded over the pocket like a lid,
+     * and the receptor is rigid during docking. A real antagonist works by
+     * pushing that helix out, which is a motion this calculation cannot
+     * perform - enzalutamide does not even place here. So "touches Ile899"
+     * is not a detection of antagonism; it is a detection of a ligand long
+     * enough to reach the closed lid. It fired on 4 of 22 with no false
+     * positives, and n = 4. */
+    notes.push('도킹 포즈가 helix-12 말단(Ile899)에 닿음 — AF-2 교란 가능. ' +
+               '다만 2AM9는 작용제 형태라 helix-12가 이미 닫혀 있고 도킹 중 ' +
+               '수용체는 고정입니다. 진짜 길항제가 하는 helix-12 밀어내기는 ' +
+               '이 계산이 재현할 수 없는 동작이라(엔잘루타미드는 배치조차 실패), ' +
+               '이 신호는 길항성 탐지가 아니라 「닫힌 뚜껑에 닿을 만큼 긴 분자」 ' +
+               '탐지에 가깝습니다. 22종 중 4종에서 발동했고 위양성은 0이었습니다.');
     }
     var hbs = [];
     for (var bi = 0; bi < (dock.hbonds || []).length; bi++) {
@@ -1436,7 +1597,8 @@ function predict(smiles, options) {
 
   var functionCall = callFunction(fp, {
     exclude: exclude, dock: options.dock || null, motifs: motifs,
-    tox21: options.tox21 || null
+    tox21: options.tox21 || null,
+    structureId: AR.structureIdOf(mol)
   });
 
   var wRead = nearest >= 0.55 ? 0.78 : (nearest >= 0.35 ? 0.50 : 0.20);
@@ -1706,6 +1868,8 @@ module.exports = {
   resetLibrary: resetLibrary,
   REFERENCE_DEFAULT: REFERENCE_DEFAULT,
   CLASS_LABELS: CLASS_LABELS,
+  PROV_GRADE_KO: PROV_GRADE_KO,
+  REFERENCE_NOTES: REFERENCE_NOTES,
   TIER_LABELS: TIER_LABELS,
   tierPhrase: tierPhrase,
   FUNCTION_CLASS: FUNCTION_CLASS,
@@ -1718,6 +1882,8 @@ module.exports = {
   RANK_BANDS: RANK_BANDS,
   TOX21_MODES: TOX21_MODES,
   registerMeasured: registerMeasured,
+  POOL_EXCLUSIONS: POOL_EXCLUSIONS,
+  POOL_CAVEATS: POOL_CAVEATS,
   functionPool: functionPool,
   SIM_CALL: SIM_CALL,
   SIM_POSSIBLE: SIM_POSSIBLE,

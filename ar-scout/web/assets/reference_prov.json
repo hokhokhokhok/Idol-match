@@ -1,0 +1,268 @@
+{
+ "source": "ChEMBL API, AR 타깃 활성(Ki/IC50/Kd/EC50)",
+ "fetched": "2026-11-26",
+ "refs": {
+  "Metribolone (R1881)": {
+   "id": "CHEMBL166444",
+   "n_ar": 20,
+   "org": {
+    "Homo sapiens": 17,
+    "Rattus norvegicus": 3
+   },
+   "grade": "mixed",
+   "assay": "Dissociation constant for [3H]R-1881 binding to human androgen receptor at 273 K"
+  },
+  "Trenbolone": {
+   "id": "CHEMBL197309",
+   "n_ar": 1,
+   "org": {
+    "Rattus norvegicus": 1
+   },
+   "grade": "nonhuman",
+   "assay": "Inhibitory concentration against recombinant rat androgen receptor expressed in Escherichia coli using [3H]methyltrienolone (R 1881)"
+  },
+  "Dihydrotestosterone": {
+   "id": "CHEMBL3275971",
+   "n_ar": 0,
+   "org": {},
+   "grade": "untraceable",
+   "assay": null
+  },
+  "Nandrolone": {
+   "id": "CHEMBL757",
+   "n_ar": 2,
+   "org": {
+    "Rattus norvegicus": 2
+   },
+   "grade": "nonhuman",
+   "assay": "DRUGMATRIX: Androgen (Testosterone) AR radioligand binding (ligand: [3H] Mibolerone)"
+  },
+  "Testosterone": {
+   "id": "CHEMBL386630",
+   "n_ar": 15,
+   "org": {
+    "Rattus norvegicus": 6,
+    "Homo sapiens": 8,
+    "Mus musculus": 1
+   },
+   "grade": "mixed",
+   "assay": "In vitro antagonist activity against rat prostatic androgen receptor (AR)"
+  },
+  "RU-59063": {
+   "id": "CHEMBL9337",
+   "n_ar": 9,
+   "org": {
+    "Rattus norvegicus": 3,
+    "Homo sapiens": 6
+   },
+   "grade": "mixed",
+   "assay": "Binding affinity against rat prostate cytosolic Androgen receptor using [3H]mibolerone as radioligand"
+  },
+  "Methyltestosterone": {
+   "id": "CHEMBL1395",
+   "n_ar": 1,
+   "org": {
+    "Rattus norvegicus": 1
+   },
+   "grade": "nonhuman",
+   "assay": "Inhibitory concentration against recombinant rat androgen receptor expressed in Escherichia coli using [3H]methyltrienolone (R 1881)"
+  },
+  "Medroxyprogesterone acetate": {
+   "id": "CHEMBL717",
+   "n_ar": 15,
+   "org": {
+    "Homo sapiens": 8,
+    "Mus musculus": 3,
+    "Rattus norvegicus": 4
+   },
+   "grade": "mixed",
+   "assay": "Inhibition of DHT binding to human androgen receptor expressed in baculovirus SF-12 cells"
+  },
+  "Darolutamide": {
+   "id": "CHEMBL4297185",
+   "n_ar": 17,
+   "org": {
+    "Homo sapiens": 17
+   },
+   "grade": "human",
+   "assay": "Inhibition of androgen receptor (unknown origin)"
+  },
+  "Cyproterone acetate": {
+   "id": "CHEMBL139835",
+   "n_ar": 4,
+   "org": {
+    "Homo sapiens": 2,
+    "Rattus norvegicus": 2
+   },
+   "grade": "mixed",
+   "assay": "Antagonistic activity against human androgen receptor (hAR) in co-transfected CV-1 cells."
+  },
+  "Apalutamide": {
+   "id": "CHEMBL3183409",
+   "n_ar": 15,
+   "org": {
+    "Homo sapiens": 14,
+    "Rattus norvegicus": 1
+   },
+   "grade": "mixed",
+   "assay": "Antagonist activity at androgen receptor (unknown origin)"
+  },
+  "Enzalutamide": {
+   "id": "CHEMBL1082407",
+   "n_ar": 74,
+   "org": {
+    "Homo sapiens": 68,
+    "Rattus norvegicus": 6
+   },
+   "grade": "mixed",
+   "assay": "Inhibition of BF3 site of androgen receptor in enzalutamide-resistant human LNCAP cells assessed as reduction in PSA level after 3 days"
+  },
+  "Progesterone": {
+   "id": "CHEMBL103",
+   "n_ar": 14,
+   "org": {
+    "Homo sapiens": 12,
+    "Mus musculus": 1,
+    "Rattus norvegicus": 1
+   },
+   "grade": "mixed",
+   "assay": "Displacement of DHT from human androgen receptor expressed in baculovirus SF-12 cells"
+  },
+  "Hydroxyflutamide": {
+   "id": "CHEMBL491",
+   "n_ar": 36,
+   "org": {
+    "Rattus norvegicus": 1,
+    "Homo sapiens": 31,
+    "Mus musculus": 4
+   },
+   "grade": "mixed",
+   "assay": "In vivo binding affinity for rat ventral prostate androgen receptor by displacement of [3H]R-1881"
+  },
+  "Clascoterone": {
+   "id": "CHEMBL3590187",
+   "n_ar": 2,
+   "org": {
+    "Homo sapiens": 2
+   },
+   "grade": "human",
+   "assay": "Displacement of [3H]methyltrienolone from androgen receptor in human prostate cancer cells"
+  },
+  "Spironolactone": {
+   "id": "CHEMBL1393",
+   "n_ar": 5,
+   "org": {
+    "Rattus norvegicus": 3,
+    "Homo sapiens": 2
+   },
+   "grade": "mixed",
+   "assay": "Inhibitory concentration against recombinant rat androgen receptor expressed in Escherichia coli using [3H]methyltrienolone (R 1881)"
+  },
+  "Bicalutamide": {
+   "id": "CHEMBL409",
+   "n_ar": 76,
+   "org": {
+    "Homo sapiens": 68,
+    "Rattus norvegicus": 6,
+    "Mus musculus": 2
+   },
+   "grade": "mixed",
+   "assay": "Agonistic activity against human androgen receptor (hAR) in co-transfected CV-1 cell"
+  },
+  "Nilutamide": {
+   "id": "CHEMBL1274",
+   "n_ar": 4,
+   "org": {
+    "Homo sapiens": 4
+   },
+   "grade": "human",
+   "assay": "Inhibition of 1.0 nM [3H]mibolerone binding to human androgen receptor of PC3/AR cell lysate"
+  },
+  "Vinclozolin": {
+   "id": "CHEMBL513221",
+   "n_ar": 0,
+   "org": {},
+   "grade": "untraceable",
+   "assay": null
+  },
+  "p,p'-DDE": {
+   "id": "CHEMBL363207",
+   "n_ar": 1,
+   "org": {
+    "Rattus norvegicus": 1
+   },
+   "grade": "nonhuman",
+   "assay": "Inhibitory concentration against recombinant rat androgen receptor expressed in Escherichia coli using [3H]methyltrienolone (R 1881)"
+  },
+  "Estradiol": {
+   "id": "CHEMBL135",
+   "n_ar": 5,
+   "org": {
+    "Homo sapiens": 4,
+    "Rattus norvegicus": 1
+   },
+   "grade": "mixed",
+   "assay": "Binding affinity for human Androgen receptor; ND = Not determined"
+  },
+  "Genistein": {
+   "id": "CHEMBL44",
+   "n_ar": 2,
+   "org": {
+    "Rattus norvegicus": 1,
+    "Homo sapiens": 1
+   },
+   "grade": "mixed",
+   "assay": "Inhibitory concentration against recombinant rat androgen receptor expressed in Escherichia coli using [3H]methyltrienolone (R 1881)"
+  },
+  "Flutamide": {
+   "id": "CHEMBL806",
+   "n_ar": 9,
+   "org": {
+    "Homo sapiens": 9
+   },
+   "grade": "human",
+   "assay": "Inhibition of 1.0 nM [3H]mibolerone binding to human androgen receptor of PC3/AR cell lysate"
+  },
+  "Butylparaben": {
+   "id": "CHEMBL459008",
+   "n_ar": 0,
+   "org": {},
+   "grade": "untraceable",
+   "assay": null
+  },
+  "Finasteride": {
+   "id": "CHEMBL710",
+   "n_ar": 1,
+   "org": {
+    "Rattus norvegicus": 1
+   },
+   "grade": "nonhuman",
+   "assay": "In vitro antagonist activity against rat prostatic androgen receptor (AR)"
+  },
+  "Niacinamide": {
+   "id": "CHEMBL1140",
+   "n_ar": 2,
+   "org": {
+    "Rattus norvegicus": 2
+   },
+   "grade": "nonhuman",
+   "assay": "DRUGMATRIX: Androgen (Testosterone) AR radioligand binding (ligand: [3H] Mibolerone)"
+  },
+  "Caffeine": {
+   "id": "CHEMBL113",
+   "n_ar": 0,
+   "org": {},
+   "grade": "untraceable",
+   "assay": null
+  },
+  "Panthenol": {
+   "id": "CHEMBL1371937",
+   "n_ar": 2,
+   "org": {
+    "Rattus norvegicus": 2
+   },
+   "grade": "nonhuman",
+   "assay": "DRUGMATRIX: Androgen (Testosterone) AR radioligand binding (ligand: [3H] Mibolerone)"
+  }
+ }
+}

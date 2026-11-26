@@ -769,6 +769,13 @@ function renderSingle(result, title, subtitle) {
              esc(r.role) + '</td><td>' + esc(state) + '</td></tr>');
   }
   out.push('</tbody></table>');
+  out.push('<p class="hint" style="margin:8px 0 0;color:var(--red)">' +
+           '<b>이 접촉들은 같은 좌표에서 나옵니다.</b> 그 좌표가 내놓는 도킹 ' +
+           'affinity와 실측 pKi의 상관은 이 저장소 22종 패널에서 ' +
+           '<b>r² = 0.03</b>으로 측정됐습니다. 점수가 사실상 무상관이면 포즈 ' +
+           '기하도 그만큼만 믿을 수 있습니다 — 접촉 목록·점유율·수소결합 후보가 ' +
+           '전부 그 포즈에서 나온 값입니다. 개별 접촉을 사실로 읽지 마시고 ' +
+           '경향으로 보세요.</p>');
   out.push('<p class="hint" style="margin:8px 0 0">' +
            '두 상태의 차이는 <b>세기가 아니라 위치</b>입니다. 접촉 판정은 양쪽 다 ' +
            '중원자 간 <b>4.5 Å 이내</b>로 같고, 빨강은 그 잔기가 ' +
@@ -852,12 +859,29 @@ function renderSingle(result, title, subtitle) {
   out.push('<h4 class="sect">최근접 레퍼런스</h4>');
   out.push('<table><thead><tr><th>물질</th><th>유형</th><th class="num">실측 pKi</th>' +
            '<th class="num">유사도</th></tr></thead><tbody>');
+  var provWarn = [];
   for (var j = 0; j < result.neighbours.length; j++) {
     var nb = result.neighbours[j];
-    out.push('<tr><td>' + esc(nb.n) + '</td><td>' + esc(nb.c) + '</td><td class="num">' +
-             fx(nb.p, 2) + '</td><td class="num">' + fx(nb.sim, 3) + '</td></tr>');
+    var pv = provFor(nb.n);
+    if (pv && (pv.grade === 'nonhuman' || pv.grade === 'untraceable')) provWarn.push(nb.n);
+    out.push('<tr><td>' + esc(nb.n) + provChip(nb.n) + '</td><td>' + esc(nb.c) +
+             '</td><td class="num">' + fx(nb.p, 2) + '</td><td class="num">' +
+             fx(nb.sim, 3) + '</td></tr>');
+    var note = PR.REFERENCE_NOTES[nb.n];
+    if (note) {
+      out.push('<tr><td colspan="4" class="hint" style="color:var(--red)">' +
+               esc(nb.n + ' — ' + note) + '</td></tr>');
+    }
   }
   out.push('</tbody></table>');
+  out.push('<p class="hint" style="margin-top:8px">이 레퍼런스들의 pKi 출처를 ' +
+           'ChEMBL에서 되짚어 종과 어세이를 붙였습니다. 28종 전체로 보면 AR 활성 ' +
+           '273건이 사람, 44건이 랫, 11건이 마우스이고, <b>7종은 사람 AR 기록이 ' +
+           '아예 없으며 4종은 추적되지 않습니다</b>(DHT 포함). 숫자가 틀렸다는 ' +
+           '뜻은 아니지만, 교차검증 MAE 0.5는 <b>랫 전립선 세포질 결합과 사람 LBD ' +
+           '어세이를 같은 열에 섞은 채</b> 계산된 값입니다.' +
+           (provWarn.length ? ' 위 이웃 중 <b>' + esc(provWarn.join(', ')) +
+            '</b>이 그런 경우입니다.' : '') + '</p>');
   out.push('</div>');
   return out.join('');
 }
@@ -916,6 +940,11 @@ function renderAffinity() {
   out.push(tile('부분 작용제', String(lab.partial || 0)));
   out.push(tile('비활성·불명', String((lab.inactive || 0) + (lab.unknown || 0))));
   out.push('</dl>');
+  out.push('<p class="hint" style="color:var(--red)"><b>친화도와 효력은 다릅니다.</b> ' +
+           '이 표는 「얼마나 세게 붙느냐」만 세웁니다. pKi 8 이상 구간에 작용제와 ' +
+           '길항제가 함께 있는 것이 그 증거입니다 — 세기만으로는 방향을 알 수 ' +
+           '없고, 방향을 알아도 <b>효력(helix-12를 실제로 밀어내는가)</b>은 또 ' +
+           '다른 문제입니다. 이 도구에 그 축은 없습니다.</p>');
   out.push('<p class="hint"><b>적용영역 태그를 먼저 보세요.</b> 가까운 레퍼런스가 ' +
            '없는 물질의 pKi는 외삽이고, pKi로 정렬하면 그 숫자가 어디에 떨어지든 ' +
            '그 자리에 앉습니다. 기본값은 <code>out</code>을 숨긴 상태입니다. ' +
@@ -1212,6 +1241,23 @@ function renderRank() {
   out.push('<div class="panel">');
   out.push('<h3>길항제 후보 ' + rankRows.length + '종 / 사전 ' +
            PR.INGREDIENTS.length + '종</h3>');
+  /* The list is ordered by predicted pKi inside each band, and pKi is
+     affinity. Antagonist potency is not affinity: bicalutamide binds AR
+     roughly two orders of magnitude more weakly than DHT and is still the
+     clinical antagonist, because what decides antagonism is what helix-12
+     does after binding - which nothing in this tool measures. Said here,
+     at the top, because a numbered list invites exactly that misreading. */
+  out.push('<p class="hint" style="color:var(--red)"><b>이것은 효력 순위가 ' +
+           '아닙니다.</b> 같은 구간 안의 정렬 기준은 예측 pKi, 즉 <b>결합 세기</b>' +
+           '입니다. 길항 효력은 결합 세기가 아닙니다 — 비칼루타마이드는 DHT보다 ' +
+           'AR 친화도가 두 자릿수 배 낮지만 임상 길항제입니다. 길항성을 결정하는 ' +
+           '것은 결합 후 helix-12가 어떻게 움직이느냐이고, <b>이 도구는 그것을 ' +
+           '재지 않습니다.</b> 여기 「길항제」로 찍힌 것의 실제 의미는 ' +
+           '<i>결합하고, 길항하는 것들과 닮았다</i>입니다.</p>');
+  out.push('<p class="hint" style="color:var(--red)"><b>노출 축도 없습니다.</b> ' +
+           'pKi 5는 Ki 10 µM입니다. 화장품 사용 농도에서 그 농도가 표적 세포의 ' +
+           'AR에 도달하는지는 투과도·단백결합·대사가 정하는 전혀 다른 문제이고, ' +
+           '여기에는 들어 있지 않습니다. 위해성 순위로 읽지 마세요.</p>');
   var curatedN = 0;
   for (var cu = 0; cu < rankRows.length; cu++) if (rankRows[cu].curated) curatedN++;
   out.push('<dl class="tiles">');
@@ -1358,6 +1404,24 @@ function rankTsv() {
                 r.flags.join(' / '), r.smiles].join('\t'));
   }
   return lines.join('\n');
+}
+
+/* Provenance for a reference pKi, if the bundle carries the table. */
+function provFor(name) {
+  try {
+    if (typeof PROV !== 'undefined' && PROV && PROV.refs) return PROV.refs[name] || null;
+  } catch (err) { /* not bundled */ }
+  return null;
+}
+
+function provChip(name) {
+  var pv = provFor(name);
+  if (!pv) return '';
+  var g = PR.PROV_GRADE_KO[pv.grade];
+  if (!g) return '';
+  var warn = (pv.grade === 'nonhuman' || pv.grade === 'untraceable');
+  return ' <span class="hint"' + (warn ? ' style="color:var(--red)"' : '') + '>' +
+         esc(g.word) + (pv.n_ar ? ' · AR활성 ' + pv.n_ar + '건' : '') + '</span>';
 }
 
 /* ------------------------------------------------------- single tab */

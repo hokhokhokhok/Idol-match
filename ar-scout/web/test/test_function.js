@@ -255,6 +255,79 @@ function run() {
     console.log('  note  no tox21_ar.json in this build, skipping');
   }
 
+  /* --- a measurement another receptor explains is not an AR call -----
+   *
+   * Hydrocortisone, prednisolone and corticosterone sat in the read-across
+   * pool as measured AR AGONISTS, voting on other compounds, because the
+   * pool was built by an automated rule nobody read. One of the three
+   * screens runs in MDA-kb2, whose reporter is MMTV-luc; MMTV is a direct
+   * GR response element and the line expresses GR. */
+  console.log('\n  mechanism blocks');
+  if (haveTox) {
+    const toxTable = JSON.parse(fs.readFileSync(toxPath, 'utf8'));
+    PR.registerMeasured(toxTable);
+    const pool = PR.functionPool().filter(e => e.measured);
+    const leaked = pool.filter(e => PR.POOL_EXCLUSIONS[e.n]);
+    if (!leaked.length) {
+      pass++;
+      console.log(`  ok    ${'excluded mechanisms do not vote'.padEnd(30)} pool is ${pool.length}`);
+    } else {
+      fail++;
+      console.log(`  FAIL  still voting: ${leaked.map(e => e.n).join(', ')}`);
+    }
+
+    /* and the block must reach the compound's own page, not just its vote */
+    let stated = 0, wrong = 0;
+    for (const name of Object.keys(PR.POOL_EXCLUSIONS)) {
+      const e = PR.INGREDIENTS.find(x => x[1] === name);
+      if (!e) continue;
+      const mol = AR.parseSmiles(e[2]);
+      if (PR.FUNCTION_CLASS[name]) continue;     /* a curated label outranks the block */
+      const r = PR.predict(e[2], { tox21: toxTable.calls[AR.structureIdOf(mol)] || null });
+      if (r.functionCall.tier === 'blocked' && r.functionCall.reason) stated++;
+      else {
+        wrong++;
+        console.log(`  FAIL  ${name}: ${r.functionCall.tier}/${r.functionCall.label}, ` +
+                    'expected a stated 판정 보류');
+      }
+    }
+    if (!wrong) {
+      pass++;
+      console.log(`  ok    ${'and the block reaches its own page'.padEnd(30)} ${stated} compounds decline`);
+    } else fail += wrong;
+
+    /* falling through to read-across was the first attempt and was worse:
+       hydrocortisone came back "길항제 가능성" because it looks like a steroid */
+    const hc = PR.INGREDIENTS.find(x => x[1] === 'Hydrocortisone');
+    if (hc) {
+      const r = PR.predict(hc[2], {
+        tox21: toxTable.calls[AR.structureIdOf(AR.parseSmiles(hc[2]))] || null });
+      if (r.functionCall.label !== 'antagonist') {
+        pass++;
+        console.log(`  ok    ${'a blocked compound makes no call'.padEnd(30)} not "길항제 가능성"`);
+      } else {
+        fail++;
+        console.log('  FAIL  hydrocortisone is being called an AR antagonist');
+      }
+    }
+
+    /* the curated shortcut must never reach a validation path - passing a
+       structureId would otherwise score 38/38 for free */
+    const dht = PR.INGREDIENTS.find(x => x[1] === 'Dihydrotestosterone');
+    const viaId = PR.callFunction(
+      AR.packFingerprint(AR.morganFingerprint(AR.parseSmiles(dht[2]), 2)),
+      { exclude: 'Dihydrotestosterone',
+        structureId: AR.structureIdOf(AR.parseSmiles(dht[2])) });
+    if (viaId.tier === 'curated') {
+      fail++;
+      console.log('  FAIL  exclude is ignored when a structureId is supplied — ' +
+                  'leave-one-out would be meaningless');
+    } else {
+      pass++;
+      console.log(`  ok    ${'exclude still beats the shortcut'.padEnd(30)} LOO stays honest`);
+    }
+  }
+
   /* --- an off-mode agonist flag must not pass for agonism ------------ */
   const offMode = PR.readTox21('010');
   if (offMode && offMode.offModeAgonist && offMode.verdict === null) {

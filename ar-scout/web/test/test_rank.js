@@ -86,34 +86,39 @@ function run() {
     console.log(`        top 12 was: ${topNames.join(', ')}`);
   }
 
-  /* --- DHEA: the case that produced every demotion rule --------------
+  /* --- DHEA, and the three answers it got ---------------------------
    *
-   * It came out #1. Tox21 calls it an antagonist; it is an androgen
+   * Draft 1 ranked it #1: Tox21 calls it an antagonist. It is an androgen
    * precursor, the structure reads agonist, and the reference set carries
-   * it as an AGONIST. An early fix made it worse: marking reference
-   * compounds as "문헌" promoted DHEA to #2 wearing a badge that reads
-   * "the literature calls this an antagonist". */
-  const dhea = by['DHEA'];
-  if (!dhea) {
+   * it as an AGONIST.
+   *
+   * Draft 2 made it worse. Badging reference compounds as 문헌 promoted it
+   * to #2 wearing a label that reads "the literature calls this an
+   * antagonist" - the exact opposite of its reference label.
+   *
+   * Draft 3, which is this one: the curated label wins outright, so DHEA is
+   * an agonist and simply is not an antagonist candidate. Demoting-and-
+   * flagging was still answering the wrong question. */
+  if (by['DHEA']) {
     fail++;
-    console.log('  FAIL  DHEA is not in the list at all — it should be, demoted and flagged');
+    console.log(`  FAIL  DHEA is ranked as an antagonist (#${by['DHEA'].rank}); ` +
+                'its curated label is agonist and must win');
   } else {
-    const checks = [
-      [dhea.band !== 'high', 'must not sit in the 우선 확인 band'],
-      [dhea.tier !== 'curated', 'must not be badged as a curated antagonist'],
-      [dhea.curatedLabel === 'agonist', 'its reference label is agonist'],
-      [dhea.conflict === true, 'must be marked as conflicted'],
-      [dhea.flags.length > 0, 'must carry a stated reason'],
-      [dhea.rank > 12, 'must be out of the top 12']
-    ];
-    const bad = checks.filter(c => !c[0]);
-    if (!bad.length) {
-      pass++;
-      console.log(`  ok    ${'DHEA is demoted and explained'.padEnd(34)} #${dhea.rank}, ${dhea.band}`);
-    } else {
-      fail += bad.length;
-      for (const c of bad) console.log(`  FAIL  DHEA: ${c[1]}`);
-    }
+    pass++;
+    console.log(`  ok    ${'DHEA is not an antagonist at all'.padEnd(34)} curated label wins`);
+  }
+
+  /* --- mechanism blocks keep off-target compounds out ---------------- */
+  const blocked = ['Finasteride', 'Dutasteride', 'Retinol', 'Pregnenolone',
+                   'Hydrocortisone', 'Prednisolone', 'Dexamethasone'];
+  const stillHere = blocked.filter(n => by[n]);
+  if (!stillHere.length) {
+    pass++;
+    console.log(`  ok    ${'off-target mechanisms excluded'.padEnd(34)} ` +
+                `${blocked.length} compounds (5AR, GR, RAR)`);
+  } else {
+    fail++;
+    console.log(`  FAIL  still ranked as antagonists: ${stillHere.join(', ')}`);
   }
 
   /* a reference label pointing the other way always demotes */

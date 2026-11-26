@@ -1,0 +1,206 @@
+{
+ "Metribolone": {
+  "cls": "agonist",
+  "wt": -11.6,
+  "t877a": -11.3,
+  "w741a": -11.2
+ },
+ "Trenbolone": {
+  "cls": "agonist",
+  "wt": -10.8,
+  "t877a": -10.7,
+  "w741a": -10.3
+ },
+ "Dihydrotestosterone": {
+  "cls": "agonist",
+  "wt": -9.9,
+  "t877a": -9.7,
+  "w741a": -9.3
+ },
+ "Nandrolone": {
+  "cls": "agonist",
+  "wt": -11.8,
+  "t877a": -11.5,
+  "w741a": -11.4
+ },
+ "Testosterone": {
+  "cls": "agonist",
+  "wt": -12.0,
+  "t877a": -11.8,
+  "w741a": -11.5
+ },
+ "Methyltestosterone": {
+  "cls": "agonist",
+  "wt": -11.6,
+  "t877a": -11.3,
+  "w741a": -10.9
+ },
+ "Mesterolone": {
+  "cls": "agonist",
+  "wt": -12.8,
+  "t877a": -12.6,
+  "w741a": -12.2
+ },
+ "Boldenone": {
+  "cls": "agonist",
+  "wt": -11.1,
+  "t877a": -10.8,
+  "w741a": -10.5
+ },
+ "Stanozolol": {
+  "cls": "agonist",
+  "wt": -9.6,
+  "t877a": -9.7,
+  "w741a": -9.2
+ },
+ "Oxandrolone": {
+  "cls": "agonist",
+  "wt": -11.9,
+  "t877a": -11.7,
+  "w741a": -11.4
+ },
+ "Oxymetholone": {
+  "cls": "agonist",
+  "wt": -8.7,
+  "t877a": -9.1,
+  "w741a": -8.3
+ },
+ "Danazol": {
+  "cls": "agonist",
+  "wt": -7.5,
+  "t877a": -8.7,
+  "w741a": -7.0
+ },
+ "Androsterone": {
+  "cls": "agonist",
+  "wt": -9.9,
+  "t877a": -10.1,
+  "w741a": -9.4
+ },
+ "Epiandrosterone": {
+  "cls": "agonist",
+  "wt": -10.8,
+  "t877a": -10.9,
+  "w741a": -10.2
+ },
+ "DHEA": {
+  "cls": "agonist",
+  "wt": -12.2,
+  "t877a": -12.0
+ },
+ "Androstenedione": {
+  "cls": "agonist",
+  "wt": -11.6,
+  "t877a": -11.5
+ },
+ "Bicalutamide": {
+  "cls": "antagonist",
+  "wt": -6.7,
+  "t877a": -6.8
+ },
+ "Enzalutamide": {
+  "cls": "antagonist",
+  "wt": 8.8,
+  "t877a": 6.8
+ },
+ "Apalutamide": {
+  "cls": "antagonist",
+  "wt": 10.6,
+  "t877a": 7.0
+ },
+ "Darolutamide": {
+  "cls": "antagonist",
+  "wt": -6.2,
+  "t877a": -5.7
+ },
+ "Nilutamide": {
+  "cls": "antagonist",
+  "wt": -9.1,
+  "t877a": -8.8
+ },
+ "Flutamide": {
+  "cls": "antagonist",
+  "wt": -8.6,
+  "t877a": -8.5
+ },
+ "Hydroxyflutamide": {
+  "cls": "antagonist",
+  "wt": -8.9,
+  "t877a": -8.7
+ },
+ "Cyproterone acetate": {
+  "cls": "antagonist",
+  "wt": -5.7,
+  "t877a": -7.1
+ },
+ "Spironolactone": {
+  "cls": "antagonist",
+  "wt": -8.0,
+  "t877a": -8.5
+ },
+ "Clascoterone": {
+  "cls": "antagonist",
+  "wt": -6.5,
+  "t877a": -7.6
+ },
+ "Progesterone": {
+  "cls": "partial",
+  "wt": -10.3,
+  "t877a": -10.8
+ },
+ "Medroxyprogesterone acetate": {
+  "cls": "partial",
+  "wt": -4.5,
+  "t877a": -6.3
+ },
+ "Chlormadinone acetate": {
+  "cls": "antagonist",
+  "wt": -6.0,
+  "t877a": -7.2
+ },
+ "Drospirenone": {
+  "cls": "antagonist",
+  "wt": -9.4,
+  "t877a": -9.2
+ },
+ "Dienogest": {
+  "cls": "antagonist",
+  "wt": -8.7,
+  "t877a": -8.4
+ },
+ "Norethisterone": {
+  "cls": "partial",
+  "wt": -8.7,
+  "t877a": -8.8
+ },
+ "Levonorgestrel": {
+  "cls": "partial",
+  "wt": -7.9,
+  "t877a": -8.1
+ },
+ "Tibolone": {
+  "cls": "partial",
+  "wt": -8.6,
+  "t877a": -9.0
+ },
+ "Vinclozolin": {
+  "cls": "antagonist",
+  "wt": -8.3,
+  "t877a": -8.2
+ },
+ "Procymidone": {
+  "cls": "antagonist",
+  "wt": -8.0,
+  "t877a": -8.4
+ },
+ "Linuron": {
+  "cls": "antagonist",
+  "wt": -7.1,
+  "t877a": -6.9
+ },
+ "Prochloraz": {
+  "cls": "antagonist",
+  "wt": -6.4,
+  "t877a": -6.6
+ }
+}
