@@ -1,0 +1,82 @@
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><span>에스트로겐 수용체 결합 예측</span>ER Scout</h1>
+    <button class="themebtn" id="themebtn" type="button">테마</button>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button type="button" data-tab="single" aria-selected="true">단건 조회</button>
+    <button type="button" data-tab="batch" aria-selected="false">배치 스크리닝</button>
+    <button type="button" data-tab="library" aria-selected="false">레퍼런스</button>
+  </nav>
+
+  <!-- ------------------------------------------------ single -->
+  <section id="tab-single">
+    <div class="panel">
+      <h2>단건 조회</h2>
+      <p class="hint">물질명(한글·영문) 또는 SMILES를 입력하세요. ERα 작용제(에스트로겐 활성) 가능성을 봅니다.</p>
+      <div class="row">
+        <div>
+          <label class="fld" for="q">물질명 또는 SMILES</label>
+          <input type="text" id="q" list="names" placeholder="예: 비스페놀 A" autocomplete="off">
+          <datalist id="names"></datalist>
+        </div>
+        <div style="flex:0 0 auto">
+          <button class="go" id="run" type="button">예측하기</button>
+        </div>
+      </div>
+      <div id="single-err"></div>
+    </div>
+    <div id="single-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ batch -->
+  <section id="tab-batch" class="hidden">
+    <div class="panel">
+      <h2>배치 스크리닝</h2>
+      <p class="hint">한 줄에 <code>이름,SMILES</code> 형식으로 입력하거나 CSV를 올리세요. 최대 400건.</p>
+      <label class="fld" for="batchin">입력</label>
+      <textarea id="batchin" spellcheck="false" placeholder="Bisphenol A,CC(C)(c1ccc(O)cc1)c1ccc(O)cc1&#10;Niacinamide,NC(=O)c1cccnc1"></textarea>
+      <div class="btnbar">
+        <button class="go" id="batchrun" type="button">스크리닝 실행</button>
+        <label class="filebtn">CSV 올리기<input type="file" id="batchfile" accept=".csv,.txt,text/csv,text/plain"></label>
+        <button class="alt" id="batchsample" type="button">예시 채우기</button>
+        <button class="alt" id="batchcopy" type="button">TSV 복사</button>
+      </div>
+      <div id="batch-err"></div>
+    </div>
+    <div id="batch-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ library -->
+  <section id="tab-library" class="hidden">
+    <div class="panel">
+      <h2>레퍼런스 라이브러리</h2>
+      <p class="hint">read-across의 기준이 되는 실측 pKi 목록입니다.
+        <code>[{"n":이름,"s":SMILES,"p":pKi,"c":유형}]</code> 형식 JSON으로 교체할 수 있습니다.</p>
+      <label class="fld" for="libin">교체용 JSON</label>
+      <textarea id="libin" spellcheck="false" placeholder='[{"n":"E2","s":"CC12CCC3c4ccc(O)cc4CCC3C1CCC2O","p":8.89,"c":"agonist"}]'></textarea>
+      <div class="btnbar">
+        <button class="go" id="libapply" type="button">교체 적용</button>
+        <label class="filebtn">JSON 올리기<input type="file" id="libfile" accept=".json,application/json,text/plain"></label>
+        <button class="alt" id="libreset" type="button">기본값 복원</button>
+        <button class="alt" id="libexport" type="button">현재 목록 보기</button>
+      </div>
+      <div id="lib-err"></div>
+    </div>
+    <div id="lib-out"></div>
+  </section>
+
+  <details class="card" id="modelcard">
+    <summary>모델 카드 — 성능과 실패 모드</summary>
+    <div class="inner" id="modelcard-body"></div>
+  </details>
+
+  <footer class="foot">
+    세포실험 전 우선순위 선별용 도구입니다. 규제 제출이나 안전성 판정의 근거로 사용할 수 없습니다.<br>
+    모든 계산은 이 파일 안에서 수행되며 입력한 구조는 외부로 전송되지 않습니다.<br>
+    글꼴 Pretendard — SIL Open Font License 1.1.
+  </footer>
+</div>
+

@@ -1,0 +1,400 @@
+[
+ {
+  "name": "17BETA-ESTRADIOL",
+  "ko": "17베타-에스트라디올",
+  "c": "agonist",
+  "note": "내인성 기준 작용제 (E2)"
+ },
+ {
+  "name": "ESTRONE",
+  "ko": "에스트론",
+  "c": "agonist",
+  "note": "내인성 에스트로겐 (E1)"
+ },
+ {
+  "name": "ESTRIOL",
+  "ko": "에스트리올",
+  "c": "agonist",
+  "note": "내인성 에스트로겐 (E3)"
+ },
+ {
+  "name": "ETHINYLESTRADIOL",
+  "ko": "에티닐에스트라디올",
+  "c": "agonist",
+  "note": "경구피임약 성분"
+ },
+ {
+  "name": "DIETHYLSTILBESTROL",
+  "ko": "디에틸스틸베스트롤",
+  "c": "agonist",
+  "note": "비스테로이드 강력 작용제 (DES)"
+ },
+ {
+  "name": "HEXESTROL",
+  "ko": "헥세스트롤",
+  "c": "agonist",
+  "note": "DES 유사 합성 에스트로겐"
+ },
+ {
+  "name": "GENISTEIN",
+  "ko": "제니스테인",
+  "c": "agonist",
+  "note": "대두 이소플라본; 1X7R 결정구조 리간드"
+ },
+ {
+  "name": "DAIDZEIN",
+  "ko": "다이드제인",
+  "c": "agonist",
+  "note": "대두 이소플라본"
+ },
+ {
+  "name": "EQUOL",
+  "ko": "에쿠올",
+  "c": "agonist",
+  "note": "다이드제인 장내 대사체",
+  "alias": [
+   "(S)-EQUOL",
+   "4',7-ISOFLAVANDIOL"
+  ]
+ },
+ {
+  "name": "COUMESTROL",
+  "ko": "쿠메스트롤",
+  "c": "agonist",
+  "note": "쿠메스탄 피토에스트로겐"
+ },
+ {
+  "name": "APIGENIN",
+  "ko": "아피제닌",
+  "c": "agonist",
+  "note": "플라본"
+ },
+ {
+  "name": "NARINGENIN",
+  "ko": "나린제닌",
+  "c": "agonist",
+  "note": "플라바논"
+ },
+ {
+  "name": "KAEMPFEROL",
+  "ko": "캠페롤",
+  "c": "agonist",
+  "note": "플라보놀"
+ },
+ {
+  "name": "RESVERATROL",
+  "ko": "레스베라트롤",
+  "c": "partial",
+  "note": "스틸벤; 혼합 작용"
+ },
+ {
+  "name": "ZEARALENONE",
+  "ko": "제아랄레논",
+  "c": "agonist",
+  "note": "곰팡이 유래 마이코에스트로겐"
+ },
+ {
+  "name": "ZERANOL",
+  "ko": "제라놀",
+  "c": "agonist",
+  "note": "알파-제아랄라놀, 성장촉진제",
+  "alias": [
+   "ALPHA-ZEARALANOL"
+  ]
+ },
+ {
+  "name": "BISPHENOL A",
+  "ko": "비스페놀 A",
+  "c": "agonist",
+  "note": "내분비계 교란물질 (BPA)"
+ },
+ {
+  "name": "4-NONYLPHENOL",
+  "ko": "4-노닐페놀",
+  "c": "agonist",
+  "note": "알킬페놀 계면활성제 분해산물"
+ },
+ {
+  "name": "4-TERT-OCTYLPHENOL",
+  "ko": "4-tert-옥틸페놀",
+  "c": "agonist",
+  "note": "알킬페놀",
+  "alias": [
+   "4-(1,1,3,3-TETRAMETHYLBUTYL)PHENOL",
+   "4-(TERT-OCTYL)PHENOL"
+  ]
+ },
+ {
+  "name": "BUTYLPARABEN",
+  "ko": "부틸파라벤",
+  "c": "agonist",
+  "note": "보존제; 약한 작용제"
+ },
+ {
+  "name": "OXYBENZONE",
+  "ko": "벤조페논-3",
+  "c": "agonist",
+  "note": "자외선차단 성분 (벤조페논-3)"
+ },
+ {
+  "name": "TAMOXIFEN",
+  "ko": "타목시펜",
+  "c": "antagonist",
+  "note": "SERM 전구체"
+ },
+ {
+  "name": "AFIMOXIFENE",
+  "ko": "4-하이드록시타목시펜",
+  "c": "antagonist",
+  "note": "타목시펜 활성 대사체; 3ERT 리간드"
+ },
+ {
+  "name": "ENDOXIFEN",
+  "ko": "엔독시펜",
+  "c": "antagonist",
+  "note": "타목시펜 활성 대사체"
+ },
+ {
+  "name": "RALOXIFENE",
+  "ko": "랄록시펜",
+  "c": "antagonist",
+  "note": "SERM; 1ERR 결정구조 리간드"
+ },
+ {
+  "name": "CLOMIFENE",
+  "ko": "클로미펜",
+  "c": "antagonist",
+  "note": "배란유도제 SERM",
+  "alias": [
+   "CLOMIPHENE",
+   "CLOMIFENE CITRATE"
+  ]
+ },
+ {
+  "name": "TOREMIFENE",
+  "ko": "토레미펜",
+  "c": "antagonist",
+  "note": "SERM"
+ },
+ {
+  "name": "FULVESTRANT",
+  "ko": "풀베스트란트",
+  "c": "antagonist",
+  "note": "완전 길항제 (SERD)"
+ },
+ {
+  "name": "BAZEDOXIFENE",
+  "ko": "바제독시펜",
+  "c": "antagonist",
+  "note": "SERM"
+ },
+ {
+  "name": "LASOFOXIFENE",
+  "ko": "라소폭시펜",
+  "c": "antagonist",
+  "note": "SERM"
+ },
+ {
+  "name": "NIACINAMIDE",
+  "ko": "나이아신아마이드",
+  "c": "non-binder",
+  "note": "화장품 활성성분 기준선",
+  "floor": 4.0
+ },
+ {
+  "name": "GLYCEROL",
+  "ko": "글리세린",
+  "c": "non-binder",
+  "note": "화장품 활성성분 기준선",
+  "floor": 4.0
+ },
+ {
+  "name": "ASCORBIC ACID",
+  "ko": "아스코르브산",
+  "c": "non-binder",
+  "note": "화장품 활성성분 기준선",
+  "floor": 4.0
+ },
+ {
+  "name": "CAFFEINE",
+  "ko": "카페인",
+  "c": "non-binder",
+  "note": "화장품 활성성분 기준선",
+  "floor": 4.0
+ },
+ {
+  "name": "SALICYLIC ACID",
+  "ko": "살리실산",
+  "c": "non-binder",
+  "note": "화장품 활성성분 기준선",
+  "floor": 4.0
+ },
+ {
+  "name": "BIOCHANIN A",
+  "ko": "비오카닌 A",
+  "c": "dictionary",
+  "note": "이소플라본",
+  "dict_only": true
+ },
+ {
+  "name": "FORMONONETIN",
+  "ko": "포르모노네틴",
+  "c": "dictionary",
+  "note": "이소플라본",
+  "dict_only": true
+ },
+ {
+  "name": "BISPHENOL AF",
+  "ko": "비스페놀 AF",
+  "c": "dictionary",
+  "note": "BPA 대체물질",
+  "dict_only": true
+ },
+ {
+  "name": "BISPHENOL S",
+  "ko": "비스페놀 S",
+  "c": "dictionary",
+  "note": "BPA 대체물질",
+  "dict_only": true
+ },
+ {
+  "name": "BISPHENOL B",
+  "ko": "비스페놀 B",
+  "c": "dictionary",
+  "note": "BPA 유사체",
+  "dict_only": true
+ },
+ {
+  "name": "METHYLPARABEN",
+  "ko": "메틸파라벤",
+  "c": "dictionary",
+  "note": "보존제",
+  "dict_only": true
+ },
+ {
+  "name": "ETHYLPARABEN",
+  "ko": "에틸파라벤",
+  "c": "dictionary",
+  "note": "보존제",
+  "dict_only": true
+ },
+ {
+  "name": "PROPYLPARABEN",
+  "ko": "프로필파라벤",
+  "c": "dictionary",
+  "note": "보존제",
+  "dict_only": true
+ },
+ {
+  "name": "METHOXYCHLOR",
+  "ko": "메톡시클로르",
+  "c": "dictionary",
+  "note": "유기염소 살충제",
+  "dict_only": true
+ },
+ {
+  "name": "CHLORDECONE",
+  "ko": "클로르데콘",
+  "c": "dictionary",
+  "note": "케폰, 유기염소 살충제",
+  "dict_only": true
+ },
+ {
+  "name": "DIELDRIN",
+  "ko": "디엘드린",
+  "c": "dictionary",
+  "note": "유기염소 살충제",
+  "dict_only": true
+ },
+ {
+  "name": "ENDOSULFAN",
+  "ko": "엔도설판",
+  "c": "dictionary",
+  "note": "유기염소 살충제",
+  "dict_only": true
+ },
+ {
+  "name": "ATRAZINE",
+  "ko": "아트라진",
+  "c": "dictionary",
+  "note": "트리아진 제초제",
+  "dict_only": true
+ },
+ {
+  "name": "GENISTIN",
+  "ko": "제니스틴",
+  "c": "dictionary",
+  "note": "제니스테인 배당체",
+  "dict_only": true
+ },
+ {
+  "name": "PHLORETIN",
+  "ko": "플로레틴",
+  "c": "dictionary",
+  "note": "디하이드로칼콘",
+  "dict_only": true
+ },
+ {
+  "name": "ENTEROLACTONE",
+  "ko": "엔테로락톤",
+  "c": "dictionary",
+  "note": "리그난 대사체",
+  "dict_only": true
+ },
+ {
+  "name": "DROLOXIFENE",
+  "ko": "드롤록시펜",
+  "c": "dictionary",
+  "note": "SERM",
+  "dict_only": true
+ },
+ {
+  "name": "ARZOXIFENE",
+  "ko": "아르족시펜",
+  "c": "dictionary",
+  "note": "SERM",
+  "dict_only": true
+ },
+ {
+  "name": "ELACESTRANT",
+  "ko": "엘라세스트란트",
+  "c": "dictionary",
+  "note": "경구 SERD",
+  "dict_only": true
+ },
+ {
+  "name": "GIREDESTRANT",
+  "ko": "지레데스트란트",
+  "c": "dictionary",
+  "note": "경구 SERD",
+  "dict_only": true
+ },
+ {
+  "name": "DIENESTROL",
+  "ko": "디에네스트롤",
+  "c": "dictionary",
+  "note": "합성 에스트로겐",
+  "dict_only": true
+ },
+ {
+  "name": "MESTRANOL",
+  "ko": "메스트라놀",
+  "c": "dictionary",
+  "note": "에티닐에스트라디올 3-메틸에터",
+  "dict_only": true
+ },
+ {
+  "name": "ESTRADIOL VALERATE",
+  "ko": "에스트라디올 발레레이트",
+  "c": "dictionary",
+  "note": "에스트라디올 에스터",
+  "dict_only": true
+ },
+ {
+  "name": "TIBOLONE",
+  "ko": "티볼론",
+  "c": "dictionary",
+  "note": "조직선택적 스테로이드",
+  "dict_only": true
+ }
+]

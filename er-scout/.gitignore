@@ -1,0 +1,4 @@
+# the built bundle: 4 MB of font and data, regenerate with `python3 build.py`
+index.html
+# API responses cached while building the data sets
+local/cache/
