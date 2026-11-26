@@ -840,6 +840,51 @@ function callFunction(fp, options) {
     (100 * share).toFixed(0) + '% 우세).');
 }
 
+/* ------------------------------------------------ measured potency ---
+ *
+ * The missing axis, as far as it can be filled. These screens report
+ * AC50 and efficacy, not just a call, so for a compound that was tested
+ * there is a real cellular potency and a real response size to show
+ * instead of an affinity estimate standing in for both.
+ *
+ * It is shown, not voted on, and the reason is measured: over the 20
+ * labelled compounds that have an efficacy value, taking "negative
+ * efficacy in the antagonist-mode well" as the antagonist call scores
+ * 14/20, because 5 of 8 known agonists also reduce the signal there. That
+ * is the same co-treatment confound that already stops the activity call
+ * being taken at face value, and it does not become a classifier just
+ * because it now comes with a number attached.
+ *
+ * The viability margin is the part worth acting on. A compound whose AR
+ * AC50 sits at or above the concentration that kills the cells has not
+ * demonstrated antagonism. Prochloraz, a curated antagonist reference,
+ * has a margin of 0.16 - its signal arrives at a sixth of the lethal
+ * concentration. */
+var MARGIN_SUSPECT = 2.0;
+
+function readPotency(rec) {
+  if (!rec) return null;
+  var out = { ap: rec.ap, ae: rec.ae, vp: rec.vp, margin: rec.m,
+              gp: rec.gp, ge: rec.ge, line: rec.l, notes: [] };
+  if (rec.ap != null) {
+    out.notes.push('길항제 모드 AC50 ' + rec.ap + ' µM' +
+                   (rec.l ? ' (' + rec.l + ')' : '') +
+                   (rec.ae != null ? ', 효력 ' + rec.ae + '%' : ''));
+  }
+  if (rec.gp != null) {
+    out.notes.push('작용제 모드 AC50 ' + rec.gp + ' µM' +
+                   (rec.ge != null ? ', 효력 ' + rec.ge + '%' : ''));
+  }
+  if (rec.m != null) {
+    out.cytoSuspect = rec.m < MARGIN_SUSPECT;
+    out.notes.push(out.cytoSuspect
+      ? '세포생존 AC50가 길항 AC50의 ' + rec.m + '배뿐입니다 — 신호가 ' +
+        '세포 죽는 농도와 겹칩니다. 길항이 아니라 세포독성일 수 있습니다.'
+      : '세포생존 AC50가 길항 AC50의 ' + rec.m + '배라 여유가 있습니다.');
+  }
+  return out;
+}
+
 /* ------------------------------------------- reference provenance ----
  *
  * The 28 affinities were carried with no record of assay, species or
@@ -1188,20 +1233,51 @@ function rankAntagonists(evidenceFor) {
     if (res.domain === 'out') {
       flags.push('적용영역 밖 — pKi 수치는 신뢰하지 마세요');
     }
-    /* Shown, not demoted. A compound that kills cells lowers the reporter
-       signal and reads as antagonism, so it is worth saying - but
-       bicalutamide itself is cytotoxic in one of the three wells, so using
-       it to demote would bury the canonical antagonist. */
+    /* The binary cytotoxic flag was shown and never acted on, because
+       bicalutamide is cytotoxic in one of its three wells and demoting on
+       it would bury the canonical antagonist. With AC50s there is a real
+       number instead of a flag: how far the antagonist signal sits below
+       the concentration that kills the cells. Bicalutamide's margin is
+       2.5x, prochloraz's is 0.16x. */
     var toxRead = ev.tox21 ? readTox21(ev.tox21) : null;
     if (fc.tier === 'measured' && toxRead && toxRead.cytotoxic) {
       flags.push('다른 어세이에서 세포독성 — 세포를 죽여도 신호가 내려가므로 ' +
                  '길항 활성이 과대평가될 수 있습니다');
     }
+    var pot = ev.potencyFor ? ev.potencyFor(mol) : null;
+    var cytoMeasured = false, agonistStronger = false;
+    if (pot) {
+      if (pot.margin != null && pot.margin < MARGIN_SUSPECT) {
+        cytoMeasured = true;
+        flags.push('세포생존 AC50가 길항 AC50의 ' + pot.margin + '배뿐입니다 — ' +
+                   '신호가 세포 죽는 농도와 겹치므로 길항이 아니라 세포독성일 ' +
+                   '수 있습니다 (실측)');
+      }
+      /* It activates the receptor at a far lower concentration than it
+         silences it. Alfatradiol: agonist AC50 1.08 uM at +96.5% efficacy
+         against an antagonist AC50 of 44.9 uM. That is an agonist. */
+      if (pot.gp != null && pot.ap != null && pot.gp * 5 < pot.ap &&
+          pot.ge != null && pot.ge > 20) {
+        agonistStronger = true;
+        flags.push('작용제 모드 AC50 ' + pot.gp + ' µM (효력 ' + pot.ge +
+                   '%)가 길항제 모드 ' + pot.ap + ' µM보다 ' +
+                   Math.round(pot.ap / pot.gp) + '배 낮습니다 — 실측으로는 ' +
+                   '작용제 쪽입니다');
+      }
+    }
 
+    /* A curated antagonist label is established pharmacology and outranks
+       an inference drawn from two AC50s. Spironolactone and drospirenone
+       both show agonist-mode activity in these screens - spironolactone is
+       an AR antagonist that is also a progesterone-receptor agonist - and
+       sinking them to the bottom of an antagonist list on that basis would
+       be the assay overruling what is known. The disagreement is still
+       worth showing, so it stays in the flags. */
     var band;
-    if (nonBinder) band = 'low';
+    if (curated) band = res.pKi < 5.0 ? 'medium' : 'high';
+    else if (nonBinder || agonistStronger) band = 'low';
+    else if (cytoMeasured) band = 'medium';
     else if (curatedConflict) band = 'medium';
-    else if (curated) band = res.pKi < 5.0 ? 'medium' : 'high';
     else if (fc.tier === 'possible' || conflict || res.pKi < 5.0) band = 'medium';
     else band = 'high';
 
@@ -1213,6 +1289,8 @@ function rankAntagonists(evidenceFor) {
       nearest: fc.nearest, support: fc.support,
       pocketVerdict: pocket.verdict, occupancy: res.occupancy,
       band: band, conflict: conflict, nonBinder: nonBinder,
+      cytoMeasured: cytoMeasured, agonistStronger: agonistStronger,
+      potency: pot || null,
       cytotoxic: !!(toxRead && toxRead.cytotoxic),
       flags: flags, evidence: fc.evidence || [],
       refAntagonists: fc.refAntagonists || [],
@@ -1865,6 +1943,8 @@ module.exports = {
   resetLibrary: resetLibrary,
   REFERENCE_DEFAULT: REFERENCE_DEFAULT,
   CLASS_LABELS: CLASS_LABELS,
+  readPotency: readPotency,
+  MARGIN_SUSPECT: MARGIN_SUSPECT,
   PROV_GRADE_KO: PROV_GRADE_KO,
   REFERENCE_NOTES: REFERENCE_NOTES,
   TIER_LABELS: TIER_LABELS,

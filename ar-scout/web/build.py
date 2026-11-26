@@ -62,6 +62,10 @@ MUTANT = "assets/mutant_shifts.json"
 # unrecorded provenance as one scale.
 PROV = "assets/reference_prov.json"
 
+# AC50 and efficacy from the same Tox21 screens. The tool had no efficacy
+# axis at all; this is the measured one.
+POTENCY = "assets/tox21_potency.json"
+
 REQUIRE_LINE = re.compile(
     r"^[ \t]*(?:var|const|let)[ \t]+\w+[ \t]*=[ \t]*require\([^)]*\)[ \t]*;?[ \t]*\r?\n?",
     re.MULTILINE,
@@ -142,7 +146,14 @@ def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
         raw = prov_path.read_text(encoding="utf-8").strip()
         prov_src = "/* ---- %s ---- */\nvar PROV = %s;\n" % (prov_path.name, raw)
 
-    app_src = extlib_src + scene_src + tox_src + mut_src + prov_src + app_src
+    pot_path = HERE / POTENCY
+    pot_src = ""
+    if pot_path.exists():
+        raw = pot_path.read_text(encoding="utf-8").strip()
+        pot_src = "/* ---- %s ---- */\nvar POTENCY = %s;\n" % (pot_path.name, raw)
+
+    app_src = (extlib_src + scene_src + tox_src + mut_src + prov_src
+               + pot_src + app_src)
 
     # syntax-check the concatenated script before it is sealed into the page
     combined = engine_src + "\n" + app_src
@@ -170,14 +181,15 @@ def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
     print("  %d bytes (%.1f KB), node --check passed%s"
           % (size, size / 1024.0, "" if embed_font else "  [font not embedded]"))
     print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, "
-          "library %.1f KB, scene %.1f KB, tox21 %.1f KB, mutant %.1f KB, prov %.1f KB"
+          "library %.1f KB, scene %.1f KB, tox21 %.1f KB, prov %.1f KB, potency %.1f KB"
           % (len(engine_src) / 1024.0,
              (len(app_src) - len(extlib_src) - len(scene_src)
-              - len(tox_src) - len(mut_src) - len(prov_src)) / 1024.0,
+              - len(tox_src) - len(mut_src) - len(prov_src)
+              - len(pot_src)) / 1024.0,
              (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0,
              len(extlib_src) / 1024.0, len(scene_src) / 1024.0,
-             len(tox_src) / 1024.0, len(mut_src) / 1024.0,
-             len(prov_src) / 1024.0))
+             len(tox_src) / 1024.0, len(prov_src) / 1024.0,
+             len(pot_src) / 1024.0))
     return 0
 
 

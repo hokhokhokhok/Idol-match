@@ -657,6 +657,49 @@ function renderSingle(result, title, subtitle) {
     out.push('</div>');
   }
 
+  /* The measured potency axis. Shown above the prediction because an AC50
+     from a cell assay outranks an affinity estimated by similarity. */
+  var pot = null;
+  try { pot = potencyFor(result.mol); } catch (err) { pot = null; }
+  if (pot && (pot.ap != null || pot.gp != null)) {
+    out.push('<div class="measured">');
+    out.push('<div class="mhead">실측 — Tox21 역가와 효력</div>');
+    out.push('<table style="margin-top:6px"><tbody>');
+    if (pot.ap != null) {
+      out.push('<tr><td style="width:52%">길항제 모드 AC50' +
+               (pot.line ? ' <span class="hint">' + esc(pot.line) + '</span>' : '') +
+               '</td><td style="font-weight:700">' + pot.ap + ' µM</td></tr>');
+    }
+    if (pot.ae != null) {
+      out.push('<tr><td>길항제 모드 효력 <span class="hint">음수 = 신호 감소</span>' +
+               '</td><td style="font-weight:700">' + pot.ae + ' %</td></tr>');
+    }
+    if (pot.gp != null) {
+      out.push('<tr><td>작용제 모드 AC50</td><td style="font-weight:700">' +
+               pot.gp + ' µM' + (pot.ge != null ? ' <span class="hint">효력 ' +
+               pot.ge + '%</span>' : '') + '</td></tr>');
+    }
+    if (pot.margin != null) {
+      out.push('<tr><td>세포생존 AC50 대비 여유</td><td' +
+               (pot.cytoSuspect ? ' class="warnink"' : '') +
+               ' style="font-weight:700">&times;' + pot.margin +
+               ' <span class="hint">(생존 ' + pot.vp + ' µM)</span></td></tr>');
+    }
+    out.push('</tbody></table>');
+    out.push('<p class="hint" style="margin:8px 0 0">' +
+             '<b>이것이 이 도구에서 유일하게 효력에 가까운 값입니다.</b> ' +
+             '아래 pKi는 결합 세기 추정이고, 위 AC50은 세포에서 실제로 측정된 ' +
+             '농도입니다. 다만 <b>효력 부호를 작용/길항 판정에 쓰지는 않습니다</b> — ' +
+             '라벨된 20종에서 「효력 음수면 길항」은 14/20에 그칩니다. 알려진 ' +
+             '작용제 8종 중 5종도 이 웰에서 신호를 떨어뜨리기 때문입니다' +
+             '(기준 작용제와 경쟁하면 그렇게 됩니다).</p>');
+    if (pot.cytoSuspect) {
+      out.push('<p class="hint" style="margin:6px 0 0;color:var(--red)">' +
+               esc(pot.notes[pot.notes.length - 1]) + '</p>');
+    }
+    out.push('</div>');
+  }
+
   out.push('<div class="headline">');
   out.push('<div class="pk num">' + fx(result.pKi, 2) +
            '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>');
@@ -1157,7 +1200,7 @@ var rankSort = { key: 'rank', dir: 1 };
 /* The evidence a compound gets is assembled the same way the single-compound
  * view does it, so the ranking cannot drift from what a lookup shows. */
 function evidenceFor(smiles, mol) {
-  var out = { dock: null, tox21: null };
+  var out = { dock: null, tox21: null, potencyFor: potencyFor };
   try {
     var scene = sceneData();
     if (scene) {
@@ -1382,6 +1425,15 @@ function rankTsv() {
                 r.flags.join(' / '), r.smiles].join('\t'));
   }
   return lines.join('\n');
+}
+
+function potencyFor(mol) {
+  try {
+    if (typeof POTENCY !== 'undefined' && POTENCY && POTENCY.data) {
+      return PR.readPotency(POTENCY.data[AR.structureIdOf(mol)] || null);
+    }
+  } catch (err) { /* not bundled */ }
+  return null;
 }
 
 /* Provenance for a reference pKi, if the bundle carries the table. */

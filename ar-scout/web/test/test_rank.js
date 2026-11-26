@@ -32,8 +32,13 @@ function run() {
   const tox = haveTox ? JSON.parse(fs.readFileSync(TOX_PATH, 'utf8')) : null;
   if (tox) PR.registerMeasured(tox);
 
+  const POT_PATH = path.join(__dirname, '..', 'assets', 'tox21_potency.json');
+  const potency = fs.existsSync(POT_PATH)
+    ? JSON.parse(fs.readFileSync(POT_PATH, 'utf8')).data : null;
   const evidenceFor = (smiles, mol) => {
-    const out = { dock: null, tox21: null };
+    const out = { dock: null, tox21: null,
+      potencyFor: m => potency
+        ? PR.readPotency(potency[AR.structureIdOf(m)] || null) : null };
     if (scene) {
       const st = scene.poses[structureKey(mol)];
       if (st && st.placed) {
@@ -200,6 +205,77 @@ function run() {
   } else {
     fail++;
     console.log(`  FAIL  ${drift} of the top 25 disagree with their own lookup`);
+  }
+
+  /* --- measured potency, used where it earns its place ---------------
+   *
+   * These screens report AC50 and efficacy, not just a call, which gives
+   * the tool the only efficacy-adjacent number it has. Two things are done
+   * with it and one deliberately is not.
+   *
+   * Not done: using the sign of the antagonist-mode efficacy as the
+   * functional call. Measured over the 20 labelled compounds that have a
+   * value, "negative efficacy means antagonist" scores 14/20, because 5 of
+   * 8 known agonists also pull the signal down when co-treated with a
+   * reference agonist.
+   *
+   * Done: the viability margin, which replaces a binary cytotoxic flag
+   * that was shown and never acted on, and the case where a compound
+   * activates the receptor far more potently than it silences it. */
+  console.log('\n  measured potency');
+  if (potency) {
+    const cyto = rows.filter(r => r.cytoMeasured);
+    const agoStronger = rows.filter(r => r.agonistStronger);
+    console.log(`        ${cyto.length} flagged on viability margin, ` +
+                `${agoStronger.length} on agonist-mode dominance`);
+
+    /* alfatradiol is the case that motivated it: agonist AC50 1.08 uM at
+       +96.5% efficacy against an antagonist AC50 of 44.9 uM, and a
+       viability margin of 0.82 - the cells die first. It was sitting in
+       the 우선 확인 band as a predicted antagonist. */
+    const alf = by['Alfatradiol'];
+    if (!alf || alf.band === 'low') {
+      pass++;
+      console.log(`  ok    ${'alfatradiol sinks on measurement'.padEnd(34)} ` +
+                  `${alf ? alf.band : 'absent'}`);
+    } else {
+      fail++;
+      console.log(`  FAIL  alfatradiol is ${alf.band} despite margin 0.82 ` +
+                  'and a 40x more potent agonist AC50');
+    }
+
+    /* but a curated antagonist is not overruled by two AC50s: spironolactone
+       antagonises AR and agonises the progesterone receptor, and both
+       screens see it */
+    for (const name of ['Spironolactone', 'Drospirenone']) {
+      const r = by[name];
+      if (!r) { fail++; console.log(`  FAIL  ${name} dropped out of the list`); continue; }
+      if (r.band === 'low') {
+        fail++;
+        console.log(`  FAIL  ${name} sank to 낮음 — a curated antagonist label ` +
+                    'must outrank an inference from two AC50s');
+      } else if (r.agonistStronger && !r.flags.length) {
+        fail++;
+        console.log(`  FAIL  ${name} disagrees with the assay and says nothing`);
+      } else {
+        pass++;
+        console.log(`  ok    ${(name + ' keeps its band').padEnd(34)} ` +
+                    `#${r.rank} ${r.band}${r.agonistStronger ? ', disagreement shown' : ''}`);
+      }
+    }
+
+    /* every potency-driven demotion must state its number */
+    const silent = cyto.concat(agoStronger).filter(r => !r.flags.length);
+    if (!silent.length) {
+      pass++;
+      console.log(`  ok    ${'potency demotions cite the AC50'.padEnd(34)} ` +
+                  `${cyto.length + agoStronger.length} rows`);
+    } else {
+      fail++;
+      console.log(`  FAIL  ${silent.length} demoted without citing a number`);
+    }
+  } else {
+    console.log('  note  no potency table in this checkout, skipping');
   }
 
   console.log(`\n  rank: ${pass} passed, ${fail} failed`);
