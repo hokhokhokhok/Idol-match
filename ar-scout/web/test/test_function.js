@@ -255,6 +255,62 @@ function run() {
     console.log('  note  no tox21_ar.json in this build, skipping');
   }
 
+  /* --- the two antagonist-mode lines can point opposite ways ---------
+   *
+   * Picking whichever line had the lower AC50 and calling it "the"
+   * antagonist reading produced resveratrol with an antagonist-mode
+   * efficacy of +232%, apigenin +84%, butylparaben +60% - signal
+   * increases, printed under a label saying antagonist. Both lines are
+   * kept now and the headline is the one that actually decreases, with the
+   * contradiction stated. It matters because those compounds are most of
+   * the polyphenol coverage in the read-across pool, so fisetin and
+   * quercetin lean on contested evidence. */
+  console.log('\n  cell-line disagreement');
+  const potPath = path.join(__dirname, '..', 'assets', 'tox21_potency.json');
+  if (fs.existsSync(potPath)) {
+    const potency = JSON.parse(fs.readFileSync(potPath, 'utf8')).data;
+    const look = name => {
+      const e = PR.INGREDIENTS.filter(x => x[1] === name)[0];
+      return e ? PR.readPotency(potency[AR.structureIdOf(AR.parseSmiles(e[2]))] || null) : null;
+    };
+    /* the headline efficacy must never be a signal increase */
+    let wrongWay = 0, checked = 0;
+    for (const [ko, en, smi] of PR.INGREDIENTS) {
+      const r = look(en);
+      if (!r || r.ae == null || !r.lines) continue;
+      checked++;
+      const anyDown = Object.keys(r.lines).some(k => r.lines[k].e != null && r.lines[k].e < 0);
+      if (anyDown && r.ae > 0) {
+        wrongWay++;
+        console.log(`  FAIL  ${en}: headline efficacy +${r.ae}% while a line shows a decrease`);
+      }
+    }
+    if (!wrongWay) {
+      pass++;
+      console.log(`  ok    ${'headline prefers the decrease'.padEnd(30)} ${checked} compounds`);
+    } else fail += wrongWay;
+
+    const gen = look('Genistein');
+    if (gen && gen.disagree && gen.notes.length && gen.ae < 0) {
+      pass++;
+      console.log(`  ok    ${'genistein is marked contested'.padEnd(30)} ` +
+                  `${gen.ae}% headline, both lines kept`);
+    } else {
+      fail++;
+      console.log('  FAIL  genistein should be flagged: its two lines are +309% and -85%');
+    }
+
+    /* and a compound whose lines agree must not be flagged */
+    const bic = look('Bicalutamide');
+    if (bic && !bic.disagree) {
+      pass++;
+      console.log(`  ok    ${'agreeing lines are not flagged'.padEnd(30)} bicalutamide`);
+    } else {
+      fail++;
+      console.log('  FAIL  bicalutamide flagged as contested when both lines decrease');
+    }
+  }
+
   /* --- a measurement another receptor explains is not an AR call -----
    *
    * Hydrocortisone, prednisolone and corticosterone sat in the read-across

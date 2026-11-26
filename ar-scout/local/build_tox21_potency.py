@@ -125,15 +125,39 @@ def main() -> int:
         key = keyed.get(cid)
         if not key:
             continue
-        # strongest antagonist-mode reading across the two lines
-        best = None
+        # Both antagonist-mode lines, kept apart.
+        #
+        # Picking whichever had the lower AC50 and calling it "the"
+        # antagonist reading was wrong: resveratrol came out with an
+        # antagonist-mode efficacy of +232%, apigenin +84%, butylparaben
+        # +60% - all signal increases, reported under a label that says
+        # antagonist. The two lines genuinely disagree for these
+        # compounds, and that disagreement is the information. So each
+        # line is recorded, and the one chosen as the headline is the one
+        # that actually shows a decrease.
+        lines = {}
         for name in ("ant_MDA-kb2", "ant_BLA"):
             r = rec.get(name)
             if not r or r.get("p") is None:
                 continue
-            if best is None or r["p"] < best["p"]:
-                best = dict(r, line=name.split("_")[1])
+            lines[name.split("_")[1]] = r
+        down = [(k, v) for k, v in lines.items()
+                if v.get("e") is not None and v["e"] < 0]
+        if down:
+            k, v = min(down, key=lambda kv: kv[1]["p"])
+        elif lines:
+            k, v = min(lines.items(), key=lambda kv: kv[1]["p"])
+        else:
+            k, v = None, None
+        best = dict(v, line=k) if v else None
         entry = {}
+        if lines:
+            entry["lines"] = {k: {"p": round(v["p"], 4),
+                                  "e": None if v.get("e") is None else round(v["e"], 1),
+                                  "v": None if v.get("v") is None else round(v["v"], 4)}
+                              for k, v in lines.items()}
+            entry["disagree"] = (len(lines) > 1 and
+                                 len({(v.get("e") or 0) >= 0 for v in lines.values()}) > 1)
         if best:
             entry["ap"] = round(best["p"], 4)            # antagonist AC50, uM
             if best.get("e") is not None:
@@ -160,7 +184,9 @@ def main() -> int:
             "m": "vp / ap — 1보다 충분히 크지 않으면 길항이 아니라 세포독성",
             "gp": "작용제 모드 AC50 (µM)",
             "ge": "작용제 모드 효력 (%)",
-            "l": "ap가 나온 세포주",
+            "l": "ap가 나온 세포주 (신호가 내려간 쪽을 우선)",
+            "lines": "두 길항 세포주의 값을 각각 보관",
+            "disagree": "두 세포주가 서로 반대 방향이면 true",
         },
         "data": out,
     }

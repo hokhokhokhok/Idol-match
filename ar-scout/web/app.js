@@ -693,6 +693,10 @@ function renderSingle(result, title, subtitle) {
              '라벨된 20종에서 「효력 음수면 길항」은 14/20에 그칩니다. 알려진 ' +
              '작용제 8종 중 5종도 이 웰에서 신호를 떨어뜨리기 때문입니다' +
              '(기준 작용제와 경쟁하면 그렇게 됩니다).</p>');
+    if (pot.disagree) {
+      out.push('<p class="hint" style="margin:6px 0 0;color:var(--red)"><b>' +
+               esc(pot.notes[0]) + '</b></p>');
+    }
     if (pot.cytoSuspect) {
       out.push('<p class="hint" style="margin:6px 0 0;color:var(--red)">' +
                esc(pot.notes[pot.notes.length - 1]) + '</p>');
@@ -867,9 +871,20 @@ function renderSingle(result, title, subtitle) {
              '<th class="num">유사도</th></tr></thead><tbody>');
     for (var f = 0; f < fc.neighbours.length; f++) {
       var fn = fc.neighbours[f];
+      var fnPot = null;
+      try {
+        if (typeof POTENCY !== 'undefined' && POTENCY && POTENCY.data) {
+          var fnEntry = PR.INGREDIENTS.filter(function (x) { return x[1] === fn.n; })[0];
+          if (fnEntry) {
+            fnPot = POTENCY.data[AR.structureIdOf(AR.parseSmiles(fnEntry[2]))] || null;
+          }
+        }
+      } catch (err) { fnPot = null; }
       out.push('<tr><td>' + esc(fn.n) +
                (fn.measured ? ' <span class="hint">Tox21 실측 라벨</span>' :
                               ' <span class="hint">큐레이션 라벨</span>') +
+               (fnPot && fnPot.disagree
+                 ? ' <span class="hint" style="color:var(--red)">두 세포주 반대</span>' : '') +
                '</td><td' + (fn.c === 'antagonist' ? ' class="warnink"' : '') + '>' +
                esc(PR.CLASS_LABELS[fn.c] || fn.c) + '</td><td class="num">' +
                fx(fn.sim, 3) + '</td></tr>');

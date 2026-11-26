@@ -865,7 +865,24 @@ var MARGIN_SUSPECT = 2.0;
 function readPotency(rec) {
   if (!rec) return null;
   var out = { ap: rec.ap, ae: rec.ae, vp: rec.vp, margin: rec.m,
-              gp: rec.gp, ge: rec.ge, line: rec.l, notes: [] };
+              gp: rec.gp, ge: rec.ge, line: rec.l,
+              lines: rec.lines || null, disagree: !!rec.disagree, notes: [] };
+  /* The two antagonist-mode lines do not always point the same way.
+   * Genistein drops the BLA signal by 85% and raises the MDA-kb2 signal by
+   * 309%; apigenin, resveratrol and butylparaben do the same thing. Those
+   * four are most of the polyphenol coverage in the read-across pool, so
+   * the compounds that lean on them - fisetin, quercetin, phenylethyl
+   * resorcinol - are leaning on contested evidence and should say so. */
+  if (rec.disagree && rec.lines) {
+    var parts = [];
+    for (var k in rec.lines) {
+      if (!Object.prototype.hasOwnProperty.call(rec.lines, k)) continue;
+      parts.push(k + ' ' + rec.lines[k].p + ' µM / ' +
+                 (rec.lines[k].e > 0 ? '+' : '') + rec.lines[k].e + '%');
+    }
+    out.notes.push('두 길항 세포주가 반대 방향입니다 — ' + parts.join(', ') +
+                   '. 한쪽은 신호가 올라가고 한쪽은 내려갑니다.');
+  }
   if (rec.ap != null) {
     out.notes.push('길항제 모드 AC50 ' + rec.ap + ' µM' +
                    (rec.l ? ' (' + rec.l + ')' : '') +
