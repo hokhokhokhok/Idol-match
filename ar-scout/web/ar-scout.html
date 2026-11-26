@@ -7038,20 +7038,25 @@ function applyPreset(which) {
 
 function presetCards() {
   var ext = extendedLibrary();
-  /* Head-to-head, measured: the same 28 observed pKis predicted with the
-     compound itself removed from whichever library is active. The extended
-     set wins on both axes, and the coverage gap is the bigger one - out of
-     domain falls from 129 of 206 to 101. Put the numbers on the cards so
-     the choice is made on evidence rather than on which one is default. */
+  /* Two tests, and they disagree - which is why the second one had to be
+     run. On the self-test (the same 28 observed pKis, each predicted with
+     itself removed) the extended set wins: MAE 0.77 against 0.84, and
+     out-of-domain across the dictionary falls from 129 to 101. On the
+     external test - 94 dictionary compounds with a Tox21 verdict, a
+     measurement from outside the model - it loses badly: false positives
+     go from 2 of 60 to 6 of 60 while catching one active fewer.
+     The external test is the one that matches what this tool is used for,
+     so the curated set stays the default and the cards say both numbers. */
   var rows = [
     ['curated', '엄선 28종',
-     '문헌 경쟁결합 실측값, 손으로 고른 것. 같은 28종 자기제외 예측에서 ' +
-     'MAE 0.84 · RMSE 1.16, 사전 206종 중 적용영역 밖이 129종입니다.'],
+     '문헌 경쟁결합 실측값, 손으로 고른 것. 외부 검증(Tox21 94종)에서 ' +
+     '활성 26/34 포착, 비활성 오탐 2/60(3%). 자기시험 MAE 0.84. ' +
+     '적용영역 밖은 129종으로 많습니다. — 권장'],
     ['extended', '확장 ' + (ext ? ext.length : 0) + '종',
-     'ChEMBL AR 데이터 병합. 같은 시험에서 MAE 0.77 · RMSE 1.09로 더 낫고, ' +
-     '적용영역 밖이 101종으로 줄어듭니다. 다만 2,349종의 종·어세이 출처는 ' +
-     '확인하지 않았습니다 — 28종에서 확인했던 랫·마우스 혼재가 여기에도 ' +
-     '그대로 있을 것입니다.']
+     'ChEMBL AR 데이터 병합. 자기시험(MAE 0.77)과 적용영역(밖 101종)은 ' +
+     '더 좋지만, 외부 검증에서는 활성 25/34에 오탐 6/60(10%)으로 ' +
+     '위양성이 3배입니다. 더 가까운 이웃을 찾아주는 대신 비활성 원료까지 ' +
+     '끌어올립니다. 종·어세이 출처도 확인하지 않았습니다.']
   ];
   var out = ['<div class="presets">'];
   for (var i = 0; i < rows.length; i++) {
@@ -7369,12 +7374,14 @@ function renderModelCard() {
   out.push('<li><b>레퍼런스가 적습니다.</b> 28종뿐이라 유사 레퍼런스가 없는 골격 ' +
            '(예: RU-59063)은 과소평가됩니다. 적용영역 태그가 <code>out</code>이면 ' +
            '수치보다 태그를 먼저 보세요.</li>');
-  out.push('<li><b>레퍼런스를 바꾸면 답도 바뀝니다.</b> 확장 2,349종은 ' +
-           '같은 28종 자기제외 시험에서 MAE 0.84→0.77로 낫고 적용영역 밖을 ' +
-           '129→101종으로 줄입니다. 기본값을 조용히 바꾸지 않은 이유는 ' +
-           '이미 보신 모든 숫자가 함께 바뀌기 때문이고, 확장 쪽은 종·어세이 ' +
-           '출처를 확인하지 않았기 때문입니다. 「레퍼런스」 탭에서 ' +
-           '한 번에 바꿀 수 있습니다.</li>');
+  out.push('<li><b>확장 라이브러리는 자기시험에서만 낫습니다.</b> 28종 ' +
+           '자기제외 시험에서는 MAE 0.84→0.77이고 적용영역 밖도 129→101종으로 ' +
+           '줄어서, 한동안 이 도구는 확장 쪽을 권했습니다. <b>외부 검증을 ' +
+           '돌려 보니 반대였습니다</b> — Tox21 실측 94종에서 비활성 오탐이 ' +
+           '2/60에서 <b>6/60으로 3배</b>가 되고 활성 포착도 26→25로 줍니다. ' +
+           '더 가까운 이웃을 찾아주는 능력이 비활성 원료까지 끌어올리는 쪽으로 ' +
+           '작동합니다. 그래서 기본값은 엄선 28종이고, 두 숫자를 ' +
+           '「레퍼런스」 탭 카드에 함께 적어 두었습니다.</li>');
   out.push('<li><b>pKi 레퍼런스의 출처를 되짚었습니다.</b> 28종 뒤의 ChEMBL ' +
            'AR 활성은 사람 273건, 랫 44건, 마우스 11건입니다. ' +
            '<b>7종은 사람 AR 기록이 없고 4종은 추적되지 않습니다</b> — ' +
