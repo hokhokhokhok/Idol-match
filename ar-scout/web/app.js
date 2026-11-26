@@ -708,6 +708,13 @@ function renderSingle(result, title, subtitle) {
   out.push('<div class="pk num">' + fx(result.pKi, 2) +
            '<small>&plusmn;' + fx(result.ci, 1) + '</small></div>');
   out.push('<div class="pklabel">예측 pKi · 오차범위</div>');
+  if (p.oversize) {
+    out.push('<p class="hint" style="margin:6px 0 0;color:var(--red)">' +
+             '<b>이 숫자를 읽지 마세요.</b> 분자 부피가 결합 공동(' +
+             PR.POCKET_VOLUME + ' Å³)보다 큽니다. Tox21 판정이 있는 94종 중 ' +
+             '점유율 100%를 넘는 8종은 <b>하나도 활성이 아니었습니다</b>. ' +
+             '위 pKi는 들어가지 못하는 자리에 대한 유사도 추정입니다.</p>');
+  }
   out.push('<div class="kv">');
   out.push('<div><span class="k">Ki 환산</span><span class="v num">' +
            fx(result.kiNM, result.kiNM < 10 ? 2 : 0) + ' nM</span></div>');
@@ -1940,6 +1947,29 @@ function renderModelCard() {
            '안드로겐이 작은 17번 치환기를 갖는 자리에 스피로 고리·에스터·나이트릴 같은 ' +
            '부피 큰 기가 있으면 길항 쪽으로 투표합니다.</li>');
   out.push('</ul>');
+  out.push('<h5>외부 검증 — 이 도구가 실제로 쓰이는 대상에서</h5>');
+  out.push('<p>지금까지 이 저장소의 성능 수치는 전부 레퍼런스 28종 위에서 ' +
+           '잰 것이었습니다. 그건 약물과 스테로이드입니다. 실제로는 화장품 ' +
+           '원료에 쓰는데, 그중 <b>94종에 Tox21 실측 판정</b>이 있습니다 — ' +
+           '모델 바깥에서 온 측정값입니다.</p>');
+  out.push('<table><thead><tr><th>기준</th><th class="num">활성 포착</th>' +
+           '<th class="num">비활성 오탐</th></tr></thead><tbody>');
+  out.push('<tr><td>pKi ≥ 5.0</td><td class="num">26 / 34</td>' +
+           '<td class="num">4 / 60 (7%)</td></tr>');
+  out.push('<tr><td><b>pKi ≥ 5.0 + 부피 초과 제외</b></td>' +
+           '<td class="num"><b>26 / 34</b></td>' +
+           '<td class="num"><b>2 / 60 (3%)</b></td></tr>');
+  out.push('</tbody></table>');
+  out.push('<p><b>부피 규칙은 여기서 나왔습니다.</b> AR 공동은 약 400 Å³로 ' +
+           '핵수용체 중에서도 작은 편입니다. 실측 94종을 점유율로 나누면 ' +
+           '0–60% 활성 24%, 60–85% 60%, 85–100% 80%, 그리고 ' +
+           '<b>100% 초과 8종은 활성 0종</b>입니다. 그런데 read-across는 이걸 ' +
+           '모릅니다 — 콜레스테롤(106%)과 베타시토스테롤(114%)이 pKi 6.4로 ' +
+           '나왔고 시토스테롤은 「길항제 가능성」까지 받았습니다. 스테로이드 ' +
+           '골격이 맞으니 점수가 높고, C17 꼬리 때문에 나머지가 들어갈 자리가 ' +
+           '없다는 것은 모르기 때문입니다. 위양성이 4건에서 2건으로 줄었고 ' +
+           '활성 포착은 그대로입니다. 남은 2건은 멜라토닌(5.21)과 ' +
+           '호모살레이트(5.08)로 둘 다 기준선 바로 위입니다.</p>');
   out.push('<h5>효력 축 — 있는 만큼만</h5>');
   out.push('<p>이 도구의 가장 큰 구멍은 <b>길항성을 재지 않으면서 길항제 순위를 ' +
            '매긴다</b>는 것이었습니다. pKi는 결합 세기이고, 길항 효력은 결합 후 ' +

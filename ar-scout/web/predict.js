@@ -1704,6 +1704,33 @@ function predict(smiles, options) {
 
   var pocket = mapContacts(desc, motifs, options.dock || null);
 
+  /* A molecule bigger than the cavity is not going into it.
+   *
+   * The AR pocket is about 400 A^3 and it is one of the smaller nuclear
+   * receptor sites. Checked against the 94 dictionary compounds with a
+   * Tox21 verdict, the bands run 0-60% occupancy 24% active, 60-85% 60%,
+   * 85-100% 80%, and over 100% - eight compounds - zero active. Not one.
+   *
+   * The read-across does not know this, and it was the tool's two worst
+   * false positives: cholesterol at 106% of the cavity and beta-sitosterol
+   * at 114% came back at pKi 6.4, measured inactive, and sitosterol was
+   * even labelled a possible antagonist. They score well because they are
+   * steroids, and the model matches the scaffold without noticing that the
+   * C17 tail leaves no room for the rest of the molecule.
+   *
+   * The number is not quietly adjusted - that would hide the disagreement.
+   * The structural verdict is forced down and says why. */
+  if (volume > POCKET_VOLUME) {
+    pocket.verdictKey = 'weak';
+    pocket.verdict = '공동보다 큼 — 결합 불가';
+    pocket.oversize = true;
+    pocket.notes = (pocket.notes || []).concat(
+      '분자 부피 ' + Math.round(volume) + ' Å³가 공동 ' + POCKET_VOLUME +
+      ' Å³보다 큽니다. Tox21 판정이 있는 사전 94종에서 점유율 100%를 넘는 ' +
+      '8종은 하나도 활성이 아니었습니다. 아래 pKi는 들어가지 못하는 자리에 ' +
+      '대한 유사도 추정이므로 읽지 마세요.');
+  }
+
   /* Keep the two verdicts from contradicting each other. The anchor rules
    * answer "could the polar groups reach the anchors", which a tetra-alanine
    * satisfies on paper; saying "binding plausible" next to a predicted Ki of

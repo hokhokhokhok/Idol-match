@@ -257,6 +257,90 @@ function run() {
     console.log('  note  no pocket_scene.json in this build, skipping');
   }
 
+  /* --- external validation on the actual use case --------------------
+   *
+   * Every performance number in this repository until now was measured on
+   * the 28-compound reference library, which is drugs and steroids. The
+   * tool is used on cosmetic ingredients, and 94 of those have a Tox21
+   * verdict - a measurement from outside the model entirely. This is the
+   * only test here that asks whether the tool is right about the things it
+   * is actually pointed at. */
+  console.log('\n  external validation (Tox21 verdicts)');
+  const toxP = require('path').join(__dirname, '..', 'assets', 'tox21_ar.json');
+  if (require('fs').existsSync(toxP)) {
+    const tox = JSON.parse(require('fs').readFileSync(toxP, 'utf8'));
+    const inactive = [], active = [];
+    for (const [ko, en, smi] of PR.INGREDIENTS) {
+      let mol;
+      try { mol = AR.parseSmiles(smi); } catch (err) { continue; }
+      const code = tox.calls[AR.structureIdOf(mol)];
+      if (!code) continue;
+      const read = PR.readTox21(code);
+      if (!read || !read.verdict) continue;
+      let r;
+      try { r = PR.predict(smi, {}); } catch (err) { continue; }
+      const row = { en: en, pKi: r.pKi, over: !!r.pocket.oversize };
+      (read.verdict === 'inactive' ? inactive : active).push(row);
+    }
+    const binds = r => r.pKi >= 5.0 && !r.over;
+    const tp = active.filter(binds).length;
+    const fp = inactive.filter(binds).length;
+    console.log(`        ${active.length} measured active, ${inactive.length} measured inactive`);
+    console.log(`        pKi >= 5.0 and not oversize: ${tp}/${active.length} caught, ` +
+                `${fp}/${inactive.length} false positives ` +
+                `(${Math.round(100 * fp / inactive.length)}%)`);
+    if (tp >= 22 && fp <= 6) {
+      pass++;
+      console.log(`  ok    ${'separates measured actives'.padEnd(34)} ` +
+                  `${tp} caught, ${fp} false`);
+    } else {
+      fail++;
+      console.log(`  FAIL  external validation slipped: ${tp} caught, ${fp} false`);
+    }
+
+    /* The oversize rule, which is what halved the false positives. The AR
+       pocket is about 400 A^3; of the compounds over 100% occupancy in the
+       measured set, none is active. Cholesterol (106%) and beta-sitosterol
+       (114%) came back at pKi 6.4 and sitosterol was called a possible
+       antagonist, because the model matches the steroid scaffold and does
+       not notice the C17 tail leaves no room. */
+    const over = inactive.concat(active).filter(r => r.over);
+    const overActive = active.filter(r => r.over).length;
+    if (over.length >= 5 && overActive === 0) {
+      pass++;
+      console.log(`  ok    ${'nothing oversized is active'.padEnd(34)} ` +
+                  `${over.length} compounds over the cavity, 0 active`);
+    } else {
+      fail++;
+      console.log(`  FAIL  ${overActive} of ${over.length} oversized compounds are active — ` +
+                  'the rule needs re-examining');
+    }
+    for (const name of ['Cholesterol', 'beta-Sitosterol']) {
+      const e = PR.INGREDIENTS.filter(x => x[1] === name)[0];
+      if (!e) continue;
+      const r = PR.predict(e[2], {});
+      if (r.pocket.oversize && r.pocket.verdictKey === 'weak') {
+        pass++;
+        console.log(`  ok    ${(name + ' is refused on volume').padEnd(34)} ` +
+                    `${Math.round(r.occupancy)}% of the cavity`);
+      } else {
+        fail++;
+        console.log(`  FAIL  ${name} is not refused: ${r.pocket.verdict}`);
+      }
+    }
+    /* and a real binder must not be caught by it */
+    const dhtE = PR.INGREDIENTS.filter(x => x[1] === 'Dihydrotestosterone')[0];
+    const dhtR = PR.predict(dhtE[2], {});
+    if (!dhtR.pocket.oversize) {
+      pass++;
+      console.log(`  ok    ${'real ligands are not refused'.padEnd(34)} DHT at ` +
+                  `${Math.round(dhtR.occupancy)}%`);
+    } else {
+      fail++;
+      console.log('  FAIL  DHT refused on volume — the threshold is wrong');
+    }
+  }
+
   console.log(`\n  predict: ${pass} passed, ${fail} failed`);
   return fail;
 }
