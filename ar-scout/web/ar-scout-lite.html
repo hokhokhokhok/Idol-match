@@ -254,6 +254,10 @@ label.filebtn {
 }
 label.filebtn input { display: none; }
 .btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+/* six tabs do not fit a phone; let the strip scroll rather than squash */
+nav.tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+nav.tabs::-webkit-scrollbar { display: none; }
+nav.tabs button { flex: 0 0 auto; }
 label.chk {
   display: inline-flex;
   align-items: center;
@@ -277,6 +281,13 @@ th.sortable:hover { color: var(--blue); }
 th.sortable .arrow { opacity: .45; font-size: 10px; margin-left: 3px; }
 tr.flagged td:first-child { box-shadow: inset 3px 0 0 #FF9500; }
 .rankno { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-3); }
+td.smi {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+  word-break: break-all;
+  max-width: 220px;
+}
 
 .err {
   background: var(--red-wash);
@@ -525,7 +536,9 @@ footer.foot {
   <nav class="tabs" id="tabs">
     <button type="button" data-tab="single" aria-selected="true">단건 조회</button>
     <button type="button" data-tab="batch" aria-selected="false">배치 스크리닝</button>
+    <button type="button" data-tab="affinity" aria-selected="false">결합 친화도</button>
     <button type="button" data-tab="rank" aria-selected="false">길항제 순위</button>
+    <button type="button" data-tab="design" aria-selected="false">유도체 설계</button>
     <button type="button" data-tab="library" aria-selected="false">레퍼런스</button>
   </nav>
 
@@ -567,6 +580,27 @@ footer.foot {
     <div id="batch-out"></div>
   </section>
 
+  <!-- ------------------------------------------------ affinity ranking -->
+  <section id="tab-affinity" class="hidden">
+    <div class="panel">
+      <h2>결합 친화도 순위 — 사전 전체</h2>
+      <p class="hint">예측 pKi가 높은 순으로 사전 전체를 세우고, 작용제·길항제 판정을
+        나란히 붙입니다. 「얼마나 세게 붙느냐」와 「어느 방향이냐」는 근거도 신뢰도도
+        다른 별개의 질문이라 한 점수로 합치지 않았습니다.</p>
+      <div class="btnbar">
+        <button class="go" id="affrun" type="button">전체 계산</button>
+        <button class="alt" id="affcopy" type="button">TSV 복사</button>
+      </div>
+      <div class="btnbar" id="afffilters">
+        <label class="chk"><input type="checkbox" id="affin" checked> 적용영역 밖 숨기기</label>
+        <label class="chk"><input type="checkbox" id="affanta"> 길항제만</label>
+        <label class="chk"><input type="checkbox" id="affago"> 작용제만</label>
+      </div>
+      <div id="aff-err"></div>
+    </div>
+    <div id="aff-out"></div>
+  </section>
+
   <!-- ------------------------------------------------ antagonist ranking -->
   <section id="tab-rank" class="hidden">
     <div class="panel">
@@ -582,6 +616,26 @@ footer.foot {
       <div id="rank-err"></div>
     </div>
     <div id="rank-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ analogue design -->
+  <section id="tab-design" class="hidden">
+    <div class="panel">
+      <h2>유도체 설계 — 길항 방향 탐색</h2>
+      <p class="hint">길항제로 판정된 물질을 고르면, 그 분자의 열린 방향족 자리마다
+        치환기를 붙인 유도체를 만들어 같은 엔진으로 다시 채점합니다. 생성물은 전부
+        화학식까지 대조해 검증합니다. <b>읽는 법은 결과 위에 적어 두었습니다 —
+        이 탭은 최적화기가 아니라 가설 생성기입니다.</b></p>
+      <label class="fld" for="designq">모화합물 (이름 또는 SMILES)</label>
+      <input type="text" id="designq" list="names" placeholder="예: 비칼루타마이드" autocomplete="off">
+      <div class="btnbar">
+        <button class="go" id="designrun" type="button">유도체 생성</button>
+        <button class="alt" id="designcopy" type="button">TSV 복사</button>
+        <label class="chk"><input type="checkbox" id="designctl" checked> 대조군 치환기 함께 보기</label>
+      </div>
+      <div id="design-err"></div>
+    </div>
+    <div id="design-out"></div>
   </section>
 
   <!-- ------------------------------------------------ library -->
@@ -751,7 +805,13 @@ function parseSmiles(smiles) {
     atoms[b].nbr.push(a); atoms[b].bidx.push(idx);
   }
 
-  function pushAtom(atom) {
+  /* Where this atom's token sits in the input string. The analogue
+   * generator edits SMILES text (there is no writer here), so it has to be
+   * able to go from "this aromatic CH in the graph" back to the exact
+   * characters that produced it. Nothing else reads these. */
+  function pushAtom(atom, len) {
+    atom.pos = i;
+    atom.len = len;
     atoms.push(atom);
     var idx = atoms.length - 1;
     if (prev >= 0) addBond(prev, idx, pending);
@@ -767,7 +827,7 @@ function parseSmiles(smiles) {
     if (ch === '[') {
       var close = smi.indexOf(']', i);
       if (close < 0) throw new Error('unclosed [ in SMILES');
-      pushAtom(parseBracketAtom(smi.substring(i + 1, close)));
+      pushAtom(parseBracketAtom(smi.substring(i + 1, close)), close + 1 - i);
       i = close + 1;
       continue;
     }
@@ -805,13 +865,13 @@ function parseSmiles(smiles) {
     }
 
     var t2 = smi.substr(i, 2);
-    if (ORGANIC_TWO.indexOf(t2) >= 0) { pushAtom(makeAtom(t2, false)); i += 2; continue; }
+    if (ORGANIC_TWO.indexOf(t2) >= 0) { pushAtom(makeAtom(t2, false), 2); i += 2; continue; }
     if (AROMATIC_TWO.indexOf(t2) >= 0) {
-      pushAtom(makeAtom(t2[0].toUpperCase() + t2[1], true)); i += 2; continue;
+      pushAtom(makeAtom(t2[0].toUpperCase() + t2[1], true), 2); i += 2; continue;
     }
-    if (ORGANIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch, false)); i += 1; continue; }
-    if (AROMATIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch.toUpperCase(), true)); i += 1; continue; }
-    if (ch === '*') { pushAtom(makeAtom('C', false)); i += 1; continue; }
+    if (ORGANIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch, false), 1); i += 1; continue; }
+    if (AROMATIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch.toUpperCase(), true), 1); i += 1; continue; }
+    if (ch === '*') { pushAtom(makeAtom('C', false), 1); i += 1; continue; }
 
     throw new Error('unexpected character "' + ch + '" at ' + i + ' in SMILES');
   }
@@ -3650,6 +3710,229 @@ function callFunction(fp, options) {
     (100 * share).toFixed(0) + '% 우세).');
 }
 
+/* --------------------------------------------- affinity ranking ------
+ *
+ * Potency first, function second: the whole dictionary ordered by predicted
+ * pKi, with the agonist/antagonist call carried alongside so the two
+ * questions stay separate. They are separate. A compound can bind hard and
+ * do nothing, and the tool answers "how tightly" and "which direction" with
+ * different evidence and different reliability, so blending them into one
+ * list would misrepresent both.
+ *
+ * The applicability-domain tag matters more here than anywhere else. A pKi
+ * for a compound with no close reference is an extrapolation, and sorting
+ * by it puts the least trustworthy numbers wherever they happen to land -
+ * so the tag travels with every row and can be filtered on. */
+function rankAffinity(evidenceFor) {
+  var rows = [];
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var ko = INGREDIENTS[i][0], en = INGREDIENTS[i][1], smi = INGREDIENTS[i][2];
+    var mol;
+    try { mol = AR.parseSmiles(smi); } catch (err) { continue; }
+    var ev = {};
+    try { ev = evidenceFor(smi, mol) || {}; } catch (err) { ev = {}; }
+    var res;
+    try { res = predict(smi, ev); } catch (err) { continue; }
+    var fc = res.functionCall;
+    var curatedLabel = FUNCTION_CLASS[en] || null;
+    rows.push({
+      ko: ko, en: en, smiles: smi,
+      pKi: res.pKi, ci: res.ci, kiNM: res.kiNM, domain: res.domain,
+      label: fc.label, tier: curatedLabel === fc.label ? 'curated' : fc.tier,
+      callTier: fc.tier, curatedLabel: curatedLabel,
+      nearest: res.nearestSim, pocketVerdict: res.pocket.verdict,
+      pocketKey: res.pocket.verdictKey, occupancy: res.occupancy, mw: res.mw
+    });
+  }
+  rows.sort(function (a, b) {
+    if (b.pKi !== a.pKi) return b.pKi - a.pKi;
+    return a.en < b.en ? -1 : 1;
+  });
+  for (var r = 0; r < rows.length; r++) rows[r].rank = r + 1;
+  return rows;
+}
+
+/* --------------------------------------------- analogue design -------
+ *
+ * There is no SMILES writer in this engine, so analogues are made by
+ * editing the parent's SMILES text at a position the graph picked, then
+ * re-parsing. That is fragile, and the guard against it is the same one
+ * that caught the ChEMBL ester/salt mix-ups: every rule declares the exact
+ * formula change it should produce, and any product whose measured formula
+ * does not match is thrown away rather than shown.
+ *
+ * The substituents are not invented. Each is a group that the known
+ * non-steroidal antiandrogens actually carry - aryl-CF3 in bicalutamide,
+ * enzalutamide, flutamide and nilutamide; aryl nitrile in bicalutamide,
+ * enzalutamide and apalutamide; aryl nitro in flutamide and nilutamide;
+ * the methylsulfonyl of bicalutamide. Methyl, hydroxyl and the halogens
+ * are included as controls: if the ranking cannot tell a pharmacophore
+ * from a methyl group, it is not reading SAR, it is reading noise.
+ */
+var DESIGN_RULES = [
+  { id: 'cf3',  frag: 'C(F)(F)F',      add: { C: 1, F: 3 },
+    name: '트리플루오로메틸 (-CF3)',
+    why: '비칼루타마이드·엔잘루타미드·플루타마이드·닐루타미드가 모두 방향족 CF3를 갖습니다' },
+  { id: 'cn',   frag: 'C#N',           add: { C: 1, N: 1 },
+    name: '나이트릴 (-C≡N)',
+    why: '비칼루타마이드·엔잘루타미드·아팔루타미드의 공통 치환기' },
+  { id: 'no2',  frag: '[N+](=O)[O-]',  add: { N: 1, O: 2 },
+    name: '나이트로 (-NO2)',
+    why: '플루타마이드·닐루타미드의 전자끌개' },
+  { id: 'so2me', frag: 'S(=O)(=O)C',   add: { S: 1, O: 2, C: 1 },
+    name: '메틸설포닐 (-SO2CH3)',
+    why: '비칼루타마이드의 설폰' },
+  { id: 'f',    frag: 'F',             add: { F: 1 }, control: true,
+    name: '불소 (-F)',          why: '할로겐 스캔 — 대조군' },
+  { id: 'cl',   frag: 'Cl',            add: { Cl: 1 }, control: true,
+    name: '염소 (-Cl)',         why: '할로겐 스캔 — 대조군' },
+  { id: 'me',   frag: 'C',             add: { C: 1 }, control: true,
+    name: '메틸 (-CH3)',        why: '소수성만 올리는 대조군' },
+  { id: 'oh',   frag: 'O',             add: { O: 1 }, control: true,
+    name: '하이드록실 (-OH)',   why: '극성만 올리는 대조군' }
+];
+
+/* Where a branch may be opened after an atom's own token: past any
+ * ring-closure markers that belong to it, so "c1" becomes "c1(X)". */
+function branchPointAfter(smi, atom) {
+  var k = atom.pos + atom.len;
+  while (k < smi.length) {
+    var c = smi.charAt(k);
+    if (c >= '0' && c <= '9') { k++; continue; }
+    if (c === '%') {
+      k++;
+      while (k < smi.length && smi.charAt(k) >= '0' && smi.charAt(k) <= '9') k++;
+      continue;
+    }
+    /* a bond symbol only counts when it is marking a ring closure */
+    if ('-=#:/\\'.indexOf(c) >= 0 && k + 1 < smi.length) {
+      var n = smi.charAt(k + 1);
+      if ((n >= '0' && n <= '9') || n === '%') { k += 2; continue; }
+    }
+    break;
+  }
+  return k;
+}
+
+function countElements(mol) {
+  var out = {};
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var el = mol.atoms[i].el;
+    out[el] = (out[el] || 0) + 1;
+  }
+  return out;
+}
+
+/* The open aromatic CH positions on six-membered rings - the only sites
+ * these rules are allowed to touch. */
+function substitutionSites(mol) {
+  var sites = [];
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var a = mol.atoms[i];
+    if (!a.arom || a.el !== 'C' || a.bracket) continue;
+    if (a.nH < 1 || !a.inRing) continue;
+    if ((a.ringSizes || []).indexOf(6) < 0) continue;
+    sites.push(i);
+  }
+  return sites;
+}
+
+function designAnalogues(parentSmiles, evidenceFor, options) {
+  options = options || {};
+  var parent = AR.parseSmiles(parentSmiles);
+  var parentCounts = countElements(parent);
+  var sites = substitutionSites(parent);
+  var parentRes = predict(parentSmiles, evidenceFor(parentSmiles, parent) || {});
+  var parentFp = AR.packFingerprint(AR.morganFingerprint(parent, 2));
+
+  var out = [], rejected = 0, seen = {};
+  for (var r = 0; r < DESIGN_RULES.length; r++) {
+    var rule = DESIGN_RULES[r];
+    for (var s = 0; s < sites.length; s++) {
+      var atom = parent.atoms[sites[s]];
+      var cut = branchPointAfter(parentSmiles, atom);
+      var smi = parentSmiles.slice(0, cut) + '(' + rule.frag + ')' +
+                parentSmiles.slice(cut);
+
+      var mol;
+      try { mol = AR.parseSmiles(smi); } catch (err) { rejected++; continue; }
+
+      /* the formula must have moved by exactly what the rule promised, and
+         by nothing else - this is what catches a bad string edit */
+      var got = countElements(mol), ok = true, el;
+      for (el in got) {
+        if (!Object.prototype.hasOwnProperty.call(got, el)) continue;
+        var want = (parentCounts[el] || 0) + (rule.add[el] || 0);
+        if (got[el] !== want) { ok = false; break; }
+      }
+      for (el in parentCounts) {
+        if (!Object.prototype.hasOwnProperty.call(parentCounts, el)) continue;
+        if (got[el] === undefined) { ok = false; break; }
+      }
+      /* and it must not have created or destroyed a ring */
+      if (ok && mol.ringCount !== parent.ringCount) ok = false;
+      if (!ok) { rejected++; continue; }
+
+      var id = AR.structureIdOf(mol);
+      if (seen[id]) continue;          /* symmetry gives the same product */
+      seen[id] = true;
+
+      var res;
+      try { res = predict(smi, evidenceFor(smi, mol) || {}); }
+      catch (err) { rejected++; continue; }
+
+      out.push({
+        smiles: smi, rule: rule.id, ruleName: rule.name, why: rule.why,
+        control: !!rule.control, site: sites[s],
+        pKi: res.pKi, dPKi: res.pKi - parentRes.pKi,
+        domain: res.domain, nearest: res.nearestSim,
+        label: res.functionCall.label, tier: res.functionCall.tier,
+        support: res.functionCall.support,
+        fnNearest: res.functionCall.nearest,
+        refAntagonists: res.functionCall.refAntagonists || [],
+        pocketVerdict: res.pocket.verdict,
+        occupancy: res.occupancy,
+        parentSim: AR.tanimotoPacked(
+          parentFp, AR.packFingerprint(AR.morganFingerprint(mol, 2))),
+        mw: res.mw
+      });
+    }
+  }
+
+  /* An analogue whose own applicability-domain tag is "out" is not a worse
+     candidate, it is an unscored one: the pKi it carries is an
+     extrapolation from references that look nothing like it. Those are
+     separated rather than ranked, so a big meaningless number cannot sit
+     at the top of the list. */
+  var scored = [], unscored = [];
+  for (var i = 0; i < out.length; i++) {
+    (out[i].domain === 'out' ? unscored : scored).push(out[i]);
+  }
+  var rank = { antagonist: 2, partial: 1, unknown: 0, agonist: -1, inactive: -1 };
+  scored.sort(function (a, b) {
+    var ra = rank[a.label] === undefined ? 0 : rank[a.label];
+    var rb = rank[b.label] === undefined ? 0 : rank[b.label];
+    if (rb !== ra) return rb - ra;
+    return b.pKi - a.pKi;
+  });
+  unscored.sort(function (a, b) { return b.pKi - a.pKi; });
+  for (var j = 0; j < scored.length; j++) scored[j].rank = j + 1;
+
+  return {
+    parent: {
+      smiles: parentSmiles, pKi: parentRes.pKi, domain: parentRes.domain,
+      label: parentRes.functionCall.label, tier: parentRes.functionCall.tier,
+      pocketVerdict: parentRes.pocket.verdict, mw: parentRes.mw,
+      occupancy: parentRes.occupancy
+    },
+    sites: sites.length,
+    scored: scored,
+    unscored: unscored,
+    rejected: rejected,
+    rules: DESIGN_RULES
+  };
+}
+
 /* ------------------------------------------- antagonist ranking ------
  *
  * Ranking the whole dictionary needs one ordering out of evidence that does
@@ -4414,6 +4697,10 @@ var PR = {
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
   rankAntagonists: rankAntagonists,
+  rankAffinity: rankAffinity,
+  designAnalogues: designAnalogues,
+  DESIGN_RULES: DESIGN_RULES,
+  substitutionSites: substitutionSites,
   RANK_BANDS: RANK_BANDS,
   TOX21_MODES: TOX21_MODES,
   registerMeasured: registerMeasured,
@@ -5305,7 +5592,7 @@ function renderSingle(result, title, subtitle) {
 
 /* ------------------------------------------------------------- tabs */
 
-var TABS = ['single', 'batch', 'rank', 'library'];
+var TABS = ['single', 'batch', 'affinity', 'rank', 'design', 'library'];
 
 function selectTab(name) {
   for (var i = 0; i < TABS.length; i++) {
@@ -5322,6 +5609,265 @@ function selectTab(name) {
     var isSel = btns[j].getAttribute('data-tab') === name;
     btns[j].setAttribute('aria-selected', isSel ? 'true' : 'false');
   }
+}
+
+/* -------------------------------------------------- affinity ranking */
+
+var affRows = null;
+
+function visibleAffRows() {
+  if (!affRows) return [];
+  var hideOut = $('affin') && $('affin').checked;
+  var onlyAnta = $('affanta') && $('affanta').checked;
+  var onlyAgo = $('affago') && $('affago').checked;
+  return affRows.filter(function (r) {
+    if (hideOut && r.domain === 'out') return false;
+    if (onlyAnta && r.label !== 'antagonist') return false;
+    if (onlyAgo && r.label !== 'agonist') return false;
+    return true;
+  });
+}
+
+function renderAffinity() {
+  var host = $('aff-out');
+  if (!host || !affRows) return;
+  var rows = visibleAffRows();
+  var lab = {};
+  for (var i = 0; i < affRows.length; i++) lab[affRows[i].label] = (lab[affRows[i].label] || 0) + 1;
+
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>사전 ' + affRows.length + '종 · 표시 ' + rows.length + '종</h3>');
+  out.push('<dl class="tiles">');
+  out.push(tile('길항제', String(lab.antagonist || 0)));
+  out.push(tile('작용제', String(lab.agonist || 0)));
+  out.push(tile('부분 작용제', String(lab.partial || 0)));
+  out.push(tile('비활성·불명', String((lab.inactive || 0) + (lab.unknown || 0))));
+  out.push('</dl>');
+  out.push('<p class="hint"><b>적용영역 태그를 먼저 보세요.</b> 가까운 레퍼런스가 ' +
+           '없는 물질의 pKi는 외삽이고, pKi로 정렬하면 그 숫자가 어디에 떨어지든 ' +
+           '그 자리에 앉습니다. 기본값은 <code>out</code>을 숨긴 상태입니다. ' +
+           '오차범위는 물질마다 다르며 표에 함께 표시됩니다.</p>');
+  out.push('</div>');
+
+  out.push('<div class="panel"><h3>순위</h3>');
+  out.push('<table><thead><tr><th>#</th><th>물질</th>' +
+           '<th class="num">예측 pKi</th><th class="num">Ki</th>' +
+           '<th>적용영역</th><th>기능</th><th>구조 판정</th></tr></thead><tbody>');
+  for (var j = 0; j < rows.length; j++) {
+    var r = rows[j];
+    var fnCls = r.label === 'antagonist' ? ' class="warnink"' : '';
+    out.push('<tr><td class="rankno">' + r.rank + '</td>' +
+             '<td><b>' + esc(r.ko) + '</b><br><span class="hint">' + esc(r.en) + '</span></td>' +
+             '<td class="num">' + fx(r.pKi, 2) +
+             '<span class="hint"> ±' + fx(r.ci, 1) + '</span></td>' +
+             '<td class="num">' + fx(r.kiNM, r.kiNM < 10 ? 2 : 0) + ' nM</td>' +
+             '<td><span class="tag ' + esc(r.domain) + '">' +
+             esc({ 'in': '내', edge: '경계', out: '밖' }[r.domain]) + '</span></td>' +
+             '<td' + fnCls + '>' + esc(PR.tierPhrase(r.tier, r.label)) + '</td>' +
+             '<td class="hint">' + esc(r.pocketVerdict || '') + '</td></tr>');
+  }
+  out.push('</tbody></table></div>');
+  host.innerHTML = out.join('');
+}
+
+function runAffinity() {
+  showError('aff-err', '');
+  var host = $('aff-out');
+  if (host) host.innerHTML = '<div class="panel"><p class="hint">계산 중…</p></div>';
+  ensureMeasuredPool();
+  setTimeout(function () {
+    try { affRows = PR.rankAffinity(evidenceFor); renderAffinity(); }
+    catch (err) {
+      if (host) host.innerHTML = '';
+      showError('aff-err', '계산 실패: ' + err.message);
+    }
+  }, 20);
+}
+
+function affinityTsv() {
+  var rows = visibleAffRows();
+  var lines = ['순위\t한글명\t영문명\t예측pKi\t오차\tKi_nM\t적용영역\t기능\t증거등급\t구조판정\tSMILES'];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    lines.push([r.rank, r.ko, r.en, r.pKi.toFixed(2), r.ci.toFixed(2),
+                r.kiNM.toFixed(2), r.domain,
+                PR.CLASS_LABELS[r.label] || r.label,
+                PR.TIER_LABELS[r.tier] ? PR.TIER_LABELS[r.tier].word : r.tier,
+                r.pocketVerdict, r.smiles].join('\t'));
+  }
+  return lines.join('\n');
+}
+
+/* ---------------------------------------------------- analogue design */
+
+var designData = null;
+
+/* The model's own noise. Leave-one-out over the reference set gives
+ * MAE 0.5 and RMSE 1.4 log units, and each prediction carries its own
+ * confidence interval. A delta smaller than that is not a weak signal, it
+ * is no signal, and the design table says so per row instead of letting a
+ * +0.06 sit at the top looking like an improvement. */
+var DESIGN_NOISE = 0.7;
+
+function renderDesign() {
+  var host = $('design-out');
+  if (!host || !designData) return;
+  var d = designData;
+  var showCtl = !$('designctl') || $('designctl').checked;
+  var rows = d.scored.filter(function (a) { return showCtl || !a.control; });
+  var unscored = d.unscored.filter(function (a) { return showCtl || !a.control; });
+
+  var all = d.scored.concat(d.unscored);
+  var inNoise = 0, flipped = 0;
+  for (var i = 0; i < all.length; i++) {
+    if (Math.abs(all[i].dPKi) <= DESIGN_NOISE) inNoise++;
+    if (all[i].label !== d.parent.label) flipped++;
+  }
+  var pharm = all.filter(function (a) { return !a.control; });
+  var ctl = all.filter(function (a) { return a.control; });
+  var best = function (xs) {
+    var m = -99;
+    for (var k = 0; k < xs.length; k++) if (xs[k].dPKi > m) m = xs[k].dPKi;
+    return m;
+  };
+  var pBest = best(pharm), cBest = best(ctl);
+
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>' + esc(d.parentName || d.parent.smiles) + '</h3>');
+  out.push('<dl class="tiles">');
+  out.push(tile('모화합물 pKi', fx(d.parent.pKi, 2)));
+  out.push(tile('치환 자리', String(d.sites)));
+  out.push(tile('검증 통과', String(all.length)));
+  out.push(tile('화학식 불일치로 폐기', String(d.rejected)));
+  out.push('</dl>');
+
+  /* the honest reading, with this run's own numbers in it */
+  out.push('<h4 class="sect">이 표를 읽는 법</h4>');
+  out.push('<p class="hint"><b>이 탭은 최적화기가 아니라 가설 생성기입니다.</b> ' +
+           '점수를 매기는 모델과 순위를 만드는 모델이 같습니다. 같은 모델을 상대로 ' +
+           '점수를 올리면 <b>모델을 잘 속이는 분자</b>가 나오지, 잘 듣는 분자가 ' +
+           '나오지 않습니다. 그래서 숫자가 올랐다는 것은 근거가 아니라 ' +
+           '<b>실험해 볼 후보라는 뜻</b>입니다.</p>');
+  out.push('<p class="hint">모델의 교차검증 오차는 MAE 0.5 · RMSE 1.4 log이고 ' +
+           '이 모화합물의 예측 오차범위는 ±' + fx(d.parent.ci || 0.7, 1) + '입니다. ' +
+           '<b>이번 ' + all.length + '종 중 ' + inNoise + '종(' +
+           Math.round(100 * inNoise / Math.max(1, all.length)) +
+           '%)은 ΔpKi가 ±' + DESIGN_NOISE + ' 안에 들어 「구분 불가」입니다.</b> ' +
+           '기능 판정이 모화합물과 달라진 것은 ' + flipped + '종입니다.</p>');
+  out.push('<p class="hint"><b>대조군을 일부러 섞어 넣었습니다.</b> 메틸·하이드록실·' +
+           '불소·염소는 AR 길항 약리단이 아닙니다. 이것들이 CF3·나이트릴·나이트로·' +
+           '설포닐과 구분되지 않으면 순위는 SAR이 아니라 잡음을 읽고 있는 것입니다. ' +
+           '이번 모화합물에서는 약리단 최고 Δ ' + (pBest >= 0 ? '+' : '') + fx(pBest, 2) +
+           ' 대 대조군 최고 Δ ' + (cBest >= 0 ? '+' : '') + fx(cBest, 2) + ' 로 ' +
+           (pBest > cBest
+             ? '<b>약리단이 앞섭니다</b> — 그래도 차이가 오차범위 안이면 의미는 없습니다.'
+             : '<b>대조군이 앞섭니다. 이 분자에서는 순위를 믿지 마세요.</b>') +
+           '</p>');
+  out.push('<p class="hint">치환 자리는 <b>6원 방향족 고리의 수소가 남은 탄소</b>로 ' +
+           '한정했습니다. 스테로이드 골격의 17번 치환처럼 길항성을 실제로 좌우하는 ' +
+           '변형은 SMILES 문자열 편집으로 안전하게 만들 수 없어 넣지 않았습니다. ' +
+           '생성물은 모두 다시 파싱해 <b>화학식이 규칙이 약속한 만큼 정확히</b> ' +
+           '바뀌었는지, 고리 수가 그대로인지 확인한 것만 남깁니다.</p>');
+  out.push('</div>');
+
+  function table(list, title, note) {
+    if (!list.length) return;
+    out.push('<div class="panel"><h3>' + esc(title) + '</h3>');
+    if (note) out.push('<p class="hint">' + note + '</p>');
+    out.push('<table><thead><tr><th>#</th><th>치환기</th>' +
+             '<th class="num">ΔpKi</th><th class="num">pKi</th>' +
+             '<th>기능</th><th>적용영역</th><th class="num">모체 유사도</th>' +
+             '<th>SMILES</th></tr></thead><tbody>');
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      var noise = Math.abs(a.dPKi) <= DESIGN_NOISE;
+      out.push('<tr' + (a.control ? ' class="flagged"' : '') + '>' +
+               '<td class="rankno">' + (a.rank || '-') + '</td>' +
+               '<td>' + esc(a.ruleName) +
+               (a.control ? ' <span class="hint">대조군</span>' : '') +
+               '<br><span class="hint">' + esc(a.why) + '</span></td>' +
+               '<td class="num"' + (noise ? ' style="opacity:.5"' : '') + '>' +
+               (a.dPKi >= 0 ? '+' : '') + fx(a.dPKi, 2) +
+               (noise ? '<br><span class="hint">구분 불가</span>' : '') + '</td>' +
+               '<td class="num">' + fx(a.pKi, 2) + '</td>' +
+               '<td' + (a.label === 'antagonist' ? ' class="warnink"' : '') + '>' +
+               esc(PR.tierPhrase(a.tier, a.label)) + '</td>' +
+               '<td><span class="tag ' + esc(a.domain) + '">' +
+               esc({ 'in': '내', edge: '경계', out: '밖' }[a.domain]) + '</span></td>' +
+               '<td class="num">' + fx(a.parentSim, 2) + '</td>' +
+               '<td class="smi">' + esc(a.smiles) + '</td></tr>');
+    }
+    out.push('</tbody></table></div>');
+  }
+
+  table(rows, '적용영역 안 유도체 ' + rows.length + '종',
+        '길항 판정이 강한 순, 같으면 pKi 순입니다. 회색 Δ는 모델 오차범위 안이라 ' +
+        '순위에 의미를 두지 마세요.');
+  table(unscored, '적용영역 밖 ' + unscored.length + '종 — 순위에서 제외',
+        '가까운 레퍼런스가 없어 pKi가 외삽입니다. 더 나쁜 후보라는 뜻이 아니라 ' +
+        '<b>채점되지 않은 후보</b>라는 뜻이라, 큰 숫자가 상위에 앉지 않도록 ' +
+        '따로 뺐습니다.');
+  host.innerHTML = out.join('');
+}
+
+function runDesign(rawQuery) {
+  showError('design-err', '');
+  var input = $('designq');
+  var query = rawQuery !== undefined ? rawQuery : (input ? input.value : '');
+  query = String(query || '').trim();
+  var host = $('design-out');
+  if (!host) return;
+  if (!query) {
+    host.innerHTML = '';
+    showError('design-err', '모화합물 이름 또는 SMILES를 입력하세요.');
+    return;
+  }
+  ensureMeasuredPool();
+  var hit = PR.lookupName(query);
+  var smiles = hit ? hit.s : query;
+  host.innerHTML = '<div class="panel"><p class="hint">유도체를 만드는 중…</p></div>';
+  setTimeout(function () {
+    try {
+      var d = PR.designAnalogues(smiles, evidenceFor);
+      d.parentName = hit ? hit.ko + ' / ' + hit.en : smiles;
+      try {
+        d.parent.ci = PR.predict(smiles, evidenceFor(smiles, AR.parseSmiles(smiles))).ci;
+      } catch (e2) { d.parent.ci = 0.7; }
+      if (!d.scored.length && !d.unscored.length) {
+        host.innerHTML = '';
+        showError('design-err',
+          '치환할 수 있는 방향족 자리가 없습니다. 이 탭은 6원 방향족 고리에 ' +
+          '수소가 남은 탄소만 건드립니다 — 스테로이드처럼 방향족 고리가 없는 ' +
+          '골격은 지금 다루지 못합니다.');
+        return;
+      }
+      designData = d;
+      renderDesign();
+    } catch (err) {
+      host.innerHTML = '';
+      var tips = PR.suggestNames(query, 5);
+      showError('design-err', '생성 실패: ' + err.message +
+        (tips.length ? ' — 혹시 이 중 하나인가요? ' +
+          tips.map(function (t) { return t.ko + ' (' + t.en + ')'; }).join(', ') : ''));
+    }
+  }, 20);
+}
+
+function designTsv() {
+  if (!designData) return '';
+  var all = designData.scored.concat(designData.unscored);
+  var lines = ['순위\t치환기\t대조군\tΔpKi\t예측pKi\t기능\t증거등급\t적용영역\t모체유사도\tSMILES'];
+  for (var i = 0; i < all.length; i++) {
+    var a = all[i];
+    lines.push([a.rank || '', a.ruleName, a.control ? 'Y' : '',
+                a.dPKi.toFixed(2), a.pKi.toFixed(2),
+                PR.CLASS_LABELS[a.label] || a.label,
+                PR.TIER_LABELS[a.tier] ? PR.TIER_LABELS[a.tier].word : a.tier,
+                a.domain, a.parentSim.toFixed(3), a.smiles].join('\t'));
+  }
+  return lines.join('\n');
 }
 
 /* ------------------------------------------------- antagonist ranking */
@@ -6148,6 +6694,25 @@ function init() {
   });
   on('rankall', 'change', function () { if (rankRows) renderRank(); });
   on('ranknew', 'change', function () { if (rankRows) renderRank(); });
+
+  on('affrun', 'click', function () { runAffinity(); });
+  on('affcopy', 'click', function () { copyText(affRows ? affinityTsv() : '', 'aff-err'); });
+  on('affin', 'change', function () { if (affRows) renderAffinity(); });
+  on('affanta', 'change', function () {
+    if ($('affanta').checked && $('affago')) $('affago').checked = false;
+    if (affRows) renderAffinity();
+  });
+  on('affago', 'change', function () {
+    if ($('affago').checked && $('affanta')) $('affanta').checked = false;
+    if (affRows) renderAffinity();
+  });
+
+  on('designrun', 'click', function () { runDesign(); });
+  on('designq', 'keydown', function (ev) { if (ev.key === 'Enter') runDesign(); });
+  on('designcopy', 'click', function () {
+    copyText(designData ? designTsv() : '', 'design-err');
+  });
+  on('designctl', 'change', function () { if (designData) renderDesign(); });
   on('batchfile', 'change', function (ev) {
     readFile(ev.target, function (text) {
       var ta = $('batchin');

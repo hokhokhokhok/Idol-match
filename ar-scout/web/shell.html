@@ -262,6 +262,10 @@ label.filebtn {
 }
 label.filebtn input { display: none; }
 .btnbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+/* six tabs do not fit a phone; let the strip scroll rather than squash */
+nav.tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+nav.tabs::-webkit-scrollbar { display: none; }
+nav.tabs button { flex: 0 0 auto; }
 label.chk {
   display: inline-flex;
   align-items: center;
@@ -285,6 +289,13 @@ th.sortable:hover { color: var(--blue); }
 th.sortable .arrow { opacity: .45; font-size: 10px; margin-left: 3px; }
 tr.flagged td:first-child { box-shadow: inset 3px 0 0 #FF9500; }
 .rankno { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-3); }
+td.smi {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-3);
+  word-break: break-all;
+  max-width: 220px;
+}
 
 .err {
   background: var(--red-wash);
@@ -533,7 +544,9 @@ footer.foot {
   <nav class="tabs" id="tabs">
     <button type="button" data-tab="single" aria-selected="true">단건 조회</button>
     <button type="button" data-tab="batch" aria-selected="false">배치 스크리닝</button>
+    <button type="button" data-tab="affinity" aria-selected="false">결합 친화도</button>
     <button type="button" data-tab="rank" aria-selected="false">길항제 순위</button>
+    <button type="button" data-tab="design" aria-selected="false">유도체 설계</button>
     <button type="button" data-tab="library" aria-selected="false">레퍼런스</button>
   </nav>
 
@@ -575,6 +588,27 @@ footer.foot {
     <div id="batch-out"></div>
   </section>
 
+  <!-- ------------------------------------------------ affinity ranking -->
+  <section id="tab-affinity" class="hidden">
+    <div class="panel">
+      <h2>결합 친화도 순위 — 사전 전체</h2>
+      <p class="hint">예측 pKi가 높은 순으로 사전 전체를 세우고, 작용제·길항제 판정을
+        나란히 붙입니다. 「얼마나 세게 붙느냐」와 「어느 방향이냐」는 근거도 신뢰도도
+        다른 별개의 질문이라 한 점수로 합치지 않았습니다.</p>
+      <div class="btnbar">
+        <button class="go" id="affrun" type="button">전체 계산</button>
+        <button class="alt" id="affcopy" type="button">TSV 복사</button>
+      </div>
+      <div class="btnbar" id="afffilters">
+        <label class="chk"><input type="checkbox" id="affin" checked> 적용영역 밖 숨기기</label>
+        <label class="chk"><input type="checkbox" id="affanta"> 길항제만</label>
+        <label class="chk"><input type="checkbox" id="affago"> 작용제만</label>
+      </div>
+      <div id="aff-err"></div>
+    </div>
+    <div id="aff-out"></div>
+  </section>
+
   <!-- ------------------------------------------------ antagonist ranking -->
   <section id="tab-rank" class="hidden">
     <div class="panel">
@@ -590,6 +624,26 @@ footer.foot {
       <div id="rank-err"></div>
     </div>
     <div id="rank-out"></div>
+  </section>
+
+  <!-- ------------------------------------------------ analogue design -->
+  <section id="tab-design" class="hidden">
+    <div class="panel">
+      <h2>유도체 설계 — 길항 방향 탐색</h2>
+      <p class="hint">길항제로 판정된 물질을 고르면, 그 분자의 열린 방향족 자리마다
+        치환기를 붙인 유도체를 만들어 같은 엔진으로 다시 채점합니다. 생성물은 전부
+        화학식까지 대조해 검증합니다. <b>읽는 법은 결과 위에 적어 두었습니다 —
+        이 탭은 최적화기가 아니라 가설 생성기입니다.</b></p>
+      <label class="fld" for="designq">모화합물 (이름 또는 SMILES)</label>
+      <input type="text" id="designq" list="names" placeholder="예: 비칼루타마이드" autocomplete="off">
+      <div class="btnbar">
+        <button class="go" id="designrun" type="button">유도체 생성</button>
+        <button class="alt" id="designcopy" type="button">TSV 복사</button>
+        <label class="chk"><input type="checkbox" id="designctl" checked> 대조군 치환기 함께 보기</label>
+      </div>
+      <div id="design-err"></div>
+    </div>
+    <div id="design-out"></div>
   </section>
 
   <!-- ------------------------------------------------ library -->

@@ -864,7 +864,7 @@ function renderSingle(result, title, subtitle) {
 
 /* ------------------------------------------------------------- tabs */
 
-var TABS = ['single', 'batch', 'rank', 'library'];
+var TABS = ['single', 'batch', 'affinity', 'rank', 'design', 'library'];
 
 function selectTab(name) {
   for (var i = 0; i < TABS.length; i++) {
@@ -881,6 +881,265 @@ function selectTab(name) {
     var isSel = btns[j].getAttribute('data-tab') === name;
     btns[j].setAttribute('aria-selected', isSel ? 'true' : 'false');
   }
+}
+
+/* -------------------------------------------------- affinity ranking */
+
+var affRows = null;
+
+function visibleAffRows() {
+  if (!affRows) return [];
+  var hideOut = $('affin') && $('affin').checked;
+  var onlyAnta = $('affanta') && $('affanta').checked;
+  var onlyAgo = $('affago') && $('affago').checked;
+  return affRows.filter(function (r) {
+    if (hideOut && r.domain === 'out') return false;
+    if (onlyAnta && r.label !== 'antagonist') return false;
+    if (onlyAgo && r.label !== 'agonist') return false;
+    return true;
+  });
+}
+
+function renderAffinity() {
+  var host = $('aff-out');
+  if (!host || !affRows) return;
+  var rows = visibleAffRows();
+  var lab = {};
+  for (var i = 0; i < affRows.length; i++) lab[affRows[i].label] = (lab[affRows[i].label] || 0) + 1;
+
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>사전 ' + affRows.length + '종 · 표시 ' + rows.length + '종</h3>');
+  out.push('<dl class="tiles">');
+  out.push(tile('길항제', String(lab.antagonist || 0)));
+  out.push(tile('작용제', String(lab.agonist || 0)));
+  out.push(tile('부분 작용제', String(lab.partial || 0)));
+  out.push(tile('비활성·불명', String((lab.inactive || 0) + (lab.unknown || 0))));
+  out.push('</dl>');
+  out.push('<p class="hint"><b>적용영역 태그를 먼저 보세요.</b> 가까운 레퍼런스가 ' +
+           '없는 물질의 pKi는 외삽이고, pKi로 정렬하면 그 숫자가 어디에 떨어지든 ' +
+           '그 자리에 앉습니다. 기본값은 <code>out</code>을 숨긴 상태입니다. ' +
+           '오차범위는 물질마다 다르며 표에 함께 표시됩니다.</p>');
+  out.push('</div>');
+
+  out.push('<div class="panel"><h3>순위</h3>');
+  out.push('<table><thead><tr><th>#</th><th>물질</th>' +
+           '<th class="num">예측 pKi</th><th class="num">Ki</th>' +
+           '<th>적용영역</th><th>기능</th><th>구조 판정</th></tr></thead><tbody>');
+  for (var j = 0; j < rows.length; j++) {
+    var r = rows[j];
+    var fnCls = r.label === 'antagonist' ? ' class="warnink"' : '';
+    out.push('<tr><td class="rankno">' + r.rank + '</td>' +
+             '<td><b>' + esc(r.ko) + '</b><br><span class="hint">' + esc(r.en) + '</span></td>' +
+             '<td class="num">' + fx(r.pKi, 2) +
+             '<span class="hint"> ±' + fx(r.ci, 1) + '</span></td>' +
+             '<td class="num">' + fx(r.kiNM, r.kiNM < 10 ? 2 : 0) + ' nM</td>' +
+             '<td><span class="tag ' + esc(r.domain) + '">' +
+             esc({ 'in': '내', edge: '경계', out: '밖' }[r.domain]) + '</span></td>' +
+             '<td' + fnCls + '>' + esc(PR.tierPhrase(r.tier, r.label)) + '</td>' +
+             '<td class="hint">' + esc(r.pocketVerdict || '') + '</td></tr>');
+  }
+  out.push('</tbody></table></div>');
+  host.innerHTML = out.join('');
+}
+
+function runAffinity() {
+  showError('aff-err', '');
+  var host = $('aff-out');
+  if (host) host.innerHTML = '<div class="panel"><p class="hint">계산 중…</p></div>';
+  ensureMeasuredPool();
+  setTimeout(function () {
+    try { affRows = PR.rankAffinity(evidenceFor); renderAffinity(); }
+    catch (err) {
+      if (host) host.innerHTML = '';
+      showError('aff-err', '계산 실패: ' + err.message);
+    }
+  }, 20);
+}
+
+function affinityTsv() {
+  var rows = visibleAffRows();
+  var lines = ['순위\t한글명\t영문명\t예측pKi\t오차\tKi_nM\t적용영역\t기능\t증거등급\t구조판정\tSMILES'];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    lines.push([r.rank, r.ko, r.en, r.pKi.toFixed(2), r.ci.toFixed(2),
+                r.kiNM.toFixed(2), r.domain,
+                PR.CLASS_LABELS[r.label] || r.label,
+                PR.TIER_LABELS[r.tier] ? PR.TIER_LABELS[r.tier].word : r.tier,
+                r.pocketVerdict, r.smiles].join('\t'));
+  }
+  return lines.join('\n');
+}
+
+/* ---------------------------------------------------- analogue design */
+
+var designData = null;
+
+/* The model's own noise. Leave-one-out over the reference set gives
+ * MAE 0.5 and RMSE 1.4 log units, and each prediction carries its own
+ * confidence interval. A delta smaller than that is not a weak signal, it
+ * is no signal, and the design table says so per row instead of letting a
+ * +0.06 sit at the top looking like an improvement. */
+var DESIGN_NOISE = 0.7;
+
+function renderDesign() {
+  var host = $('design-out');
+  if (!host || !designData) return;
+  var d = designData;
+  var showCtl = !$('designctl') || $('designctl').checked;
+  var rows = d.scored.filter(function (a) { return showCtl || !a.control; });
+  var unscored = d.unscored.filter(function (a) { return showCtl || !a.control; });
+
+  var all = d.scored.concat(d.unscored);
+  var inNoise = 0, flipped = 0;
+  for (var i = 0; i < all.length; i++) {
+    if (Math.abs(all[i].dPKi) <= DESIGN_NOISE) inNoise++;
+    if (all[i].label !== d.parent.label) flipped++;
+  }
+  var pharm = all.filter(function (a) { return !a.control; });
+  var ctl = all.filter(function (a) { return a.control; });
+  var best = function (xs) {
+    var m = -99;
+    for (var k = 0; k < xs.length; k++) if (xs[k].dPKi > m) m = xs[k].dPKi;
+    return m;
+  };
+  var pBest = best(pharm), cBest = best(ctl);
+
+  var out = [];
+  out.push('<div class="panel">');
+  out.push('<h3>' + esc(d.parentName || d.parent.smiles) + '</h3>');
+  out.push('<dl class="tiles">');
+  out.push(tile('모화합물 pKi', fx(d.parent.pKi, 2)));
+  out.push(tile('치환 자리', String(d.sites)));
+  out.push(tile('검증 통과', String(all.length)));
+  out.push(tile('화학식 불일치로 폐기', String(d.rejected)));
+  out.push('</dl>');
+
+  /* the honest reading, with this run's own numbers in it */
+  out.push('<h4 class="sect">이 표를 읽는 법</h4>');
+  out.push('<p class="hint"><b>이 탭은 최적화기가 아니라 가설 생성기입니다.</b> ' +
+           '점수를 매기는 모델과 순위를 만드는 모델이 같습니다. 같은 모델을 상대로 ' +
+           '점수를 올리면 <b>모델을 잘 속이는 분자</b>가 나오지, 잘 듣는 분자가 ' +
+           '나오지 않습니다. 그래서 숫자가 올랐다는 것은 근거가 아니라 ' +
+           '<b>실험해 볼 후보라는 뜻</b>입니다.</p>');
+  out.push('<p class="hint">모델의 교차검증 오차는 MAE 0.5 · RMSE 1.4 log이고 ' +
+           '이 모화합물의 예측 오차범위는 ±' + fx(d.parent.ci || 0.7, 1) + '입니다. ' +
+           '<b>이번 ' + all.length + '종 중 ' + inNoise + '종(' +
+           Math.round(100 * inNoise / Math.max(1, all.length)) +
+           '%)은 ΔpKi가 ±' + DESIGN_NOISE + ' 안에 들어 「구분 불가」입니다.</b> ' +
+           '기능 판정이 모화합물과 달라진 것은 ' + flipped + '종입니다.</p>');
+  out.push('<p class="hint"><b>대조군을 일부러 섞어 넣었습니다.</b> 메틸·하이드록실·' +
+           '불소·염소는 AR 길항 약리단이 아닙니다. 이것들이 CF3·나이트릴·나이트로·' +
+           '설포닐과 구분되지 않으면 순위는 SAR이 아니라 잡음을 읽고 있는 것입니다. ' +
+           '이번 모화합물에서는 약리단 최고 Δ ' + (pBest >= 0 ? '+' : '') + fx(pBest, 2) +
+           ' 대 대조군 최고 Δ ' + (cBest >= 0 ? '+' : '') + fx(cBest, 2) + ' 로 ' +
+           (pBest > cBest
+             ? '<b>약리단이 앞섭니다</b> — 그래도 차이가 오차범위 안이면 의미는 없습니다.'
+             : '<b>대조군이 앞섭니다. 이 분자에서는 순위를 믿지 마세요.</b>') +
+           '</p>');
+  out.push('<p class="hint">치환 자리는 <b>6원 방향족 고리의 수소가 남은 탄소</b>로 ' +
+           '한정했습니다. 스테로이드 골격의 17번 치환처럼 길항성을 실제로 좌우하는 ' +
+           '변형은 SMILES 문자열 편집으로 안전하게 만들 수 없어 넣지 않았습니다. ' +
+           '생성물은 모두 다시 파싱해 <b>화학식이 규칙이 약속한 만큼 정확히</b> ' +
+           '바뀌었는지, 고리 수가 그대로인지 확인한 것만 남깁니다.</p>');
+  out.push('</div>');
+
+  function table(list, title, note) {
+    if (!list.length) return;
+    out.push('<div class="panel"><h3>' + esc(title) + '</h3>');
+    if (note) out.push('<p class="hint">' + note + '</p>');
+    out.push('<table><thead><tr><th>#</th><th>치환기</th>' +
+             '<th class="num">ΔpKi</th><th class="num">pKi</th>' +
+             '<th>기능</th><th>적용영역</th><th class="num">모체 유사도</th>' +
+             '<th>SMILES</th></tr></thead><tbody>');
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      var noise = Math.abs(a.dPKi) <= DESIGN_NOISE;
+      out.push('<tr' + (a.control ? ' class="flagged"' : '') + '>' +
+               '<td class="rankno">' + (a.rank || '-') + '</td>' +
+               '<td>' + esc(a.ruleName) +
+               (a.control ? ' <span class="hint">대조군</span>' : '') +
+               '<br><span class="hint">' + esc(a.why) + '</span></td>' +
+               '<td class="num"' + (noise ? ' style="opacity:.5"' : '') + '>' +
+               (a.dPKi >= 0 ? '+' : '') + fx(a.dPKi, 2) +
+               (noise ? '<br><span class="hint">구분 불가</span>' : '') + '</td>' +
+               '<td class="num">' + fx(a.pKi, 2) + '</td>' +
+               '<td' + (a.label === 'antagonist' ? ' class="warnink"' : '') + '>' +
+               esc(PR.tierPhrase(a.tier, a.label)) + '</td>' +
+               '<td><span class="tag ' + esc(a.domain) + '">' +
+               esc({ 'in': '내', edge: '경계', out: '밖' }[a.domain]) + '</span></td>' +
+               '<td class="num">' + fx(a.parentSim, 2) + '</td>' +
+               '<td class="smi">' + esc(a.smiles) + '</td></tr>');
+    }
+    out.push('</tbody></table></div>');
+  }
+
+  table(rows, '적용영역 안 유도체 ' + rows.length + '종',
+        '길항 판정이 강한 순, 같으면 pKi 순입니다. 회색 Δ는 모델 오차범위 안이라 ' +
+        '순위에 의미를 두지 마세요.');
+  table(unscored, '적용영역 밖 ' + unscored.length + '종 — 순위에서 제외',
+        '가까운 레퍼런스가 없어 pKi가 외삽입니다. 더 나쁜 후보라는 뜻이 아니라 ' +
+        '<b>채점되지 않은 후보</b>라는 뜻이라, 큰 숫자가 상위에 앉지 않도록 ' +
+        '따로 뺐습니다.');
+  host.innerHTML = out.join('');
+}
+
+function runDesign(rawQuery) {
+  showError('design-err', '');
+  var input = $('designq');
+  var query = rawQuery !== undefined ? rawQuery : (input ? input.value : '');
+  query = String(query || '').trim();
+  var host = $('design-out');
+  if (!host) return;
+  if (!query) {
+    host.innerHTML = '';
+    showError('design-err', '모화합물 이름 또는 SMILES를 입력하세요.');
+    return;
+  }
+  ensureMeasuredPool();
+  var hit = PR.lookupName(query);
+  var smiles = hit ? hit.s : query;
+  host.innerHTML = '<div class="panel"><p class="hint">유도체를 만드는 중…</p></div>';
+  setTimeout(function () {
+    try {
+      var d = PR.designAnalogues(smiles, evidenceFor);
+      d.parentName = hit ? hit.ko + ' / ' + hit.en : smiles;
+      try {
+        d.parent.ci = PR.predict(smiles, evidenceFor(smiles, AR.parseSmiles(smiles))).ci;
+      } catch (e2) { d.parent.ci = 0.7; }
+      if (!d.scored.length && !d.unscored.length) {
+        host.innerHTML = '';
+        showError('design-err',
+          '치환할 수 있는 방향족 자리가 없습니다. 이 탭은 6원 방향족 고리에 ' +
+          '수소가 남은 탄소만 건드립니다 — 스테로이드처럼 방향족 고리가 없는 ' +
+          '골격은 지금 다루지 못합니다.');
+        return;
+      }
+      designData = d;
+      renderDesign();
+    } catch (err) {
+      host.innerHTML = '';
+      var tips = PR.suggestNames(query, 5);
+      showError('design-err', '생성 실패: ' + err.message +
+        (tips.length ? ' — 혹시 이 중 하나인가요? ' +
+          tips.map(function (t) { return t.ko + ' (' + t.en + ')'; }).join(', ') : ''));
+    }
+  }, 20);
+}
+
+function designTsv() {
+  if (!designData) return '';
+  var all = designData.scored.concat(designData.unscored);
+  var lines = ['순위\t치환기\t대조군\tΔpKi\t예측pKi\t기능\t증거등급\t적용영역\t모체유사도\tSMILES'];
+  for (var i = 0; i < all.length; i++) {
+    var a = all[i];
+    lines.push([a.rank || '', a.ruleName, a.control ? 'Y' : '',
+                a.dPKi.toFixed(2), a.pKi.toFixed(2),
+                PR.CLASS_LABELS[a.label] || a.label,
+                PR.TIER_LABELS[a.tier] ? PR.TIER_LABELS[a.tier].word : a.tier,
+                a.domain, a.parentSim.toFixed(3), a.smiles].join('\t'));
+  }
+  return lines.join('\n');
 }
 
 /* ------------------------------------------------- antagonist ranking */
@@ -1707,6 +1966,25 @@ function init() {
   });
   on('rankall', 'change', function () { if (rankRows) renderRank(); });
   on('ranknew', 'change', function () { if (rankRows) renderRank(); });
+
+  on('affrun', 'click', function () { runAffinity(); });
+  on('affcopy', 'click', function () { copyText(affRows ? affinityTsv() : '', 'aff-err'); });
+  on('affin', 'change', function () { if (affRows) renderAffinity(); });
+  on('affanta', 'change', function () {
+    if ($('affanta').checked && $('affago')) $('affago').checked = false;
+    if (affRows) renderAffinity();
+  });
+  on('affago', 'change', function () {
+    if ($('affago').checked && $('affanta')) $('affanta').checked = false;
+    if (affRows) renderAffinity();
+  });
+
+  on('designrun', 'click', function () { runDesign(); });
+  on('designq', 'keydown', function (ev) { if (ev.key === 'Enter') runDesign(); });
+  on('designcopy', 'click', function () {
+    copyText(designData ? designTsv() : '', 'design-err');
+  });
+  on('designctl', 'change', function () { if (designData) renderDesign(); });
   on('batchfile', 'change', function (ev) {
     readFile(ev.target, function (text) {
       var ta = $('batchin');

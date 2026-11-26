@@ -724,6 +724,229 @@ function callFunction(fp, options) {
     (100 * share).toFixed(0) + '% 우세).');
 }
 
+/* --------------------------------------------- affinity ranking ------
+ *
+ * Potency first, function second: the whole dictionary ordered by predicted
+ * pKi, with the agonist/antagonist call carried alongside so the two
+ * questions stay separate. They are separate. A compound can bind hard and
+ * do nothing, and the tool answers "how tightly" and "which direction" with
+ * different evidence and different reliability, so blending them into one
+ * list would misrepresent both.
+ *
+ * The applicability-domain tag matters more here than anywhere else. A pKi
+ * for a compound with no close reference is an extrapolation, and sorting
+ * by it puts the least trustworthy numbers wherever they happen to land -
+ * so the tag travels with every row and can be filtered on. */
+function rankAffinity(evidenceFor) {
+  var rows = [];
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var ko = INGREDIENTS[i][0], en = INGREDIENTS[i][1], smi = INGREDIENTS[i][2];
+    var mol;
+    try { mol = AR.parseSmiles(smi); } catch (err) { continue; }
+    var ev = {};
+    try { ev = evidenceFor(smi, mol) || {}; } catch (err) { ev = {}; }
+    var res;
+    try { res = predict(smi, ev); } catch (err) { continue; }
+    var fc = res.functionCall;
+    var curatedLabel = FUNCTION_CLASS[en] || null;
+    rows.push({
+      ko: ko, en: en, smiles: smi,
+      pKi: res.pKi, ci: res.ci, kiNM: res.kiNM, domain: res.domain,
+      label: fc.label, tier: curatedLabel === fc.label ? 'curated' : fc.tier,
+      callTier: fc.tier, curatedLabel: curatedLabel,
+      nearest: res.nearestSim, pocketVerdict: res.pocket.verdict,
+      pocketKey: res.pocket.verdictKey, occupancy: res.occupancy, mw: res.mw
+    });
+  }
+  rows.sort(function (a, b) {
+    if (b.pKi !== a.pKi) return b.pKi - a.pKi;
+    return a.en < b.en ? -1 : 1;
+  });
+  for (var r = 0; r < rows.length; r++) rows[r].rank = r + 1;
+  return rows;
+}
+
+/* --------------------------------------------- analogue design -------
+ *
+ * There is no SMILES writer in this engine, so analogues are made by
+ * editing the parent's SMILES text at a position the graph picked, then
+ * re-parsing. That is fragile, and the guard against it is the same one
+ * that caught the ChEMBL ester/salt mix-ups: every rule declares the exact
+ * formula change it should produce, and any product whose measured formula
+ * does not match is thrown away rather than shown.
+ *
+ * The substituents are not invented. Each is a group that the known
+ * non-steroidal antiandrogens actually carry - aryl-CF3 in bicalutamide,
+ * enzalutamide, flutamide and nilutamide; aryl nitrile in bicalutamide,
+ * enzalutamide and apalutamide; aryl nitro in flutamide and nilutamide;
+ * the methylsulfonyl of bicalutamide. Methyl, hydroxyl and the halogens
+ * are included as controls: if the ranking cannot tell a pharmacophore
+ * from a methyl group, it is not reading SAR, it is reading noise.
+ */
+var DESIGN_RULES = [
+  { id: 'cf3',  frag: 'C(F)(F)F',      add: { C: 1, F: 3 },
+    name: '트리플루오로메틸 (-CF3)',
+    why: '비칼루타마이드·엔잘루타미드·플루타마이드·닐루타미드가 모두 방향족 CF3를 갖습니다' },
+  { id: 'cn',   frag: 'C#N',           add: { C: 1, N: 1 },
+    name: '나이트릴 (-C≡N)',
+    why: '비칼루타마이드·엔잘루타미드·아팔루타미드의 공통 치환기' },
+  { id: 'no2',  frag: '[N+](=O)[O-]',  add: { N: 1, O: 2 },
+    name: '나이트로 (-NO2)',
+    why: '플루타마이드·닐루타미드의 전자끌개' },
+  { id: 'so2me', frag: 'S(=O)(=O)C',   add: { S: 1, O: 2, C: 1 },
+    name: '메틸설포닐 (-SO2CH3)',
+    why: '비칼루타마이드의 설폰' },
+  { id: 'f',    frag: 'F',             add: { F: 1 }, control: true,
+    name: '불소 (-F)',          why: '할로겐 스캔 — 대조군' },
+  { id: 'cl',   frag: 'Cl',            add: { Cl: 1 }, control: true,
+    name: '염소 (-Cl)',         why: '할로겐 스캔 — 대조군' },
+  { id: 'me',   frag: 'C',             add: { C: 1 }, control: true,
+    name: '메틸 (-CH3)',        why: '소수성만 올리는 대조군' },
+  { id: 'oh',   frag: 'O',             add: { O: 1 }, control: true,
+    name: '하이드록실 (-OH)',   why: '극성만 올리는 대조군' }
+];
+
+/* Where a branch may be opened after an atom's own token: past any
+ * ring-closure markers that belong to it, so "c1" becomes "c1(X)". */
+function branchPointAfter(smi, atom) {
+  var k = atom.pos + atom.len;
+  while (k < smi.length) {
+    var c = smi.charAt(k);
+    if (c >= '0' && c <= '9') { k++; continue; }
+    if (c === '%') {
+      k++;
+      while (k < smi.length && smi.charAt(k) >= '0' && smi.charAt(k) <= '9') k++;
+      continue;
+    }
+    /* a bond symbol only counts when it is marking a ring closure */
+    if ('-=#:/\\'.indexOf(c) >= 0 && k + 1 < smi.length) {
+      var n = smi.charAt(k + 1);
+      if ((n >= '0' && n <= '9') || n === '%') { k += 2; continue; }
+    }
+    break;
+  }
+  return k;
+}
+
+function countElements(mol) {
+  var out = {};
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var el = mol.atoms[i].el;
+    out[el] = (out[el] || 0) + 1;
+  }
+  return out;
+}
+
+/* The open aromatic CH positions on six-membered rings - the only sites
+ * these rules are allowed to touch. */
+function substitutionSites(mol) {
+  var sites = [];
+  for (var i = 0; i < mol.atoms.length; i++) {
+    var a = mol.atoms[i];
+    if (!a.arom || a.el !== 'C' || a.bracket) continue;
+    if (a.nH < 1 || !a.inRing) continue;
+    if ((a.ringSizes || []).indexOf(6) < 0) continue;
+    sites.push(i);
+  }
+  return sites;
+}
+
+function designAnalogues(parentSmiles, evidenceFor, options) {
+  options = options || {};
+  var parent = AR.parseSmiles(parentSmiles);
+  var parentCounts = countElements(parent);
+  var sites = substitutionSites(parent);
+  var parentRes = predict(parentSmiles, evidenceFor(parentSmiles, parent) || {});
+  var parentFp = AR.packFingerprint(AR.morganFingerprint(parent, 2));
+
+  var out = [], rejected = 0, seen = {};
+  for (var r = 0; r < DESIGN_RULES.length; r++) {
+    var rule = DESIGN_RULES[r];
+    for (var s = 0; s < sites.length; s++) {
+      var atom = parent.atoms[sites[s]];
+      var cut = branchPointAfter(parentSmiles, atom);
+      var smi = parentSmiles.slice(0, cut) + '(' + rule.frag + ')' +
+                parentSmiles.slice(cut);
+
+      var mol;
+      try { mol = AR.parseSmiles(smi); } catch (err) { rejected++; continue; }
+
+      /* the formula must have moved by exactly what the rule promised, and
+         by nothing else - this is what catches a bad string edit */
+      var got = countElements(mol), ok = true, el;
+      for (el in got) {
+        if (!Object.prototype.hasOwnProperty.call(got, el)) continue;
+        var want = (parentCounts[el] || 0) + (rule.add[el] || 0);
+        if (got[el] !== want) { ok = false; break; }
+      }
+      for (el in parentCounts) {
+        if (!Object.prototype.hasOwnProperty.call(parentCounts, el)) continue;
+        if (got[el] === undefined) { ok = false; break; }
+      }
+      /* and it must not have created or destroyed a ring */
+      if (ok && mol.ringCount !== parent.ringCount) ok = false;
+      if (!ok) { rejected++; continue; }
+
+      var id = AR.structureIdOf(mol);
+      if (seen[id]) continue;          /* symmetry gives the same product */
+      seen[id] = true;
+
+      var res;
+      try { res = predict(smi, evidenceFor(smi, mol) || {}); }
+      catch (err) { rejected++; continue; }
+
+      out.push({
+        smiles: smi, rule: rule.id, ruleName: rule.name, why: rule.why,
+        control: !!rule.control, site: sites[s],
+        pKi: res.pKi, dPKi: res.pKi - parentRes.pKi,
+        domain: res.domain, nearest: res.nearestSim,
+        label: res.functionCall.label, tier: res.functionCall.tier,
+        support: res.functionCall.support,
+        fnNearest: res.functionCall.nearest,
+        refAntagonists: res.functionCall.refAntagonists || [],
+        pocketVerdict: res.pocket.verdict,
+        occupancy: res.occupancy,
+        parentSim: AR.tanimotoPacked(
+          parentFp, AR.packFingerprint(AR.morganFingerprint(mol, 2))),
+        mw: res.mw
+      });
+    }
+  }
+
+  /* An analogue whose own applicability-domain tag is "out" is not a worse
+     candidate, it is an unscored one: the pKi it carries is an
+     extrapolation from references that look nothing like it. Those are
+     separated rather than ranked, so a big meaningless number cannot sit
+     at the top of the list. */
+  var scored = [], unscored = [];
+  for (var i = 0; i < out.length; i++) {
+    (out[i].domain === 'out' ? unscored : scored).push(out[i]);
+  }
+  var rank = { antagonist: 2, partial: 1, unknown: 0, agonist: -1, inactive: -1 };
+  scored.sort(function (a, b) {
+    var ra = rank[a.label] === undefined ? 0 : rank[a.label];
+    var rb = rank[b.label] === undefined ? 0 : rank[b.label];
+    if (rb !== ra) return rb - ra;
+    return b.pKi - a.pKi;
+  });
+  unscored.sort(function (a, b) { return b.pKi - a.pKi; });
+  for (var j = 0; j < scored.length; j++) scored[j].rank = j + 1;
+
+  return {
+    parent: {
+      smiles: parentSmiles, pKi: parentRes.pKi, domain: parentRes.domain,
+      label: parentRes.functionCall.label, tier: parentRes.functionCall.tier,
+      pocketVerdict: parentRes.pocket.verdict, mw: parentRes.mw,
+      occupancy: parentRes.occupancy
+    },
+    sites: sites.length,
+    scored: scored,
+    unscored: unscored,
+    rejected: rejected,
+    rules: DESIGN_RULES
+  };
+}
+
 /* ------------------------------------------- antagonist ranking ------
  *
  * Ranking the whole dictionary needs one ordering out of evidence that does
@@ -1488,6 +1711,10 @@ module.exports = {
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
   rankAntagonists: rankAntagonists,
+  rankAffinity: rankAffinity,
+  designAnalogues: designAnalogues,
+  DESIGN_RULES: DESIGN_RULES,
+  substitutionSites: substitutionSites,
   RANK_BANDS: RANK_BANDS,
   TOX21_MODES: TOX21_MODES,
   registerMeasured: registerMeasured,

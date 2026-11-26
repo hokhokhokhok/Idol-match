@@ -132,7 +132,13 @@ function parseSmiles(smiles) {
     atoms[b].nbr.push(a); atoms[b].bidx.push(idx);
   }
 
-  function pushAtom(atom) {
+  /* Where this atom's token sits in the input string. The analogue
+   * generator edits SMILES text (there is no writer here), so it has to be
+   * able to go from "this aromatic CH in the graph" back to the exact
+   * characters that produced it. Nothing else reads these. */
+  function pushAtom(atom, len) {
+    atom.pos = i;
+    atom.len = len;
     atoms.push(atom);
     var idx = atoms.length - 1;
     if (prev >= 0) addBond(prev, idx, pending);
@@ -148,7 +154,7 @@ function parseSmiles(smiles) {
     if (ch === '[') {
       var close = smi.indexOf(']', i);
       if (close < 0) throw new Error('unclosed [ in SMILES');
-      pushAtom(parseBracketAtom(smi.substring(i + 1, close)));
+      pushAtom(parseBracketAtom(smi.substring(i + 1, close)), close + 1 - i);
       i = close + 1;
       continue;
     }
@@ -186,13 +192,13 @@ function parseSmiles(smiles) {
     }
 
     var t2 = smi.substr(i, 2);
-    if (ORGANIC_TWO.indexOf(t2) >= 0) { pushAtom(makeAtom(t2, false)); i += 2; continue; }
+    if (ORGANIC_TWO.indexOf(t2) >= 0) { pushAtom(makeAtom(t2, false), 2); i += 2; continue; }
     if (AROMATIC_TWO.indexOf(t2) >= 0) {
-      pushAtom(makeAtom(t2[0].toUpperCase() + t2[1], true)); i += 2; continue;
+      pushAtom(makeAtom(t2[0].toUpperCase() + t2[1], true), 2); i += 2; continue;
     }
-    if (ORGANIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch, false)); i += 1; continue; }
-    if (AROMATIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch.toUpperCase(), true)); i += 1; continue; }
-    if (ch === '*') { pushAtom(makeAtom('C', false)); i += 1; continue; }
+    if (ORGANIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch, false), 1); i += 1; continue; }
+    if (AROMATIC_ONE.indexOf(ch) >= 0) { pushAtom(makeAtom(ch.toUpperCase(), true), 1); i += 1; continue; }
+    if (ch === '*') { pushAtom(makeAtom('C', false), 1); i += 1; continue; }
 
     throw new Error('unexpected character "' + ch + '" at ' + i + ' in SMILES');
   }
