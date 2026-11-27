@@ -2032,6 +2032,28 @@ function renderModelCard() {
            '스테로이드가 접촉을 조금 잃을 뿐입니다 — 모양을 재고 있었습니다.</p>');
   out.push('<p>측정값은 저장소에 남겨 두되 해석은 거뒀습니다. ' +
            '여기 적어 두는 이유는, 이 주장이 한동안 화면에 있었기 때문입니다.</p>');
+  out.push('<h5>작용/길항 판정의 외부 검증 — 761종</h5>');
+  out.push('<p>아래 32/38은 <b>큐레이션 38종 위의 leave-one-out</b>입니다. ' +
+           'Tox21로 외부 검증을 하려니 레퍼런스로 이미 쓰인 것을 다 빼면 ' +
+           '<b>3종</b>밖에 남지 않아 검증이 불가능했습니다. 그래서 사전 밖으로 ' +
+           '나갔습니다 — Tox21 스크린에는 약 8,000종이 있고 그중 ' +
+           '<b>판정이 명확하면서 이 도구의 어떤 레퍼런스에도 없는 761종</b>이 ' +
+           '진짜 외부 집합입니다.</p>');
+  out.push('<table><thead><tr><th>항목</th><th class="num">값</th></tr></thead><tbody>');
+  out.push('<tr><td>평가 대상 (처음 보는 구조)</td><td class="num">761종</td></tr>');
+  out.push('<tr><td>판정 거부</td><td class="num">484종 (64%)</td></tr>');
+  out.push('<tr><td>판정한 것의 정확도</td><td class="num"><b>227 / 277 = 82%</b></td></tr>');
+  out.push('<tr><td>기저율 (항상 「길항」이라 찍으면)</td><td class="num">71%</td></tr>');
+  out.push('<tr><td>길항제 재현율</td><td class="num">92%</td></tr>');
+  out.push('<tr><td><b>작용제 재현율</b></td><td class="num"><b>57%</b></td></tr>');
+  out.push('<tr><td>균형 정확도</td><td class="num">75%</td></tr>');
+  out.push('</tbody></table>');
+  out.push('<p><b>38종에서의 84%보다 훨씬 겸손한 숫자입니다.</b> 기저율 대비 ' +
+           '개선은 +11%p이고, 비대칭이 분명합니다 — <b>길항제는 92% 잡아내지만 ' +
+           '작용제는 57%</b>입니다. 레퍼런스 38종 중 17종이 길항제라는 편향이 ' +
+           '외부에서 그대로 나타납니다. 다행히 자신 없을 때는 ' +
+           '<b>64%를 판정 거부</b>합니다. ' +
+           '<code>local/eval_function_external.py</code>로 재현됩니다.</p>');
   out.push('<p><b>성능 (leave-one-out, n = 38):</b> read-across만 27/38(71%), ' +
            '여기에 도킹 신호를 더하면 30/38(79%), 부피 모티프까지 더하면 ' +
            '<b>32/38(84%)</b>입니다. 가중치는 손으로 정했지만 넓은 범위에서 ' +

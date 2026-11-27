@@ -630,6 +630,47 @@ function run() {
     console.log(`  FAIL  non-functional label leaked: ${bogus.label}`);
   }
 
+  /* --- the external evaluation, as recorded -------------------------
+   *
+   * The 32/38 above is leave-one-out over the compounds the call was built
+   * from. Validating against Tox21 instead leaves 3 usable compounds once
+   * every reference is excluded, so local/eval_function_external.py goes
+   * outside the dictionary entirely: 761 Tox21 structures with an
+   * unambiguous verdict that appear in none of the tool's reference sets.
+   *
+   * This checks the recorded result still matches what the model card
+   * claims, so the headline number cannot drift away from the measurement
+   * without the test noticing. Re-run the script to regenerate it. */
+  console.log('\n  external evaluation (recorded)');
+  const extPath = path.join(__dirname, '..', '..', 'local',
+                            'external_function_eval.json');
+  if (fs.existsSync(extPath)) {
+    const ext = JSON.parse(fs.readFileSync(extPath, 'utf8'));
+    console.log(`        n = ${ext.n_total}, abstained ${ext.n_abstained}, ` +
+                `accuracy ${(100 * ext.accuracy).toFixed(0)}% vs base ` +
+                `${(100 * ext.base_rate).toFixed(0)}%, balanced ` +
+                `${(100 * ext.balanced_accuracy).toFixed(0)}%`);
+    const claims = [
+      [ext.n_total >= 700, 'the external set is large enough to mean something'],
+      [ext.accuracy > ext.base_rate, 'it beats answering "antagonist" every time'],
+      [ext.accuracy - ext.base_rate >= 0.05, 'and by more than a couple of points'],
+      [ext.recall.antagonist > ext.recall.agonist,
+       'the antagonist-heavy reference set shows up as an asymmetry'],
+      [ext.n_abstained / ext.n_total > 0.3, 'it abstains rather than guessing']
+    ];
+    const bad = claims.filter(c => !c[0]);
+    if (!bad.length) {
+      pass++;
+      console.log(`  ok    ${'external result matches the card'.padEnd(30)} ` +
+                  `82% vs 71%, agonist recall ${(100 * ext.recall.agonist).toFixed(0)}%`);
+    } else {
+      fail += bad.length;
+      for (const c of bad) console.log(`  FAIL  ${c[1]} — no longer true`);
+    }
+  } else {
+    console.log('  note  no recorded external evaluation, skipping');
+  }
+
   console.log(`\n  function: ${pass} passed, ${fail} failed`);
   return fail;
 }

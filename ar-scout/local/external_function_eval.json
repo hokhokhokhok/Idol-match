@@ -1,0 +1,28 @@
+{
+ "source": "Tox21 AID 743053/743054/743063, compounds absent from every reference set used by the tool",
+ "n_total": 761,
+ "n_called": 277,
+ "n_abstained": 484,
+ "accuracy": 0.8195,
+ "base_rate": 0.7112,
+ "recall": {
+  "antagonist": 0.9188,
+  "agonist": 0.575
+ },
+ "balanced_accuracy": 0.7469,
+ "confusion": {
+  "antagonist->antagonist": 181,
+  "antagonist->unknown": 423,
+  "agonist->unknown": 61,
+  "agonist->antagonist": 31,
+  "agonist->agonist": 46,
+  "antagonist->agonist": 15,
+  "agonist->partial": 3,
+  "antagonist->partial": 1
+ },
+ "tiers": {
+  "predicted": 80,
+  "unknown": 484,
+  "possible": 197
+ }
+}
