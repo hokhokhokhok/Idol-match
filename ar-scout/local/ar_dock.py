@@ -33,7 +33,12 @@ import sys
 import urllib.request
 
 RCSB = "https://files.rcsb.org/download/%s.pdb"
-DEFAULT_PDB = "2AM9"  # AR LBD + DHT, 1.64 A, agonist conformation
+DEFAULT_PDB = "2AM9"  # AR LBD + TESTOSTERONE (HET code TES), 1.64 A,
+                      # agonist conformation. Written as "AR LBD + DHT" here
+                      # and in the README for weeks; the PDB title says
+                      # "IN COMPLEX WITH TESTOSTERONE". It matters for the
+                      # co-crystal bias analysis: the ligand 2AM9 flatters
+                      # is testosterone, not DHT.
 
 # Crystallisation additives and solvent, not part of the binding site.
 JUNK_HET = {
@@ -43,6 +48,16 @@ JUNK_HET = {
 }
 
 CONTACT_CUTOFF = 4.5
+
+# A water is kept only if it touches both the ligand and the protein, which
+# is what "bridging" means; a water merely sitting in the site is noise.
+WATER_LIGAND_CUT = 4.0
+WATER_PROTEIN_CUT = 3.4
+
+
+def dist(a, b):
+    return math.sqrt((a["x"] - b["x"]) ** 2 + (a["y"] - b["y"]) ** 2
+                     + (a["z"] - b["z"]) ** 2)
 HBOND_CUTOFF = 3.5
 HBOND_ELEMENTS = {"N", "O", "S"}
 BOX_PADDING = 5.0
@@ -157,7 +172,8 @@ def check_anchor_residues(protein: list) -> list:
     return problems
 
 
-def prepare(pdb_id: str, workdir: pathlib.Path) -> dict:
+def prepare(pdb_id: str, workdir: pathlib.Path,
+            keep_waters: bool = True) -> dict:
     workdir.mkdir(parents=True, exist_ok=True)
     raw_path = workdir / ("%s.pdb" % pdb_id.upper())
     if not raw_path.exists():
@@ -171,7 +187,31 @@ def prepare(pdb_id: str, workdir: pathlib.Path) -> dict:
     if not atoms:
         raise SystemExit("no atoms parsed from %s" % raw_path)
 
-    protein = [a for a in atoms if a["record"] == "ATOM"]
+    # Keep one conformer per atom.
+    #
+    # altloc was parsed and then ignored, so every alternate side chain went
+    # into the receptor at once: 2AM9 carries 108 duplicated atoms across 14
+    # residues, Gln711 among them - an A-ring anchor this tool reports on -
+    # with the two copies up to 4.7 A apart. Docking against that is docking
+    # against phantom bulk and phantom hydrogen-bond partners. Convention is
+    # to keep the first (highest-occupancy) conformer.
+    def first_conformer(records):
+        seen, kept = set(), []
+        for a in records:
+            if a["altloc"] not in ("", "A"):
+                continue
+            key = (a["chain"], a["resseq"], a["name"])
+            if key in seen:
+                continue
+            seen.add(key)
+            kept.append(a)
+        return kept
+
+    protein = first_conformer([a for a in atoms if a["record"] == "ATOM"])
+    dropped = sum(1 for a in atoms if a["record"] == "ATOM") - len(protein)
+    if dropped:
+        print("alternate conformers: dropped %d atoms, kept altloc A" % dropped)
+
     het = [a for a in atoms
            if a["record"] == "HETATM" and a["resname"].upper() not in JUNK_HET]
 
@@ -190,9 +230,36 @@ def prepare(pdb_id: str, workdir: pathlib.Path) -> dict:
     key, ligand = max(groups.items(), key=lambda kv: len(kv[1]))
     print("co-crystal ligand: %s %s chain %s, %d atoms"
           % (key[2], key[1], key[0] or "-", len(ligand)))
+    ligand_for_water = ligand
+
+    # Keep the structural waters that bridge the ligand to the protein.
+    #
+    # Stripping all solvent is the default habit and it is wrong here. 2AM9
+    # has exactly one water within 5 A of DHT, and it bridges the ligand
+    # (3.20 A) to Gln711 OE1 (2.52 A) and Arg752 NH1 (2.93 A) - the
+    # canonical AR A-ring water, and precisely the two residues this tool
+    # calls "A-ring anchor". Modelling that contact as direct, with the
+    # water deleted, misplaces the A-ring of every steroid docked here.
+    waters = [a for a in atoms
+              if a["resname"].upper() in ("HOH", "DOD", "WAT")
+              and a["altloc"] in ("", "A")]
+    bridging = []
+    if keep_waters and ligand_for_water:
+        for w in waters:
+            dl = min(dist(w, l) for l in ligand_for_water)
+            if dl > WATER_LIGAND_CUT:
+                continue
+            dp = min((dist(w, a) for a in protein), default=99.0)
+            if dp <= WATER_PROTEIN_CUT:
+                bridging.append(w)
+        if bridging:
+            print("structural waters kept: %d (within %.1f A of the ligand and "
+                  "%.1f A of protein)" % (len(bridging), WATER_LIGAND_CUT,
+                                          WATER_PROTEIN_CUT))
 
     (workdir / "receptor.pdb").write_text(
-        "\n".join(a["raw"] for a in protein) + "\nEND\n", encoding="utf-8")
+        "\n".join(a["raw"] for a in protein + bridging) + "\nEND\n",
+        encoding="utf-8")
     (workdir / "ligand_ref.pdb").write_text(
         "\n".join(a["raw"] for a in ligand) + "\nEND\n", encoding="utf-8")
 
@@ -233,6 +300,55 @@ def box_from_atoms(atoms: list) -> dict:
 
 # --------------------------------------------------------- ligand 3D prep
 
+
+# Ionisation at pH 7.4.
+#
+# Ligands were built straight from SMILES and docked as written, which means
+# every carboxylic acid went in as neutral COOH. 32 of the 206 dictionary
+# compounds carry a free carboxyl or sulfonic acid - ferulic, caffeic,
+# gallic, ursolic, the retinoids - and at physiological pH all of them are
+# anions. That is not a detail in this pocket: Arg752 is a positively
+# charged A-ring anchor, so the sign of the ligand's charge changes the
+# interaction it is being scored on.
+#
+# This is the minimal rule-based treatment, not a pKa predictor: strip the
+# proton from carboxylic and sulfonic acids, add one to aliphatic amines
+# that are not amides, anilines or already charged. Phenols (pKa ~10) and
+# imidazoles are left neutral.
+ACID_SMARTS = ("[CX3](=O)[OX2H1]", "[SX4](=O)(=O)[OX2H1]", "[PX4](=O)([OX2H1])")
+BASE_SMARTS = ("[NX3;H2,H1,H0;!$(N[#6]=[O,N,S]);!$(N[a]);!$(N=*);!$([N+]);"
+               "!$(N[SX4](=O)=O)]",)
+
+
+def protonate_at_physiological_ph(mol):
+    from rdkit import Chem
+
+    rw = Chem.RWMol(mol)
+    for patt in ACID_SMARTS:
+        q = Chem.MolFromSmarts(patt)
+        for match in rw.GetSubstructMatches(q):
+            for idx in match:
+                a = rw.GetAtomWithIdx(idx)
+                if a.GetSymbol() == "O" and a.GetTotalNumHs() == 1:
+                    a.SetNoImplicit(True)
+                    a.SetNumExplicitHs(0)
+                    a.SetFormalCharge(-1)
+    for patt in BASE_SMARTS:
+        q = Chem.MolFromSmarts(patt)
+        for match in rw.GetSubstructMatches(q):
+            a = rw.GetAtomWithIdx(match[0])
+            if a.GetFormalCharge() == 0 and a.GetDegree() <= 3:
+                a.SetFormalCharge(1)
+                a.SetNumExplicitHs(a.GetTotalNumHs() + 1)
+                a.SetNoImplicit(True)
+    out = rw.GetMol()
+    try:
+        Chem.SanitizeMol(out)
+    except Exception:            # noqa: BLE001
+        return mol               # a molecule we cannot ionise docks as drawn
+    return out
+
+
 def ligand_to_sdf(smiles: str, name: str, path: pathlib.Path) -> None:
     try:
         from rdkit import Chem, RDLogger
@@ -245,6 +361,7 @@ def ligand_to_sdf(smiles: str, name: str, path: pathlib.Path) -> None:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         raise ValueError("RDKit could not parse the SMILES")
+    mol = protonate_at_physiological_ph(mol)
     mol = Chem.AddHs(mol)
     params = AllChem.ETKDGv3()
     params.randomSeed = 42
@@ -432,6 +549,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--prepare", action="store_true", help="fetch and split the PDB entry")
+    ap.add_argument("--no-waters", action="store_true",
+                    help="strip every water, including ones bridging the ligand "
+                         "to the protein (the old behaviour)")
     ap.add_argument("--pdb", default=DEFAULT_PDB, help="PDB id (default %s)" % DEFAULT_PDB)
     ap.add_argument("--smiles", help="dock a single SMILES")
     ap.add_argument("--name", help="name for --smiles")
@@ -443,7 +563,7 @@ def main() -> int:
 
     work = args.workdir
     if args.prepare:
-        prepare(args.pdb, work)
+        prepare(args.pdb, work, keep_waters=not args.no_waters)
         if not (args.smiles or args.csv):
             return 0
 

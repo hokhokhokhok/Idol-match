@@ -8,7 +8,24 @@
 
 var AR = require('./armodel.js');
 
-var POCKET_VOLUME = 400;          /* AR LBD cavity, Angstrom^3 */
+/* The cut used for "too big to fit", in McGowan volume units.
+ *
+ * This was written as "AR LBD cavity, 400 A^3" and treated as a physical
+ * constant - occupancy percentages all over the UI are computed against
+ * it. It was never measured. A grid scan of the 2AM9 site gives 179 A^3
+ * for the probe-accessible volume, which is a different quantity from a
+ * McGowan ligand volume and cannot be compared to it directly, so that
+ * does not settle the number either.
+ *
+ * What is measured is the cut. Over the 94 dictionary compounds with a
+ * Tox21 verdict, no compound above this volume is active, and the result
+ * is stable anywhere from 380 to 420: below 380 it starts discarding real
+ * ligands, above 450 it starts letting false positives back in. But the
+ * plateau is set by two molecules - the largest active is 376 and the
+ * smallest inactive above it is 387 - so it is an empirical threshold with
+ * an 11 A^3 margin, not a cavity measurement. "점유율" should be read as
+ * "fraction of that cut", not as how full the pocket is. */
+var POCKET_VOLUME = 400;
 
 /* ------------------------------------------------- reference library (28) */
 
@@ -931,6 +948,105 @@ var REFERENCE_NOTES = {
                  '되짚지 못했습니다. 값 자체는 교과서적이지만 추적은 안 됩니다.'
 };
 
+/* ------------------------------------------- usability for cosmetics -
+ *
+ * A ranked list of AR antagonists is not a sourcing list. Of the 25
+ * compounds in the top band, 14 are prescription drugs and 4 are banned or
+ * restricted pesticides; what is left that a formulator could actually put
+ * in a product is six flavonoids, all of them long since commercialised.
+ * That is the single most useful thing to tell someone looking for an
+ * anti-androgen ingredient, and the tool was not telling them.
+ *
+ * Regulatory status is knowledge, not something derivable from a
+ * structure, so it is written down with a reason per class. It is a
+ * screening aid and not regulatory advice: limits differ by market and
+ * change, and anything here has to be checked against the current KFDA /
+ * EU annexes before it goes near a formulation. */
+var USE_CLASSES = {
+  cosmetic:   { word: '화장품 원료', note: '화장품에 쓰이는 원료입니다' },
+  restricted: { word: '제한/규제',   note: '화장품에 쓰이지만 농도 제한이나 시장별 금지가 걸립니다' },
+  drug:       { word: '의약품',      note: '처방·일반의약품 성분이라 화장품에 넣을 수 없습니다' },
+  pesticide:  { word: '농약/살생물제', note: '농약 또는 살생물제입니다. 화장품 원료가 아닙니다' },
+  pollutant:  { word: '환경오염물질', note: '산업 오염물질입니다. 발굴 대상이 아니라 회피 대상입니다' },
+  endogenous: { word: '내인성',      note: '체내 호르몬·전구체입니다' }
+};
+
+var USE_CLASS = {
+  /* drugs - the top of the antagonist list is mostly this */
+  'Dienogest': 'drug', 'Drospirenone': 'drug', 'Megestrol acetate': 'drug',
+  'Clascoterone': 'drug', 'Chlormadinone acetate': 'drug',
+  'Cyproterone acetate': 'drug', 'Apalutamide': 'drug', 'Enzalutamide': 'drug',
+  'Darolutamide': 'drug', 'Spironolactone': 'drug', 'Bicalutamide': 'drug',
+  'Hydroxyflutamide': 'drug', 'Nilutamide': 'drug', 'Flutamide': 'drug',
+  'Ethinylestradiol': 'drug', 'Estradiol': 'drug', 'Estrone': 'drug',
+  'Estriol': 'drug', 'Finasteride': 'drug', 'Dutasteride': 'drug',
+  'Minoxidil': 'drug', 'Tretinoin': 'drug', 'Adapalene': 'drug',
+  /* alfatradiol is sold as a topical alopecia drug, not a cosmetic */
+  'Alfatradiol': 'drug',
+  /* ketoconazole shampoo is a quasi-drug in KR, a medicine elsewhere */
+  'Ketoconazole': 'drug',
+
+  'Vinclozolin': 'pesticide', 'Procymidone': 'pesticide', 'Linuron': 'pesticide',
+  'Fenitrothion': 'pesticide', 'Prochloraz': 'pesticide',
+  'Methoxychlor': 'pesticide', 'Triclocarban': 'pesticide',
+  'Triclosan': 'pesticide', "p,p'-DDE": 'pesticide',
+
+  'Bisphenol A': 'pollutant', 'Bisphenol S': 'pollutant', 'Bisphenol F': 'pollutant',
+  '4-Octylphenol': 'pollutant', 'Nonylphenol': 'pollutant',
+
+  'DHEA': 'endogenous', 'Androstenedione': 'endogenous', 'Pregnenolone': 'endogenous',
+  'Testosterone': 'endogenous', 'Dihydrotestosterone': 'endogenous',
+  'Progesterone': 'endogenous', 'Cholesterol': 'endogenous',
+  'Corticosterone': 'endogenous', 'Hydrocortisone': 'endogenous',
+
+  /* restricted: used in cosmetics but with limits or market bans */
+  'Hydroquinone': 'restricted', 'Deoxyarbutin': 'restricted',
+  'Benzophenone-3': 'restricted', 'Capsaicin': 'restricted',
+  'Isobutylparaben': 'restricted', 'Propylparaben': 'restricted',
+  'Butylparaben': 'restricted', 'Benzylparaben': 'restricted',
+  'Octinoxate': 'restricted', 'Climbazole': 'restricted',
+
+  'Kaempferol': 'cosmetic', 'Daidzein': 'cosmetic', 'Genistein': 'cosmetic',
+  'Glycitein': 'cosmetic', 'Formononetin': 'cosmetic', 'Luteolin': 'cosmetic',
+  'Apigenin': 'cosmetic', 'Biochanin A': 'cosmetic', 'Bakuchiol': 'cosmetic',
+  'Ascorbyl glucoside': 'cosmetic', 'Glyceryl glucoside': 'cosmetic',
+  'Octocrylene': 'cosmetic', 'Fisetin': 'cosmetic', 'Galangin': 'cosmetic',
+  'Chrysin': 'cosmetic', 'Curcumin': 'cosmetic', 'Hesperetin': 'cosmetic',
+  'Naringenin': 'cosmetic', 'Equol': 'cosmetic', 'Baicalein': 'cosmetic',
+  'Pterostilbene': 'cosmetic', 'Phloretin': 'cosmetic', 'Padimate O': 'cosmetic',
+  'Quercetin': 'cosmetic', 'Puerarin': 'cosmetic', 'Myricetin': 'cosmetic',
+  'Morin': 'cosmetic', 'Hydroxypinacolone retinoate': 'cosmetic',
+  'Methylparaben': 'cosmetic', 'Tetrahexyldecyl ascorbate': 'cosmetic',
+  'Ferulic acid': 'cosmetic', 'Taxifolin': 'cosmetic', 'Caffeic acid': 'cosmetic',
+  'Phenylethyl resorcinol': 'cosmetic', 'Resveratrol': 'cosmetic',
+  'Epigallocatechin gallate': 'cosmetic', 'Benzyl salicylate': 'cosmetic',
+  'Coumestrol': 'cosmetic', 'Linoleic acid': 'cosmetic', 'Lauric acid': 'cosmetic',
+  'Myristic acid': 'cosmetic', 'Palmitic acid': 'cosmetic',
+  'Stearic acid': 'cosmetic', 'Niacinamide': 'cosmetic'
+};
+
+/* Whether a molecule has any chance of reaching the androgen receptor in
+ * the dermal papilla, which sits below the epidermis. This is the crudest
+ * possible screen - the 500 Dalton rule with a lipophilicity window - and
+ * it is here because the tool had nothing at all: 26 of the 85 antagonist
+ * candidates are too lipophilic to cross, and a hit that cannot get there
+ * is not a lead however well it scores. It says nothing about formulation,
+ * penetration enhancers or follicular delivery. */
+function dermalScreen(desc) {
+  var reasons = [];
+  if (desc.mw > 500) reasons.push('MW ' + Math.round(desc.mw) + ' > 500');
+  if (desc.clogp > 4) reasons.push('clogP ' + desc.clogp.toFixed(1) + ' > 4 — 각질층에 갇힙니다');
+  else if (desc.clogp < 1) reasons.push('clogP ' + desc.clogp.toFixed(1) + ' < 1 — 지질층을 못 지납니다');
+  return { pass: reasons.length === 0, reasons: reasons };
+}
+
+function useClassOf(name) {
+  var key = USE_CLASS[name] || null;
+  if (!key) return null;
+  return { key: key, word: USE_CLASSES[key].word, note: USE_CLASSES[key].note,
+           actionable: key === 'cosmetic' || key === 'restricted' };
+}
+
 /* --------------------------------------------- affinity ranking ------
  *
  * Potency first, function second: the whole dictionary ordered by predicted
@@ -1300,6 +1416,7 @@ function rankAntagonists(evidenceFor) {
 
     rows.push({
       ko: ko, en: en, smiles: smi, curated: curated,
+      use: useClassOf(en), dermal: dermalScreen(AR.computeDescriptors(mol)),
       curatedLabel: curatedLabel,
       tier: curated ? 'curated' : fc.tier, callTier: fc.tier,
       pKi: res.pKi, domain: res.domain,
@@ -1722,13 +1839,16 @@ function predict(smiles, options) {
    * The structural verdict is forced down and says why. */
   if (volume > POCKET_VOLUME) {
     pocket.verdictKey = 'weak';
-    pocket.verdict = '공동보다 큼 — 결합 불가';
+    pocket.verdict = '부피 기준 초과 — 결합 어려움';
     pocket.oversize = true;
     pocket.notes = (pocket.notes || []).concat(
-      '분자 부피 ' + Math.round(volume) + ' Å³가 공동 ' + POCKET_VOLUME +
-      ' Å³보다 큽니다. Tox21 판정이 있는 사전 94종에서 점유율 100%를 넘는 ' +
-      '8종은 하나도 활성이 아니었습니다. 아래 pKi는 들어가지 못하는 자리에 ' +
-      '대한 유사도 추정이므로 읽지 마세요.');
+      '분자 부피 ' + Math.round(volume) + ' Å³가 기준 ' + POCKET_VOLUME +
+      ' Å³를 넘습니다. 이 기준은 <b>측정된 공동 부피가 아니라 경험적 컷</b>입니다 — ' +
+      'Tox21 판정이 있는 94종에서 이 선을 넘는 8종이 하나도 활성이 아니었고, ' +
+      '380~420 Å³ 어디에 놓아도 결과가 같습니다. 다만 그 평탄구간은 ' +
+      '활성 최대 376 Å³과 비활성 최소 387 Å³ 사이 11 Å³ 틈이 만든 것이라 ' +
+      '얇습니다. 아래 pKi는 들어가기 어려운 자리에 대한 유사도 추정이므로 ' +
+      '읽지 마세요.');
   }
 
   /* Keep the two verdicts from contradicting each other. The anchor rules
@@ -1996,6 +2116,10 @@ module.exports = {
   FUNCTION_CLASS: FUNCTION_CLASS,
   callFunction: callFunction,
   rankAntagonists: rankAntagonists,
+  USE_CLASS: USE_CLASS,
+  USE_CLASSES: USE_CLASSES,
+  useClassOf: useClassOf,
+  dermalScreen: dermalScreen,
   rankAffinity: rankAffinity,
   designAnalogues: designAnalogues,
   DESIGN_RULES: DESIGN_RULES,
