@@ -139,7 +139,11 @@ def main():
         html = assemble(base_css.replace("__FONT_BASE64__", font_b64),
                         body, modules, data)
 
-    out_path.write_text(html, encoding="utf8")
+    # A UTF-8 byte-order mark forces every viewer to decode as UTF-8 instead
+    # of guessing a legacy Korean codepage. Browsers strip it before parsing,
+    # so it costs nothing and it is the difference between a readable page and
+    # a screen of question marks when the file travels by mail.
+    out_path.write_bytes(b"\xef\xbb\xbf" + html.encode("utf8"))
     size = out_path.stat().st_size
     print("%s — %.1f MB (font %.1f MB)" % (out_path, size / 1e6, len(font_b64) / 1e6))
     for var, asset in DATA:
