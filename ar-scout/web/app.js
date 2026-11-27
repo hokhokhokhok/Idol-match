@@ -1335,6 +1335,36 @@ function renderRank() {
            '전부 이미 상용화된 플라보노이드 계열입니다. ' +
            '위의 「실제로 쓸 수 있는 것만」으로 걸러 보세요. ' +
            '<b>규제 분류는 시장마다 다르고 바뀝니다 — 처방이 아니라 선별 보조입니다.</b></p>');
+  /* The number an executive needs before anything else: how far the best
+     usable hit is from something that is already known to work topically.
+     Clascoterone is the benchmark because it is an approved topical AR
+     antagonist, which is exactly the product concept. */
+  out.push('<h4 class="sect">기준선 — 이미 효과가 입증된 것과의 거리</h4>');
+  out.push('<table><thead><tr><th>물질</th><th class="num">예측 Ki</th>' +
+           '<th class="num">길항 AC50 (실측)</th><th>용도</th></tr></thead><tbody>');
+  var bench = [['Clascoterone', '승인된 국소 AR 길항제'],
+               ['Cyproterone acetate', ''], ['Bicalutamide', ''],
+               ['Kaempferol', '최상위 실행가능 후보'], ['Genistein', ''],
+               ['Apigenin', '']];
+  for (var bi = 0; bi < bench.length; bi++) {
+    var br = rankRows.filter(function (x) { return x.en === bench[bi][0]; })[0];
+    if (!br) continue;
+    var bp = br.potency;
+    out.push('<tr><td>' + esc(br.ko) + ' <span class="hint">' + esc(br.en) +
+             (bench[bi][1] ? ' · ' + bench[bi][1] : '') + '</span></td>' +
+             '<td class="num">' + Math.round(Math.pow(10, 9 - br.pKi)) + ' nM</td>' +
+             '<td class="num">' + (bp && bp.ap != null ? bp.ap + ' µM' : '—') + '</td>' +
+             '<td>' + esc(br.use ? br.use.word : '미분류') + '</td></tr>');
+  }
+  out.push('</tbody></table>');
+  out.push('<p class="hint" style="color:var(--red)"><b>실행 가능한 최상위 ' +
+           '후보는 승인 약물보다 약 700배 약합니다.</b> 켐페롤·제니스테인의 ' +
+           '예측 Ki가 6.3–6.5 µM, 클라스코테론은 9 nM입니다. 세포 실측으로 봐도 ' +
+           '플라보노이드의 길항 AC50은 <b>26–37 µM</b>으로, 피부에서 도달하기 ' +
+           '어려운 농도입니다. 이 도구가 내놓는 「우선 확인」은 ' +
+           '<b>작용 기전이 있을 법하다</b>는 뜻이지 <b>제품이 된다</b>는 뜻이 ' +
+           '아닙니다.</p>');
+
   out.push('<p class="hint"><b>문헌 등재 ' + curatedN + '종은 이 도구의 입력이지 ' +
            '발견이 아닙니다.</b> 기능 레퍼런스에 실린 물질이라 자기 자신과 ' +
            '유사도 1.00으로 맞으므로, 「예측」이라고 적으면 순환 논리가 됩니다. ' +
