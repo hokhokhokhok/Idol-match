@@ -70,6 +70,21 @@ function run() {
                   `cross ${a.crossings}`);
     }
   }
+  /* every pocket residue must get a position; the figure used to drop
+     silently anything missing from a hardcoded coordinate table */
+  const PR2 = require('../predict.js');
+  const ids = PR2.POCKET_RESIDUES.map(r => r.id);
+  const uniq = {};
+  let dup = 0;
+  for (const id of ids) { if (uniq[id]) dup++; uniq[id] = 1; }
+  if (!dup && ids.length >= 20) {
+    pass++;
+    console.log(`  ok    ${'pocket residues are unique'.padEnd(30)} ${ids.length} entries`);
+  } else {
+    fail++;
+    console.log(`  FAIL  ${dup} duplicate residue ids, ${ids.length} total`);
+  }
+
   console.log(`\n  layout: ${pass} passed, ${fail} failed`);
   return fail;
 }

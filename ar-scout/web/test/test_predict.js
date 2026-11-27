@@ -341,6 +341,50 @@ function run() {
     }
   }
 
+  /* --- the pocket map must show every residue it knows about ---------
+   *
+   * Residue positions on the figure were a hardcoded table of fifteen
+   * coordinates and the renderer skipped anything missing from it without
+   * a word, so correcting the residue list to 22 left the picture drawing
+   * 15. Checked here against the structure as well: the list must contain
+   * the residues that actually line the 2AM9 site. */
+  console.log('\n  pocket residue list');
+  const mustLine = ['Leu701', 'Leu704', 'Asn705', 'Leu707', 'Gly708', 'Gln711',
+                    'Trp741', 'Met742', 'Met745', 'Val746', 'Met749', 'Arg752',
+                    'Phe764', 'Met780', 'Met787', 'Leu873', 'Phe876', 'Thr877',
+                    'Leu880', 'Phe891', 'Met895'];
+  const have = PR.POCKET_RESIDUES.map(r => r.id);
+  const absent = mustLine.filter(r => have.indexOf(r) < 0);
+  if (!absent.length) {
+    pass++;
+    console.log(`  ok    ${'every lining residue is listed'.padEnd(34)} ` +
+                `${mustLine.length} within 4.5 Å of the ligand`);
+  } else {
+    fail++;
+    console.log(`  FAIL  missing from the pocket list: ${absent.join(', ')}`);
+  }
+
+  /* Ile899 is deliberately there and deliberately not pocket-lining */
+  const ile = PR.POCKET_RESIDUES.filter(r => r.id === 'Ile899')[0];
+  if (ile && /4\.8/.test(ile.role)) {
+    pass++;
+    console.log(`  ok    ${'Ile899 states it is outside'.padEnd(34)} 4.8 Å, AF-2 reach`);
+  } else {
+    fail++;
+    console.log('  FAIL  Ile899 must say it is 4.8 Å away, not read as a normal contact');
+  }
+
+  /* the water-mediated anchors must say so */
+  const mediated = PR.POCKET_RESIDUES.filter(
+    r => (r.id === 'Gln711' || r.id === 'Arg752') && /물 매개/.test(r.role));
+  if (mediated.length === 2) {
+    pass++;
+    console.log(`  ok    ${'A-ring anchors marked water-mediated'.padEnd(34)} Gln711, Arg752`);
+  } else {
+    fail++;
+    console.log('  FAIL  Gln711/Arg752 contact the ligand through a bridging water');
+  }
+
   console.log(`\n  predict: ${pass} passed, ${fail} failed`);
   return fail;
 }
