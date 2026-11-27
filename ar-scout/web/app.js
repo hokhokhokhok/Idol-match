@@ -552,18 +552,49 @@ function mountScene(mol) {
 
 /* ---------------------------------------------------------- pocket map */
 
-var RESIDUE_XY = {
-  Gln711: [72, 118], Arg752: [72, 206],
-  Asn705: [488, 116], Thr877: [488, 200],
-  Leu704: [148, 292], Leu707: [238, 302], Met742: [330, 302], Met745: [420, 292],
-  Phe764: [150, 38], Met787: [252, 26], Leu873: [352, 26],
-  Met895: [448, 40], Ile899: [534, 82],
-  Trp741: [72, 162], Phe876: [488, 158]
-};
+/* Residue positions on the pocket map.
+ *
+ * These were a hardcoded table of fifteen coordinates, which meant that
+ * adding a residue to POCKET_RESIDUES made it silently vanish from the
+ * figure - the renderer skipped anything without an entry and said
+ * nothing. That is how the map kept showing 15 residues after the list
+ * was corrected to 22. Positions are laid out from the list instead, so
+ * the figure cannot fall out of step with the data again.
+ *
+ * The ring is ordered to keep the helix-12 residues together on the right,
+ * where the AF-2 surface is, and the two A-ring anchors together on the
+ * left, so the picture still reads the way it did. */
+var H12_SIDE = { Thr877: 1, Met895: 1, Ile899: 1, Phe891: 1, Phe876: 1, Asn705: 1 };
+var ARING_SIDE = { Gln711: 1, Arg752: 1, Trp741: 1 };
+
+function residueLayout(residues) {
+  var right = [], left = [], rest = [];
+  for (var i = 0; i < residues.length; i++) {
+    var id = residues[i].id;
+    if (H12_SIDE[id]) right.push(id);
+    else if (ARING_SIDE[id]) left.push(id);
+    else rest.push(id);
+  }
+  var xy = {}, cx = 300, cy = 178;
+  function place(ids, a0, a1, rx, ry) {
+    for (var k = 0; k < ids.length; k++) {
+      var t = ids.length === 1 ? 0.5 : k / (ids.length - 1);
+      var a = a0 + (a1 - a0) * t;
+      xy[ids[k]] = [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry];
+    }
+  }
+  place(left, Math.PI * 0.78, Math.PI * 1.22, 228, 150);
+  place(right, Math.PI * -0.22, Math.PI * 0.22, 228, 150);
+  var half = Math.ceil(rest.length / 2);
+  place(rest.slice(0, half), Math.PI * 1.30, Math.PI * 1.70, 212, 158);
+  place(rest.slice(half), Math.PI * 0.70, Math.PI * 0.30, 212, 158);
+  return xy;
+}
 
 function svgPocket(pocket, occupancy) {
   var parts = [];
-  var cx = 280, cy = 164, rx = 118, ry = 68;
+  var cx = 300, cy = 178, rx = 122, ry = 70;
+  var RESIDUE_XY = residueLayout(pocket.residues);
 
   parts.push('<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry +
              '" fill="var(--blue-wash)" stroke="var(--blue)" stroke-width="1.2" ' +
@@ -575,7 +606,7 @@ function svgPocket(pocket, occupancy) {
              'letter-spacing="-1" fill="var(--blue)">' + esc(occLabel) + '</text>');
   parts.push('<text x="' + cx + '" y="' + (cy + 18) + '" text-anchor="middle" ' +
              'font-family="var(--sans)" font-size="12" font-weight="500" ' +
-             'fill="var(--ink-3)">포켓 점유율</text>');
+             'fill="var(--ink-3)">부피 / 기준</text>');
 
   for (var i = 0; i < pocket.residues.length; i++) {
     var res = pocket.residues[i];
@@ -609,7 +640,8 @@ function svgPocket(pocket, occupancy) {
                'opacity="' + (res.contact ? '1' : '.6') + '">' + esc(res.id) + '</text>');
   }
 
-  return '<svg viewBox="0 0 600 330" role="img" aria-label="AR LBD 포켓 접촉도">' +
+  /* widened and heightened for 22 residues instead of 15 */
+  return '<svg viewBox="0 0 640 372" role="img" aria-label="AR LBD 포켓 접촉도">' +
          parts.join('') + '</svg>';
 }
 

@@ -1448,22 +1448,40 @@ function rankAntagonists(evidenceFor) {
 
 /* ---------------------------------------------------------- pocket layout */
 
+/* Checked against the structure rather than recalled: every residue with a
+ * heavy atom within 4.5 A of the co-crystal ligand in 2AM9. The first
+ * version of this list was written from memory and missed seven of them -
+ * Leu701, Gly708, Val746, Met749, Met780, Leu880 and Phe891 - which are
+ * ordinary AR pocket residues, not exotica. A pocket map that leaves out a
+ * third of the pocket understates how enclosed the site is.
+ *
+ * Ile899 is kept although it is 4.8 A away and therefore NOT pocket-lining
+ * for the natural ligand. That is the point of it: reaching Ile899 means
+ * reaching past the pocket toward the AF-2 surface. The distance is stated
+ * so nobody reads it as an ordinary contact. */
 var POCKET_RESIDUES = [
+  { id: 'Leu701', role: 'hydrophobic' },
   { id: 'Leu704', role: 'hydrophobic' },
   { id: 'Asn705', role: 'D-ring anchor' },
   { id: 'Leu707', role: 'hydrophobic' },
-  { id: 'Gln711', role: 'A-ring anchor' },
+  { id: 'Gly708', role: 'hydrophobic' },
+  { id: 'Gln711', role: 'A-ring anchor (물 매개)' },
   { id: 'Met742', role: 'hydrophobic' },
   { id: 'Met745', role: 'hydrophobic' },
-  { id: 'Arg752', role: 'A-ring anchor' },
+  { id: 'Val746', role: 'hydrophobic' },
+  { id: 'Met749', role: 'hydrophobic' },
+  { id: 'Arg752', role: 'A-ring anchor (물 매개)' },
   { id: 'Phe764', role: 'hydrophobic' },
+  { id: 'Met780', role: 'hydrophobic' },
   { id: 'Met787', role: 'hydrophobic' },
   { id: 'Leu873', role: 'hydrophobic' },
+  { id: 'Leu880', role: 'hydrophobic' },
+  { id: 'Phe891', role: 'helix-12 직전' },
   { id: 'Trp741', role: '입체 관문 (W741L 내성)' },
   { id: 'Phe876', role: '입체 관문 (F876L 내성)' },
   { id: 'Thr877', role: 'D-ring / helix-12 (T877A 내성)' },
   { id: 'Met895', role: 'helix-12 / AF-2' },
-  { id: 'Ile899', role: 'helix-12 / AF-2' }
+  { id: 'Ile899', role: 'helix-12 / AF-2 (공결정 리간드에서 4.8 Å — 포켓 밖)' }
 ];
 
 /* Trp741, Phe876 and Thr877 are where the classic resistance mutations sit:
