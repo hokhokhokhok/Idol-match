@@ -4,7 +4,12 @@
 AR Scout와 같은 구조로, 수용체만 안드로겐에서 에스트로겐으로 바뀌었습니다.
 
 `python3 build.py` → `index.html` (약 5.5 MB, 외부 요청 없음)
-`python3 build.py out.html --no-font` → 글꼴 제외 2.7 MB (메일 첨부용)
+`python3 build.py out.html --subset-font` → 쓰는 글자만 담은 글꼴 2.9 MB (메일 첨부용)
+`python3 build.py out.html --no-font` → 글꼴 제외 2.7 MB (받는 쪽에 한글 글꼴이 있을 때만)
+
+글꼴을 빼면 여는 쪽 PC의 한글 글꼴에 의존하게 되고, 없는 환경에서는 글자가 전부
+`?` 또는 네모로 나옵니다(실제로 메일로 보냈다가 겪음). 배포본은 `--subset-font`를
+쓰세요 — 화면에 쓰이는 498자만 담아 130 KB입니다.
 
 ## 무엇이 실측이고 무엇이 예측인가
 
@@ -110,6 +115,7 @@ local/
   pocket_pparg.json      PPARγ 설정 (Tyr473 수소결합 여부로 분류)
   fetch_adipo.py         ChEMBL 지방세포 분화·지질축적 어세이 → adipo_pheno.json
   pack_panels.py         보조 수용체 라이브러리 5종을 번들용으로 압축
+  subset_font.py         글꼴을 쓰는 글자만 남기고 잘라내기 (2,009 KB → 130 KB)
   merge_tox21.py         Tox21 테이블 5종을 키 하나로 합침 (1,022 KB → 443 KB)
   pocket_volume.py       공동 부피 측정 (격자 + 둘러싸임 판정)
   build_tox21.py         PubChem 어세이 → tox21_er.json
