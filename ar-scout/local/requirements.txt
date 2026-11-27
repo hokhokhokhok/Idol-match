@@ -1,0 +1,13 @@
+# Local pipeline only. The web bundle (ar-scout.html) has no dependencies.
+
+# train_qsar.py — ChEMBL fetch and cleaning
+requests>=2.31
+
+# train_qsar.py — model fitting, ar_dock.py — 3D ligand generation
+rdkit>=2023.9.1
+scikit-learn>=1.3
+numpy>=1.24
+
+# ar_dock.py also needs the smina executable, which is not a Python package:
+#   conda install -c conda-forge smina
+# or a static build from https://sourceforge.net/projects/smina/

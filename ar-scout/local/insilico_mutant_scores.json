@@ -1,0 +1,268 @@
+{
+ "Metribolone": {
+  "cls": "agonist",
+  "wt": -11.6,
+  "t877a": -11.3,
+  "w741a": -11.2,
+  "w741l": -11.3
+ },
+ "Trenbolone": {
+  "cls": "agonist",
+  "wt": -10.8,
+  "t877a": -10.7,
+  "w741a": -10.3,
+  "w741l": -10.4
+ },
+ "Dihydrotestosterone": {
+  "cls": "agonist",
+  "wt": -9.9,
+  "t877a": -9.7,
+  "w741a": -9.3,
+  "w741l": -9.4
+ },
+ "Nandrolone": {
+  "cls": "agonist",
+  "wt": -11.8,
+  "t877a": -11.5,
+  "w741a": -11.4,
+  "w741l": -11.4
+ },
+ "Testosterone": {
+  "cls": "agonist",
+  "wt": -12.0,
+  "t877a": -11.8,
+  "w741a": -11.5,
+  "w741l": -11.5
+ },
+ "Methyltestosterone": {
+  "cls": "agonist",
+  "wt": -11.6,
+  "t877a": -11.3,
+  "w741a": -10.9,
+  "w741l": -11.0
+ },
+ "Mesterolone": {
+  "cls": "agonist",
+  "wt": -12.8,
+  "t877a": -12.6,
+  "w741a": -12.2,
+  "w741l": -12.3
+ },
+ "Boldenone": {
+  "cls": "agonist",
+  "wt": -11.1,
+  "t877a": -10.8,
+  "w741a": -10.5,
+  "w741l": -10.5
+ },
+ "Stanozolol": {
+  "cls": "agonist",
+  "wt": -9.6,
+  "t877a": -9.7,
+  "w741a": -9.2,
+  "w741l": -9.2
+ },
+ "Oxandrolone": {
+  "cls": "agonist",
+  "wt": -11.9,
+  "t877a": -11.7,
+  "w741a": -11.4,
+  "w741l": -11.5
+ },
+ "Oxymetholone": {
+  "cls": "agonist",
+  "wt": -8.7,
+  "t877a": -9.1,
+  "w741a": -8.3,
+  "w741l": -8.3
+ },
+ "Danazol": {
+  "cls": "agonist",
+  "wt": -7.5,
+  "t877a": -8.7,
+  "w741a": -7.0,
+  "w741l": -7.0
+ },
+ "Androsterone": {
+  "cls": "agonist",
+  "wt": -9.9,
+  "t877a": -10.1,
+  "w741a": -9.4,
+  "w741l": -9.5
+ },
+ "Epiandrosterone": {
+  "cls": "agonist",
+  "wt": -10.8,
+  "t877a": -10.9,
+  "w741a": -10.2,
+  "w741l": -10.3
+ },
+ "DHEA": {
+  "cls": "agonist",
+  "wt": -12.2,
+  "t877a": -12.0,
+  "w741a": -11.7,
+  "w741l": -11.7
+ },
+ "Androstenedione": {
+  "cls": "agonist",
+  "wt": -11.6,
+  "t877a": -11.5,
+  "w741a": -11.0,
+  "w741l": -11.1
+ },
+ "Bicalutamide": {
+  "cls": "antagonist",
+  "wt": -6.7,
+  "t877a": -6.8,
+  "w741a": -8.9,
+  "w741l": -6.3
+ },
+ "Enzalutamide": {
+  "cls": "antagonist",
+  "wt": 8.8,
+  "t877a": 6.8,
+  "w741a": 9.0,
+  "w741l": 8.8
+ },
+ "Apalutamide": {
+  "cls": "antagonist",
+  "wt": 10.6,
+  "t877a": 7.0,
+  "w741a": 7.8,
+  "w741l": 8.0
+ },
+ "Darolutamide": {
+  "cls": "antagonist",
+  "wt": -6.2,
+  "t877a": -5.7,
+  "w741a": -8.2,
+  "w741l": -7.7
+ },
+ "Nilutamide": {
+  "cls": "antagonist",
+  "wt": -9.1,
+  "t877a": -8.8,
+  "w741a": -8.9,
+  "w741l": -8.9
+ },
+ "Flutamide": {
+  "cls": "antagonist",
+  "wt": -8.6,
+  "t877a": -8.5,
+  "w741a": -8.4,
+  "w741l": -8.4
+ },
+ "Hydroxyflutamide": {
+  "cls": "antagonist",
+  "wt": -8.9,
+  "t877a": -8.7,
+  "w741a": -8.7,
+  "w741l": -8.7
+ },
+ "Cyproterone acetate": {
+  "cls": "antagonist",
+  "wt": -5.7,
+  "t877a": -7.1,
+  "w741a": -5.2,
+  "w741l": -5.3
+ },
+ "Spironolactone": {
+  "cls": "antagonist",
+  "wt": -8.0,
+  "t877a": -8.5,
+  "w741a": -5.3,
+  "w741l": -4.2
+ },
+ "Clascoterone": {
+  "cls": "antagonist",
+  "wt": -6.5,
+  "t877a": -7.6,
+  "w741a": -6.2,
+  "w741l": -6.4
+ },
+ "Progesterone": {
+  "cls": "partial",
+  "wt": -10.3,
+  "t877a": -10.8,
+  "w741a": -9.9,
+  "w741l": -9.8
+ },
+ "Medroxyprogesterone acetate": {
+  "cls": "partial",
+  "wt": -4.5,
+  "t877a": -6.3,
+  "w741a": -5.1,
+  "w741l": -5.1
+ },
+ "Chlormadinone acetate": {
+  "cls": "antagonist",
+  "wt": -6.0,
+  "t877a": -7.2,
+  "w741a": -5.6,
+  "w741l": -5.7
+ },
+ "Drospirenone": {
+  "cls": "antagonist",
+  "wt": -9.4,
+  "t877a": -9.2,
+  "w741a": -8.9,
+  "w741l": -8.9
+ },
+ "Dienogest": {
+  "cls": "antagonist",
+  "wt": -8.7,
+  "t877a": -8.4,
+  "w741a": -8.1,
+  "w741l": -8.2
+ },
+ "Norethisterone": {
+  "cls": "partial",
+  "wt": -8.7,
+  "t877a": -8.8,
+  "w741a": -8.2,
+  "w741l": -8.2
+ },
+ "Levonorgestrel": {
+  "cls": "partial",
+  "wt": -7.9,
+  "t877a": -8.1,
+  "w741a": -7.5,
+  "w741l": -7.6
+ },
+ "Tibolone": {
+  "cls": "partial",
+  "wt": -8.6,
+  "t877a": -9.0,
+  "w741a": -8.2,
+  "w741l": -8.2
+ },
+ "Vinclozolin": {
+  "cls": "antagonist",
+  "wt": -8.3,
+  "t877a": -8.2,
+  "w741a": -8.1,
+  "w741l": -8.1
+ },
+ "Procymidone": {
+  "cls": "antagonist",
+  "wt": -8.0,
+  "t877a": -8.4,
+  "w741a": -7.8,
+  "w741l": -7.8
+ },
+ "Linuron": {
+  "cls": "antagonist",
+  "wt": -7.1,
+  "t877a": -6.9,
+  "w741a": -6.8,
+  "w741l": -6.8
+ },
+ "Prochloraz": {
+  "cls": "antagonist",
+  "wt": -6.4,
+  "t877a": -6.6,
+  "w741a": -7.0,
+  "w741l": -6.7
+ }
+}

@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+"""Bundle the AR Scout engine and UI into one self-contained HTML file.
+
+The browser build must have zero dependencies and no network fetches, so the
+engine modules are concatenated into the shell's placeholders.
+
+Node and the browser need different plumbing for the same source files:
+
+  * ``var AR = require('./armodel.js');`` lines are dropped.
+  * ``module.exports = { ... };`` is rewritten to ``var AR = { ... };`` rather
+    than deleted, so the cross-module namespaces the stripped ``require``
+    lines used to provide still exist inside the single script scope.
+
+Run with no arguments to write <repo>/ar-scout/ar-scout.html.
+"""
+
+import argparse
+import base64
+import pathlib
+import re
+import subprocess
+import sys
+import tempfile
+
+HERE = pathlib.Path(__file__).resolve().parent
+
+# source file -> namespace the other modules reference it by
+ENGINE = [("armodel.js", "AR"), ("layout.js", "LY"), ("layout3d.js", "LY3"),
+          ("predict.js", "PR")]
+APP = ("app.js", "APP")
+
+# Pretendard is vendored and inlined as base64 rather than fetched: the
+# bundle has to stay a single file with no outbound requests, and naming the
+# font in a fallback stack is not enough when it is not installed locally.
+FONT = ("assets/PretendardVariable.woff2", "/*__FONT__*/")
+
+# The whole @font-face rule, dropped for the light build. The font stack in
+# :root still names Pretendard first, so a machine that has it installed
+# renders identically; everything else falls back to the platform sans.
+FONT_FACE = re.compile(r"@font-face\s*\{[^}]*\}\s*", re.DOTALL)
+
+# The expanded reference library ships inside the bundle so the extra few
+# thousand points are one click away rather than a file the user has to
+# carry around. Built by local/merge_library.py.
+EXTLIB = "assets/ar_reference_merged.json"
+
+# Pre-computed binding scene: real 2AM9 pocket coordinates and real smina
+# poses, from local/build_pocket_scene.py. The browser cannot dock, so this
+# is the only honest way to show a bound ligand.
+SCENE = "assets/pocket_scene.json"
+
+# Measured Tox21 androgen-receptor calls. Not a model: a lookup of what the
+# assay actually found, which outranks anything the tool predicts.
+TOX21 = "assets/tox21_ar.json"
+
+# Docking the same ligands into the two resistance mutants. Shown as evidence
+# in the single-compound view; deliberately not part of the prediction.
+MUTANT = "assets/mutant_shifts.json"
+
+# Where each reference pKi came from: ChEMBL target organism and assay.
+# Recovered after the library was criticised for treating 28 numbers of
+# unrecorded provenance as one scale.
+PROV = "assets/reference_prov.json"
+
+# AC50 and efficacy from the same Tox21 screens. The tool had no efficacy
+# axis at all; this is the measured one.
+POTENCY = "assets/tox21_potency.json"
+
+REQUIRE_LINE = re.compile(
+    r"^[ \t]*(?:var|const|let)[ \t]+\w+[ \t]*=[ \t]*require\([^)]*\)[ \t]*;?[ \t]*\r?\n?",
+    re.MULTILINE,
+)
+EXPORTS_HEAD = re.compile(r"^[ \t]*module\.exports[ \t]*=[ \t]*\{", re.MULTILINE)
+MAIN_GUARD = re.compile(
+    r"^[ \t]*if[ \t]*\([ \t]*require\.main[ \t]*===[ \t]*module[ \t]*\).*\r?\n?",
+    re.MULTILINE,
+)
+
+
+def prepare(path: pathlib.Path, namespace: str) -> str:
+    """Strip Node-only plumbing and expose the module under `namespace`."""
+    src = path.read_text(encoding="utf-8")
+    src = REQUIRE_LINE.sub("", src)
+    src = MAIN_GUARD.sub("", src)
+    src, n = EXPORTS_HEAD.subn("var %s = {" % namespace, src)
+    if n != 1:
+        raise SystemExit(
+            "%s: expected exactly one 'module.exports = {' line, found %d"
+            % (path.name, n)
+        )
+    banner = "/* ---- %s ---- */\n" % path.name
+    return banner + src.strip() + "\n"
+
+
+def build(out_path: pathlib.Path, embed_font: bool = True) -> int:
+    shell_path = HERE / "shell.html"
+    shell = shell_path.read_text(encoding="utf-8")
+    for token in ("/*__ENGINE__*/", "/*__APP__*/"):
+        if token not in shell:
+            raise SystemExit("shell.html is missing the %s placeholder" % token)
+
+    font_path = HERE / FONT[0]
+    font_b64 = ""
+    if embed_font and FONT[1] in shell:
+        if not font_path.exists():
+            raise SystemExit("missing vendored font: %s" % font_path)
+        font_b64 = base64.b64encode(font_path.read_bytes()).decode("ascii")
+        shell = shell.replace(FONT[1], font_b64)
+    elif not embed_font:
+        shell, dropped = FONT_FACE.subn("", shell)
+        if not dropped:
+            raise SystemExit("could not find the @font-face rule to drop")
+
+    engine_src = "\n".join(prepare(HERE / name, ns) for name, ns in ENGINE)
+    app_src = prepare(HERE / APP[0], APP[1])
+
+    extlib_path = HERE / EXTLIB
+    extlib_src = ""
+    if extlib_path.exists():
+        raw = extlib_path.read_text(encoding="utf-8").strip()
+        extlib_src = ("/* ---- %s ---- */\nvar EXTLIB = %s;\n"
+                      % (extlib_path.name, raw))
+
+    scene_path = HERE / SCENE
+    scene_src = ""
+    if scene_path.exists():
+        raw = scene_path.read_text(encoding="utf-8").strip()
+        scene_src = ("/* ---- %s ---- */\nvar SCENE = %s;\n"
+                     % (scene_path.name, raw))
+
+    tox_path = HERE / TOX21
+    tox_src = ""
+    if tox_path.exists():
+        raw = tox_path.read_text(encoding="utf-8").strip()
+        tox_src = "/* ---- %s ---- */\nvar TOX21 = %s;\n" % (tox_path.name, raw)
+
+    # The mutant shifts are no longer bundled. The interpretation they
+    # carried was retracted after a controlled re-run, nothing in the page
+    # reads them any more, and shipping 21 KB of numbers with no meaning
+    # attached invites someone to attach one.
+    mut_src = ""
+
+    prov_path = HERE / PROV
+    prov_src = ""
+    if prov_path.exists():
+        raw = prov_path.read_text(encoding="utf-8").strip()
+        prov_src = "/* ---- %s ---- */\nvar PROV = %s;\n" % (prov_path.name, raw)
+
+    pot_path = HERE / POTENCY
+    pot_src = ""
+    if pot_path.exists():
+        raw = pot_path.read_text(encoding="utf-8").strip()
+        pot_src = "/* ---- %s ---- */\nvar POTENCY = %s;\n" % (pot_path.name, raw)
+
+    app_src = (extlib_src + scene_src + tox_src + mut_src + prov_src
+               + pot_src + app_src)
+
+    # syntax-check the concatenated script before it is sealed into the page
+    combined = engine_src + "\n" + app_src
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".js", delete=False, encoding="utf-8"
+    ) as tmp:
+        tmp.write(combined)
+        tmp_name = tmp.name
+    try:
+        check = subprocess.run(
+            ["node", "--check", tmp_name], capture_output=True, text=True
+        )
+    finally:
+        pathlib.Path(tmp_name).unlink(missing_ok=True)
+    if check.returncode != 0:
+        sys.stderr.write(check.stderr)
+        raise SystemExit("node --check failed on the bundled script")
+
+    html = shell.replace("/*__ENGINE__*/", engine_src).replace("/*__APP__*/", app_src)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(html, encoding="utf-8")
+
+    size = out_path.stat().st_size
+    print("wrote %s" % out_path)
+    print("  %d bytes (%.1f KB), node --check passed%s"
+          % (size, size / 1024.0, "" if embed_font else "  [font not embedded]"))
+    print("  engine %.1f KB, app %.1f KB, shell %.1f KB, font %.1f KB, "
+          "library %.1f KB, scene %.1f KB, tox21 %.1f KB, prov %.1f KB, potency %.1f KB"
+          % (len(engine_src) / 1024.0,
+             (len(app_src) - len(extlib_src) - len(scene_src)
+              - len(tox_src) - len(mut_src) - len(prov_src)
+              - len(pot_src)) / 1024.0,
+             (len(shell) - len(font_b64)) / 1024.0, len(font_b64) / 1024.0,
+             len(extlib_src) / 1024.0, len(scene_src) / 1024.0,
+             len(tox_src) / 1024.0, len(prov_src) / 1024.0,
+             len(pot_src) / 1024.0))
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--out",
+        type=pathlib.Path,
+        default=None,
+        help="output HTML path (default: ../ar-scout.html, "
+             "or ../ar-scout-lite.html with --no-font)",
+    )
+    ap.add_argument(
+        "--no-font",
+        action="store_true",
+        help="leave Pretendard out; the page then uses a locally installed "
+             "copy if there is one, otherwise the platform sans. Cuts about "
+             "2.7 MB, which matters for an email attachment.",
+    )
+    args = ap.parse_args()
+    out = args.out
+    if out is None:
+        out = HERE.parent / ("ar-scout-lite.html" if args.no_font else "ar-scout.html")
+    return build(out, embed_font=not args.no_font)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
