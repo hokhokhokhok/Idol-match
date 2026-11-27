@@ -41,6 +41,7 @@ DATA = [
     ("PANEL_AR", "panel_ar.json"),
     ("PANEL_HSD1", "panel_hsd1.json"),
     ("PANEL_AROM", "panel_arom.json"),
+    ("PANEL_ERB", "panel_erb.json"),
     ("ADIPO", "adipo_pheno.json"),
 ]
 FONT = "Pretendard-Variable.woff2"

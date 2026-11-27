@@ -20,6 +20,7 @@ PANELS = [
     ("chembl_ar.json", "panel_ar.json", "CHEMBL1871", "AR"),
     ("chembl_hsd1.json", "panel_hsd1.json", "CHEMBL4235", "11β-HSD1"),
     ("chembl_arom.json", "panel_arom.json", "CHEMBL1978", "Aromatase"),
+    ("chembl_erb.json", "panel_erb.json", "CHEMBL242", "ERβ"),
 ]
 
 

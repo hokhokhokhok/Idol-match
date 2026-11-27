@@ -24,17 +24,21 @@ PAGE = 1000
 
 
 def get(url):
-    for attempt in range(5):
+    # ChEMBL answers 500 or stalls under load often enough that a short
+    # backoff loses whole runs; this waits it out instead.
+    for attempt in range(12):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA,
                                                        "Accept": "application/json"})
-            with urllib.request.urlopen(req, timeout=120) as r:
+            with urllib.request.urlopen(req, timeout=180) as r:
                 return json.load(r)
         except Exception as exc:                      # noqa: BLE001
-            if attempt == 4:
+            if attempt == 11:
                 raise
-            print("  retry %d: %s" % (attempt + 1, exc), file=sys.stderr)
-            time.sleep(3 * (attempt + 1))
+            wait = min(60, 5 * (attempt + 1))
+            print("  retry %d in %ds: %s" % (attempt + 1, wait, str(exc)[:60]),
+                  file=sys.stderr)
+            time.sleep(wait)
 
 
 def fetch_all():
@@ -60,6 +64,13 @@ def fetch_all():
 def main():
     raw = fetch_all()
     print("activities: %d" % len(raw), file=sys.stderr)
+    # Binding and functional numbers are different quantities and mixing them
+    # into one median was wrong: a competitive-binding Ki and a reporter EC50
+    # for the same compound routinely differ by a log, because the cell assay
+    # carries uptake, metabolism and amplification that the binding assay does
+    # not. They are aggregated separately and the binding value leads.
+    BINDING = {"Ki", "Kd", "IC50"}
+    FUNCTIONAL = {"EC50"}
     by_mol = {}
     for a in raw:
         if a.get("standard_relation") != "=":
@@ -77,14 +88,22 @@ def main():
             continue
         if "." in smi:                 # salts and mixtures: no single structure
             continue
-        rec = by_mol.setdefault(mid, {"smiles": smi, "vals": [], "types": set()})
+        rec = by_mol.setdefault(mid, {"smiles": smi, "vals": [], "types": set(),
+                                      "binding": [], "functional": []})
         rec["vals"].append(float(pch))
         rec["types"].add(a["standard_type"])
+        if a["standard_type"] in BINDING:
+            rec["binding"].append(float(pch))
+        elif a["standard_type"] in FUNCTIONAL:
+            rec["functional"].append(float(pch))
 
     out = []
     for mid, rec in by_mol.items():
         vals = rec["vals"]
-        p = round(statistics.median(vals), 3)
+        binding = rec["binding"]
+        functional = rec["functional"]
+        # the value the model is fitted to: binding where it exists
+        p = round(statistics.median(binding if binding else vals), 3)
         if p < 4:
             continue
         band = ("strong binder" if p >= 8 else
@@ -93,7 +112,18 @@ def main():
         note = "ChEMBL %s; n=%d; %s" % (mid, len(vals), ",".join(sorted(rec["types"])))
         if len(vals) > 1:
             note += "; spread %.2f log" % (max(vals) - min(vals))
-        out.append({"n": mid, "s": rec["smiles"], "p": p, "c": band, "note": note})
+        row = {"n": mid, "s": rec["smiles"], "p": p, "c": band, "note": note}
+        if binding:
+            row["pB"] = round(statistics.median(binding), 3)
+            row["nB"] = len(binding)
+        if functional:
+            row["pF"] = round(statistics.median(functional), 3)
+            row["nF"] = len(functional)
+        if binding and functional:
+            gap = row["pF"] - row["pB"]
+            if abs(gap) >= 1.0:
+                row["note"] += "; 결합과 기능값이 %.1f log 차이" % gap
+        out.append(row)
 
     out.sort(key=lambda e: -e["p"])
     dest = pathlib.Path(__file__).resolve().parent.parent / ("web/assets/" + OUT)

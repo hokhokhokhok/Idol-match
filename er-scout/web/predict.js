@@ -40,7 +40,7 @@ var REFERENCE_DEFAULT = [
   {
     "n": "17베타-에스트라디올",
     "en": "ESTRADIOL",
-    "p": 8.89,
+    "p": 8.85,
     "c": "agonist",
     "s": "C[C@]12CC[C@@H]3c4ccc(O)cc4CC[C@H]3[C@@H]1CC[C@@H]2O",
     "note": "내인성 기준 작용제 (E2) · ChEMBL CHEMBL135; n=147; EC50,IC50,Kd,Ki; spread 4.11 log",
@@ -49,7 +49,7 @@ var REFERENCE_DEFAULT = [
   {
     "n": "에스트론",
     "en": "ESTRONE",
-    "p": 8.12,
+    "p": 7.54,
     "c": "agonist",
     "s": "C[C@]12CC[C@@H]3c4ccc(O)cc4CC[C@H]3[C@@H]1CCC2=O",
     "note": "내인성 에스트로겐 (E1) · ChEMBL CHEMBL1405; n=11; EC50,IC50,Ki; spread 2.83 log",
@@ -58,7 +58,7 @@ var REFERENCE_DEFAULT = [
   {
     "n": "에스트리올",
     "en": "ESTRIOL",
-    "p": 8.77,
+    "p": 9.045,
     "c": "agonist",
     "s": "C[C@]12CC[C@@H]3c4ccc(O)cc4CC[C@H]3[C@@H]1C[C@@H](O)[C@@H]2O",
     "note": "내인성 에스트로겐 (E3) · ChEMBL CHEMBL193482; n=3; EC50,IC50,Ki; spread 0.62 log",
@@ -67,7 +67,7 @@ var REFERENCE_DEFAULT = [
   {
     "n": "에티닐에스트라디올",
     "en": "ETHINYL ESTRADIOL",
-    "p": 9.35,
+    "p": 9.025,
     "c": "agonist",
     "s": "C#C[C@]1(O)CC[C@H]2[C@@H]3CCc4cc(O)ccc4[C@H]3CC[C@@]21C",
     "note": "경구피임약 성분 · ChEMBL CHEMBL691; n=5; EC50,IC50,Ki; spread 1.79 log",
@@ -76,7 +76,7 @@ var REFERENCE_DEFAULT = [
   {
     "n": "디에틸스틸베스트롤",
     "en": "DIETHYLSTILBESTROL",
-    "p": 9.395,
+    "p": 9.31,
     "c": "agonist",
     "s": "CC/C(=C(/CC)c1ccc(O)cc1)c1ccc(O)cc1",
     "note": "비스테로이드 강력 작용제 (DES) · ChEMBL CHEMBL411; n=14; EC50,IC50,Ki; spread 4.11 log",
@@ -98,6 +98,15 @@ var REFERENCE_DEFAULT = [
     "c": "agonist",
     "s": "O=c1c(-c2ccc(O)cc2)coc2cc(O)ccc12",
     "note": "대두 이소플라본 · ChEMBL CHEMBL8145; n=6; IC50,Ki; spread 1.78 log",
+    "curated": true
+  },
+  {
+    "n": "에쿠올",
+    "en": "AUS-131",
+    "p": 5.23,
+    "c": "agonist",
+    "s": "Oc1ccc([C@H]2COc3cc(O)ccc3C2)cc1",
+    "note": "다이드제인 장내 대사체 · ChEMBL CHEMBL198877; n=1; IC50",
     "curated": true
   },
   {
@@ -139,7 +148,7 @@ var REFERENCE_DEFAULT = [
   {
     "n": "비스페놀 A",
     "en": "BISPHENOL A",
-    "p": 6.145,
+    "p": 6.19,
     "c": "agonist",
     "s": "CC(C)(c1ccc(O)cc1)c1ccc(O)cc1",
     "note": "내분비계 교란물질 (BPA) · ChEMBL CHEMBL418971; n=8; EC50,IC50,Ki; spread 0.90 log",
@@ -169,7 +178,7 @@ var REFERENCE_DEFAULT = [
     "p": 7.0,
     "c": "antagonist",
     "s": "CC/C(=C(\\c1ccccc1)c1ccc(OCCN(C)C)cc1)c1ccccc1",
-    "note": "SERM 전구체 · ChEMBL CHEMBL83; n=35; EC50,IC50,Ki; spread 3.82 log",
+    "note": "SERM 전구체 · ChEMBL CHEMBL83; n=35; EC50,IC50,Ki; spread 3.82 log; 결합과 기능값이 -1.4 log 차이",
     "curated": true
   },
   {
@@ -196,13 +205,13 @@ var REFERENCE_DEFAULT = [
     "p": 8.74,
     "c": "antagonist",
     "s": "O=C(c1ccc(OCCN2CCCCC2)cc1)c1c(-c2ccc(O)cc2)sc2cc(O)ccc12",
-    "note": "SERM; 1ERR 결정구조 리간드 · ChEMBL CHEMBL81; n=45; EC50,IC50,Kd,Ki; spread 3.87 log",
+    "note": "SERM; 1ERR 결정구조 리간드 · ChEMBL CHEMBL81; n=45; EC50,IC50,Kd,Ki; spread 3.87 log; 결합과 기능값이 -1.1 log 차이",
     "curated": true
   },
   {
     "n": "풀베스트란트",
     "en": "FULVESTRANT",
-    "p": 8.8,
+    "p": 8.54,
     "c": "antagonist",
     "s": "C[C@]12CC[C@@H]3c4ccc(O)cc4C[C@@H](CCCCCCCCC[S+]([O-])CCCC(F)(F)C(F)(F)F)[C@H]3[C@@H]1CC[C@@H]2O",
     "note": "완전 길항제 (SERD) · ChEMBL CHEMBL1358; n=47; EC50,IC50,Kd,Ki; spread 3.65 log",
@@ -320,6 +329,15 @@ var INGREDIENTS = [
   "다이드제인",
   "DAIDZEIN",
   "O=c1c(-c2ccc(O)cc2)coc2cc(O)ccc12"
+ ],
+ [
+  "에쿠올",
+  "AUS-131",
+  "Oc1ccc([C@H]2COc3cc(O)ccc3C2)cc1",
+  [
+   "(S)-EQUOL",
+   "4',7-ISOFLAVANDIOL"
+  ]
  ],
  [
   "쿠메스트롤",
@@ -2995,6 +3013,7 @@ var FUNCTION_CLASS = {
   "DIETHYLSTILBESTROL": "agonist",
   "GENISTEIN": "agonist",
   "DAIDZEIN": "agonist",
+  "AUS-131": "agonist",
   "COUMESTROL": "agonist",
   "APIGENIN": "agonist",
   "NARINGENIN": "agonist",
@@ -3521,6 +3540,7 @@ function compileEntry(entry) {
     en: entry.en || '',
     s: entry.s,
     p: entry.p,
+    pB: entry.pB, nB: entry.nB, pF: entry.pF, nF: entry.nF,
     c: entry.c || '',
     note: entry.note || '',
     curated: !!entry.curated,
@@ -3783,6 +3803,60 @@ function mapContacts(desc, motifs, er, pose) {
   };
 }
 
+/* ------------------------------------------------- anchor compatibility */
+
+/* Read-across on a 2D fingerprint has a specific failure here, and it is not
+ * a small one: the fingerprint does not know which part of the molecule the
+ * receptor holds on to.
+ *
+ * Measured on this bundle's own library:
+ *   - estradiol with the 3-hydroxyl deleted keeps Tanimoto 0.72 to estradiol
+ *     and was predicted at pKi 7.8. Removing that phenol removes the Glu353 /
+ *     Arg394 anchor, which every agonist complex in the crystal panel uses;
+ *     real affinity falls by orders of magnitude.
+ *   - mestranol, the 3-methyl ether of ethinylestradiol, sat at pKi 8.0 for
+ *     the same reason. It is a prodrug: the ether has to come off in the
+ *     liver before anything binds.
+ *   - and the inverse: estradiol and diethylstilbestrol are equipotent and
+ *     their Tanimoto is 0.19, so similarity misses the match it should make.
+ *
+ * So a neighbour only counts in full when it shares the query's anchor
+ * features. A neighbour that has the phenol the query lacks is evidence
+ * about a different binding mode, and its vote is cut to a fifth. The same
+ * mismatch also pulls the read-across weight down, which lets the rule score
+ * - the part that knows about anchors - decide. */
+var ANCHOR_PENALTY_PHENOL = 0.2;
+var ANCHOR_PENALTY_SPAN = 0.55;
+
+function anchorProfile(entry) {
+  if (entry.anchors) return entry.anchors;
+  try {
+    var mol = entry.mol || MOL.parseSmiles(entry.s);
+    var er = ERM.erMotifs(mol);
+    entry.anchors = { phenol: er.phenolRings > 0 || er.resorcinol,
+                      span: !!er.spanOk };
+  } catch (err) {
+    entry.anchors = { phenol: false, span: false };
+  }
+  return entry.anchors;
+}
+
+function anchorFactor(queryEr, entry) {
+  var a = anchorProfile(entry);
+  var qPhenol = queryEr.phenolRings > 0 || queryEr.resorcinol;
+  var factor = 1, why = [];
+  if (qPhenol !== a.phenol) {
+    factor *= ANCHOR_PENALTY_PHENOL;
+    why.push(qPhenol ? '레퍼런스에 페놀 앵커가 없음' : '레퍼런스에만 페놀 앵커가 있음');
+  }
+  if (!!queryEr.spanOk !== a.span) {
+    factor *= ANCHOR_PENALTY_SPAN;
+    why.push(queryEr.spanOk ? '레퍼런스는 두 앵커 간격을 만족하지 않음'
+                            : '레퍼런스만 두 앵커 간격을 만족');
+  }
+  return { factor: factor, why: why };
+}
+
 /* ------------------------------------------------------------- prediction */
 
 function predict(smiles, options) {
@@ -3812,15 +3886,63 @@ function predict(smiles, options) {
   neighbours.sort(function (a, b) { return b.sim - a.sim; });
   var top = neighbours.slice(0, 5);
 
-  var wsum = 0, psum = 0;
+  /* weight each neighbour by similarity AND by whether it anchors the same
+   * way; a neighbour binding through features the query does not have is
+   * evidence about something else */
+  var wsum = 0, psum = 0, rawsum = 0, matched = 0;
+  var mismatchNotes = [];
   for (var k = 0; k < top.length; k++) {
-    var w = Math.pow(top[k].sim, 3);
+    var libEntry = null;
+    for (var li = 0; li < lib.length; li++) {
+      if (lib[li].n === top[k].n) { libEntry = lib[li]; break; }
+    }
+    var af = libEntry ? anchorFactor(er, libEntry) : { factor: 1, why: [] };
+    top[k].anchorFactor = af.factor;
+    top[k].anchorWhy = af.why;
+    var raw = Math.pow(top[k].sim, 3);
+    var w = raw * af.factor;
+    rawsum += raw;
     wsum += w; psum += w * top[k].p;
+    if (af.factor >= 0.999) matched += raw;
+    else if (af.why.length && mismatchNotes.length < 2) {
+      mismatchNotes.push(top[k].n + ': ' + af.why.join(', '));
+    }
   }
   var readAcross = wsum > 1e-12 ? psum / wsum : 4.0;
+  /* how much of the read-across evidence came from neighbours that anchor
+   * the same way; 1 means every neighbour did */
+  var anchorSupport = rawsum > 1e-12 ? matched / rawsum : 0;
 
   var rules = ruleScore(desc, motifs, er, occupancy);
   var nearest = top.length ? top[0].sim : 0;
+
+  /* Stereochemistry. The fingerprint and the structure hash do not see it,
+   * so 17alpha-estradiol and 17beta-estradiol are one molecule here - and at
+   * ERalpha they are not: the 17beta hydroxyl is the one that reaches His524,
+   * and the alpha epimer binds orders of magnitude more weakly. The engine
+   * cannot fix this; it can refuse to hide it. */
+  var stereo = MOL.stereoSignature(mol);
+  var stereoWarning = null;
+  if (top.length && top[0].sim >= 0.99) {
+    var ref = null;
+    for (var si = 0; si < lib.length; si++) {
+      if (lib[si].n === top[0].n) { ref = lib[si]; break; }
+    }
+    if (ref) {
+      if (!ref.stereo) ref.stereo = MOL.stereoSignature(ref.mol);
+      if (stereo.count || ref.stereo.count) {
+        stereoWarning = {
+          match: top[0].n,
+          same: stereo.key === ref.stereo.key,
+          centres: stereo.count,
+          refCentres: ref.stereo.count
+        };
+      }
+    }
+  } else if (stereo.count) {
+    stereoWarning = { match: null, same: null, centres: stereo.count,
+                      refCentres: 0 };
+  }
 
   var pose = options.pose || poseForStructure(structureId);
   var affinityHint = Math.max(readAcross * (nearest >= 0.35 ? 1 : 0), rules.score);
@@ -3832,12 +3954,22 @@ function predict(smiles, options) {
   });
 
   var wRead = nearest >= 0.55 ? 0.78 : (nearest >= 0.35 ? 0.50 : 0.20);
+  /* An anchor mismatch is a reason to trust the neighbours less and the
+   * structural rules more, which is the whole point of having both. */
+  var wReadRaw = wRead;
+  wRead = wRead * (0.25 + 0.75 * anchorSupport);
   var pKi = wRead * readAcross + (1 - wRead) * rules.score;
 
   var domain, ci;
   if (nearest >= 0.55) { domain = 'in'; ci = 0.7; }
   else if (nearest >= 0.35) { domain = 'edge'; ci = 1.1; }
   else { domain = 'out'; ci = 1.6; }
+  if (anchorSupport < 0.5) {
+    /* the neighbours are close by fingerprint and far by pharmacophore:
+     * that is outside what read-across was ever tested on */
+    domain = domain === 'in' ? 'edge' : 'out';
+    ci = Math.max(ci, 1.4);
+  }
 
   var pocket = mapContacts(desc, motifs, er, pose);
 
@@ -3857,6 +3989,8 @@ function predict(smiles, options) {
     smiles: smiles,
     mol: mol,
     structureId: structureId,
+    stereo: stereo,
+    stereoWarning: stereoWarning,
     desc: desc,
     motifs: motifs,
     er: er,
@@ -3872,6 +4006,9 @@ function predict(smiles, options) {
     ruleRawScore: rules.raw,
     reasons: rules.reasons,
     weightReadAcross: wRead,
+    weightReadAcrossRaw: wReadRaw,
+    anchorSupport: anchorSupport,
+    anchorMismatch: mismatchNotes,
     neighbours: top,
     functionCall: functionCall,
     pose: pose || null,
@@ -4020,23 +4157,51 @@ function suggestNames(query, limit) {
 
 /* ------------------------------------------------------------ validation */
 
-/* Leave-one-out over the active library. */
+/* Leave-one-out over the active library.
+ *
+ * Split by how well the reference itself is measured, because that turned
+ * out to be where most of the error lives. Naringenin's reference pKi is one
+ * IC50 from one paper; equol's and resveratrol's are one value each. An
+ * error against a number like that says as much about the number as about
+ * the model, and averaging them together with the well-measured references
+ * produces a figure that cannot be acted on. */
+function referenceDepth(entry) {
+  if (isFinite(entry.nB)) return entry.nB;
+  if (isFinite(entry.nF)) return entry.nF;
+  var m = /n=(\d+)/.exec(entry.note || '');
+  return m ? Number(m[1]) : 1;
+}
+
 function crossValidate() {
   var lib = ensureLibrary();
   var rows = [], sumAbs = 0, sumSq = 0;
+  var solid = [], thin = [];
   for (var i = 0; i < lib.length; i++) {
     var r = predict(lib[i].s, { exclude: lib[i].n });
     var err = r.pKi - lib[i].p;
     sumAbs += Math.abs(err);
     sumSq += err * err;
-    rows.push({ n: lib[i].n, observed: lib[i].p, predicted: r.pKi, error: err,
-                domain: r.domain, nearest: r.nearestSim, floor: lib[i].floor });
+    var depth = referenceDepth(lib[i]);
+    var row = { n: lib[i].n, observed: lib[i].p, predicted: r.pKi, error: err,
+                domain: r.domain, nearest: r.nearestSim, floor: lib[i].floor,
+                depth: depth };
+    rows.push(row);
+    if (lib[i].floor) continue;
+    (depth >= 3 ? solid : thin).push(row);
+  }
+  function mae(set) {
+    if (!set.length) return null;
+    var t = 0;
+    for (var k = 0; k < set.length; k++) t += Math.abs(set[k].error);
+    return t / set.length;
   }
   return {
     rows: rows,
     n: rows.length,
     mae: sumAbs / rows.length,
-    rmse: Math.sqrt(sumSq / rows.length)
+    rmse: Math.sqrt(sumSq / rows.length),
+    solid: { n: solid.length, mae: mae(solid) },
+    thin: { n: thin.length, mae: mae(thin) }
   };
 }
 
@@ -4072,6 +4237,35 @@ function validateFunction() {
   };
 }
 
+/* How far the library reaches into the chemistry this tool is pointed at.
+ *
+ * The reference set is ChEMBL, which is medicinal chemistry: steroids and
+ * SERMs. The compounds people actually screen - bisphenols, alkylphenols,
+ * parabens, pesticides - are a different space, and the honest way to say
+ * how different is to take the compounds Tox21 calls ER-active, look them up
+ * in the dictionary, and count how many land near enough to the library for
+ * read-across to be allowed to speak. */
+function domainCoverage(toxTable) {
+  if (!toxTable || !toxTable.calls) return null;
+  var bands = { in: 0, edge: 0, out: 0, floor: 0 }, rows = [];
+  for (var i = 0; i < INGREDIENTS.length; i++) {
+    var mol;
+    try { mol = MOL.parseSmiles(INGREDIENTS[i][2]); } catch (err) { continue; }
+    var code = toxTable.calls[MOL.structureIdOf(mol)];
+    if (!code || code.indexOf('1') < 0) continue;      /* agonist-mode active */
+    var r;
+    try { r = predict(INGREDIENTS[i][2]); } catch (err) { continue; }
+    var band = r.nearestSim >= 0.55 ? 'in'
+      : (r.nearestSim >= SIM_CALL ? 'edge'
+         : (r.nearestSim >= SIM_FLOOR ? 'out' : 'floor'));
+    bands[band]++;
+    rows.push({ n: INGREDIENTS[i][0], sim: r.nearestSim, band: band });
+  }
+  var n = bands.in + bands.edge + bands.out + bands.floor;
+  return { n: n, bands: bands, rows: rows,
+           asserted: n ? (bands.in + bands.edge) / n : 0 };
+}
+
 /* The independent check: compounds whose only label is a Tox21 verdict, each
  * predicted with its own screen result withheld and itself removed from the
  * pool. Unlike validateFunction this was never used to set a threshold. */
@@ -4100,6 +4294,7 @@ function validateHoldout() {
 var PR = {
   predict: predict,
   validateHoldout: validateHoldout,
+  domainCoverage: domainCoverage,
   lookupName: lookupName,
   suggestNames: suggestNames,
   normalizeName: normalizeName,
@@ -4130,6 +4325,8 @@ var PR = {
   SIM_POSSIBLE: SIM_POSSIBLE,
   SIM_FLOOR: SIM_FLOOR,
   POOL_AC50_MAX: POOL_AC50_MAX,
+  anchorFactor: anchorFactor,
+  ANCHOR_PENALTY_PHENOL: ANCHOR_PENALTY_PHENOL,
   INGREDIENTS: INGREDIENTS,
   POCKET_RESIDUES: POCKET_RESIDUES,
   RESISTANCE_SITES: RESISTANCE_SITES,

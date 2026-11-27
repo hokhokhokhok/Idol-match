@@ -9,6 +9,36 @@ var MAX_BATCH = 400;
 
 function $(id) { return document.getElementById(id); }
 
+/* Estradiol's own concentration in the same screen, so that a reading can be
+ * put in scale. "Active" says nothing about how active: oxybenzone and
+ * estradiol are both agonist-mode actives in Tox21, at 34 µM and 0.001 µM.
+ * Printing those two words identically for both is how a weak, probably
+ * irrelevant signal gets read as estrogenic activity. */
+var E2_SMILES = 'CC12CCC3c4ccc(O)cc4CCC3C1CCC2O';
+var toxRef = null;
+function toxReferenceAc50() {
+  if (toxRef !== null) return toxRef;
+  toxRef = false;
+  try {
+    var table = erTox21();
+    var id = MOL.structureIdOf(MOL.parseSmiles(E2_SMILES));
+    var rec = table && table.potency ? table.potency[id] : null;
+    if (rec && isFinite(rec[0])) toxRef = rec[0];
+  } catch (err) { toxRef = false; }
+  return toxRef;
+}
+
+function potencyScale(ac50) {
+  var ref = toxReferenceAc50();
+  if (!ref || !isFinite(ac50) || ac50 <= 0) return '';
+  var ratio = ac50 / ref;
+  if (ratio < 3) return '에스트라디올과 같은 수준';
+  var rounded = ratio >= 10000 ? Math.round(ratio / 1000) * 1000
+    : (ratio >= 1000 ? Math.round(ratio / 100) * 100 : Math.round(ratio));
+  var word = String(rounded).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return '에스트라디올보다 약 ' + word + '배 약한 농도';
+}
+
 /* The ER engine predates the merged Tox21 table and wants a table of its
  * own: {calls, potency, assays}. This is that slice, built once. */
 var erTox = null;
@@ -629,6 +659,99 @@ function svgPocket(pocket, occupancy) {
          parts.join('') + '</svg>';
 }
 
+/* ERbeta, and why a single "ER" number is not enough.
+ *
+ * The two subtypes sit in different tissues and oppose each other in several
+ * of them, and the phytoestrogens - the compounds this tool is most often
+ * pointed at - are the textbook case: genistein is reported an order of
+ * magnitude stronger at ERbeta than at ERalpha. A screen that reports one
+ * number for "the estrogen receptor" hides exactly that.
+ *
+ * The comparison is read-across on the ERbeta library only, with no
+ * pharmacophore layer and no Tox21 behind it, so it is reported as a ratio
+ * with its own similarity and never folded into the ERalpha number. */
+function subtypeSelectivity(result) {
+  if (typeof PANEL === 'undefined' || !PANEL.panels || !PANEL.panels.erb) return null;
+  var out;
+  try {
+    var fp = MOL.packFingerprint(MOL.morganFingerprint(result.mol, 2));
+    out = PANEL.evaluatePanel('erb', fp, result.structureId, {});
+  } catch (err) { return null; }
+  if (!out || !out.read || !out.read.asserted) return null;
+  var beta = out.read.pKi, alpha = result.pKi;
+  var diff = alpha - beta;
+  /* The two numbers come from two independently aggregated ChEMBL sets, not
+   * from one laboratory measuring both, so the floor on what counts as
+   * selectivity has to be set above that noise. A log is the honest line:
+   * below it this comparison cannot tell a real preference from two
+   * different assay collections disagreeing.
+   *
+   * Worth knowing how blunt that makes it: genistein is reported an order of
+   * magnitude ERbeta-selective in the literature, and these medians put it
+   * at ERalpha 6.8 against ERbeta 6.9 - no preference at all. Read this row
+   * as a flag for large differences, not as a selectivity measurement. */
+  var word, lean;
+  if (Math.abs(diff) < 1.0) { word = '뚜렷한 선택성 없음'; lean = 'none'; }
+  else if (diff > 0) {
+    word = 'ERα 쪽 ' + fx(Math.pow(10, diff), 0) + '배';
+    lean = 'alpha';
+  } else {
+    word = 'ERβ 쪽 ' + fx(Math.pow(10, -diff), 0) + '배';
+    lean = 'beta';
+  }
+  return { lean: lean, word: word,
+           detail: 'ERβ 추정 pKi ' + fx(beta, 1) + ' (유사도 ' +
+                   fx(out.read.nearest, 2) + ', read-across만) · ' +
+                   '두 수용체의 값은 서로 다른 데이터셋에서 온 것이라 ' +
+                   '10배 미만 차이는 선택성으로 읽지 않습니다' };
+}
+
+/* ------------------------------------------------------- caveat block */
+
+/* Two things the engine knows it cannot see. Both used to be silent, and
+ * both produced confident numbers that were wrong by orders of magnitude,
+ * so they are printed next to the number they affect. */
+function caveatSection(result) {
+  var out = [];
+  var sw = result.stereoWarning;
+  var mismatch = result.anchorMismatch || [];
+  /* a token mismatch on one distant neighbour is not worth a warning; this
+   * fires when a real part of the evidence binds some other way */
+  var weak = result.anchorSupport !== undefined && result.anchorSupport < 0.85;
+  if (!sw && !weak) return '';
+
+  out.push('<div class="panel" style="margin:0 0 16px;padding:16px 18px;' +
+           'border-left:3px solid var(--orange)">');
+  out.push('<div style="font-size:14px;font-weight:700;margin-bottom:8px">' +
+           '이 결과를 읽을 때 주의할 점</div>');
+  out.push('<ul style="margin:0;padding-left:18px">');
+
+  if (weak) {
+    out.push('<li style="font-size:13.5px;line-height:1.55;color:var(--ink-2);' +
+             'margin-bottom:6px"><b>앵커 불일치</b> — 가장 닮은 레퍼런스들이 ' +
+             '이 물질과 <b>같은 방식으로 결합하지 않습니다</b> (앵커 일치도 ' +
+             fx(100 * result.anchorSupport, 0) + '%). ' +
+             (mismatch.length ? esc(mismatch.join(' · ')) + '. ' : '') +
+             '지문 유사도는 분자의 어느 부분을 수용체가 붙잡는지 모르기 때문에, ' +
+             'read-across 가중치를 ' + fx(result.weightReadAcrossRaw, 2) + '에서 ' +
+             fx(result.weightReadAcross, 2) + '로 낮추고 구조 규칙 쪽에 ' +
+             '무게를 실었습니다.</li>');
+  }
+  if (sw) {
+    out.push('<li style="font-size:13.5px;line-height:1.55;color:var(--ink-2)">' +
+             '<b>입체화학</b> — 이 엔진은 입체화학을 보지 않습니다. ' +
+             (sw.centres ? '입력 구조에 입체중심이 ' + sw.centres + '개 있고, ' : '') +
+             (sw.match ? '매칭된 레퍼런스(' + esc(sw.match) + ')에 ' +
+                         sw.refCentres + '개 있습니다. ' : '') +
+             '둘이 같은 이성질체인지 이 도구는 판별하지 못합니다. ' +
+             'ERα에서 이것은 사소한 문제가 아닙니다 — 17β-에스트라디올의 ' +
+             '17번 하이드록실이 His524에 닿는 쪽이고, 17α 에피머는 친화도가 ' +
+             '자리 수로 떨어지는데 여기서는 <b>같은 분자로 처리됩니다</b>.</li>');
+  }
+  out.push('</ul></div>');
+  return out.join('');
+}
+
 /* ------------------------------------------------ adipocyte signalling */
 
 /* A second panel, for the question "does this touch fat". It is kept visually
@@ -851,10 +974,13 @@ function renderSingle(result, title, subtitle) {
                ' style="font-weight:700">' + esc(ko) + '</td></tr>');
     }
     if (tox.ac50 !== null && tox.ac50 !== undefined) {
+      var scale = potencyScale(tox.ac50);
       out.push('<tr><td>가장 강한 활성 농도 (AC50)</td><td style="font-weight:700">' +
                fx(tox.ac50, tox.ac50 < 1 ? 3 : 1) + ' &micro;M' +
                (tox.ac50mode ? ' <span class="hint">' +
                  (tox.ac50mode === 'agonist' ? '작용제 모드' : '길항제 모드') + '</span>' : '') +
+               (scale ? '<div style="font-weight:400;font-size:12.5px;' +
+                        'color:var(--ink-3);margin-top:2px">' + esc(scale) + '</div>' : '') +
                '</td></tr>');
     }
     out.push('</tbody></table>');
@@ -867,6 +993,19 @@ function renderSingle(result, title, subtitle) {
              (tox.cytotoxic ? ' 「세포독성으로 판정 보류」는 길항 활성의 근거가 아닙니다 — ' +
               '세포를 죽이는 물질은 길항제 모드에서 신호를 내기 때문입니다.' : '') +
              '</p>');
+    out.push('</div>');
+  }
+
+  var toxRead = fc.tox21;
+  if (toxRead && toxRead.verdict === 'inactive' && result.pKi >= 6.5) {
+    out.push('<div class="measured" style="border-left:3px solid var(--orange)">');
+    out.push('<div class="mhead">실측 비활성과 예측 친화도가 어긋납니다</div>');
+    out.push('<p class="hint" style="margin:6px 0 0">Tox21 리포터 어세이는 ' +
+             '<b>비활성</b>인데 예측 친화도는 pKi ' + fx(result.pKi, 1) + '입니다. ' +
+             '리포터에서 비활성이라는 것은 <b>결합하지 않는다는 뜻이 아닙니다</b> — ' +
+             '순수 길항제와 SERD는 작용제 모드에서 신호를 내지 않고, 용해도·세포독성· ' +
+             '대사 불안정으로도 비활성으로 나옵니다. 결합 여부는 아래 예측과 ' +
+             '포켓 접촉도를, 에스트로겐 활성 여부는 이 실측을 보세요.</p>');
     out.push('</div>');
   }
 
@@ -954,11 +1093,18 @@ function renderSingle(result, title, subtitle) {
              esc(fc.evidence.join(' · ')) + '</span></div>');
   }
   out.push('<div><span class="k">구조 판정</span><span class="v">' + esc(p.verdict) + '</span></div>');
+  var sel = subtypeSelectivity(result);
+  if (sel) {
+    out.push('<div><span class="k">ERα / ERβ</span><span class="v' +
+             (sel.lean === 'beta' ? ' warnink' : '') + '">' + esc(sel.word) +
+             '<span class="sub">' + esc(sel.detail) + '</span></span></div>');
+  }
   out.push('<div><span class="k">적용영역</span><span class="v">' +
            '<span class="tag ' + esc(result.domain) + '">' + esc(domainWord) + '</span>' +
            '<span class="sub">유사도 ' + fx(result.nearestSim, 2) + '</span></span></div>');
   out.push('</div></div>');
 
+  out.push(caveatSection(result));
   out.push(adipoSection(result));
 
   out.push('<h4 class="sect">포켓 접촉도</h4>');
@@ -1547,11 +1693,30 @@ function renderModelCard() {
   if (cv) {
     out.push('<h5>성능 ① pKi (leave-one-out, n = ' + cv.n + ')</h5>');
     out.push('<p>MAE <b>' + fx(cv.mae, 2) + '</b> log, RMSE <b>' + fx(cv.rmse, 2) +
-             '</b> log. 레퍼런스 자체가 실험실 간 ±0.5~1 log의 분산을 가지므로 ' +
-             '이보다 낮은 오차는 기대할 수 없습니다. 실제로 풀베스트란트의 ChEMBL ' +
-             '중앙값은 47개 측정에 걸쳐 3.65 log이 퍼져 있고, 나린제닌·레스베라트롤은 ' +
-             '단 1개 측정값입니다 — 레퍼런스 표의 「비고」에 n과 퍼짐이 적혀 있으니 ' +
-             '그 숫자를 보고 가중치를 두세요.</p>');
+             '</b> log. 다만 이 한 숫자는 쓸모가 적습니다 — 오차의 대부분이 ' +
+             '<b>모델이 아니라 레퍼런스 값 쪽</b>에서 오기 때문입니다. ' +
+             '레퍼런스가 얼마나 측정됐는지로 갈라 보면 이렇습니다.</p>');
+    if (cv.solid && cv.thin && cv.solid.mae !== null && cv.thin.mae !== null) {
+      out.push('<table><thead><tr><th>레퍼런스 측정 횟수</th><th class="num">종수</th>' +
+               '<th class="num">MAE</th></tr></thead><tbody>');
+      out.push('<tr><td>3건 이상</td><td class="num">' + cv.solid.n +
+               '</td><td class="num">' + fx(cv.solid.mae, 2) + ' log</td></tr>');
+      out.push('<tr><td>2건 이하</td><td class="num">' + cv.thin.n +
+               '</td><td class="num">' + fx(cv.thin.mae, 2) + ' log</td></tr>');
+      out.push('</tbody></table>');
+      out.push('<p>나린제닌·에쿠올·레스베라트롤·아피제닌의 기준값은 ' +
+               '<b>각각 논문 한 편의 측정값 하나</b>입니다. 그런 숫자에 대한 오차는 ' +
+               '모델에 대해서만큼이나 그 숫자에 대해 말하는 것이라, 잘 측정된 ' +
+               '레퍼런스에 대한 <b>' + fx(cv.solid.mae, 2) + ' log</b> 쪽이 ' +
+               '기대 성능에 가깝습니다. 레퍼런스 표의 「비고」에 n과 퍼짐이 ' +
+               '적혀 있으니 개별 값을 믿을지 여기서 판단하세요.</p>');
+      out.push('<p>타목시펜은 반대 방향의 예입니다. ChEMBL 중앙값 7.0은 35건에 ' +
+               '걸쳐 3.8 log 퍼져 있고 결합값과 기능값이 1.4 log 어긋나는데, ' +
+               '이 도구는 4.5로 훨씬 낮게 예측합니다. 타목시펜 자체는 페놀이 없어 ' +
+               'A-ring 앵커를 쓰지 못하는 전구체이고 강한 결합은 대사체인 ' +
+               '4-하이드록시타목시펜의 몫이므로, 여기서는 <b>모델 쪽이 더 맞을 수 ' +
+               '있습니다</b>. 큰 오차를 전부 모델 탓으로 읽지 마세요.</p>');
+    }
     var worst = cv.rows.slice().sort(function (a, b) {
       return Math.abs(b.error) - Math.abs(a.error);
     }).slice(0, 5);
@@ -1653,8 +1818,9 @@ function renderModelCard() {
   out.push('<ul>');
   out.push('<li><b>입체화학을 구분하지 못합니다.</b> 거울상 이성질체와 ' +
            '시스/트랜스 이성질체가 같은 지문·같은 구조해시를 가집니다. ' +
-           '17α-에스트라디올과 17β-에스트라디올은 친화도가 자리 수로 다른데 ' +
-           '이 도구에는 같은 물질로 보입니다.</li>');
+           '17α와 17β-에스트라디올을 넣어 보면 예측값이 소수점까지 같습니다. ' +
+           '고칠 수 없는 한계라, 입체중심이 있는 입력에는 결과 위에 경고를 ' +
+           '띄웁니다.</li>');
   out.push('<li><b>ERβ를 보지 않습니다.</b> 라이브러리·어세이·결정구조가 모두 ' +
            'ERα입니다. 제니스테인처럼 ERβ 선택적인 물질의 선택성은 알 수 없습니다.</li>');
   out.push('<li><b>대사를 보지 않습니다.</b> 전구체는 과소평가됩니다 — ' +
@@ -1710,6 +1876,90 @@ function renderModelCard() {
            '분화를 켜는 것과 어디에 쌓이는지는 서로 다른 질문이며, 농도·노출·대사가 ' +
            '전부 빠져 있습니다. 체형을 바꿀 목적의 사용 근거로 쓸 수 없습니다.</p>');
 
+  out.push('<h5>이 도구를 공격해 보면 — 알려진 실패와 그 대응</h5>');
+  out.push('<p>에스트로겐 수용체 쪽 지식으로 이 엔진을 일부러 깨뜨려 보고, ' +
+           '무너진 지점을 고친 기록입니다. 세 가지가 재현 가능한 실패였습니다.</p>');
+  out.push('<table><thead><tr><th>공격</th><th class="num">고치기 전</th>' +
+           '<th class="num">고친 뒤</th><th>대응</th></tr></thead><tbody>');
+  out.push('<tr><td>에스트라디올에서 3-OH만 삭제<br>' +
+           '<span class="hint">A-ring 앵커 상실, 실제 친화도는 자리 수로 추락</span></td>' +
+           '<td class="num">pKi 7.8</td><td class="num">pKi 4.9</td>' +
+           '<td>앵커 불일치 게이트</td></tr>');
+  out.push('<tr><td>메스트라놀 (3-메틸에터)<br>' +
+           '<span class="hint">탈메틸화돼야 활성인 프로드러그</span></td>' +
+           '<td class="num">pKi 8.0</td><td class="num">pKi 5.0</td>' +
+           '<td>같음</td></tr>');
+  out.push('<tr><td>17α-에스트라디올<br>' +
+           '<span class="hint">17β와 ERα 친화도가 자리 수로 다름</span></td>' +
+           '<td class="num">17β와 동일</td><td class="num">17β와 동일</td>' +
+           '<td>고치지 못함 — 경고를 띄움</td></tr>');
+  out.push('</tbody></table>');
+  out.push('<p><b>앵커 불일치 게이트</b>가 무엇인지가 핵심입니다. 지문 유사도는 ' +
+           '분자의 어느 부분을 수용체가 붙잡는지 모릅니다. 3-OH를 지운 에스트라디올은 ' +
+           '에스트라디올과 Tanimoto 0.72로 여전히 가깝고, 그 가까움만 보면 ' +
+           'read-across가 규칙 점수를 눌러 버립니다. 그래서 이웃마다 ' +
+           '<b>같은 앵커(페놀, 9~13결합 간격)를 쓰는지</b>를 보고, 다르면 그 이웃의 ' +
+           '표를 1/5로 깎고 read-across 전체 가중치도 함께 내립니다. ' +
+           '이 조치의 비용도 적어 둡니다: 엄선 레퍼런스 21종 ' +
+           'leave-one-out MAE가 ' + (cv ? '1.11에서 ' + fx(cv.mae, 2) : '약 0.09 log') +
+           '로 조금 나빠집니다. 정상 리간드에서 조금 잃고, 약리단이 깨진 ' +
+           '유사체에서 3 log를 얻는 거래입니다.</p>');
+  out.push('<p>반대 방향 실패도 있습니다. 에스트라디올과 디에틸스틸베스트롤은 ' +
+           '역가가 사실상 같은데(pKi 8.9 / 9.4) Tanimoto는 <b>0.19</b>입니다. ' +
+           '즉 이 지표는 ER 리간드 공간에서 가까운 것을 멀다고 말하기도 합니다. ' +
+           '유사도가 낮다고 해서 결합하지 않는다는 뜻이 아니라는 것을, ' +
+           '「적용영역 밖」 표시를 볼 때 같이 기억하세요.</p>');
+
+  var dc = null;
+  try { dc = PR.domainCoverage(erTox21()); } catch (err) { dc = null; }
+  if (dc && dc.n) {
+    out.push('<h5>ERα 하나만 보는 문제 — ERβ를 함께 띄운 이유</h5>');
+  out.push('<p>"에스트로겐 수용체"라고 뭉뚱그리면 두 아형의 차이가 지워집니다. ' +
+           'α와 β는 분포하는 조직이 다르고 여러 조직에서 서로 반대로 작용하며, ' +
+           '이 도구가 가장 자주 조회하게 될 피토에스트로겐이 바로 그 차이가 ' +
+           '큰 집단입니다. 그래서 ChEMBL CHEMBL242(ERβ) ' +
+           (typeof PANEL_ERB !== 'undefined' ? PANEL_ERB.rows.length + '종' : '') +
+           '을 실어 결과에 α/β 비를 함께 띄웁니다.</p>');
+  out.push('<p>다만 이 비는 <b>한 실험실이 둘을 같이 잰 값이 아닙니다.</b> ' +
+           '서로 다른 데이터셋에서 각각 집계한 중앙값끼리의 비라서, 10배 미만 ' +
+           '차이는 선택성으로 읽지 않습니다. 이 한계가 실제로 보이는 사례도 ' +
+           '적어 둡니다: 제니스테인은 문헌에서 ERβ 선택적인 것으로 유명한데, ' +
+           '이 두 집계값으로는 ERα 6.8 대 ERβ 6.9로 <b>차이가 나오지 않습니다</b>. ' +
+           '큰 차이를 잡는 깃발로만 쓰세요.</p>');
+
+  out.push('<h5>결합값과 기능값을 섞지 않기</h5>');
+  out.push('<p>경쟁결합 Ki와 리포터 EC50은 같은 양이 아닙니다. 세포 어세이에는 ' +
+           '흡수·대사·신호증폭이 끼어들기 때문입니다. 처음에는 이 둘을 한 중앙값으로 ' +
+           '뭉개고 있었는데, ChEMBL ERα에서 두 종류가 모두 있는 322종을 비교해 보면 ' +
+           '중앙값 차이가 <b>0.72 log</b>이고 118종은 1 log 이상 벌어집니다. ' +
+           '지금은 결합값(Ki·Kd·IC50)과 기능값(EC50)을 따로 집계하고, ' +
+           '모델이 맞추는 값은 <b>결합값</b>입니다. 결합값이 없는 물질만 기능값을 ' +
+           '쓰고 그 사실을 비고에 적습니다.</p>');
+
+  out.push('<h5>적용영역 — 정작 선별하려는 화학물질에 닿는가</h5>');
+    out.push('<p>레퍼런스는 ChEMBL, 즉 의약화학(스테로이드·SERM)입니다. 실제로 ' +
+             '선별하려는 것은 비스페놀·알킬페놀·파라벤·농약 쪽이고요. ' +
+             '사전에 들어 있으면서 Tox21이 ERα 작용제로 부른 ' + dc.n + '종을 ' +
+             '조회해 보면 최근접 유사도가 이렇게 분포합니다.</p>');
+    out.push('<table><thead><tr><th>구간</th><th class="num">종수</th><th>의미</th>' +
+             '</tr></thead><tbody>');
+    var bandRows = [['in', dc.bands.in, '0.55 이상 — read-across 신뢰'],
+                    ['edge', dc.bands.edge, '0.35–0.55 — 단정 가능 하한'],
+                    ['out', dc.bands.out, '0.15–0.35 — 가능성까지만'],
+                    ['floor', dc.bands.floor, '0.15 미만 — 검증된 적 없는 거리']];
+    for (var bi = 0; bi < bandRows.length; bi++) {
+      out.push('<tr><td>' + esc(bandRows[bi][0]) + '</td><td class="num">' +
+               bandRows[bi][1] + '</td><td>' + esc(bandRows[bi][2]) + '</td></tr>');
+    }
+    out.push('</tbody></table>');
+    out.push('<p>단정 기준(0.35) 위에 있는 것은 <b>' +
+             fx(100 * dc.asserted, 0) + '%</b>뿐입니다. 나머지는 Tox21 실측이 ' +
+             '있으니 답을 주지만, 실측이 없는 신규 원료였다면 이 도구는 ' +
+             '「가능성」이나 「판단 불가」라고 답했을 것입니다. ' +
+             '산업용 화학물질 선별에서 이 도구의 real-world 성능은 위의 ' +
+             'leave-one-out 숫자가 아니라 이 분포가 말해 줍니다.</p>');
+  }
+
   out.push('<h5>부위 지향 — 피하 대 내장을 어떻게 다루는가</h5>');
   out.push('<p>이것이 이 도구에서 <b>데이터가 가장 약한 부분</b>이고, 그래서 결과 ' +
            '화면에서도 측정값과 분리해 「해석 층」으로 표시합니다. 사실관계부터: ' +
@@ -1757,7 +2007,9 @@ function renderModelCard() {
   out.push('<li>Tox21 / PubChem BioAssay AID 743077 · 743079 · 743078 · 743091</li>');
   out.push('<li>PDB 1GWR · 1X7R · 1L2I · 2P15 · 2B1V · 3OS8 · 1XP1 · 1SJ0 · ' +
            '3ERT · 1ERR — ERα 포켓과 리간드 포즈</li>');
-  out.push('<li>ChEMBL CHEMBL235 (PPARγ) · CHEMBL2034 (GR) 활성 데이터</li>');
+  out.push('<li>ChEMBL CHEMBL235 (PPARγ) · CHEMBL2034 (GR) · CHEMBL1871 (AR) · ' +
+           'CHEMBL4235 (11β-HSD1) · CHEMBL1978 (아로마테이즈) · ' +
+           'CHEMBL242 (ERβ) 활성 데이터</li>');
   out.push('<li>Tox21 / PubChem BioAssay AID 743140 · 743199 (PPARγ), ' +
            '720719 · 720725 (GR)</li>');
   out.push('<li>ChEMBL 지방세포 분화·지질축적 어세이 (3T3-L1, ST-13 등)</li>');
@@ -1815,7 +2067,10 @@ function init() {
          [], true, null],
         ['arom', 'Aromatase', '아로마테이즈 (안드로겐 → 에스트로겐 전환)', 'CHEMBL1978',
          typeof PANEL_AROM !== 'undefined' ? PANEL_AROM : null,
-         ['inhibitor'], true, null]
+         ['inhibitor'], true, null],
+        ['erb', 'ERβ', 'ERβ (에스트로겐 수용체 베타)', 'CHEMBL242',
+         typeof PANEL_ERB !== 'undefined' ? PANEL_ERB : null,
+         [], false, null]
       ];
       for (var di = 0; di < defs.length; di++) {
         var d = defs[di];

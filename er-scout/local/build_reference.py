@@ -117,6 +117,9 @@ def main():
                     agg = by_id[hit["id"]]
                     hit["p"] = agg["p"]
                     hit["src"] = agg["note"]
+                    for k in ("pB", "nB", "pF", "nF"):
+                        if k in agg:
+                            hit[k] = agg[k]
                 else:
                     vals, types = activities_for(hit["id"])
                     if vals:
@@ -152,12 +155,16 @@ def main():
                 continue
             missing.append((key, hit.get("src", "정량값 없음")))
             continue
-        curated.append({
+        row = {
             "n": entry["ko"], "en": hit.get("pref") or key, "s": hit["smiles"],
             "p": hit["p"], "c": entry["c"],
             "note": entry["note"] + " · " + hit["src"],
             "curated": True,
-        })
+        }
+        for k in ("pB", "nB", "pF", "nF"):
+            if k in hit:
+                row[k] = hit[k]
+        curated.append(row)
 
     print("%-26s %-14s %-6s %s" % ("curated", "chembl", "pKi", "class"), file=sys.stderr)
     for e in curated:
@@ -177,8 +184,12 @@ def main():
         if e["n"] in curated_ids:
             continue
         nm = names.get(e["n"], {}).get("name")
-        merged.append({"n": nm.title() if nm else e["n"], "s": e["s"], "p": e["p"],
-                       "c": e["c"], "note": e["note"]})
+        row = {"n": nm.title() if nm else e["n"], "s": e["s"], "p": e["p"],
+               "c": e["c"], "note": e["note"]}
+        for k in ("pB", "nB", "pF", "nF"):
+            if k in e:
+                row[k] = e[k]
+        merged.append(row)
 
     out = ASSETS / "er_reference.json"
     out.write_text(json.dumps(merged, ensure_ascii=False, separators=(",", ":")),

@@ -1182,7 +1182,41 @@ function mcGowanVolume(mol) {
   return (vx / 0.6022) * 0.73;           /* -> Å^3 per molecule */
 }
 
+/* A signature of the stereocentres, independent of how the SMILES was
+ * written: each centre is keyed by its Morgan invariant, so the same atom
+ * gets the same key whatever order the string walked the molecule in, and
+ * paired with its @ / @@ tag.
+ *
+ * It cannot be read as a configuration. Whether a centre is written @ or @@
+ * depends on the order its neighbours appear in the string, so two spellings
+ * of one isomer can differ here. What it is good for is the only thing it is
+ * used for: noticing that a query and a reference are not written the same
+ * way stereochemically, and saying so, because this engine's fingerprints
+ * and structure hash ignore stereochemistry entirely. */
+function stereoSignature(mol) {
+  var inv = initialInvariants(mol);
+  for (var round = 0; round < 2; round++) {
+    var next = new Array(mol.atoms.length);
+    for (var i = 0; i < mol.atoms.length; i++) {
+      var parts = [inv[i]];
+      var nbr = mol.atoms[i].nbr.slice();
+      var nbrInv = [];
+      for (var k = 0; k < nbr.length; k++) nbrInv.push(inv[nbr[k]]);
+      nbrInv.sort();
+      next[i] = fnv1a(parts.concat(nbrInv).join(','));
+    }
+    inv = next;
+  }
+  var tags = [];
+  for (var a = 0; a < mol.atoms.length; a++) {
+    if (mol.atoms[a].chirality) tags.push(inv[a] + ':' + mol.atoms[a].chirality);
+  }
+  tags.sort();
+  return { count: tags.length, key: tags.join('|') };
+}
+
 var MOL = {
+  stereoSignature: stereoSignature,
   parseSmiles: parseSmiles,
   computeDescriptors: computeDescriptors,
   molecularFormula: molecularFormula,
